@@ -1,0 +1,56 @@
+[
+{:source "http://www.w3.org/1999/02/22-rdf-syntax-ns.ttl",
+  :target "rdf.ttl",
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:source "http://www.w3.org/2000/01/rdf-schema.ttl",
+  :target "rdf-schema.ttl",
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:source "https://www.w3.org/2002/07/owl.ttl",
+  :target "owl.ttl",
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:source "http://dublincore.org/2012/06/14/dcterms.ttl",
+  :target "dcterms.ttl",
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:source "http://dublincore.org/2012/06/14/dcelements.ttl"
+  :target "dcelements.ttl"
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:source "https://www.w3.org/2009/08/skos-reference/skos.rdf",
+  :target "skos.rdf",
+  :format :rdf}
+ {:source
+  "https://github.com/The-Sequence-Ontology/SO-Ontologies/raw/master/so.owl",
+  :target "so.owl",
+  :format :rdf}
+ {:source
+  "http://purl.obolibrary.org/obo/iao/2015-02-23/ontology-metadata.owl",
+  :target "iao.owl",
+  :format :rdf}
+ {:source "http://purl.obolibrary.org/obo/bfo/2.0/bfo.owl",
+  :target "bfo.owl",
+  :format :rdf}
+ {:source
+  "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/sepio.owl",
+  :target "sepio.owl",
+  :format :rdf}
+ {:source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg.owl",
+  :target "sepio-clingen-acmg.owl",
+  :format :rdf}
+ {:source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg-valueset.owl",
+  :target "sepio-clingen-acmg-valueset.owl",
+  :format :rdf}
+ {:source "http://purl.obolibrary.org/obo/hp.owl",
+  :target "hp.owl",
+  :format :rdf}
+ {:source "http://purl.obolibrary.org/obo/mondo.owl",
+  :target "mondo.owl",
+  :format :rdf}
+ {:source "http://rest.genenames.org/fetch/status/Approved",
+  :target "hgnc.json",
+  :format :genes,
+  :fetch-opts {:accept :json}}
+ ]

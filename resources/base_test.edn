@@ -1,0 +1,11 @@
+[{:source "http://www.w3.org/1999/02/22-rdf-syntax-ns.ttl",
+  :target "rdf.ttl",
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:source  "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/sepio.owl",
+  :target "sepio.owl",
+  :format :rdf}
+ {:source "http://rest.genenames.org/fetch/status/Approved",
+  :target "hgnc.json",
+  :format :genes,
+  :fetch-opts {:accept :json}}]

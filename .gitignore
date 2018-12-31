@@ -1,5 +1,6 @@
 # Project related
-
+/db/
+/data/
 
 # Java related
 pom.xml

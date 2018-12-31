@@ -1,8 +1,10 @@
 (ns clingen-search.service
-  (:require [io.pedestal.http :as http]
+  (:require [hiccup.page :refer [html5]]
+            [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.http.body-params :as body-params]
-            [ring.util.response :as ring-resp]))
+            [ring.util.response :as ring-resp]
+            [clingen-search.source.html.common :as cg-html]))
 
 (defn about-page
   [request]
@@ -12,7 +14,11 @@
 
 (defn home-page
   [request]
-  (ring-resp/response "Hello World!"))
+  (ring-resp/response (html5 (cg-html/application-template request))))
+
+(defn aboot-page
+  [request]
+  (ring-resp/response "Sorry World!"))
 
 ;; Defines "/" and "/about" routes with their associated :get handlers.
 ;; The interceptors defined after the verb map (e.g., {:get home-page}
@@ -21,7 +27,8 @@
 
 ;; Tabular routes
 (def routes #{["/" :get (conj common-interceptors `home-page)]
-              ["/about" :get (conj common-interceptors `about-page)]})
+              ["/about" :get (conj common-interceptors `about-page)]
+              ["/aboot" :get (conj common-interceptors `aboot-page)]})
 
 ;; Map-based routes
 ;(def routes `{"/" {:interceptors [(body-params/body-params) http/html-body]

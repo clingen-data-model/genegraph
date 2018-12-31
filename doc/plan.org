@@ -1,0 +1,66 @@
+* Overall Goal
+
+Flow of information from curation interfaces into Kafka and from there onto ClinGen Website.
+
+* Sources of information
+
+** Gene Dosage (JIRA)
+
+** Gene Disease Validity (GCI)
+
+** Variant Pathogenicity (VCI)
+
+** Actionability (ACI)
+
+** ClinVar
+
+
+* Implementation plan
+
+** DONE Import base ontology data
+
+** DONE Import base gene information 
+
+** DONE Import JSON-LD formatted interpretations from local filesystem
+
+** DONE Connect to Kafka and import realtime stream of interpretation data
+
+** TODO Create query interface to datastore
+
+*** TODO Restructure datastore with public api/instance separated
+Mount components should live in a totally separate namespace
+
+*** TODO Define public api for interfacing with datastore
+**** DONE Implement basic navigation following edges
+**** DONE Proof of concept for select queries 
+**** TODO Configure format for storing external queries
+Three types of queries exist: one to select a subset of nodes, another to retrieve a table, and finally one that constructs a subgraph for further navigation.
+
+We may only have to concern ourselves with the first case, certainly to start
+
+The second case is still a select query
+
+The type of the third case should be discernable from the syntax, and is hopefully detectable with the Jena APIs (check this).
+
+We therefore may not need to add descriptive metadata to the query. The filename can translate directly into the function name.
+
+Need to figure out the mechanism by which the queries become state in the runtime. Ideally a query is a function with a map argument. They should be stored pre-compiled and optimized to fit the shape of the data. Need to use parameter replacement methods in ARQ to substitute arguments, but otherwise should not need to change the shape of the query after optimization.
+
+*** TODO Implement public api for interfacing with datastore
+
+** TODO Model for implementing view and integrating with queried data (controller)
+
+The display of the data is generally informed by the type of the data.
+
+We can register a renderer for a given class of data in the database, or in the application (probably in the application).
+
+May need to assign a priority list of renderers, generic, but alterable depending on the view desired.
+
+
+
+
+* Optional enhancements
+
+** Ontology Browser
+
+It might be interesting to be able to browse classes in an ontology and see instances of those classes (or uses of the properties). It would likely help significantly with understanding the data model and the structure of the data. 
