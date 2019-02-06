@@ -1,0 +1,14 @@
+* On data import, there is no typechecking when a property should have a resource as its object, but instead recieves a literal
+
+This was noticed as a part of the malfunctioning gene / load triples script. The resource expected as a target a gene IRI, and instead imported a string literal with the Gene IRI. This error was corrected, but leaves an issue where object properties may instead return a literal.
+
+** Suggested resolution:
+
+Properties in OWL have either a Data Property or a Object Property type. Ensure on import that these types are used to validate the object of their referent.
+
+Alternatively, use these properties to determine the type of the referrent imported. Throw an error when type does not align as expected.
+
+* There may be classes and properties that aren't namespaced appropriately in local-names
+
+When the base is imported, a check should be made for any un-namespaced keywords in local-names, these should be at least pointed out
+

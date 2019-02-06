@@ -34,7 +34,7 @@
 (defn curie [iri]
   (some #(when (s/starts-with? iri (first %)) (second %)) ns-prefix-map))
 
-(defn -local-name-uri [resource]
+(defn- local-name-uri [resource]
   (let [ns (curie (.getURI resource))
         label (some-> resource get-label csk/->kebab-case)]
     (if label
@@ -48,13 +48,13 @@
         (concat (resources-with-type "http://www.w3.org/2002/07/owl#DatatypeProperty"))
         (concat (resources-with-type "http://www.w3.org/2002/07/owl#AnnotationProperty"))
         (concat (resources-with-type "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"))
-        (map -local-name-uri)
+        (map local-name-uri)
         (into {}))))
 
 (defstate local-property-names
   :start (object-properties))
 
-(defn -local-name-uri-class [resource]
+(defn- local-name-uri-class [resource]
   (let [label (some-> resource get-label csk/->PascalCase)
         ns (curie (.getURI resource))]
     (if label
@@ -64,7 +64,7 @@
 
 (defn class-names []
   (tx (->> (select "select distinct ?x where { [] a ?x }")
-           (map -local-name-uri-class)
+           (map local-name-uri-class)
            (into {}))))
 
 (defstate local-class-names

@@ -7,6 +7,7 @@
             [clojure.pprint :refer [pprint]])
   (:import java.io.PushbackReader))
 
+;; TODO ensure target directory exists
 (def target-base "data/base/")
 (def base-resources "base.edn")
 
@@ -16,7 +17,7 @@
     (edn/read rdr)))
 
 (defn read-base-resources []
-  (-read-edn base-resources))
+  (read-edn base-resources))
 
 (defn retrieve-base-data [resources]
   (doseq [{uri-str :source, target-file :target, opts :fetch-opts} resources]
@@ -26,10 +27,11 @@
   (doseq [{source-file :target, source-type :format, opts :reader-opts} resources]
     (println "Importing " source-file)
     (with-open [is (io/input-stream (str target-base source-file))]
+      ;; should refactor this to be configurable via file
       (case source-type
         :rdf (db/load-rdf is opts)
         :genes (gene/load-genes is)))))
 
 (defn- set-ns-prefixes []
-  (let [prefixes (-read-edn "namespaces.edn")]
+  (let [prefixes (read-edn "namespaces.edn")]
     (db/set-ns-prefixes prefixes)))

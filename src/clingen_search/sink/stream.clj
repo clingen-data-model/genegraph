@@ -10,4 +10,4 @@
     (doseq [file files]
       (println "importing " (.getName file))
       (with-open [is (io/input-stream file)]
-        (db/load-rdf is :format :json-ld)))))
+        (db/load-rdf is {:format :json-ld})))))

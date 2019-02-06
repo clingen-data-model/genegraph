@@ -38,5 +38,7 @@
     (with-open [qexec (QueryExecutionFactory/create query model)]
       (when-let [result (-> qexec .execSelect)]
         (let [result-var (-> result .getResultVars first)
-              result-seq (iterator-seq result)]
+              result-seq (iterator-seq result)
+              literals (filter #(-> % (.get result-var) .isLiteral) result-seq )]
+          (println literals)
           (mapv #(.getResource % result-var) result-seq))))))
