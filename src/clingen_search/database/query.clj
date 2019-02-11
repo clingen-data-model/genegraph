@@ -22,7 +22,7 @@
     (str ":" k-ns "/" k)))
 
 (defn- expand-query-str [query-str]
-  (s/replace query-str #":(\w+)/(\w+)" keyword-string-sub))
+  (s/replace query-str #":(\S+)/(\S+)" keyword-string-sub))
 
 (defn select [query-str]
   (let [model (.getDefaultModel db)

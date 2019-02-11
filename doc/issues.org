@@ -10,5 +10,30 @@ Alternatively, use these properties to determine the type of the referrent impor
 
 * There may be classes and properties that aren't namespaced appropriately in local-names
 
-When the base is imported, a check should be made for any un-namespaced keywords in local-names, these should be at least pointed out
+When the base is imported, a check should be made for any un-namespaced keywords in local-names, these should be at least pointed out.
+
+For the time being, (2019-02-08) all known classes are covered
+
+* Implement bi-directional traversal of names
+* Complete datafy/nav implementation
+
+  Being able to use the Cognitect REBL would be huge, need a substitute for the browser in Neo4j
+
+* Need appropriate migration path when class and property labels change in OWL file
+
+Since local names in the code are based on labels defined in the base ontology and RDF files, there should exist code that can do the following steps:
+
+As an alternative, there should be code that can retain the old names. In this sense, the local-names hashes would be stored in the code base as configuration files; names woudld be added to iteratively (but not replaced altogether). This approach may be easier as a first pass.
+
+** Detect when a name has changed
+
+** Identify instances of that name in queries and code
+
+** Automatically (or interactively) update the name to the new iteration
+
+* Check for class names that have no label
+
+"select distinct ?x where { [] a ?x }" returns 42, there are 37 entries in class-names, some classes are likely unlabeled
+
+
 

@@ -32,6 +32,15 @@
  {:source "http://purl.obolibrary.org/obo/bfo/2.0/bfo.owl",
   :target "bfo.owl",
   :format :rdf}
+ {:source "https://raw.githubusercontent.com/monarch-initiative/GENO-ontology/develop/src/ontology/geno.owl"
+  :target "geno.owl"
+  :format :rdf}
+ {:source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-dosage/sepio-clingen-dosage-valueset.owl"
+  :target "sepio-clingen-dosage-valueset.owl"
+  :format :rdf}
+ {:source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-dosage/sepio-clingen-dosage.owl"
+  :target "sepio-clingen-dosage.owl"
+  :format :rdf}
  {:source
   "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/sepio.owl",
   :target "sepio.owl",
