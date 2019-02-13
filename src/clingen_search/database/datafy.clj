@@ -15,21 +15,7 @@
 (defstate class-uri->keyword
   :start (set/map-invert names/local-class-names))
 
-;; TODO compose non-class resource string into namespaced keyword
-;; TODO construct multiple property targets as collection
-(defn datafy-resource [this]
-  (tx 
-   (let [model (.getDefaultModel db)
-         out-attributes (-> model (.listStatements this nil nil) iterator-seq)
-         in-attributes (-> model (.listStatements nil nil this) iterator-seq)]
-     {:out (into {} (map 
-                     #(vector (-> % .getPredicate property-uri->keyword)
-                              (-> % .getObject compose-object))
-                     out-attributes))
-      :in  (into {} (map 
-                     #(vector (-> % .getPredicate property-uri->keyword)
-                              (-> % .getSubject compose-object))
-                     in-attributes))})))
+(declare datafy-resource)
 
 (defn- compose-object [o]
   (cond (instance? Literal o) (.toString o)
@@ -38,6 +24,24 @@
           {::d/obj o
            ::d/class (class o)
            `p/datafy #(-> % meta ::d/obj datafy-resource)})))
+
+;; TODO compose non-class resource string into namespaced keyword
+;; TODO construct multiple property targets as collection
+(defn datafy-resource [this]
+  (tx 
+   (let [model (.getDefaultModel db)
+         out-attributes (-> model (.listStatements this nil nil) iterator-seq)
+         in-attributes (-> model (.listStatements nil nil this) iterator-seq)]
+     {:> (into {} (map 
+                     #(vector (-> % .getPredicate property-uri->keyword)
+                              (-> % .getObject compose-object))
+                     out-attributes))
+      :<  (into {} (map 
+                     #(vector (-> % .getPredicate property-uri->keyword)
+                              (-> % .getSubject compose-object))
+                     in-attributes))})))
+
+
 
 (extend-protocol p/Datafiable
 

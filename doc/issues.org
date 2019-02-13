@@ -17,7 +17,7 @@ For the time being, (2019-02-08) all known classes are covered
 * Implement bi-directional traversal of names
 * Complete datafy/nav implementation
 
-  Being able to use the Cognitect REBL would be huge, need a substitute for the browser in Neo4j
+  Being able to use the Cognitect REBL would be huge, need a substitute for the browser in Neo4j.
 
 * Need appropriate migration path when class and property labels change in OWL file
 
