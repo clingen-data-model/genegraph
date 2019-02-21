@@ -1,0 +1,5 @@
+* Query type possibilites
+** Select a set of nodes to pass on to walk, or to use for kewyword access
+** Construct a table-like hash structure
+* Punchlist
+** TODO expand-query-str needs more helpful error messages when a keyword string fails to resolve to a registered uri.
