@@ -24,13 +24,6 @@
   clojure.lang.Keyword
   (step [edge start model]
     (step [edge :>] start model))
-  ;; (step [edge start model]
-  ;;   (let [property (names/local-property-names edge)
-  ;;         starting-resources (filter #(instance? Resource %) start)
-  ;;         statements-per-node (map #(-> model (.listStatements % property nil) iterator-seq)
-  ;;                                  starting-resources)]
-  ;;     (into #{} (mapcat (fn [stmts] (map #(.getObject %) stmts)) 
-  ;;                       statements-per-node))))p
   
   ;; Expect edge to be a vector with form [:ns/prop <direction>], where direction is one
   ;; of :> :< :-
@@ -46,7 +39,7 @@
                     :- both-fn)
           starting-resources (filter #(instance? Resource %) start)
           statements-per-node (map step-fn starting-resources)]
-      (into #{} (mapcat step-fn starting-resources))))`)
+      (into #{} (mapcat step-fn starting-resources)))))
 
 (defn walk [start-nodes & edges]
   (tx
