@@ -16,5 +16,5 @@
    [:body
     [:section.section
      [:div.container
-      [:h1.title "Hello World"]
+      [:h1.title "What does it mean, the plague? It's life, that's all."]
       [:p.subtitle "My first website with " [:strong "Bulma"] "!"]]]]])

@@ -46,7 +46,7 @@
                     :- both-fn)
           starting-resources (filter #(instance? Resource %) start)
           statements-per-node (map step-fn starting-resources)]
-      (into #{} (mapcat step-fn starting-resources)))))
+      (into #{} (mapcat step-fn starting-resources))))`)
 
 (defn walk [start-nodes & edges]
   (tx
