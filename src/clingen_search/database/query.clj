@@ -2,7 +2,8 @@
   (:require [clingen-search.database.instance :refer [db]]
             [clingen-search.database.util :refer [tx]]
             [clingen-search.database.names :as names :refer
-             [local-class-names local-property-names]]
+             [local-class-names local-property-names
+              class-uri->keyword local-names ns-prefix-map prefix-ns-map]]
             [clojure.pprint :refer [pprint]]
             [clojure.set :as set]
             [clojure.datafy :as d]
@@ -12,8 +13,40 @@
            [org.apache.jena.query QueryFactory Query QueryExecution
             QueryExecutionFactory QuerySolutionMap]))
 
-(defstate local-names
-  :start (merge local-class-names local-property-names))
+(defprotocol Steppable
+  (step [edge start model]))
+
+(defprotocol AsReference
+  (to-ref [resource]))
+
+(defprotocol AsClojureType
+  (to-clj [x]))
+
+(defprotocol AsRDFNode
+  (to-rdf-node [x]))
+
+(defprotocol SelectQuery
+  (select [query-def] [query-def params]))
+
+(defprotocol AsResource
+  "Create an RDFResource given a reference"
+  (resource [r] [ns-prefix r]))
+
+(deftype RDFResource [resource]
+
+  ;; TODO, returns all properties when k does not map to a known symbol,
+  ;; This seems to break the contract for ILookup
+  clojure.lang.ILookup
+  (valAt [this k] (step k this (.getDefaultModel db)))
+  (valAt [this k nf] nf)
+
+  Object
+  (toString [_] (.getURI resource))
+  
+  AsReference
+  (to-ref [_] (if-let [kw (class-uri->keyword resource)]
+                kw
+                (str resource))))
 
 (defonce query-register (atom {}))
 
@@ -30,8 +63,7 @@
     (swap! query-register assoc name q)
     true))
 
-(defprotocol AsClojureType
-  (to-clj [x]))
+
 
 (extend-protocol AsClojureType
   Resource
@@ -40,8 +72,7 @@
   Literal
   (to-clj [x] (.getString x)))
 
-(defprotocol Steppable
-  (step [edge start model]))
+
 
 (extend-protocol Steppable
 
@@ -71,20 +102,6 @@
          1 (first result)
          result)))))
 
-(deftype RDFResource [resource]
-
-  ;; TODO, returns all properties when k does not map to a known symbol,
-  ;; This seems to break the contract for ILookup
-  clojure.lang.ILookup
-  (valAt [this k] (step k this (.getDefaultModel db)))
-  (valAt [this k nf] nf)
-
-  Object
-  (toString [_] (.getURI resource)))
-
-(defprotocol AsRDFNode
-  (to-rdf-node [x]))
-
 (extend-protocol AsRDFNode
 
   java.lang.String
@@ -98,9 +115,6 @@
     (doseq [[k v] params]
       (.add qs-map (name k) (to-rdf-node v)))
     qs-map))
-
-(defprotocol SelectQuery
-  (select [query-def] [query-def params]))
 
 (extend-protocol SelectQuery
   
@@ -129,3 +143,16 @@
      (if-let [q (@query-register query-def)]
        (select q params)
        #{}))))
+
+(extend-protocol AsResource
+  
+  java.lang.String
+  (resource 
+    ([r] (->RDFResource (ResourceFactory/createResource r)))
+    ([ns-prefix r] (when-let [prefix (prefix-ns-map ns-prefix)]
+                     (->RDFResource (ResourceFactory/createResource (str prefix r))))))
+  
+  clojure.lang.Keyword
+  (resource [r] (when-let [res (local-names r)]
+                  (->RDFResource res))))
+

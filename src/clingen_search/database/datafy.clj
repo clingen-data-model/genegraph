@@ -1,7 +1,7 @@
 (ns clingen-search.database.datafy
   (:require [clojure.core.protocols :as p]
             [clojure.datafy :as d]
-            [clingen-search.database.names :as names]
+            [clingen-search.database.names :as names :refer [property-uri->keyword class-uri->keyword]]
             [clingen-search.database.instance :refer [db]]
             [clingen-search.database.util :refer [tx]]
             [mount.core :refer [defstate]]
@@ -9,11 +9,7 @@
   (:import [org.apache.jena.rdf.model Property Literal Resource ResourceFactory
             Statement]))
 
-(defstate property-uri->keyword
-  :start (set/map-invert names/local-property-names))
 
-(defstate class-uri->keyword
-  :start (set/map-invert names/local-class-names))
 
 (declare datafy-resource)
 

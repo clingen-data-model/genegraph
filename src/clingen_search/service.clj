@@ -8,17 +8,27 @@
 
 (defn about-page
   [request]
-  (ring-resp/response (format "Clojure %s - served from %s"
-                              (clojure-version)
-                              (route/url-for ::about-page))))
+  (ring-resp/response (str request (format "Clojure %s - served from %s"
+                                           (clojure-version)
+                                           (route/url-for ::about-page)))))
 
 (defn home-page
   [request]
-  (ring-resp/response (html5 (cg-html/application-template request))))
+  (ring-resp/response (html5 (cg-html/template cg-html/index request))))
 
 (defn aboot-page
   [request]
   (ring-resp/response "Sorry World!"))
+
+(defn halo-page
+  [request]
+  (ring-resp/response "Guten tag!"))
+
+(defn resource-page
+  [request]
+  (ring-resp/response (html5 (cg-html/template 
+                              cg-html/resource 
+                              (select-keys request [:path-params :query-params])))))
 
 ;; Defines "/" and "/about" routes with their associated :get handlers.
 ;; The interceptors defined after the verb map (e.g., {:get home-page}
@@ -27,13 +37,15 @@
 
 ;; Tabular routes
 (def routes #{["/" :get (conj common-interceptors `home-page)]
+              ["/r/:id" :get (conj common-interceptors `resource-page)]
               ["/about" :get (conj common-interceptors `about-page)]
-              ["/aboot" :get (conj common-interceptors `aboot-page)]})
+              ["/aboot" :get (conj common-interceptors `aboot-page)]
+              ["/halo" :get (conj common-interceptors `halo-page)]})
 
 ;; Map-based routes
-;(def routes `{"/" {:interceptors [(body-params/body-params) http/html-body]
-;                   :get home-page
-;                   "/about" {:get about-page}}})
+;; (def routes `{"/" {:interceptors [(body-params/body-params) http/html-body]
+;;                   :get home-page
+;;                   "/about" {:get about-page}}})
 
 ;; Terse/Vector-based routes
 ;(def routes

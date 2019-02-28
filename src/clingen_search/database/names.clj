@@ -10,11 +10,11 @@
   (:import [org.apache.jena.shared PrefixMapping]
            [org.apache.jena.rdf.model Model ModelFactory Literal Resource ResourceFactory]))
 
-(defn get-ns-prefix-map []
-  (-> "namespaces.edn" io/resource slurp edn/read-string set/map-invert))
+(defstate prefix-ns-map
+  :start (-> "namespaces.edn" io/resource slurp edn/read-string))
 
 (defstate ns-prefix-map
-  :start (get-ns-prefix-map))
+  :start (set/map-invert prefix-ns-map))
 
 (defn get-label [resource]
   (let [p (property "http://www.w3.org/2000/01/rdf-schema#label")
@@ -69,3 +69,13 @@
 
 (defstate local-class-names
   :start (class-names))
+
+(defstate property-uri->keyword
+  :start (set/map-invert local-property-names))
+
+(defstate class-uri->keyword
+  :start (set/map-invert local-class-names))
+
+(defstate local-names
+  :start (merge local-class-names local-property-names))
+

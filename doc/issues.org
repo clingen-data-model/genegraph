@@ -37,3 +37,16 @@ As an alternative, there should be code that can retain the old names. In this s
 
 
 
+* Replace symbol in query should cover case where symbol is not terminated by space
+
+For example:
+
+clingen-search.source.html.elements> (q/register-query ::genes "select ?x where {?x a :so/Gene} limit 5")
+Execution error (QueryParseException) at org.apache.jena.sparql.lang.ParserBase/throwParseException (ParserBase.java:522).
+Line 1, column 23: Unresolved prefixed name: :so
+clingen-search.source.html.elements> (q/register-query ::genes "select ?x where { ?x a :so/Gene } limit 5")
+true
+* Consider what to do when a resource has multiple types in dispatch of sink/html/elements
+* Consider implications of OWL subclassing/inheritance in dispatch of sink/html/elements
+
+In particular, is it possible to represent elements based on their more specific classes when available, and more general classes when not. Would be lovely to create a construct based on the ad-hoc subtyping available in the multimethod intervace.

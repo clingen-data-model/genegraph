@@ -1,3 +1,4 @@
+;; _ is a reserved character in namespaces
 {"dc" "http://purl.org/dc/elements/1.1/",
  "owl" "http://www.w3.org/2002/07/owl#",
  "xml" "http://www.w3.org/XML/1998/namespace",
@@ -22,7 +23,7 @@
  "oboInOwl" "http://www.geneontology.org/formats/oboInOwl#",
  "hsapdv" "http://purl.obolibrary.org/obo/hsapdv#",
  "mondo" "http://purl.obolibrary.org/obo/MONDO_",
- "ace_lexicon" "http://attempto.ifi.uzh.ch/ace_lexicon#",
+ "ace-lexicon" "http://attempto.ifi.uzh.ch/ace_lexicon#",
  "skos" "http://www.w3.org/2004/02/skos/core#",
  "xsd" "http://www.w3.org/2001/XMLSchema#",
  "ncbitaxon" "http://purl.obolibrary.org/obo/ncbitaxon#"
@@ -38,4 +39,5 @@
  "hp-ld" "http://purl.obolibrary.org/obo/hp/hp-logical-definitions-subq#"
  "hp-p" "http://purl.obolibrary.org/obo/hp.owl#"
  "obi" "http://purl.obolibrary.org/obo/OBI_"
- "bibo" "http://purl.org/ontology/bibo/"}
+ "bibo" "http://purl.org/ontology/bibo/"
+ "ncbi-gene" "https://www.ncbi.nlm.nih.gov/gene/"}

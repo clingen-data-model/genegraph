@@ -25,10 +25,11 @@
                  [org.apache.kafka/kafka-clients "2.0.0"]
                  [cheshire "5.8.1"]
                  [camel-snake-kebab "0.4.0"]
-                 [org.apache.jena/jena-core "3.9.0"]
-                 [org.apache.jena/jena-arq "3.9.0"]
-                 [org.apache.jena/jena-iri "3.9.0"]
-                 [org.apache.jena/jena-tdb2 "3.9.0"]
+                 [org.apache.jena/jena-core "3.10.0"]
+                 [org.apache.jena/jena-arq "3.10.0"]
+                 [org.apache.jena/jena-iri "3.10.0"]
+                 [org.apache.jena/jena-tdb2 "3.10.0"]
+                 [org.apache.jena/jena-text "3.10.0" :exclusions [org.apache.jena/jena-cmds]]
                  [mount "0.1.14"]
                  [com.velisco/clj-ftp "0.3.9"] ;; For downloading ftp docs
                  [clj-http "3.9.1"] ;; For downloading 
