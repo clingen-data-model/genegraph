@@ -20,7 +20,7 @@
   (let [p (property "http://www.w3.org/2000/01/rdf-schema#label")
         m (.getDefaultModel db)]
     (when-let [lbl (-> (.listStatements m resource p nil) iterator-seq first)]
-      (.getString lbl))))
+      (-> lbl .getString (s/replace #"\W" " ")))))
 
 (defn resources-with-type [t]
   (let [m (.getDefaultModel db)
@@ -39,8 +39,8 @@
         label (some-> resource get-label csk/->kebab-case)]
     (if label
       [(if ns (keyword ns label) (keyword label))
-       (property (.getURI resource))]
-      [nil nil])))
+       (.getURI resource)]
+      nil)))
 
 (defn object-properties []
   (tx 
@@ -49,26 +49,38 @@
         (concat (resources-with-type "http://www.w3.org/2002/07/owl#AnnotationProperty"))
         (concat (resources-with-type "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"))
         (map local-name-uri)
-        (into {}))))
+        (remove nil?)
+        (into []))))
+
+;;(-> "property-names.edn" io/resource slurp edn/read-string)
+(defn- read-local-property-names []
+  (let [kw-to-iri  (-> "property-names.edn" io/resource slurp edn/read-string)]
+    (into {} (map (fn [[k v]]  [k (ResourceFactory/createProperty v)]) kw-to-iri))))
 
 (defstate local-property-names
-  :start (object-properties))
+  :start (read-local-property-names))
 
 (defn- local-name-uri-class [resource]
   (let [label (some-> resource get-label csk/->PascalCase)
         ns (curie (.getURI resource))]
     (if label
       [(if ns (keyword ns label) (keyword label))
-       resource]
-      [nil nil])))
+       (.getURI resource)]
+      nil)))
 
 (defn class-names []
   (tx (->> (select "select distinct ?x where { [] a ?x }")
            (map local-name-uri-class)
-           (into {}))))
+           (remove nil?)
+           (into []))))
+
+;;(-> "class-names.edn" io/resource slurp edn/read-string)
+(defn- read-local-class-names []
+  (let [kw-to-iri  (-> "class-names.edn" io/resource slurp edn/read-string)]
+    (into {} (map (fn [[k v]]  [k (ResourceFactory/createResource v)]) kw-to-iri))))
 
 (defstate local-class-names
-  :start (class-names))
+  :start (read-local-class-names))
 
 (defstate property-uri->keyword
   :start (set/map-invert local-property-names))
