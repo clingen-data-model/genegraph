@@ -32,6 +32,4 @@
 (defn resource [params]
   (let [r (resolve-resource (get-in params [:path-params :id]))]
     [:section.section
-     [:div.container
-      (e/page r)
-      [:p (str params)]]]))
+     (e/page r)]))

@@ -1,5 +1,5 @@
 (ns clingen-search.sink.base
-  (:require [clingen-search.database.tdb :as db]
+  (:require [clingen-search.database.load :as db]
             [clingen-search.sink.fetch :as fetch]
             [clingen-search.sink.gene :as gene]
             [clojure.java.io :as io]
@@ -29,7 +29,7 @@
     (with-open [is (io/input-stream (str target-base source-file))]
       ;; should refactor this to be configurable via file
       (case source-type
-        :rdf (db/load-rdf is opts)
+        :rdf (db/store-rdf is opts)
         :genes (gene/load-genes is)))))
 
 (defn- set-ns-prefixes []

@@ -13,7 +13,6 @@
                  ;; [io.pedestal/pedestal.tomcat "0.5.4"]
                  [hiccup "1.0.5"]
                  ;; experimental--may remove in future
-                 [org.clojure/core.logic "0.8.11"]
                  [ch.qos.logback/logback-classic "1.2.3" :exclusions [org.slf4j/slf4j-api]]
                  [org.slf4j/jul-to-slf4j "1.7.25"]
                  [org.slf4j/jcl-over-slf4j "1.7.25"]
@@ -33,7 +32,7 @@
                  [mount "0.1.14"]
                  [com.velisco/clj-ftp "0.3.9"] ;; For downloading ftp docs
                  [clj-http "3.9.1"] ;; For downloading 
-                 ]
+                 [org.apache.kafka/kafka-clients "2.1.1"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
   ;; If you use HTTP/2 or ALPN, use the java-agent to pull in the correct alpn-boot dependency

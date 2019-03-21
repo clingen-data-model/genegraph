@@ -2,7 +2,7 @@
   (:require [cheshire.core :as json]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
-            [clingen-search.database.tdb :as db]))
+            [clingen-search.database.load :as db]))
 
 ;; symbol -> skos:prefLabel ? rdf:label
 ;; name -> skos:altLabel 

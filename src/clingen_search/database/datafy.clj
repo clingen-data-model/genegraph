@@ -5,7 +5,8 @@
             [clingen-search.database.instance :refer [db]]
             [clingen-search.database.util :refer [tx]]
             [mount.core :refer [defstate]]
-            [clojure.set :as set])
+            [clojure.set :as set]
+            [clingen-search.database.query :as q])
   (:import [org.apache.jena.rdf.model Property Literal Resource ResourceFactory
             Statement]))
 
@@ -40,7 +41,7 @@
 
 
 (extend-protocol p/Datafiable
-
+  
   Resource
   (datafy [this] (datafy-resource this))
   

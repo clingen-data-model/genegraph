@@ -25,11 +25,36 @@ Since local names in the code are based on labels defined in the base ontology a
 
 As an alternative, there should be code that can retain the old names. In this sense, the local-names hashes would be stored in the code base as configuration files; names woudld be added to iteratively (but not replaced altogether). This approach may be easier as a first pass.
 
+With the current implementation, name translation is not entirely feasible to use for loading data. Property names should be fine as long as one can guarantee that the OWL files have been loaded, but a lot of class name shortcuts won't exist since instances of them won't exist yet. There is also the question of updating the data whenever these instances are created.
+
+It seems to make the most sense to generate the symbol->iri table and load it separately from the database. There can be a pathway to update with new ontologies and files, but this makes the most sense for now. Should require no change to code outside of database.names.
+
+Where do the update methods belong? Does it make sense to create an admin namespace for these sorts of operations? (yes)
+
 ** Detect when a name has changed
 
 ** Identify instances of that name in queries and code
 
 ** Automatically (or interactively) update the name to the new iteration
+
+
+* Admin operations
+** Refresh names
+
+A fully robust implementation of this should be able to:
+
+*** Identify relevant names in the database
+Done, existing queries support this
+
+*** Write names in edn format if they don't already exist
+
+*** If they do, read existing names and compare
+
+Perhaps report the disparity and abort unless a flag is set. User is encouraged to run the command once without the flag, and then set the flag later
+
+*** Beyond MVP: automatically detect instances of changed names used in the code.
+
+*** Way beyond MVP: automatically update them.
 
 * Check for class names that have no label
 
@@ -50,3 +75,61 @@ true
 * Consider implications of OWL subclassing/inheritance in dispatch of sink/html/elements
 
 In particular, is it possible to represent elements based on their more specific classes when available, and more general classes when not. Would be lovely to create a construct based on the ad-hoc subtyping available in the multimethod intervace.
+* Implement interface to RDFResource that always returns properties as a collection
+
+Being able to access properties as if a resource were simply a hash is super slick. Sometimes one wants to iterate over properties as if they were guaranteed to be a collection, along the lines of the xml-> and xml1-> zipper syntax.
+
+Maybe the solution is to bring the zipper interface to RDFResource.
+
+* Post-processing to consider:
+
+** Labels
+
+Probaby want to be consistent about the label property we want to use for terms. :skos/preferred-label feels correct, may want to translate that to :rdfs/label instead.
+
+Could easily be satisfied by a CONSTRUCT query, particularly if one is permitted to keep the original label.
+
+** Diseases
+
+*** Translation to MONDO
+
+The labels and class hierarchies are all tied to MONDO terms, but gene dosage records are tied to OMIM terms, may want to make sure that all disease terms are translated into MONDO terms.
+
+Here we need to delete the original association, this should be a 1-1 relation.
+
+*** Typing
+
+Diseases should have a type assigned to them to mark them as diseases.
+
+* Datafy
+
+** CURIE/IRI of disease nil in one case
+
+I got the following output when looking up aneurysm-osteoarthritis syndrome, the IRI/CURIE is nil in one case
+
+clingen-search.database.query> (-> g (get [:geno/is-feature-affected-by :<]) first (get [:sepio/has-subject :<]) :sepio/has-object (get [:skos/has-exact-match :<]) datafy)
+{:>
+ {nil "MONDO:0013426",
+  :rdf/type http://www.w3.org/2002/07/owl#Class,
+  :oboInOwl/has-exact-synonym "Loeys-Dietz syndrome type 3",
+  :oboInOwl/has-related-synonym
+  "Loeys-Dietz syndrome, type 1C (formerly)",
+  :oboInOwl/database-cross-reference "UMLS:C3151087",
+  :rdfs/label "aneurysm-osteoarthritis syndrome",
+  :owl/equivalent-class http://purl.obolibrary.org/obo/OMIM_613795,
+  :skos/has-exact-match http://purl.obolibrary.org/obo/DOID_0070237,
+  :oboInOwl/in-subset http://purl.obolibrary.org/obo/mondo#clingen,
+  :rdfs/sub-class-of ad56daa9-3262-437b-be73-54bfe39680cd},
+ :<
+ #:owl{:annotated-source f5f3fb8d-bc35-451d-8193-b1ed07e6c9b5,
+       :equivalent-class http://purl.obolibrary.org/obo/GARD_0010997}}
+
+* Performance
+
+** Paths for local resources require an O(n) search through namespaces to generate
+
+Am currently using curie, blasting through the lists of namespaces. There should be a better way to handle this
+* Loading dependency inversions
+
+  There are a couple interfaces with dependency inversions, the datafy implementaiton of Jena resources, and the pages themselves. May need to require these explicity, but it would be nice if that wasn't necessary
+* Creation and management of Clojure class hierarchy

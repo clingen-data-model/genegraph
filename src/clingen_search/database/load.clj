@@ -1,4 +1,4 @@
-(ns clingen-search.database.tdb
+(ns clingen-search.database.load
   (:require [mount.core :as mount :refer [defstate]]
             [clojure.pprint :refer [pprint]]
             [camel-snake-kebab.core :as csk]
@@ -10,13 +10,6 @@
            [org.apache.jena.rdf.model Model ModelFactory Literal Resource ResourceFactory
             Statement]
            [org.apache.jena.ontology OntResource]))
-
-;; (defn with-class [cl]
-;;   (let [m (.getDefaultModel db)
-;;         object-class (get local-class-names cl)
-;;         property-class (property "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-;;         stmt-iter (.listStatements m nil property-class object-class)]
-;;     (map #(.getSubject %) (iterator-seq stmt-iter))))
 
 (def jena-rdf-format
   {:rdf-xml "RDF/XML"
@@ -32,16 +25,20 @@
    (.getDefaultModel db)
    ))
 
-(defn load-rdf 
+(defn read-rdf
+  ([src] (read-rdf src {}))
+  ([src opts] (-> (ModelFactory/createDefaultModel)
+                 (.read src nil (jena-rdf-format (:format opts :rdf-xml))))))
+
+(defn store-rdf 
   "Expects src to be compatible with Model.read(src, nil). A java.io.InputStream is
   likely the most appropriate type."
-  ([src] (load-rdf src {}))
+  ([src] (store-rdf src {}))
   ([src opts]
    (write-tx
     (let [m (.getDefaultModel db)
           in (-> (ModelFactory/createDefaultModel)
                  (.read src nil (jena-rdf-format (:format opts :rdf-xml))))]
-      ;; (.setNsPrefixes m in) ;; is this really needed? Where are we using NsPrefixes in this code?
       (.add m in))
     true)))
 
@@ -60,7 +57,7 @@
   "Statements are a three-item sequence, "
   ([stmts]
    (load-statements stmts nil))
-  ([stmts graph-name]
+  ([stmts model]
    (tx (let [m (get-model graph-name)
              constructed-statements (into-array Statement (map construct-statement stmts))]
          (.add m constructed-statements))

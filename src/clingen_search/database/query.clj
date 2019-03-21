@@ -6,9 +6,9 @@
               class-uri->keyword local-names ns-prefix-map prefix-ns-map]]
             [clojure.pprint :refer [pprint]]
             [clojure.set :as set]
-            [clojure.datafy :as d]
             [clojure.string :as s]
-            [mount.core :refer [defstate]])
+            [clojure.core.protocols :refer [Datafiable]]
+            [clojure.datafy :refer [datafy]])
   (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal]
            [org.apache.jena.query QueryFactory Query QueryExecution
             QueryExecutionFactory QuerySolutionMap]))
@@ -20,7 +20,7 @@
   (to-ref [resource]))
 
 (defprotocol AsClojureType
-  (to-clj [x]))
+  (to-clj [x model]))
 
 (defprotocol AsRDFNode
   (to-rdf-node [x]))
@@ -32,12 +32,22 @@
   "Create an RDFResource given a reference"
   (resource [r] [ns-prefix r]))
 
-(deftype RDFResource [resource]
+(defprotocol Addressable
+  "Retrieves the local path to a resource"
+  (path [this]))
+
+(defprotocol ThreadableData
+  "A data structure that can be accessed through the ld-> and ld1-> accessors
+  similar to Clojure XML zippers"
+  (ld-> [this ks])
+  (ld1-> [this ks]))
+
+(deftype RDFResource [resource model]
 
   ;; TODO, returns all properties when k does not map to a known symbol,
   ;; This seems to break the contract for ILookup
   clojure.lang.ILookup
-  (valAt [this k] (step k this (.getDefaultModel db)))
+  (valAt [this k] (step k this model))
   (valAt [this k nf] nf)
 
   Object
@@ -46,7 +56,23 @@
   AsReference
   (to-ref [_] (if-let [kw (class-uri->keyword resource)]
                 kw
-                (str resource))))
+                (str resource)))
+
+  Datafiable
+  (datafy [_] (datafy resource))
+
+  ThreadableData
+  (ld-> [this ks] (reduce (fn [nodes k]
+                            (->> nodes (map #(step k % model))
+                                 (filter seq) flatten)) [this] ks))
+  (ld1-> [this ks] (first (ld-> this ks)))
+  
+  Addressable
+  (path [_] (let [uri (.getURI resource)
+                  short-ns (names/curie uri)
+                  full-ns (prefix-ns-map short-ns)
+                  id (subs uri (count full-ns))]
+              (str "/r/" short-ns "_" id))))
 
 (defonce query-register (atom {}))
 
@@ -63,16 +89,12 @@
     (swap! query-register assoc name q)
     true))
 
-
-
 (extend-protocol AsClojureType
   Resource
-  (to-clj [x] (->RDFResource x))
+  (to-clj [x model] (->RDFResource x model))
   
   Literal
-  (to-clj [x] (.getString x)))
-
-
+  (to-clj [x model] (.getString x)))
 
 (extend-protocol Steppable
 
@@ -96,10 +118,10 @@
                      :> out-fn
                      :< in-fn
                      :- both-fn)
-           result (mapv to-clj (step-fn start))]
+           result (mapv #(to-clj % model) (step-fn start))]
        (case (count result)
          0 nil
-         1 (first result)
+         ;; 1 (first result)
          result)))))
 
 (extend-protocol AsRDFNode
@@ -118,18 +140,20 @@
 
 (extend-protocol SelectQuery
   
+  ;; TODO--consider removing this method into a function, do not want to expose
+  ;; interfaces against Jena types
   Query
   (select
     ([query-def] (select query-def {}))
     ([query-def params]
-     (let [model (.getDefaultModel db)
-           qs-map (construct-query-solution-map params)]
+     (let [model (if-let [m (:-model params)] m (.getDefaultModel db))
+           qs-map (construct-query-solution-map (dissoc params :-model))]
        (tx
         (with-open [qexec (QueryExecutionFactory/create query-def model qs-map)]
           (when-let [result (-> qexec .execSelect)]
             (let [result-var (-> result .getResultVars first)
                   result-seq (iterator-seq result)]
-              (mapv #(->RDFResource (.getResource % result-var)) result-seq))))))))
+              (mapv #(->RDFResource (.getResource % result-var) model) result-seq))))))))
   
   java.lang.String
   (select 
@@ -148,11 +172,11 @@
   
   java.lang.String
   (resource 
-    ([r] (->RDFResource (ResourceFactory/createResource r)))
+    ([r] (->RDFResource (ResourceFactory/createResource r) (.getDefaultModel db)))
     ([ns-prefix r] (when-let [prefix (prefix-ns-map ns-prefix)]
-                     (->RDFResource (ResourceFactory/createResource (str prefix r))))))
+                     (->RDFResource (ResourceFactory/createResource (str prefix r)) (.getDefaultModel db)))))
   
   clojure.lang.Keyword
   (resource [r] (when-let [res (local-names r)]
-                  (->RDFResource res))))
+                  (->RDFResource res (.getDefaultModel db)))))
 
