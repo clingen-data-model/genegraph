@@ -38,3 +38,5 @@ repl-port
 out/
 build/
 
+# Jena 
+tdb/**

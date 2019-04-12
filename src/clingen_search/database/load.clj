@@ -58,7 +58,7 @@
   ([stmts]
    (load-statements stmts nil))
   ([stmts model]
-   (tx (let [m (get-model graph-name)
+   (tx (let [m (if model model (.getDefaultModel db))
              constructed-statements (into-array Statement (map construct-statement stmts))]
          (.add m constructed-statements))
        true)))
