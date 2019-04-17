@@ -24,12 +24,12 @@
     (fetch/fetch-data uri-str (str target-base target-file) opts)))
 
 (defn import-base-data [resources]
-  (doseq [{source-file :target, source-type :format, opts :reader-opts} resources]
+  (doseq [{source-file :target, source-type :format, opts :reader-opts, name :source} resources]
     (println "Importing " source-file)
     (with-open [is (io/input-stream (str target-base source-file))]
       ;; should refactor this to be configurable via file
       (case source-type
-        :rdf (db/store-rdf is opts)
+        :rdf (db/store-rdf is (assoc opts :name name))
         :genes (gene/load-genes is)))))
 
 (defn- set-ns-prefixes []
