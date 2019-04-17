@@ -22,7 +22,7 @@
   ([] (get-model nil))
   ([graph-name]
    ;;(if graph-name (.getNamedModel db graph-name) (.getUnionModel db))
-   (.getDefaultModel db)
+   (.getUnionModel db)
    ))
 
 (defn read-rdf
@@ -32,14 +32,12 @@
 
 (defn store-rdf 
   "Expects src to be compatible with Model.read(src, nil). A java.io.InputStream is
-  likely the most appropriate type."
-  ([src] (store-rdf src {}))
+  likely the most appropriate type. :name parameter required in opts."
   ([src opts]
    (write-tx
-    (let [m (.getDefaultModel db)
-          in (-> (ModelFactory/createDefaultModel)
+    (let [in (-> (ModelFactory/createDefaultModel)
                  (.read src nil (jena-rdf-format (:format opts :rdf-xml))))]
-      (.add m in))
+      (.replaceNamedModel db (:name opts) in))
     true)))
 
 (defn- construct-statement 
@@ -54,18 +52,17 @@
      (ResourceFactory/createStatement subject predicate object))))
 
 (defn load-statements 
-  "Statements are a three-item sequence, "
-  ([stmts]
-   (load-statements stmts nil))
-  ([stmts model]
-   (tx (let [m (if model model (.getDefaultModel db))
+  "Statements are a three-item sequence. Will be imported as a named graph into TDB"
+  ([stmts graph-name]
+   (tx (let [m (ModelFactory/createDefaultModel)
              constructed-statements (into-array Statement (map construct-statement stmts))]
-         (.add m constructed-statements))
+         (.add m constructed-statements)
+         (.replaceNamedModel db graph-name m))
        true)))
 
 (defn set-ns-prefixes [prefixes]
   (write-tx
-   (let [m (.getDefaultModel db)]
+   (let [m (.getUnionModel db)]
      (.clearNsPrefixMap m)
      (.setNsPrefixes m prefixes)
      true)))

@@ -26,7 +26,7 @@
 ;; TODO construct multiple property targets as collection
 (defn datafy-resource [this]
   (tx 
-   (let [model (.getDefaultModel db)
+   (let [model (.getUnionModel db)
          out-attributes (-> model (.listStatements this nil nil) iterator-seq)
          in-attributes (-> model (.listStatements nil nil this) iterator-seq)]
      {:> (into {} (map 

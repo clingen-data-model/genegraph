@@ -146,7 +146,7 @@
   (select
     ([query-def] (select query-def {}))
     ([query-def params]
-     (let [model (if-let [m (:-model params)] m (.getDefaultModel db))
+     (let [model (if-let [m (:-model params)] m (.getUnionModel db))
            qs-map (construct-query-solution-map (dissoc params :-model))]
        (tx
         (with-open [qexec (QueryExecutionFactory/create query-def model qs-map)]
@@ -172,11 +172,11 @@
   
   java.lang.String
   (resource 
-    ([r] (->RDFResource (ResourceFactory/createResource r) (.getDefaultModel db)))
+    ([r] (->RDFResource (ResourceFactory/createResource r) (.getUnionModel db)))
     ([ns-prefix r] (when-let [prefix (prefix-ns-map ns-prefix)]
-                     (->RDFResource (ResourceFactory/createResource (str prefix r)) (.getDefaultModel db)))))
+                     (->RDFResource (ResourceFactory/createResource (str prefix r)) (.getUnionModel db)))))
   
   clojure.lang.Keyword
   (resource [r] (when-let [res (local-names r)]
-                  (->RDFResource res (.getDefaultModel db)))))
+                  (->RDFResource res (.getUnionModel db)))))
 

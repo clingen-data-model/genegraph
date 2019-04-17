@@ -29,5 +29,5 @@
     (mapcat gene-as-triple genes)))
 
 (defn load-genes [path]
-  (-> path genes-from-file genes-as-triple db/load-statements))
+  (-> path genes-from-file genes-as-triple (db/load-statements "https://www.genenames.org/")))
 

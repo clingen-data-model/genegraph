@@ -18,12 +18,12 @@
 
 (defn get-label [resource]
   (let [p (property "http://www.w3.org/2000/01/rdf-schema#label")
-        m (.getDefaultModel db)]
+        m (.getUnionModel db)]
     (when-let [lbl (-> (.listStatements m resource p nil) iterator-seq first)]
       (-> lbl .getString (s/replace #"\W" " ")))))
 
 (defn resources-with-type [t]
-  (let [m (.getDefaultModel db)
+  (let [m (.getUnionModel db)
         statements (iterator-seq
                     (.listStatements
                      m nil 

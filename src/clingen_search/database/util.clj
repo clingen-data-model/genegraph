@@ -33,7 +33,7 @@
        (finally (.end db)))))
 
 (defn select [query-str]
-  (let [model (.getDefaultModel db)
+  (let [model (.getUnionModel db)
         query (QueryFactory/create query-str)]
     (with-open [qexec (QueryExecutionFactory/create query model)]
       (when-let [result (-> qexec .execSelect)]
