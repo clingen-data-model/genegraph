@@ -6,6 +6,10 @@
   :target "rdf-schema.ttl",
   :format :rdf
   :reader-opts {:format :turtle}}
+ {:source "https://www.w3.org/ns/sparql-service-description.ttl"
+  :target "sparql-service-description.ttl"
+  :format :rdf
+  :reader-opts {:format :turtle}}
  {:source "https://www.w3.org/2002/07/owl.ttl",
   :target "owl.ttl",
   :format :rdf

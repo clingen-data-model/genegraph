@@ -1,6 +1,6 @@
 # clingen-search
 
-FIXME
+Current iteration of ClinGen. Based on Clojure, 
 
 ## Getting Started
 

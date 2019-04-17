@@ -13,7 +13,5 @@
        [:h2.subtitle (first (:skos/alternative-label gene))]]]
      [:section.container
       [:h3.title.is-3 "Gene Dosage"]
-      [:p "<b>hi</b>"]
-      ;;[:div.columns (map e/column dosage-stmts)]
-      ]]))
+      [:div.columns (map e/column dosage-stmts)]]]))
 
