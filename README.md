@@ -1,6 +1,6 @@
 # clingen-search
 
-Current iteration of ClinGen. Based on Clojure, 
+Current iteration of ClinGen. Based on Clojure, Apache Jena, and Pedestal.
 
 ## Getting Started
 

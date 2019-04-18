@@ -68,4 +68,4 @@
     (doseq [file files]
       (println "importing " (.getName file))
       (with-open [is (io/input-stream file)]
-        (db/store-rdf is {:format :json-ld})))))
+        (db/store-rdf is {:format :json-ld, :name (.getName file)})))))

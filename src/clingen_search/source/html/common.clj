@@ -1,6 +1,11 @@
 (ns clingen-search.source.html.common
   (:require [clingen-search.database.query :as q]
-            [clingen-search.source.html.elements :as e]))
+            [clingen-search.source.html.elements :as e]
+            [clingen-search.source.html.elements.class]
+            [clingen-search.source.html.elements.dosage-sensitivity-proposition]
+            [clingen-search.source.html.elements.evidence-level-assertion]
+            [clingen-search.source.html.elements.genes]
+            [clingen-search.source.html.elements.genetic-dosage]))
 
 (defn head
   [params]
