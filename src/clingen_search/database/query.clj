@@ -104,7 +104,7 @@
   (to-clj [x model] (->RDFResource x model))
   
   Literal
-  (to-clj [x model] (.getString x)))
+  (to-clj [x model] (.getValue x)))
 
 (extend-protocol Steppable
 
