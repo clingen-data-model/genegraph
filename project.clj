@@ -17,10 +17,6 @@
                  [org.slf4j/jul-to-slf4j "1.7.25"]
                  [org.slf4j/jcl-over-slf4j "1.7.25"]
                  [org.slf4j/log4j-over-slf4j "1.7.25"]
-                 ;; [org.neo4j/neo4j "3.4.9"]
-                 ;; [org.neo4j/neo4j-bolt "3.4.9"]
-                 ;; [org.neo4j/neo4j-kernel "3.4.9"]
-                 ;; [org.neo4j/neo4j-io "3.4.9"]
                  [org.apache.kafka/kafka-clients "2.0.0"]
                  [cheshire "5.8.1"]
                  [camel-snake-kebab "0.4.0"]
@@ -29,6 +25,7 @@
                  [org.apache.jena/jena-iri "3.10.0"]
                  [org.apache.jena/jena-tdb2 "3.10.0"]
                  [org.apache.jena/jena-text "3.10.0" :exclusions [org.apache.jena/jena-cmds]]
+                 [org.topbraid/shacl "1.1.0"]
                  [mount "0.1.14"]
                  [com.velisco/clj-ftp "0.3.9"] ;; For downloading ftp docs
                  [clj-http "3.9.1"] ;; For downloading 

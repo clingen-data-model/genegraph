@@ -42,7 +42,7 @@
     (map #(TopicPartition. (.topic %) (.partition %)) partition-infos)))
 
 (defn- poll-once [c]
-  (-> c (.poll (Duration/ofSeconds 1)) .iterator iterator-seq))
+  (-> c (.poll (Duration/ofSeconds 2)) .iterator iterator-seq))
 
 (defn topic-data [topic]
   (with-open [c (consumer)]

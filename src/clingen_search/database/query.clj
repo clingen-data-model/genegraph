@@ -76,13 +76,23 @@
 
 (defonce query-register (atom {}))
 
-(defn- keyword-string-sub [[_ k-ns k]]
-  (if-let [iri (some-> (keyword k-ns k) local-names .getURI)]
-    (str "<" iri ">")
-    (str ":" k-ns "/" k)))>
+(defn- substitute-known-iri-short-name [k-ns k]
+  (when-let [iri (some-> (keyword k-ns k) local-names .getURI)]
+    (str "<" iri ">")))
 
+(defn- substitute-known-ns [k-ns k]
+  (when-let [base (names/prefix-ns-map k-ns)]
+    (str "<" base k ">")))
+
+(defn- substitute-keyword [[_ k-ns k]]
+  (let [kw (keyword k-ns k)]
+    (cond (local-names kw) (str "<" (-> kw local-names .getURI) ">")
+          (prefix-ns-map k-ns) (str "<" (prefix-ns-map k-ns) k ">")
+          :else (str ":" k-ns "/" k))))
+
+;; TODO fix so that non-whitespace terminated expressions are treated appropriately
 (defn- expand-query-str [query-str]
-  (s/replace query-str #":(\S+)/(\S+)" keyword-string-sub))
+  (s/replace query-str #":(\S+)/(\S+)" substitute-keyword))
 
 (defn register-query [name query-str]
   (let [q (QueryFactory/create (expand-query-str query-str))]

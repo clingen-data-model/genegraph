@@ -34,10 +34,14 @@
 (defn curie [iri]
   (some #(when (s/starts-with? iri (first %)) (second %)) ns-prefix-map))
 
+(defn- label-valid? [l]
+  (and l
+       (re-find #"^\D" l)))
+
 (defn- local-name-uri [resource]
   (let [ns (curie (.getURI resource))
         label (some-> resource get-label csk/->kebab-case)]
-    (if label
+    (if (label-valid? label)
       [(if ns (keyword ns label) (keyword label))
        (.getURI resource)]
       nil)))
@@ -63,7 +67,7 @@
 (defn- local-name-uri-class [resource]
   (let [label (some-> resource get-label csk/->PascalCase)
         ns (curie (.getURI resource))]
-    (if label
+    (if (label-valid? label)
       [(if ns (keyword ns label) (keyword label))
        (.getURI resource)]
       nil)))

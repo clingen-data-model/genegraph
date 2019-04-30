@@ -16,15 +16,6 @@
    :json-ld "JSON-LD"
    :turtle "Turtle"})
 
-(defn get-model 
-  "Get the named model in the triplestore instance. If graph-name is nil, or if the 
-  function is called with no arguments, return the union model"
-  ([] (get-model nil))
-  ([graph-name]
-   ;;(if graph-name (.getNamedModel db graph-name) (.getUnionModel db))
-   (.getUnionModel db)
-   ))
-
 (defn read-rdf
   ([src] (read-rdf src {}))
   ([src opts] (-> (ModelFactory/createDefaultModel)
@@ -54,7 +45,7 @@
 (defn load-statements 
   "Statements are a three-item sequence. Will be imported as a named graph into TDB"
   ([stmts graph-name]
-   (tx (let [m (ModelFactory/createDefaultModel)
+   (write-tx (let [m (ModelFactory/createDefaultModel)
              constructed-statements (into-array Statement (map construct-statement stmts))]
          (.add m constructed-statements)
          (.replaceNamedModel db graph-name m))
