@@ -9,9 +9,10 @@
             [clojure.string :as s]
             [clojure.core.protocols :refer [Datafiable]]
             [clojure.datafy :refer [datafy]])
-  (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal]
+  (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList]
            [org.apache.jena.query QueryFactory Query QueryExecution
-            QueryExecutionFactory QuerySolutionMap]))
+            QueryExecutionFactory QuerySolutionMap]
+           java.io.ByteArrayOutputStream))
 
 (defprotocol Steppable
   (step [edge start model]))
@@ -62,6 +63,8 @@
   (datafy [_] (datafy resource))
 
   ThreadableData
+  ;; TODO Flattening the ld-> has potentially undesirable behavior with RDFList, consider
+  ;; how flatten is being used in this context
   (ld-> [this ks] (reduce (fn [nodes k]
                             (->> nodes (map #(step k % model))
                                  (filter seq) flatten)) [this] ks))
@@ -99,9 +102,22 @@
     (swap! query-register assoc name q)
     true))
 
+
+(def first-property (ResourceFactory/createProperty "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"))
+
+(defn rdf-list-to-vector [rdf-list-node model]
+
+  (let [rdf-list (.as rdf-list-node RDFList)]
+    (->> rdf-list .iterator iterator-seq (mapv #(to-clj % model)))
+    )
+)
+
 (extend-protocol AsClojureType
+
   Resource
-  (to-clj [x model] (->RDFResource x model))
+  (to-clj [x model] (if (.hasProperty x first-property)
+                      (rdf-list-to-vector x model)
+                      (->RDFResource x model)))
   
   Literal
   (to-clj [x model] (.getValue x)))
@@ -190,3 +206,10 @@
   (resource [r] (when-let [res (local-names r)]
                   (->RDFResource res (.getUnionModel db)))))
 
+(defn get-named-graph [name]
+  (.getNamedModel db name))
+
+(defn to-turtle [model]
+  (let [os (ByteArrayOutputStream.)]
+    (.write model os "TURTLE")
+    (.toString os)))
