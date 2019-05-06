@@ -5,16 +5,14 @@
 (defmethod e/page :owl/Class 
   ([c]
    (let [title (first (:rdfs/label c))
-         curations (get c [:sepio/has-object :<])]
-     [:div.container
-      [:section.hero-is-info
-       [:div.hero-body
-        [:h1.title title]]]
-      [:section
-       (map #(vector :p  
-                     "curation"
-                     ;;(first (:rdfs/label %))
-                     )
-            curations)]])))
+         shapes (get c [:shacl/class :<])]
+     [:body
+      [:section.section
+       [:div.container
+        [:h1.title title]
+        [:p (first (:iao/definition c))]]]
+      [:section.section
+       [:div.container [:h1.title "shapes"]
+        (map e/detail-section shapes)]]])))
 
 (defmethod e/link :owl/Class ([c] [:a {:href (q/path c)} (first (:rdfs/label c))]))

@@ -19,8 +19,7 @@
   [body params]
   [:html
    (head params)
-   [:body
-    (body params)]])
+   (body params)])
 
 (defn index
   "Template to wrap every HTML request, returns structure in Hiccup syntax"
@@ -35,5 +34,4 @@
 
 (defn resource [params]
   (let [r (resolve-resource (get-in params [:path-params :id]))]
-    [:section.section
-     (e/page r)]))
+    (e/page r)))

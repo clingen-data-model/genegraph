@@ -13,6 +13,11 @@
                                 [:h1.title "Page not found for resource."]
                                 [:p (str r)]]))
 
+(defmulti detail-section resource-dispatch)
+
+(defmethod detail-section ::default ([r] [:div.container
+                                          [:p "resource not found"]]))
+
 ;; (defmulti summary resource-dispatch)
 
 ;; (defmethod summary ::default ([r] [:div.container
