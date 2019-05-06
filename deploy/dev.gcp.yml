@@ -1,0 +1,8 @@
+---
+plugin: gcp_compute
+projects:
+  - clingen-dev
+filters: 
+auth_kind: serviceaccount
+service_account_file: credentials/clingen-dev-bc164f3d74e7.json
+

@@ -1,0 +1,7 @@
+---
+web:
+  hosts:
+    kb.iseult.us:
+  vars:
+    ansible_user: tristan
+
