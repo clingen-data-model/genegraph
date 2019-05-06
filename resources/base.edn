@@ -1,72 +1,94 @@
-[{:source "http://www.w3.org/1999/02/22-rdf-syntax-ns.ttl",
+[{:name "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  :source "http://www.w3.org/1999/02/22-rdf-syntax-ns.ttl",
   :target "rdf.ttl",
   :format :rdf
   :reader-opts {:format :turtle}}
- {:source "http://www.w3.org/2000/01/rdf-schema.ttl",
+ {:name "http://www.w3.org/2000/01/rdf-schema#"
+  :source "http://www.w3.org/2000/01/rdf-schema.ttl",
   :target "rdf-schema.ttl",
   :format :rdf
   :reader-opts {:format :turtle}}
- {:source "https://www.w3.org/ns/sparql-service-description.ttl"
+ {:name "http://www.w3.org/ns/sparql-service-description#"
+  :source "https://www.w3.org/ns/sparql-service-description.ttl"
   :target "sparql-service-description.ttl"
   :format :rdf
   :reader-opts {:format :turtle}}
- {:source "https://www.w3.org/2002/07/owl.ttl",
+ {:name "https://www.w3.org/2002/07/owl"
+  :source "https://www.w3.org/2002/07/owl.ttl",
   :target "owl.ttl",
   :format :rdf
   :reader-opts {:format :turtle}}
- {:source "http://dublincore.org/2012/06/14/dcterms.ttl",
+ {:name "http://purl.org/dc/terms/"
+  :source "http://dublincore.org/2012/06/14/dcterms.ttl",
   :target "dcterms.ttl",
   :format :rdf
   :reader-opts {:format :turtle}}
- {:source "http://dublincore.org/2012/06/14/dcelements.ttl"
+ {:name "http://purl.org/dc/elements/1.1/"
+  :source "http://dublincore.org/2012/06/14/dcelements.ttl"
   :target "dcelements.ttl"
   :format :rdf
   :reader-opts {:format :turtle}}
- {:source "https://www.w3.org/2009/08/skos-reference/skos.rdf",
+ {:name "http://www.w3.org/2004/02/skos/core"
+  :source "https://www.w3.org/2009/08/skos-reference/skos.rdf",
   :target "skos.rdf",
   :format :rdf}
- {:source
-  "https://github.com/The-Sequence-Ontology/SO-Ontologies/raw/master/so.owl",
+ {:name "http://purl.obolibrary.org/obo/so.owl"
+  :source "https://github.com/The-Sequence-Ontology/SO-Ontologies/raw/master/so.owl",
   :target "so.owl",
   :format :rdf}
- {:source
+ {:name "http://purl.obolibrary.org/obo/iao/ontology-metadata.owl"
+  :source
   "http://purl.obolibrary.org/obo/iao/2015-02-23/ontology-metadata.owl",
   :target "iao.owl",
   :format :rdf}
- {:source "http://purl.obolibrary.org/obo/bfo/2.0/bfo.owl",
+ {:name "http://purl.obolibrary.org/obo/bfo.owl"
+  :source "http://purl.obolibrary.org/obo/bfo/2.0/bfo.owl",
   :target "bfo.owl",
   :format :rdf}
- {:source "https://www.w3.org/ns/shacl.ttl"
+ {:name "http://www.w3.org/ns/shacl#"
+  :source "https://www.w3.org/ns/shacl.ttl"
   :target "shacl.ttl"
   :format :rdf
   :reader-opts {:format :turtle}}
- {:source "https://raw.githubusercontent.com/monarch-initiative/GENO-ontology/develop/src/ontology/geno.owl"
+ {:name "http://purl.obolibrary.org/obo/geno.owl"
+  :source "https://raw.githubusercontent.com/monarch-initiative/GENO-ontology/develop/src/ontology/geno.owl"
   :target "geno.owl"
   :format :rdf}
- {:source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-dosage/sepio-clingen-dosage-valueset.owl"
+ {:name "http://purl.obolibrary.org/obo/sepio-clingen-dosage-valueset"
+  :source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-dosage/sepio-clingen-dosage-valueset.owl"
   :target "sepio-clingen-dosage-valueset.owl"
   :format :rdf}
- {:source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-dosage/sepio-clingen-dosage.owl"
+ {:name "http://purl.obolibrary.org/obo/sepio-clingen-dosage.owl"
+  :source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-dosage/sepio-clingen-dosage.owl"
   :target "sepio-clingen-dosage.owl"
   :format :rdf}
- {:source
+ {:name "http://purl.obolibrary.org/obo/sepio-valueset.owl"
+  :source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/sepio-valueset.owl" 
+  :target "sepio-valueset.owl"
+  :format :rdf}
+ {:name "http://purl.obolibrary.org/obo/sepio.owl"
+  :source
   "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/sepio.owl",
   :target "sepio.owl",
   :format :rdf}
- {:source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg.owl",
+ {:name "http://purl.obolibrary.org/obo/sepio-clingen-acmg.owl"
+  :source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg.owl",
   :target "sepio-clingen-acmg.owl",
   :format :rdf}
- {:source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg-valueset.owl",
+ {:name "http://purl.obolibrary.org/obo/sepio-clingen-acmg-valueset.owl"
+  :source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg-valueset.owl",
   :target "sepio-clingen-acmg-valueset.owl",
   :format :rdf}
- {:source "http://purl.obolibrary.org/obo/hp.owl",
+ {:name "http://purl.obolibrary.org/obo/hp.owl"
+  :source "http://purl.obolibrary.org/obo/hp.owl",
   :target "hp.owl",
   :format :rdf}
- {:source "http://purl.obolibrary.org/obo/mondo.owl",
+ {:name "http://purl.obolibrary.org/obo/mondo.owl"
+  :source "http://purl.obolibrary.org/obo/mondo.owl",
   :target "mondo.owl",
   :format :rdf}
- {:source "http://rest.genenames.org/fetch/status/Approved",
+ {:name "https://www.genenames.org/"
+  :source "http://rest.genenames.org/fetch/status/Approved",
   :target "hgnc.json",
   :format :genes,
-  :fetch-opts {:accept :json}}
-]
+  :fetch-opts {:accept :json}}]

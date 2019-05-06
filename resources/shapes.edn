@@ -1,0 +1,5 @@
+[{:name "https://dataexchange.clinicalgenome.org/shapes/GeneDosage"
+  :source "https://raw.githubusercontent.com/clingen-data-model/clingen-schemas/master/dosage.ttl"
+  :target "dosage.ttl"
+  :format :rdf
+  :reader-opts {:format :turtle}}]

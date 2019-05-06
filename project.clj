@@ -29,7 +29,8 @@
                  [mount "0.1.14"]
                  [com.velisco/clj-ftp "0.3.9"] ;; For downloading ftp docs
                  [clj-http "3.9.1"] ;; For downloading 
-                 [org.apache.kafka/kafka-clients "2.1.1"]]
+                 [org.apache.kafka/kafka-clients "2.1.1"]
+                 [org.clojure/tools.cli "0.4.2"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
   ;; If you use HTTP/2 or ALPN, use the java-agent to pull in the correct alpn-boot dependency
