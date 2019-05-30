@@ -4,7 +4,10 @@
             [clingen-search.sink.gene :as gene]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [clojure.pprint :refer [pprint]])
+            [clojure.pprint :refer [pprint]]
+            [clingen-search.sink.validation :as v]
+            [clingen-search.database.query :as q]
+            [clingen-search.database.util :refer [tx]])
   (:import java.io.PushbackReader))
 
 ;; TODO ensure target directory exists
