@@ -6,13 +6,10 @@
   ([c]
    (let [title (first (:rdfs/label c))
          shapes (get c [:shacl/class :<])]
-     [:body
-      [:section.section
-       [:div.container
-        [:h1.title title]
-        [:p (first (:iao/definition c))]]]
-      [:section.section
-       [:div.container [:h1.title "shapes"]
-        (map e/detail-section shapes)]]])))
+     [:section.section
+      [:div.container
+       [:h1.title title]
+       [:p (first (:iao/definition c))]]
+      (map e/detail-section shapes)])))
 
 (defmethod e/link :owl/Class ([c] [:a {:href (q/path c)} (first (:rdfs/label c))]))

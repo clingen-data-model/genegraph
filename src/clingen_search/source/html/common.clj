@@ -5,7 +5,10 @@
             [clingen-search.source.html.elements.dosage-sensitivity-proposition]
             [clingen-search.source.html.elements.evidence-level-assertion]
             [clingen-search.source.html.elements.genes]
-            [clingen-search.source.html.elements.genetic-dosage]))
+            [clingen-search.source.html.elements.genetic-dosage]
+            [clingen-search.source.html.elements.node-shape]
+            [clingen-search.source.html.elements.predicate]
+            [clingen-search.source.html.elements.value-set]))
 
 (defn head
   [params]
@@ -19,7 +22,8 @@
   [body params]
   [:html
    (head params)
-   (body params)])
+   [:body
+    (body params)]])
 
 (defn index
   "Template to wrap every HTML request, returns structure in Hiccup syntax"
