@@ -42,4 +42,5 @@
  "bibo" "http://purl.org/ontology/bibo/"
  "ncbi-gene" "https://www.ncbi.nlm.nih.gov/gene/"
  "sparql" "http://www.w3.org/ns/sparql-service-description#"
- "shacl" "http://www.w3.org/ns/shacl#"}
+ "shacl" "http://www.w3.org/ns/shacl#"
+ "omim" "http://purl.obolibrary.org/obo/OMIM_"}

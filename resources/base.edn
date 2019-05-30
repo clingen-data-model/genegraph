@@ -45,17 +45,19 @@
   :source "http://purl.obolibrary.org/obo/bfo/2.0/bfo.owl",
   :target "bfo.owl",
   :format :rdf}
- {:name "http://www.w3.org/ns/shacl#"
-  :source "https://www.w3.org/ns/shacl.ttl"
-  :target "shacl.ttl"
-  :format :rdf
-  :reader-opts {:format :turtle}}
+ ;; For some reason shacl models do not validate when shacl is in the database. 
+ ;; disappointing, but it is not essential to use this in order to validate models
+ ;; {:name "http://www.w3.org/ns/shacl#"
+ ;;  :source "https://www.w3.org/ns/shacl.ttl"
+ ;;  :target "shacl.ttl"
+ ;;  :format :rdf
+ ;;  :reader-opts {:format :turtle}}
  {:name "http://purl.obolibrary.org/obo/geno.owl"
   :source "https://raw.githubusercontent.com/monarch-initiative/GENO-ontology/develop/src/ontology/geno.owl"
   :target "geno.owl"
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/sepio-clingen-dosage-valueset"
-  :source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-dosage/sepio-clingen-dosage-valueset.owl"
+  :source "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-dosage/sepio-clingen-dosage-valueset.owl"
   :target "sepio-clingen-dosage-valueset.owl"
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/sepio-clingen-dosage.owl"
@@ -91,4 +93,5 @@
   :source "http://rest.genenames.org/fetch/status/Approved",
   :target "hgnc.json",
   :format :genes,
-  :fetch-opts {:accept :json}}]
+  :fetch-opts {:accept :json}}
+ ]
