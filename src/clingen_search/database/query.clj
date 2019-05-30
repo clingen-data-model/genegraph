@@ -27,7 +27,7 @@
   (to-rdf-node [x]))
 
 (defprotocol SelectQuery
-  (select [query-def] [query-def params]))
+  (select [query-def] [query-def params] [query-def params model]))
 
 (defprotocol AsResource
   "Create an RDFResource given a reference"
@@ -171,9 +171,9 @@
   Query
   (select
     ([query-def] (select query-def {}))
-    ([query-def params]
-     (let [model (if-let [m (:-model params)] m (.getUnionModel db))
-           qs-map (construct-query-solution-map (dissoc params :-model))]
+    ([query-def params] (select query-def params (.getUnionModel db)))
+    ([query-def params model]
+     (let [qs-map (construct-query-solution-map (dissoc params :-model))]
        (tx
         (with-open [qexec (QueryExecutionFactory/create query-def model qs-map)]
           (when-let [result (-> qexec .execSelect)]
@@ -184,14 +184,17 @@
   java.lang.String
   (select 
     ([query-def] (select query-def {}))
-    ([query-def params] (select (QueryFactory/create (expand-query-str query-def)) params)))
+    ([query-def params] (select query-def params (.getUnionModel db)))
+    ([query-def params model] 
+     (select (QueryFactory/create (expand-query-str query-def)) params model)))
   
   clojure.lang.Keyword
   (select
     ([query-def] (select query-def {}))
-    ([query-def params]
+    ([query-def params] (select query-def params (.getUnionModel db)))
+    ([query-def params model]
      (if-let [q (@query-register query-def)]
-       (select q params)
+       (select q params model)
        #{}))))
 
 (extend-protocol AsResource
@@ -200,7 +203,8 @@
   (resource 
     ([r] (->RDFResource (ResourceFactory/createResource r) (.getUnionModel db)))
     ([ns-prefix r] (when-let [prefix (prefix-ns-map ns-prefix)]
-                     (->RDFResource (ResourceFactory/createResource (str prefix r)) (.getUnionModel db)))))
+                     (->RDFResource (ResourceFactory/createResource (str prefix r))
+                                    (.getUnionModel db)))))
   
   clojure.lang.Keyword
   (resource [r] (when-let [res (local-names r)]
@@ -208,6 +212,9 @@
 
 (defn get-named-graph [name]
   (.getNamedModel db name))
+
+(defn get-all-graphs []
+  (.getUnionModel db))
 
 (defn to-turtle [model]
   (let [os (ByteArrayOutputStream.)]
