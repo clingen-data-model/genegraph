@@ -17,7 +17,8 @@
  "hp" "http://purl.obolibrary.org/obo/HP_",
  "iao" "http://purl.obolibrary.org/obo/IAO_",
  "sepio" "http://purl.obolibrary.org/obo/SEPIO_",
- "cg" "http://dataexchange.clinicalgenome.org/terms/"
+ "cg-t" "http://dataexchange.clinicalgenome.org/terms/"
+ "cg" "https://search.clinicalgenome.org/r/cg_"
  "eco" "http://purl.obolibrary.org/obo/eco/",
  "rdfs" "http://www.w3.org/2000/01/rdf-schema#",
  "oboInOwl" "http://www.geneontology.org/formats/oboInOwl#",
@@ -43,4 +44,5 @@
  "ncbi-gene" "https://www.ncbi.nlm.nih.gov/gene/"
  "sparql" "http://www.w3.org/ns/sparql-service-description#"
  "shacl" "http://www.w3.org/ns/shacl#"
- "omim" "http://purl.obolibrary.org/obo/OMIM_"}
+ "omim" "http://purl.obolibrary.org/obo/OMIM_"
+ "pubmed" "https://www.ncbi.nlm.nih.gov/pubmed/"}

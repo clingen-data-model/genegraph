@@ -55,9 +55,7 @@
   (toString [_] (.getURI resource))
   
   AsReference
-  (to-ref [_] (if-let [kw (class-uri->keyword resource)]
-                kw
-                (str resource)))
+  (to-ref [_] (class-uri->keyword resource))
 
   Datafiable
   (datafy [_] (datafy resource))

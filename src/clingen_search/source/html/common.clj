@@ -8,7 +8,8 @@
             [clingen-search.source.html.elements.genetic-dosage]
             [clingen-search.source.html.elements.node-shape]
             [clingen-search.source.html.elements.predicate]
-            [clingen-search.source.html.elements.value-set]))
+            [clingen-search.source.html.elements.value-set]
+            [clingen-search.source.html.elements.functional-copy-number-complement]))
 
 (defn head
   [params]
@@ -38,4 +39,5 @@
 
 (defn resource [params]
   (let [r (resolve-resource (get-in params [:path-params :id]))]
-    (e/page r)))
+    [:section.section
+     (e/page r)]))

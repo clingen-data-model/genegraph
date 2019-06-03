@@ -45,13 +45,6 @@
   :source "http://purl.obolibrary.org/obo/bfo/2.0/bfo.owl",
   :target "bfo.owl",
   :format :rdf}
- ;; For some reason shacl models do not validate when shacl is in the database. 
- ;; disappointing, but it is not essential to use this in order to validate models
- ;; {:name "http://www.w3.org/ns/shacl#"
- ;;  :source "https://www.w3.org/ns/shacl.ttl"
- ;;  :target "shacl.ttl"
- ;;  :format :rdf
- ;;  :reader-opts {:format :turtle}}
  {:name "http://purl.obolibrary.org/obo/geno.owl"
   :source "https://raw.githubusercontent.com/monarch-initiative/GENO-ontology/develop/src/ontology/geno.owl"
   :target "geno.owl"
@@ -61,24 +54,24 @@
   :target "sepio-clingen-dosage-valueset.owl"
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/sepio-clingen-dosage.owl"
-  :source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-dosage/sepio-clingen-dosage.owl"
+  :source "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-dosage/sepio-clingen-dosage.owl"
   :target "sepio-clingen-dosage.owl"
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/sepio-valueset.owl"
-  :source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/sepio-valueset.owl" 
+  :source "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/sepio-valueset.owl" 
   :target "sepio-valueset.owl"
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/sepio.owl"
   :source
-  "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/sepio.owl",
+  "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/sepio.owl",
   :target "sepio.owl",
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/sepio-clingen-acmg.owl"
-  :source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg.owl",
+  :source "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg.owl",
   :target "sepio-clingen-acmg.owl",
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/sepio-clingen-acmg-valueset.owl"
-  :source "https://raw.githubusercontent.com/monarch-initiative/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg-valueset.owl",
+  :source "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg-valueset.owl",
   :target "sepio-clingen-acmg-valueset.owl",
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/hp.owl"
