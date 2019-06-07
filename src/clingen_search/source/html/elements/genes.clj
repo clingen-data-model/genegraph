@@ -3,7 +3,7 @@
             [clingen-search.database.query :as q]))
 
 (defmethod e/page [:index :so/Gene] [c]
-  (let [genes (q/select "select distinct ?x { ?x a :so/Gene . [] :geno/is-feature-affected-by ?x . } limit 10")]
+  (let [genes (q/select "select distinct ?x { ?x a :so/Gene . [] :geno/is-feature-affected-by ?x . } limit 30")]
     [:div.container
      [:h1.title "Genes"]
      (map e/row genes)]))
