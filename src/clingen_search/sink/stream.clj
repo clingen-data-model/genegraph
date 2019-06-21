@@ -60,6 +60,14 @@
     (-> consumer-record .value json/parse-string)
     (catch Exception e (println "invalid JSON"))))
 
+(defn topic-to-disk [topic folder]
+  (let [records (topic-data topic)]
+    (println (count records))
+    (doseq [record-payload records]
+      (if-let [record (consumer-record-to-clj record-payload)]
+        (let  [id (re-find #"[A-Za-z0-9-]+$" (get record "iri"))]
+              (spit (str folder "/" id ".json") (.value record-payload)))))))
+
 (defn load-local-data 
   "Treat all files stored in dir as loadable data in json-ld form, load them
   into base datastore"

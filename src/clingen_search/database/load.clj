@@ -42,6 +42,8 @@
                   (ResourceFactory/createTypedLiteral o))]
      (ResourceFactory/createStatement subject predicate object))))
 
+(defn statements-to-model)
+
 (defn load-statements 
   "Statements are a three-item sequence. Will be imported as a named graph into TDB"
   ([stmts graph-name]
