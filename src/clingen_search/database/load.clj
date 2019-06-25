@@ -4,7 +4,8 @@
             [camel-snake-kebab.core :as csk]
             [clojure.java.io :as io]
             [clingen-search.database.instance :refer [db]]
-            [clingen-search.database.util :refer [property tx write-tx]])
+            [clingen-search.database.util :refer [property tx write-tx]]
+            [clingen-search.database.names :refer [local-property-names local-class-names]])
   (:import [org.apache.jena.tdb2 TDB2Factory]
            [org.apache.jena.query TxnType Dataset]
            [org.apache.jena.rdf.model Model ModelFactory Literal Resource ResourceFactory
@@ -15,6 +16,9 @@
   {:rdf-xml "RDF/XML"
    :json-ld "JSON-LD"
    :turtle "Turtle"})
+
+(defn blank-node []
+  (ResourceFactory/createResource))
 
 (defn read-rdf
   ([src] (read-rdf src {}))
@@ -35,23 +39,35 @@
   ([stmt] (construct-statement stmt {}))
   ([stmt opts]
    (let [[s p o] stmt
-         subject (ResourceFactory/createResource s)
-         predicate (ResourceFactory/createProperty p)
-         object (if (= :Resource (:object (meta stmt)))
-                  (ResourceFactory/createResource o)
-                  (ResourceFactory/createTypedLiteral o))]
+         subject (cond
+                   (keyword? s) (local-class-names s)
+                   (string? s) (ResourceFactory/createResource s)
+                   :else s)
+         predicate (if (keyword? p)
+                     (local-property-names p)
+                     (ResourceFactory/createProperty p))
+         object (cond 
+                  (keyword? o) (local-class-names o)
+                  (= :Resource (:object (meta stmt))) (ResourceFactory/createResource o)
+                  (string? o) (ResourceFactory/createTypedLiteral o)
+                  :else o)]
      (ResourceFactory/createStatement subject predicate object))))
 
-(defn statements-to-model)
+(defn statements-to-model
+  [stmts]
+  (let [m (ModelFactory/createDefaultModel)
+        constructed-statements (into-array Statement (map construct-statement stmts))]
+    (.add m constructed-statements)))
+
+(defn load-model [model name]
+  (write-tx
+   (.replaceNamedModel db name model)
+   true))
 
 (defn load-statements 
   "Statements are a three-item sequence. Will be imported as a named graph into TDB"
-  ([stmts graph-name]
-   (write-tx (let [m (ModelFactory/createDefaultModel)
-             constructed-statements (into-array Statement (map construct-statement stmts))]
-         (.add m constructed-statements)
-         (.replaceNamedModel db graph-name m))
-       true)))
+  ([stmts name]
+   (load-model (statements-to-model stmts))))
 
 (defn set-ns-prefixes [prefixes]
   (write-tx
