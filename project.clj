@@ -17,8 +17,11 @@
                  [org.slf4j/jul-to-slf4j "1.7.25"]
                  [org.slf4j/jcl-over-slf4j "1.7.25"]
                  [org.slf4j/log4j-over-slf4j "1.7.25"]
+
                  [org.apache.kafka/kafka-clients "2.0.0"]
                  [cheshire "5.8.1"]
+                 [org.clojure/data.csv "0.1.4"]
+
                  [camel-snake-kebab "0.4.0"]
                  [org.apache.jena/jena-core "3.10.0"]
                  [org.apache.jena/jena-arq "3.10.0"]
