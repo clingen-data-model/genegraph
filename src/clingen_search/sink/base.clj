@@ -7,13 +7,13 @@
             [clojure.pprint :refer [pprint]]
             [clingen-search.sink.validation :as v]
             [clingen-search.database.query :as q]
-            [clingen-search.database.util :refer [tx]])
+            [clingen-search.database.util :refer [tx]]
+            [clingen-search.transform.core :refer [transform-doc]])
   (:import java.io.PushbackReader))
 
 ;; TODO ensure target directory exists
 (def target-base "data/base/")
 (def base-resources "base.edn")
-
 
 (defn read-edn [resource]
   (with-open [rdr (PushbackReader. (io/reader (io/resource resource)))]
@@ -34,6 +34,14 @@
       (case source-type
         :rdf (db/store-rdf is (assoc opts :name name))
         :genes (gene/load-genes is)))))
+
+(defn import-documents [documents]
+  (doseq [d documents]
+    (println "Importing " (:name d))
+    (db/load-model (transform-doc d) (:name d))))
+
+(defn import-document [name documents]
+  (import-documents (filter #(= name (:name %)) documents)))
 
 (defn- set-ns-prefixes []
   (let [prefixes (read-edn "namespaces.edn")]

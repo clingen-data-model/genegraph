@@ -1,8 +1,9 @@
-(ns clingen-search.sink.gene
+(ns clingen-search.transform.gene
   (:require [cheshire.core :as json]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
-            [clingen-search.database.load :as db]))
+            [clingen-search.database.load :as db]
+            [clingen-search.transform.core :refer [transform-doc src-path]]))
 
 ;; symbol -> skos:prefLabel ? rdf:label
 ;; name -> skos:altLabel 
@@ -26,6 +27,11 @@
 (defn genes-as-triple [genes-json]
   (let [genes (get-in genes-json [:response :docs])]
     (mapcat gene-as-triple genes)))
+
+
+(defmethod transform-doc :genes
+  ([doc-def] (transform-doc doc-def (slurp (src-path doc-def))))
+  ([doc-def src] (-> src json/parse-string genes-as-triple db/statements-to-model)))
 
 (defn load-genes [path]
   (-> path genes-from-file genes-as-triple (db/load-statements "https://www.genenames.org/")))
