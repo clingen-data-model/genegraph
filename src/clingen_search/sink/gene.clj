@@ -15,13 +15,12 @@
 
 (defn gene-as-triple [gene]
   (let [uri (str "https://www.ncbi.nlm.nih.gov/gene/" (:entrez_id gene))]
-    (concat [[uri "http://www.w3.org/2004/02/skos/core#prefLabel" (:symbol gene)]
-             [uri "http://www.w3.org/2004/02/skos/core#altLabel" (:name gene)]
-             ^{:object :Resource} [uri "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-              "http://purl.obolibrary.org/obo/SO_0000704"]]
-            (map #(vector uri "http://www.w3.org/2004/02/skos/core#hiddenLabel" %)
+    (concat [[uri :skos/preferred-label (:symbol gene)]
+             [uri :skos/alternative-label (:name gene)]
+             [uri :rdf/type :so/Gene]]
+            (map #(vector uri :skos/hidden-label %)
                  (:alias_symbol gene))
-            (map #(vector uri "http://www.w3.org/2004/02/skos/core#hiddenLabel" %)
+            (map #(vector uri :skos/hidden-label %)
                  (:prev_name gene)))))
 
 (defn genes-as-triple [genes-json]

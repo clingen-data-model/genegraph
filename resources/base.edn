@@ -86,5 +86,4 @@
   :source "http://rest.genenames.org/fetch/status/Approved",
   :target "hgnc.json",
   :format :genes,
-  :fetch-opts {:accept :json}}
- ]
+  :fetch-opts {:accept :json}}]
