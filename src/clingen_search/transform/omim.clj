@@ -2,7 +2,8 @@
   (:require [clingen-search.database.load :as l]
             [clingen-search.database.query :as q]
             [clojure.data.csv :as csv]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clingen-search.transform.core :refer [transform-doc src-path]]))
 
 (def gene-prefix "https://www.ncbi.nlm.nih.gov/gene/")
 (def mim-prefix "http://purl.obolibrary.org/obo/OMIM_")
@@ -18,3 +19,7 @@
 (defn transform-genemap2 [genemap2]
   (let [genemap2-table (nthrest (csv/read-csv genemap2 :separator \tab) 4)]
     (l/statements-to-model (remove nil? (mapcat genemap2-row-to-triple genemap2-table)))))
+
+(defmethod transform-doc :omim-genemap
+  ([doc-def] (transform-doc doc-def (slurp (src-path doc-def))))
+  ([doc-def doc] (transform-genemap2 doc)))
