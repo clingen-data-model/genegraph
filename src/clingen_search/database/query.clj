@@ -43,7 +43,23 @@
   (ld-> [this ks])
   (ld1-> [this ks]))
 
+(defprotocol RDFType
+  (is-rdf-type? [this rdf-type]))
+
+(defprotocol AsJenaResource
+  (as-jena-resource [this]))
+
 (deftype RDFResource [resource model]
+
+  AsJenaResource
+  (as-jena-resource [_] resource)
+
+  RDFType
+  (is-rdf-type? [this rdf-type] 
+    (let [t (if (= (type rdf-type) clojure.lang.Keyword) 
+              (local-names rdf-type)
+              (ResourceFactory/createResource rdf-type))]
+      (tx (.contains model resource (local-names :rdf/type) t))))
 
   ;; TODO, returns all properties when k does not map to a known symbol,
   ;; This seems to break the contract for ILookup
@@ -53,6 +69,9 @@
 
   Object
   (toString [_] (.getURI resource))
+  ;; (equals [this o] (when (instance? RDFResource o)
+  ;;                    (= (str resource) (str o))))
+  ;; (hashCode [_] (-> resource .getURI .hashCode))
   
   AsReference
   (to-ref [_] (class-uri->keyword resource))
@@ -64,8 +83,11 @@
   ;; TODO Flattening the ld-> has potentially undesirable behavior with RDFList, consider
   ;; how flatten is being used in this context
   (ld-> [this ks] (reduce (fn [nodes k]
-                            (->> nodes (map #(step k % model))
-                                 (filter seq) flatten)) [this] ks))
+                            (->> nodes
+                                 (map #(step k % model))
+                                 (filter seq) flatten))
+                          [this] 
+                          ks))
   (ld1-> [this ks] (first (ld-> this ks)))
   
   Addressable
@@ -107,8 +129,7 @@
 
   (let [rdf-list (.as rdf-list-node RDFList)]
     (->> rdf-list .iterator iterator-seq (mapv #(to-clj % model)))
-    )
-)
+    ))
 
 (extend-protocol AsClojureType
 

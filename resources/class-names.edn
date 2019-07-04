@@ -2,4 +2,5 @@
  [:sepio/ValueSet "http://purl.obolibrary.org/obo/SEPIO_0000412"]
  [:sepio/ActionabilityReport "http://purl.obolibrary.org/obo/SEPIO_0003010"]
  [:sepio/ApproverRole "http://purl.obolibrary.org/obo/SEPIO_0000155"]
- [:sepio/GeneticCondition "http://purl.obolibrary.org/obo/SEPIO_0000219"]]
+ [:sepio/GeneticCondition "http://purl.obolibrary.org/obo/SEPIO_0000219"]
+ [:sepio/EvidenceRole "http://purl.obolibrary.org/obo/SEPIO_0000148"]]

@@ -1,0 +1,24 @@
+{:interfaces
+ {:resource
+  {:fields {:iri {:type String}
+            :label {:type String}}}
+  :curation_summary {:curation_wg {:type String}
+                     :classification_description {:type String}
+                     :report_date {:type String}}
+  }
+
+ :objects
+ {:gene
+  {:implements [:resource]
+   :fields {:iri {:type String :resolve :iri}
+            :label {:type String :resolve :label}
+            :hgnc_id {:type String :resolve :hgnc-id}}}
+  :actionability_curation
+  {:implements [:resource :curation_summary]
+   :fields {:iri {:type String :resolve :iri}
+            :label {:type String :resolve :label}}}}
+
+ :queries
+ {:gene {:type (non-null :gene)
+         :args {:iri {:type String}}
+         :resolve :gene}}}

@@ -3,7 +3,7 @@
   (:require [io.pedestal.http :as server]
             [io.pedestal.http.route :as route]
             [clingen-search.service :as service]
-            [mount.core :as mount]
+            [mount.core :as mount :refer [defstate]]
             [clojure.tools.cli :refer [parse-opts]]))
 
 ;; This is an adapted service map, that can be started and stopped
@@ -36,6 +36,10 @@
   (println "\nCreating your server...")
   (mount/start)
   (server/start runnable-service))
+
+(defstate server
+  :start (server/start (server/create-server service/service))
+  :stop (server/stop server))
 
 (def cli-options
   [["-p" "--port PORT" "Port number"]])

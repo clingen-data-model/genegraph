@@ -1,24 +1,42 @@
 (ns clingen-search.transform.actionability
   (:require [clingen-search.database.load :as l]
             [clingen-search.database.query :as q]
+            [clingen-search.transform.core :refer [transform-doc src-path]]
             [cheshire.core :as json]
             [clojure.java.io :as io]))
 
 
+;; TODO Validate form of input (curation MUST have a condition, conditions MUST have a gene)
+(defn genetic-condition [curation-iri condition]
+  (if (q/is-rdf-type? (q/resource (:iri condition)) :sepio/GeneticCondition)
+    [[curation-iri :sepio/is-about-condition (:iri condition)]]
+    (let [gc-node (l/blank-node)
+          gene (-> (q/ld1-> (q/resource (:gene condition)) [[:owl/same-as :<]]))]
+      [[curation-iri :sepio/is-about-condition gc-node]
+       [gc-node :rdf/type :sepio/GeneticCondition]
+       [gc-node :rdfs/sub-class-of (:iri condition)]
+       [gc-node :sepio/is-about-gene gene]])))
+
+(defn search-contributions [curation-iri search-date]
+  (let [contrib-iri (l/blank-node)]
+    [[curation-iri :sepio/qualified-contribution contrib-iri]
+     [contrib-iri :sepio/activity-date search-date]
+     [contrib-iri :bfo/realizes :sepio/EvidenceRole]]))
 
 (defn transform [curation]
-  (let [curation-iri (get curation "iri")
-        contrib-iri (l/blank-node)]
-    (l/statements-to-model
-     [[curation-iri :rdf/type :sepio/ActionabilityReport]
-      [curation-iri :sepio/qualified-contribution contrib-iri]
+  (let [curation-iri (:iri curation)
+        contrib-iri (l/blank-node)
+        statements (concat 
+                    [[curation-iri :rdf/type :sepio/ActionabilityReport]
+                     [curation-iri :sepio/qualified-contribution contrib-iri]
+                     [contrib-iri :sepio/activity-date (:dateISO8601 curation)]
+                     [contrib-iri :bfo/realizes :sepio/ApproverRole]]
+                    (mapcat #(genetic-condition curation-iri %) (:conditions curation))
+                    (mapcat #(search-contributions curation-iri %) (:searchDates curation)))]
+    (l/statements-to-model statements)))
 
-      [contrib-iri :sepio/activity-date (get curation "dateISO8601")]
-      [contrib-iri :bfo/realizes :sepio/ApproverRole]
+(defmethod transform-doc :actionability-v1
+  ([doc-def] (transform-doc doc-def (slurp (src-path doc-def))))
+  ([doc-def doc] (transform (json/parse-string doc true))))
 
-      
-      ])))
 
-(defn read-local-curations [path]
-  (let [files (filter #(.isFile %) (-> path io/file file-seq))]
-    (map #(-> % io/reader json/parse-stream) files)))

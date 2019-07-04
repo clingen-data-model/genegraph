@@ -8,7 +8,8 @@
             [clingen-search.sink.validation :as v]
             [clingen-search.database.query :as q]
             [clingen-search.database.util :refer [tx]]
-            [clingen-search.transform.core :refer [transform-doc]])
+            [clingen-search.transform.core :refer [transform-doc]]
+            [cheshire.core :as json])
   (:import java.io.PushbackReader))
 
 ;; TODO ensure target directory exists
@@ -46,3 +47,11 @@
 (defn- set-ns-prefixes []
   (let [prefixes (read-edn "namespaces.edn")]
     (db/set-ns-prefixes prefixes)))
+
+(defn read-actionability-curations [path]
+  (let [files (filter #(.isFile %) (-> path io/file file-seq))]
+    (doseq [f files]
+      (let [doc (-> f io/reader (json/parse-stream true))
+            doc-spec {:format :actionability-v1 :name (:iri doc) :target (.getName f)}]
+        (println (.getName f))
+        (db/load-model (transform-doc doc-spec) (:name doc-spec))))))

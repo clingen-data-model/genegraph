@@ -13,8 +13,11 @@
         ncbi-gene (str gene-prefix ncbi-gene-id)
         phenotype-mims (re-seq #"\d{4,}" (nth row 12))
         phenotypes (map #(str mim-prefix %) phenotype-mims)]
-    (when (and (< 0 (count ncbi-gene-id)) (< 0 (count phenotypes)))
-      (map #(vector % :sepio/is-about-gene ncbi-gene) phenotypes))))
+    ;; Only associations with a single gene can count as GeneticConditions
+    (when (and (< 0 (count ncbi-gene-id)) (= 1 (count phenotypes)))
+      (concat
+       (map #(vector % :sepio/is-about-gene ncbi-gene) phenotypes)
+       (map #(vector % :rdf/type :sepio/GeneticCondition) phenotypes)))))
 
 (defn transform-genemap2 [genemap2]
   (let [genemap2-table (nthrest (csv/read-csv genemap2 :separator \tab) 4)]

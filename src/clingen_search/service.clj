@@ -6,7 +6,13 @@
             [ring.util.response :as ring-resp]
             [clingen-search.source.html.common :as cg-html]
             [com.walmartlabs.lacinia.pedestal :as lacinia]
-            [com.walmartlabs.lacinia.schema :as schema]))
+            [com.walmartlabs.lacinia.schema :as schema]
+            [com.walmartlabs.lacinia.util :as util]
+            [clingen-search.source.graphql.core :as gql]
+            [clingen-search.source.graphql.gene :as gql-gene]
+            [mount.core :refer [defstate]]
+            [clojure.java.io :as io]
+            [clojure.edn :as edn]))
 
 (defn about-page
   [request]
@@ -23,6 +29,9 @@
   (ring-resp/response (html5 (cg-html/template 
                               cg-html/resource 
                               (select-keys request [:path-params :query-params])))))
+
+
+
 
 (def hello-schema (schema/compile
                    {:queries {:hello
@@ -52,7 +61,9 @@
 ;      ["/about" {:get about-page}]]]])
 
 
-(def service (lacinia/service-map hello-schema {:graphiql true}))
+;;(def service (lacinia/service-map (graphql-schema) {:graphiql true}))
+(def service (lacinia/service-map gql/schema {:graphiql true}))
+
 ;; Consumed by clingen-search.server/create-server
 ;; See http/default-interceptors for additional options you can configure
 ;; (def service {:env :prod

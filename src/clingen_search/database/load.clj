@@ -5,7 +5,8 @@
             [clojure.java.io :as io]
             [clingen-search.database.instance :refer [db]]
             [clingen-search.database.util :refer [property tx write-tx]]
-            [clingen-search.database.names :refer [local-property-names local-class-names]])
+            [clingen-search.database.names :refer [local-property-names local-class-names]]
+            [clingen-search.database.query :as q])
   (:import [org.apache.jena.tdb2 TDB2Factory]
            [org.apache.jena.query TxnType Dataset]
            [org.apache.jena.rdf.model Model ModelFactory Literal Resource ResourceFactory
@@ -42,6 +43,7 @@
          subject (cond
                    (keyword? s) (local-class-names s)
                    (string? s) (ResourceFactory/createResource s)
+                   (satisfies? q/AsJenaResource s) (q/as-jena-resource s)
                    :else s)
          predicate (if (keyword? p)
                      (local-property-names p)
@@ -50,6 +52,7 @@
                   (keyword? o) (local-class-names o)
                   (= :Resource (:object (meta stmt))) (ResourceFactory/createResource o)
                   (string? o) (ResourceFactory/createTypedLiteral o)
+                  (satisfies? q/AsJenaResource o) (q/as-jena-resource o)
                   :else o)]
      (ResourceFactory/createStatement subject predicate object))))
 
