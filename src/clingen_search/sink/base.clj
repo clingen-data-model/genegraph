@@ -1,7 +1,6 @@
 (ns clingen-search.sink.base
   (:require [clingen-search.database.load :as db]
             [clingen-search.sink.fetch :as fetch]
-            [clingen-search.sink.gene :as gene]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.pprint :refer [pprint]]
@@ -13,7 +12,7 @@
   (:import java.io.PushbackReader))
 
 ;; TODO ensure target directory exists
-(def target-base "data/base/")
+(def target-base (str (System/getenv "CG_SEARCH_DATA_VOL") "/base/"))
 (def base-resources "base.edn")
 
 (defn read-edn [resource]
@@ -26,15 +25,6 @@
 (defn retrieve-base-data [resources]
   (doseq [{uri-str :source, target-file :target, opts :fetch-opts} resources]
     (fetch/fetch-data uri-str (str target-base target-file) opts)))
-
-(defn import-base-data [resources]
-  (doseq [{source-file :target, source-type :format, opts :reader-opts, name :name} resources]
-    (println "Importing " source-file)
-    (with-open [is (io/input-stream (str target-base source-file))]
-      ;; should refactor this to be configurable via file
-      (case source-type
-        :rdf (db/store-rdf is (assoc opts :name name))
-        :genes (gene/load-genes is)))))
 
 (defn import-documents [documents]
   (doseq [d documents]

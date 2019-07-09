@@ -2,7 +2,7 @@
   (:require [clingen-search.database.load :as l]
             [clojure.java.io :as io]))
 
-(def target-base "data/base/")
+(def target-base (str (System/getenv "CG_SEARCH_DATA_VOL") "/base/"))
 
 (defn src-path [doc-def] (str target-base (:target doc-def)))
 

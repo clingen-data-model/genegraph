@@ -4,5 +4,5 @@
   (:import [org.apache.jena.tdb2 TDB2Factory]))
 
 (defstate db
-  :start (TDB2Factory/connectDataset "tdb") 
+  :start (TDB2Factory/connectDataset (str (System/getenv "CG_SEARCH_DATA_VOL") "tdb")) 
   :stop (.close db))

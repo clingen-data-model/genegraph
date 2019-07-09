@@ -8,8 +8,6 @@
            org.topbraid.shacl.util.ModelPrinter
            org.topbraid.shacl.validation.ValidationUtil))
 
-(q/register-query ::validation-report "select ?x where { ?x a :shacl/ValidationReport } limit 1")
-
 (defn validate 
   "Validate the model passed in, given the contraints model. Return the model containing validation issues."
   [model constraints]
@@ -17,9 +15,5 @@
     (.getModel results)))
 
 
-(defn did-validate? 
-  "Return true if the model validated, false otherwise."
-  [validation-report]
-  (let [rep-node (first (q/select  ::validation-report {:-model validation-report}))]
-    (q/ld1-> rep-node [:shacl/conforms])))
+
 

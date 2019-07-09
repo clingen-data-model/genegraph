@@ -61,8 +61,12 @@
 ;      ["/about" {:get about-page}]]]])
 
 
+
+
 ;;(def service (lacinia/service-map (graphql-schema) {:graphiql true}))
-(def service (lacinia/service-map gql/schema {:graphiql true}))
+(defn service []
+  (merge (lacinia/service-map (gql/schema) {:graphiql true})
+         {::http/host "0.0.0.0"}))
 
 ;; Consumed by clingen-search.server/create-server
 ;; See http/default-interceptors for additional options you can configure
