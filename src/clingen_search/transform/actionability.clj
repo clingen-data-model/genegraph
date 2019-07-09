@@ -8,7 +8,8 @@
 
 ;; TODO Validate form of input (curation MUST have a condition, conditions MUST have a gene)
 (defn genetic-condition [curation-iri condition]
-  (if (q/is-rdf-type? (q/resource (:iri condition)) :sepio/GeneticCondition)
+  (if (or (q/is-rdf-type? (q/resource (:iri condition)) :sepio/GeneticCondition)
+          (not (:gene condition)))
     [[curation-iri :sepio/is-about-condition (:iri condition)]]
     (let [gc-node (l/blank-node)
           gene (-> (q/ld1-> (q/resource (:gene condition)) [[:owl/same-as :<]]))]

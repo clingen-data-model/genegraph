@@ -1,13 +1,23 @@
 (ns clingen-search.sink.stream
   (:require [clingen-search.database.load :as db]
+            [clingen-search.transform.core :refer [transform-doc]]
             [clojure.java.io :as io]
-            [cheshire.core :as json])
+            [cheshire.core :as json]
+            [mount.core :refer [defstate]]
+            [clojure.edn :as edn]
+            [io.pedestal.log :refer [warn]])
   (:import java.util.Properties
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
             ConsumerRecords]
            [org.apache.kafka.common PartitionInfo TopicPartition]
            java.time.Duration))
 
+(def offset-file (str (System/getenv "CG_SEARCH_DATA_VOL") "/partition_offsets.edn"))
+
+(defstate current-offsets
+  :start (if (.exists (io/as-file offset-file))
+           (atom (-> offset-file slurp edn/read-string))
+           (atom {})))
 
 (def client-properties
   {"bootstrap.servers" (System/getenv "DATA_EXCHANGE_HOST")
@@ -23,8 +33,11 @@
    "ssl.keystore.password" (System/getenv "SERVEUR_KEY_PASS")
    "ssl.key.password" (System/getenv "SERVEUR_KEY_PASS")})
 
+(def topic-handlers
+  {"actionability" :actionability-v1})
+
 ;; Java Properties object defining configuration of Kafka client
-(defn client-configuration 
+(defn- client-configuration 
   "Create client "
   []
   (let [props (new Properties)]
@@ -32,20 +45,62 @@
       (.put props (p 0) (p 1)))
     props))
 
-(defn consumer
+(defn- kafka-consumer
   []
   (let [props (client-configuration)]
     (new KafkaConsumer props)))
 
-(defn topic-partitions [c topic]
+(defn- topic-partitions [c topic]
   (let [partition-infos (.partitionsFor c topic)]
     (map #(TopicPartition. (.topic %) (.partition %)) partition-infos)))
 
 (defn- poll-once [c]
-  (-> c (.poll (Duration/ofSeconds 2)) .iterator iterator-seq))
+  (-> c (.poll (Duration/ofMillis 100)) .iterator iterator-seq))
+
+(defn- assign-topic! [consumer topic]
+  (let [tp (topic-partitions consumer topic)]
+    (.assign consumer tp)
+    (if-let [offsets (get @current-offsets topic)]
+      (doseq [part tp]
+        (if-let [offset (get offsets (.partition part))]
+          (.seek consumer part offset)
+          (.seekToBeginning consumer [part])))
+      (.seekToBeginning consumer tp))))
+
+(defn import-record! [record]
+  (try
+    (let [iri (-> record .value json/parse-string (get "iri"))
+          doc-model (transform-doc {:name iri :format (get topic-handlers (.topic record))}
+                                   (.value record))]
+      (println "importing: " iri)
+      (db/load-model doc-model iri))
+    (catch Exception e (warn :function :import-record!
+                             :topic (.topic record)
+                             :partition (.partition record)
+                             :offset (.offset record)
+                             :exception (str e)))))
+
+(defn update-offsets! [consumer tps]
+  (doseq [tp tps]
+    (swap! current-offsets assoc-in [(.topic tp) (.partition tp)] (.position consumer tp)))
+  (spit offset-file (pr-str @current-offsets)))
+
+(defn subscribe!
+  "Start a Kafka consumer listening to topics in topic-list
+  Messages are transformed to RDF, if needed, and imported into triplestore"
+  [topic-list]
+  (with-open [consumer (kafka-consumer)]
+    (doseq [topic topic-list]
+      (assign-topic! consumer topic))
+    (let [tps (mapcat #(topic-partitions consumer %) topic-list)]
+      (while true
+        (doseq [record (poll-once consumer)]
+          (import-record! record))
+        (update-offsets! consumer tps)))))
+
 
 (defn topic-data [topic]
-  (with-open [c (consumer)]
+  (with-open [c (kafka-consumer)]
     (let [tp (topic-partitions c topic)]
       (.assign c tp)
       (.seekToBeginning c tp)
@@ -77,3 +132,4 @@
       (println "importing " (.getName file))
       (with-open [is (io/input-stream file)]
         (db/store-rdf is {:format :json-ld, :name (.getName file)})))))
+
