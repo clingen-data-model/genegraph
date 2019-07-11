@@ -1,37 +1,37 @@
 (ns clingen-search.sink.stream
   (:require [clingen-search.database.load :as db]
             [clingen-search.transform.core :refer [transform-doc]]
+            [clingen-search.env :as env]
             [clojure.java.io :as io]
             [cheshire.core :as json]
             [mount.core :refer [defstate]]
             [clojure.edn :as edn]
-            [io.pedestal.log :refer [warn]])
+            [io.pedestal.log :refer [warn]]
+            [clingen-search.transform.actionability]
+            [clojure.string :as s])
   (:import java.util.Properties
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
             ConsumerRecords]
            [org.apache.kafka.common PartitionInfo TopicPartition]
            java.time.Duration))
 
-(def offset-file (str (System/getenv "CG_SEARCH_DATA_VOL") "/partition_offsets.edn"))
+(def offset-file (str env/data-vol "/partition_offsets.edn"))
 
-(defstate current-offsets
-  :start (if (.exists (io/as-file offset-file))
-           (atom (-> offset-file slurp edn/read-string))
-           (atom {})))
+(def current-offsets (atom {}))
+
 
 (def client-properties
-  {"bootstrap.servers" (System/getenv "DATA_EXCHANGE_HOST")
-   "group.id" (System/getenv "SERVEUR_GROUP")
-   "enable.auto.commit" "true"
-   "auto.commit.interval.ms" "1000"
+  {"bootstrap.servers" env/dx-host
+   "group.id" env/dx-group
+   "enable.auto.commit" "false"
    "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
    "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
    "security.protocol" "SSL"
    "ssl.truststore.location" "keys/serveur.truststore.jks"
-   "ssl.truststore.password" (System/getenv "SERVEUR_KEY_PASS")
-   "ssl.keystore.location" (System/getenv "SERVEUR_KEYSTORE")
-   "ssl.keystore.password" (System/getenv "SERVEUR_KEY_PASS")
-   "ssl.key.password" (System/getenv "SERVEUR_KEY_PASS")})
+   "ssl.truststore.password" env/dx-key-pass
+   "ssl.keystore.location" env/dx-keystore
+   "ssl.keystore.password" env/dx-key-pass
+   "ssl.key.password" env/dx-key-pass})
 
 (def topic-handlers
   {"actionability" :actionability-v1})
@@ -45,7 +45,7 @@
       (.put props (p 0) (p 1)))
     props))
 
-(defn- kafka-consumer
+(defn- create-kafka-consumer
   []
   (let [props (client-configuration)]
     (new KafkaConsumer props)))
@@ -85,22 +85,37 @@
     (swap! current-offsets assoc-in [(.topic tp) (.partition tp)] (.position consumer tp)))
   (spit offset-file (pr-str @current-offsets)))
 
+(def run-consumer (atom true))
+
+(defn read-offsets! [] 
+  (if (.exists (io/as-file offset-file))
+    (reset! current-offsets (-> offset-file slurp edn/read-string))
+    (reset! current-offsets {})))
+
 (defn subscribe!
   "Start a Kafka consumer listening to topics in topic-list
   Messages are transformed to RDF, if needed, and imported into triplestore"
   [topic-list]
-  (with-open [consumer (kafka-consumer)]
+  (read-offsets!)
+  (with-open [consumer (create-kafka-consumer)]
     (doseq [topic topic-list]
       (assign-topic! consumer topic))
     (let [tps (mapcat #(topic-partitions consumer %) topic-list)]
-      (while true
+      (while @run-consumer
         (doseq [record (poll-once consumer)]
           (import-record! record))
         (update-offsets! consumer tps)))))
 
+(defstate consumer-thread
+  :start (let [topics (s/split env/dx-topics #";")
+               t (Thread. (partial subscribe! topics))]
+           (reset! run-consumer true)
+           (.start t)
+           t)
+  :stop  (reset! run-consumer false))
 
 (defn topic-data [topic]
-  (with-open [c (kafka-consumer)]
+  (with-open [c (create-kafka-consumer)]
     (let [tp (topic-partitions c topic)]
       (.assign c tp)
       (.seekToBeginning c tp)

@@ -133,3 +133,24 @@ Am currently using curie, blasting through the lists of namespaces. There should
 
   There are a couple interfaces with dependency inversions, the datafy implementaiton of Jena resources, and the pages themselves. May need to require these explicity, but it would be nice if that wasn't necessary
 * Creation and management of Clojure class hierarchy
+* define 'server ready' criteria
+
+Kubernettes supports querying a pod for 'readiness'; when a server is considered to be in a usable state (distinct from a failed or unhealthy state). We should implement these as endpoints in pedestal.
+
+Probably this logic lives in or close to clingen-search.service
+
+** Kafka streams are close enough to up to date
+
+Technically a stream is never 'finished', but we should not register as ready until the messages that were available at app startup are consumed.
+
+** Base data is loaded
+
+Base data should be completely loaded. Realistically this needs to happen prior to starting any stream consumption.
+
+* Exceptions when loading and transforming data
+
+Currently we're coding too much along the 'happy path'. Either we need to reprogram transformations to be tolerant in all cases of missing data (or to return nil when it's not possible to run a transformation due to missing data), or we need to wrap transformations with exception handling. Probably both, though dealing with unmanagable data is a problem that is yet to be addressed.
+
+* Time sequence when loading data
+
+Should we load all data in the sequence it was recieved in (as the NY Times does with their monologue), or is there a sequence that should be insisted on. This is key with the base data we're working with.

@@ -1,11 +1,9 @@
 (ns clingen-search.transform.core
   (:require [clingen-search.database.load :as l]
             [clojure.java.io :as io]
-            [clingen-search.transform.gene]
-            [clingen-search.transform.actionability]
-            [clingen-search.transform.omim]))
+            [clingen-search.env :as env]))
 
-(def target-base (str (System/getenv "CG_SEARCH_DATA_VOL") "/base/"))
+(def target-base (str env/data-vol "/base/"))
 
 (defn src-path [doc-def] (str target-base (:target doc-def)))
 

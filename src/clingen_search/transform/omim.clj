@@ -21,7 +21,11 @@
 
 (defn transform-genemap2 [genemap2]
   (let [genemap2-table (nthrest (csv/read-csv genemap2 :separator \tab) 4)]
-    (l/statements-to-model (remove nil? (mapcat genemap2-row-to-triple genemap2-table)))))
+    (->> genemap2-table
+         (filter #(<= 13 (count %)))
+         (mapcat genemap2-row-to-triple)
+         (remove nil?)
+         l/statements-to-model)))
 
 (defmethod transform-doc :omim-genemap
   ([doc-def] (transform-doc doc-def (slurp (src-path doc-def))))

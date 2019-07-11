@@ -8,12 +8,23 @@
             [clingen-search.database.query :as q]
             [clingen-search.database.util :refer [tx]]
             [clingen-search.transform.core :refer [transform-doc]]
-            [cheshire.core :as json])
-  (:import java.io.PushbackReader))
+            [cheshire.core :as json]
+            [mount.core :refer [defstate]]
+            [clingen-search.transform.gene]
+            [clingen-search.transform.omim]
+            [clingen-search.env :as env])
+  (:import java.io.PushbackReader
+           java.time.Instant))
 
 ;; TODO ensure target directory exists
-(def target-base (str (System/getenv "CG_SEARCH_DATA_VOL") "/base/"))
+(def target-base (str env/data-vol "/base/"))
 (def base-resources "base.edn")
+(def state-file (str env/data-vol "/base_state.edn"))
+
+(defstate current-state
+  :start (if (.exists (io/as-file state-file))
+           (atom (-> state-file slurp edn/read-string))
+           (atom {})))
 
 (defn read-edn [resource]
   (with-open [rdr (PushbackReader. (io/reader (io/resource resource)))]
@@ -22,17 +33,36 @@
 (defn read-base-resources []
   (read-edn base-resources))
 
-(defn retrieve-base-data [resources]
-  (doseq [{uri-str :source, target-file :target, opts :fetch-opts} resources]
-    (fetch/fetch-data uri-str (str target-base target-file) opts)))
+(defn- update-state! [resource-name k v]
+  (swap! current-state assoc-in [resource-name k] v)
+  (spit state-file (prn-str @current-state)))
 
-(defn import-documents [documents]
+(defn retrieve-base-data! [resources]
+  (doseq [{uri-str :source, target-file :target, opts :fetch-opts, name :name} resources]
+    (fetch/fetch-data uri-str (str target-base target-file) opts)
+    (update-state! name :retrieved (str (Instant/now)))))
+
+(defn import-documents! [documents]
   (doseq [d documents]
     (println "Importing " (:name d))
-    (db/load-model (transform-doc d) (:name d))))
+    (db/load-model (transform-doc d) (:name d))
+    (update-state! (:name d) :imported (str (Instant/now)))))
+
+(defn initialize-db! []
+  (let [res (read-base-resources)]
+    (->> res
+         (remove #(get-in @current-state [(:name %) :retrieved]))
+         retrieve-base-data!)
+    (->> res
+         (remove #(get-in @current-state [(:name %) :imported]))
+         import-documents!)
+    (println "database initialization complete")))
+
+(defn async-initialize-db! []
+  (.start (Thread. initialize-db!)))
 
 (defn import-document [name documents]
-  (import-documents (filter #(= name (:name %)) documents)))
+  (import-documents! (filter #(= name (:name %)) documents)))
 
 (defn- set-ns-prefixes []
   (let [prefixes (read-edn "namespaces.edn")]

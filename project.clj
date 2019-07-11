@@ -4,24 +4,17 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.10.0"]
+                 [org.clojure/core.async "0.4.500"]
                  [io.pedestal/pedestal.service "0.5.5"]
-
-                 ;; Remove this line and uncomment one of the next lines to
-                 ;; use Immutant or Tomcat instead of Jetty:
                  [io.pedestal/pedestal.jetty "0.5.5"]
-                 ;; [io.pedestal/pedestal.immutant "0.5.4"]
-                 ;; [io.pedestal/pedestal.tomcat "0.5.4"]
                  [hiccup "1.0.5"]
-                 ;; experimental--may remove in future
                  [ch.qos.logback/logback-classic "1.2.3" :exclusions [org.slf4j/slf4j-api]]
                  [org.slf4j/jul-to-slf4j "1.7.25"]
                  [org.slf4j/jcl-over-slf4j "1.7.25"]
                  [org.slf4j/log4j-over-slf4j "1.7.25"]
-
-                 [org.apache.kafka/kafka-clients "2.0.0"]
+                 [org.apache.kafka/kafka-clients "2.3.0"]
                  [cheshire "5.8.1"]
                  [org.clojure/data.csv "0.1.4"]
-
                  [camel-snake-kebab "0.4.0"]
                  [org.apache.jena/jena-core "3.10.0"]
                  [org.apache.jena/jena-arq "3.10.0"]
@@ -32,8 +25,6 @@
                  [mount "0.1.14"]
                  [com.velisco/clj-ftp "0.3.9"] ;; For downloading ftp docs
                  [clj-http "3.9.1"] ;; For downloading 
-                 [org.apache.kafka/kafka-clients "2.1.1"]
-                 [org.clojure/tools.cli "0.4.2"]
                  [com.walmartlabs/lacinia-pedestal "0.12.0"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
