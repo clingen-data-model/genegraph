@@ -2,9 +2,11 @@
 FROM adoptopenjdk/openjdk12:latest
 MAINTAINER Tristan Nelson <thnelson@geisinger.edu>
 
-ADD target/clingen-search-0.0.1-SNAPSHOT-standalone.jar /clingen-search/app.jar
+COPY keys/dev.serveur.keystore.jks /keys/dev.serveur.keystore.jks
 
-ENV CG_SEARCH_DATA_VOL /data/
+COPY target/clingen-search-0.0.1-SNAPSHOT-standalone.jar /clingen-search/app.jar
+
+
 
 EXPOSE 8888
 

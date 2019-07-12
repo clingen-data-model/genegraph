@@ -6,7 +6,7 @@
             [cheshire.core :as json]
             [mount.core :refer [defstate]]
             [clojure.edn :as edn]
-            [io.pedestal.log :refer [warn]]
+            [io.pedestal.log :as log]
             [clingen-search.transform.actionability]
             [clojure.string :as s])
   (:import java.util.Properties
@@ -72,13 +72,13 @@
     (let [iri (-> record .value json/parse-string (get "iri"))
           doc-model (transform-doc {:name iri :format (get topic-handlers (.topic record))}
                                    (.value record))]
-      (println "importing: " iri)
+      (log/info :fn :import-record! :msg :importing :iri iri)
       (db/load-model doc-model iri))
-    (catch Exception e (warn :function :import-record!
-                             :topic (.topic record)
-                             :partition (.partition record)
-                             :offset (.offset record)
-                             :exception (str e)))))
+    (catch Exception e (log/warn :fn :import-record!
+                                 :topic (.topic record)
+                                 :partition (.partition record)
+                                 :offset (.offset record)
+                                 :msg (str e)))))
 
 (defn update-offsets! [consumer tps]
   (doseq [tp tps]

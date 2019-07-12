@@ -29,7 +29,6 @@
 
 (defn genes-as-triple [genes-json]
   (let [genes (get-in genes-json [:response :docs])]
-    (println "genes: " (count genes))
     (mapcat gene-as-triple genes)))
 
 

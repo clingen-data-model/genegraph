@@ -1,7 +1,8 @@
 (ns clingen-search.database.util
   "Utility functions used by other components of clingen-search.database
   should not generally be used directly by code outside this namespace"
-  (:require [clingen-search.database.instance :refer [db]])
+  (:require [clingen-search.database.instance :refer [db]]
+            [io.pedestal.log :as log])
   (:import [org.apache.jena.rdf.model ResourceFactory]
            [org.apache.jena.query ReadWrite QueryFactory QueryExecutionFactory]))
 
@@ -19,7 +20,7 @@
          (let [result# (do ~@body)]
            (.commit db)
            result#)
-         (catch Exception e# (println "Exception: " e#) (.abort db))
+         (catch Exception e# (log/error :fn :tx :msg e#) (.abort db))
          (finally (.end db))))))
 
 (defmacro write-tx [& body]
@@ -29,7 +30,7 @@
        (let [result# (do ~@body)]
          (.commit db)
          result#)
-       (catch Exception e# (println "Exception: " e#) (.abort db))
+       (catch Exception e# (log/error :fn :tx :msg e#) (.abort db))
        (finally (.end db)))))
 
 (defn select [query-str]
@@ -40,5 +41,4 @@
         (let [result-var (-> result .getResultVars first)
               result-seq (iterator-seq result)
               literals (filter #(-> % (.get result-var) .isLiteral) result-seq )]
-          (println literals)
           (mapv #(.getResource % result-var) result-seq))))))

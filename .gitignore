@@ -1,6 +1,7 @@
 # Project related
 /db/
 /data/
+env.list
 
 # Java related
 pom.xml

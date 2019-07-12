@@ -14,7 +14,10 @@
 (defn -main
   "The entry-point for 'lein run'"
   [& args]
-  (mount.core/start)
-  (.start (Thread. base/initialize-db!)))
+  ;; It's not possible to consume messages before the base state has been loaded
+  ;; Make sure this happens first (synchronously)
+  (mount.core/start-without #'clingen-search.sink.stream/consumer-thread)
+  (base/initialize-db!)
+  (mount.core/start #'clingen-search.sink.stream/consumer-thread))
 
 

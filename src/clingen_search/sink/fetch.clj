@@ -3,7 +3,8 @@
   (:require [miner.ftp :as ftp]
             [clojure.java.io :as io]
             [clj-http.client :as http]
-            [clojure.string :as string])
+            [clojure.string :as string]
+            [io.pedestal.log :as log])
   (:import [java.util.zip GZIPInputStream ZipInputStream ZipEntry]))
 
 (def zip-exts [".zip" ".gz"])
@@ -43,20 +44,20 @@
     (do (with-open [f (io/output-stream target-file)]
           (.write f result))
         (unzip-target target-file))
-    (println "get-http: no result: " url)))
+    (log/warn :fn :get-http :msg :cant-retrieve :url url)))
 
 (defn fetch-data
   "retrieve file from remote url and store in data directory
   used to stage imports from external sources. Currently supports only
   http and ftp"
   [url-str target-file opts]
-  (println "retrieving " url-str)
+  (log/info :fn :fetch-data :msg :retrieving :url url-str)
   (if-let [url (io/as-url url-str)]
     (cond 
       (= "http" (.getProtocol url)) (get-http url-str target-file opts)
       (= "https" (.getProtocol url)) (get-http url-str target-file opts)
       (= "ftp" (.getProtocol url)) (get-ftp url target-file opts)
-      :default (println "fetch-data: invalid protocol" url-str))))
+      :default (log/error :fn :fetch-data :msg :invalid-protocol :url url-str))))
 
 (defn fetch-all-remote-assets
   [remote-assets]

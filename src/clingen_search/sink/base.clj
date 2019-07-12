@@ -12,7 +12,8 @@
             [mount.core :refer [defstate]]
             [clingen-search.transform.gene]
             [clingen-search.transform.omim]
-            [clingen-search.env :as env])
+            [clingen-search.env :as env]
+            [io.pedestal.log :as log])
   (:import java.io.PushbackReader
            java.time.Instant))
 
@@ -39,24 +40,27 @@
 
 (defn retrieve-base-data! [resources]
   (doseq [{uri-str :source, target-file :target, opts :fetch-opts, name :name} resources]
-    (fetch/fetch-data uri-str (str target-base target-file) opts)
+    (let [path (str target-base target-file)]
+      (io/make-parents path)
+      (fetch/fetch-data uri-str path opts))
     (update-state! name :retrieved (str (Instant/now)))))
 
 (defn import-documents! [documents]
   (doseq [d documents]
-    (println "Importing " (:name d))
+    (log/info :fn :import-documents! :msg :importing :name (:name d))
     (db/load-model (transform-doc d) (:name d))
     (update-state! (:name d) :imported (str (Instant/now)))))
 
 (defn initialize-db! []
   (let [res (read-base-resources)]
+    
     (->> res
          (remove #(get-in @current-state [(:name %) :retrieved]))
          retrieve-base-data!)
     (->> res
          (remove #(get-in @current-state [(:name %) :imported]))
          import-documents!)
-    (println "database initialization complete")))
+    (log/info :fn :initialize-db! :msg :initialization-complete)))
 
 (defn async-initialize-db! []
   (.start (Thread. initialize-db!)))
@@ -73,5 +77,4 @@
     (doseq [f files]
       (let [doc (-> f io/reader (json/parse-stream true))
             doc-spec {:format :actionability-v1 :name (:iri doc) :target (.getName f)}]
-        (println (.getName f))
         (db/load-model (transform-doc doc-spec) (:name doc-spec))))))
