@@ -27,7 +27,8 @@
    "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
    "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
    "security.protocol" "SSL"
-   "ssl.truststore.location" "keys/serveur.truststore.jks"
+   ;;"ssl.truststore.location" "keys/serveur.truststore.jks"
+   "ssl.truststore.location" env/dx-truststore
    "ssl.truststore.password" env/dx-key-pass
    "ssl.keystore.location" env/dx-keystore
    "ssl.keystore.password" env/dx-key-pass

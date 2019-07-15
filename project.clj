@@ -32,6 +32,7 @@
   ;:java-agents [[org.mortbay.jetty.alpn/jetty-alpn-agent "2.0.5"]]
   :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "clingen-search.server/run-dev"]}
                    :dependencies [[io.pedestal/pedestal.service-tools "0.5.5"]]}
-             :uberjar {:aot [clingen-search.server]}}
+             :uberjar {:aot [clingen-search.server]
+                       :uberjar-name "app.jar"}}
   :main ^{:skip-aot true} clingen-search.server)
 
