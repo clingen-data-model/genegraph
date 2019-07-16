@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clingen-ds
+  labels:
+    app: clingen-ds
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clingen-ds
+  template:
+    metadata:
+      labels:
+        app: clingen-ds
+    spec:
+      nodeSelector:
+        cloud.google.com/gke-local-ssd: "true"
+      volumes:
+        - name: clingen-ds-vol
+          hostPath:
+            path: "/mnt/disks/ssd0"
+      containers:
+        - image: gcr.io/clingen-dev/clingen-ds:v1
+          name: clingen-ds
+          env:
+            - name: CG_SEARCH_DATA_VOL
+              value: "/data/"
+            - name: DATA_EXCHANGE_HOST
+              value: "exchange.clinicalgenome.org:9093"
+            - name: SERVEUR_GROUP
+              value: "serveur_dev"
+            - name: SERVEUR_KEY_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: serveur-key-pass
+                  key: password
+            - name: SERVEUR_KEYSTORE
+              value: "/keys/dev.serveur.keystore.jks"
+            - name: SERVEUR_TRUSTSTORE
+              value: "/keys/serveur.truststore.jks"
+            - name: CG_SEARCH_TOPICS
+              value: actionability
+          ports:
+            - containerPort: 8888
+              name: clingen-ds
+          volumeMounts:
+            - name: clingen-ds-vol
+              mountPath: /data/
+
+              
+  
