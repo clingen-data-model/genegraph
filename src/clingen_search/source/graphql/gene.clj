@@ -13,4 +13,4 @@
     (map #(tag-with-type % :actionability_curation)) actionability))
 
 (defn actionability-curations [context args value]
-  (q/ld-> value [[:sepio/is-about-gene :<] [:sepio/is-about-condition :<]]))
+  (concat (q/ld-> value [[:sepio/is-about-gene :<] [:sepio/is-about-condition :<]])))

@@ -44,4 +44,9 @@
 (defn schema []
   (schema/compile base-schema))
 
+(defn gql-query 
+  "Function not used except for evaluating queries in the REPL
+  may consider moving into test namespace in future"
+  [query-str]
+  (lacinia/execute (schema) query-str nil nil))
 

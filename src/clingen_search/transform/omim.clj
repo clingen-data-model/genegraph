@@ -13,8 +13,7 @@
         ncbi-gene (str gene-prefix ncbi-gene-id)
         phenotype-mims (re-seq #"\d{4,}" (nth row 12))
         phenotypes (map #(str mim-prefix %) phenotype-mims)]
-    ;; Only associations with a single gene can count as GeneticConditions
-    (when (and (< 0 (count ncbi-gene-id)) (= 1 (count phenotypes)))
+    (when (and (< 0 (count ncbi-gene-id)) (< 0 (count phenotypes)))
       (concat
        (map #(vector % :sepio/is-about-gene ncbi-gene) phenotypes)
        (map #(vector % :rdf/type :sepio/GeneticCondition) phenotypes)))))

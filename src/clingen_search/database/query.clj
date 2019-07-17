@@ -9,7 +9,7 @@
             [clojure.string :as s]
             [clojure.core.protocols :refer [Datafiable]]
             [clojure.datafy :refer [datafy]])
-  (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList]
+  (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList SimpleSelector]
            [org.apache.jena.query QueryFactory Query QueryExecution
             QueryExecutionFactory QuerySolutionMap]
            java.io.ByteArrayOutputStream))
@@ -154,9 +154,9 @@
   (step [edge start model]
     (tx 
      (let [property (names/local-property-names (first edge))
-           out-fn (fn [n] (->> (.listStatements model (.resource n) property nil)
+           out-fn (fn [n] (->> (.listStatements model (SimpleSelector. (.resource n) property nil))
                                iterator-seq (map #(.getObject %))))
-           in-fn (fn [n] (->> (.listStatements model nil property (.resource n))
+           in-fn (fn [n] (->> (.listStatements model (SimpleSelector. nil property (.resource n)))
                               iterator-seq (map #(.getSubject %))))
            both-fn #(concat (out-fn %) (in-fn %))
            step-fn (case (second edge)

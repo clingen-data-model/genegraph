@@ -6,6 +6,7 @@ metadata:
   name: clingen-ds
 spec:
   type: LoadBalancer
+  loadBalancerIP: 35.196.195.211
   ports:
     - port: 80
       targetPort: 8888
