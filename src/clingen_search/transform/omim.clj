@@ -16,7 +16,19 @@
     (when (and (< 0 (count ncbi-gene-id)) (< 0 (count phenotypes)))
       (concat
        (map #(vector % :sepio/is-about-gene ncbi-gene) phenotypes)
-       (map #(vector % :rdf/type :sepio/GeneticCondition) phenotypes)))))
+       ;;(map #(vector % :rdf/type :sepio/GeneticCondition) phenotypes)
+       ))))
+
+(defn gene-topic-map [triples]
+  (reduce (fn [acc [s _ o]] (assoc acc s (conj (acc s []) o))) {} triples))
+
+(defn select-genetic-conditions [gene-subjects]
+  (filter (fn [[_ v]] (= 1 (count v))) gene-subjects))
+
+(defn construct-genetic-condition-triples [triples]
+  (mapcat (fn [[k v]] [[k :rdf/type :sepio/GeneticCondition]
+                       [k :sepio/is-about-gene (first v)]])
+          triples))
 
 (defn transform-genemap2 [genemap2]
   (let [genemap2-table (nthrest (csv/read-csv genemap2 :separator \tab) 4)]
@@ -24,6 +36,9 @@
          (filter #(<= 13 (count %)))
          (mapcat genemap2-row-to-triple)
          (remove nil?)
+         gene-topic-map
+         select-genetic-conditions
+         construct-genetic-condition-triples
          l/statements-to-model)))
 
 (defmethod transform-doc :omim-genemap
