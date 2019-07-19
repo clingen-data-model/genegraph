@@ -15,9 +15,7 @@
         phenotypes (map #(str mim-prefix %) phenotype-mims)]
     (when (and (< 0 (count ncbi-gene-id)) (< 0 (count phenotypes)))
       (concat
-       (map #(vector % :sepio/is-about-gene ncbi-gene) phenotypes)
-       ;;(map #(vector % :rdf/type :sepio/GeneticCondition) phenotypes)
-       ))))
+       (map #(vector % :sepio/is-about-gene ncbi-gene) phenotypes)))))
 
 (defn gene-topic-map [triples]
   (reduce (fn [acc [s _ o]] (assoc acc s (conj (acc s []) o))) {} triples))
@@ -27,7 +25,7 @@
 
 (defn construct-genetic-condition-triples [triples]
   (mapcat (fn [[k v]] [[k :rdf/type :sepio/GeneticCondition]
-                       [k :sepio/is-about-gene (first v)]])
+                       [k :sepio/is-about-gene (q/resource (first v))]])
           triples))
 
 (defn transform-genemap2 [genemap2]

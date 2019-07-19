@@ -75,11 +75,14 @@
                                    (.value record))]
       (log/info :fn :import-record! :msg :importing :iri iri)
       (db/load-model doc-model iri))
-    (catch Exception e (log/warn :fn :import-record!
-                                 :topic (.topic record)
-                                 :partition (.partition record)
-                                 :offset (.offset record)
-                                 :msg (str e)))))
+    (catch Exception e 
+      (.printStackTrace e)
+      (log/warn :fn :import-record!
+                :topic (.topic record)
+                :partition (.partition record)
+                :offset (.offset record)
+                :record record
+                :msg (str e)))))
 
 (defn update-offsets! [consumer tps]
   (doseq [tp tps]
