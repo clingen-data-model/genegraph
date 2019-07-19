@@ -3,6 +3,7 @@
             [clingen-search.source.graphql.gene :as gene]
             [clingen-search.source.graphql.resource :as resource]
             [clingen-search.source.graphql.actionability :as actionability]
+            [clingen-search.source.graphql.condition :as condition]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]))
@@ -24,6 +25,14 @@
               :curations {:type '(list :curation) :resolve gene/curations}
               :actionability_curations {:type '(list :actionability_curation)
                                         :resolve gene/actionability-curations}}}
+
+    :condition
+    {:implements [:resource]
+     :fields {:iri {:type 'String :resolve resource/iri}
+              :label {:type 'String :resolve resource/label}
+              :actionability_curations {:type '(list :actionability_curation)
+                                        :resolve condition/actionability-curations}}}
+
     :actionability_curation
     {:implements [:resource :curation]
      :fields 
@@ -37,6 +46,9 @@
    {:gene {:type '(non-null :gene)
            :args {:iri {:type 'String}}
            :resolve gene/gene-query}
+    :condition {:type '(non-null :condition)
+                :args {:iri {:type 'String}}
+                :resolve condition/condition-query}
     :actionability {:type '(non-null :actionability_curation)
                     :args {:iri {:type 'String}}
                     :resolve actionability/actionability-query}}})

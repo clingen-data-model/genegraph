@@ -55,8 +55,8 @@
   (let [partition-infos (.partitionsFor c topic)]
     (map #(TopicPartition. (.topic %) (.partition %)) partition-infos)))
 
-(defn- poll-once [c]
-  (-> c (.poll (Duration/ofMillis 100)) .iterator iterator-seq))
+(defn- poll-once 
+  ([c] (-> c (.poll (Duration/ofMillis 100)) .iterator iterator-seq)))
 
 (defn- assign-topic! [consumer topic]
   (let [tp (topic-partitions consumer topic)]
@@ -118,13 +118,16 @@
            t)
   :stop  (reset! run-consumer false))
 
+(defn long-poll [c]
+  (-> c (.poll (Duration/ofMillis 2000)) .iterator iterator-seq))
+
 (defn topic-data [topic]
   (with-open [c (create-kafka-consumer)]
     (let [tp (topic-partitions c topic)]
       (.assign c tp)
       (.seekToBeginning c tp)
-      (loop [records (poll-once c)]
-        (let [addl-records (poll-once c)]
+      (loop [records (long-poll c)]
+        (let [addl-records (long-poll c)]
           (if-not (seq addl-records)
             records
             (recur (concat records addl-records))))))))

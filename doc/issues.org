@@ -154,3 +154,6 @@ Currently we're coding too much along the 'happy path'. Either we need to reprog
 * Time sequence when loading data
 
 Should we load all data in the sequence it was recieved in (as the NY Times does with their monologue), or is there a sequence that should be insisted on. This is key with the base data we're working with.
+* Returning meaningful results when something is 'not found' in graphql
+  
+Right now graphql queries are doing no checking to make sure an entity exists of the type that's being requested. Despite the fact that anything (even a resource not in the triplestore) can be represented as a resource, most anything without an explicit type, and certainly without any statements, is unlikely to be a usable concept and should get the graphql equivalent of a 404
