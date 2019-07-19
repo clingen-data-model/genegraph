@@ -150,14 +150,15 @@
   
   ;; Expect edge to be a vector with form [:ns/prop <direction>], where direction is one
   ;; of :> :< :-
+  ;; TODO fail more gracefully when starting point is a literal
   clojure.lang.IPersistentVector
   (step [edge start model]
     (tx 
      (let [property (names/local-property-names (first edge))
-           out-fn (fn [n] (->> (.listStatements model (SimpleSelector. (.resource n) property nil))
-                               iterator-seq (map #(.getObject %))))
-           in-fn (fn [n] (->> (.listStatements model (SimpleSelector. nil property (.resource n)))
-                              iterator-seq (map #(.getSubject %))))
+           out-fn (fn [n] (->> (.listObjectsOfProperty model (.resource n) property)
+                               iterator-seq))
+           in-fn (fn [n] (->> (.listResourcesWithProperty model property (.resource n))
+                              iterator-seq))
            both-fn #(concat (out-fn %) (in-fn %))
            step-fn (case (second edge)
                      :> out-fn
