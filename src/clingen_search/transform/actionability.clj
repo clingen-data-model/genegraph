@@ -6,20 +6,22 @@
             [clojure.java.io :as io]))
 
 
+(defn genetic-condition-label [parent-condition gene]
+  (str (q/ld1-> parent-condition [:rdfs/label]) ", " (q/ld1-> gene [:skos/preferred-label])))
+
 ;; TODO Validate form of input (curation MUST have a condition, conditions MUST have a gene)
 (defn genetic-condition [curation-iri condition]
-  (let [condition-resource (q/resource (:iri condition))]
+  (when-let [condition-resource (q/ld1-> (q/resource (:iri condition)) [[:owl/equivalent-class :<]])]
     (if (or (q/is-rdf-type? condition-resource :sepio/GeneticCondition)
             (not (:gene condition)))
       [[curation-iri :sepio/is-about-condition condition-resource]]
       (let [gc-node (l/blank-node)
             gene (q/ld1-> (q/resource (:gene condition)) [[:owl/same-as :<]])]
-        (println (:gene condition))
-        (println (str gene))
         [[curation-iri :sepio/is-about-condition gc-node]
          [gc-node :rdf/type :sepio/GeneticCondition]
          [gc-node :rdfs/sub-class-of condition-resource]
-         [gc-node :sepio/is-about-gene gene]]))))
+         [gc-node :sepio/is-about-gene gene]
+         [gc-node :rdfs/label (genetic-condition-label condition-resource gene)]]))))
 
 (defn search-contributions [curation-iri search-date]
   (let [contrib-iri (l/blank-node)]
@@ -33,6 +35,7 @@
         statements (concat 
                     [[curation-iri :rdf/type :sepio/ActionabilityReport]
                      [curation-iri :sepio/qualified-contribution contrib-iri]
+                     [curation-iri :dc/source (:scoreDetails curation)]
                      [contrib-iri :sepio/activity-date (:dateISO8601 curation)]
                      [contrib-iri :bfo/realizes :sepio/ApproverRole]]
                     (mapcat #(genetic-condition curation-iri %) (:conditions curation))

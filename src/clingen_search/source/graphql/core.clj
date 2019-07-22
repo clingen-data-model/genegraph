@@ -22,16 +22,21 @@
     {:implements [:resource]
      :fields {:iri {:type 'String :resolve resource/iri}
               :label {:type 'String :resolve resource/label}
+              :hgnc_id {:type 'String :resolve gene/hgnc-id}
               :curations {:type '(list :curation) :resolve gene/curations}
+              :conditions {:type '(list :condition) :resolve gene/conditions}
               :actionability_curations {:type '(list :actionability_curation)
                                         :resolve gene/actionability-curations}}}
 
     :condition
     {:implements [:resource]
-     :fields {:iri {:type 'String :resolve resource/iri}
-              :label {:type 'String :resolve resource/label}
+     :fields {:iri {:type 'String :resolve condition/iri}
+              :label {:type 'String :resolve condition/label}
+              :gene {:type :gene :resolve condition/gene}
               :actionability_curations {:type '(list :actionability_curation)
-                                        :resolve condition/actionability-curations}}}
+                                        :resolve condition/actionability-curations}
+              :genetic_conditions {:type '(list :condition)
+                                   :resolve condition/genetic_conditions}}}
 
     :actionability_curation
     {:implements [:resource :curation]
@@ -40,7 +45,10 @@
       :label {:type 'String :resolve resource/label}
       :report_date {:type 'String :resolve actionability/report-date}
       :wg_label {:type 'String :resolve actionability/wg-label}
-      :classification_description {:type 'String :resolve actionability/classification-description}}}}
+      :classification_description {:type 'String :resolve actionability/classification-description}
+      :conditions {:type '(list :condition)
+                   :resolve actionability/conditions}
+      :source {:type 'String :resolve actionability/source}}}}
 
    :queries
    {:gene {:type '(non-null :gene)

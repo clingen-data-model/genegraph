@@ -17,3 +17,8 @@
 (defn classification-description [context args value]
   "View report for scoring details")
 
+(defn conditions [context args value]
+  (:sepio/is-about-condition value))
+
+(defn source [context args value]
+  (q/ld1-> value [:dc/source]))

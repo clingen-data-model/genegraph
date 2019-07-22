@@ -24,9 +24,12 @@
   (filter (fn [[_ v]] (= 1 (count v))) gene-subjects))
 
 (defn construct-genetic-condition-triples [triples]
-  (mapcat (fn [[k v]] [[k :rdf/type :sepio/GeneticCondition]
-                       [k :sepio/is-about-gene (q/resource (first v))]])
-          triples))
+  (->> triples
+       (mapcat (fn [[k v]] 
+                 (when-let [condition (q/ld1-> (q/resource k) [[:owl/equivalent-class :<]])]
+                   [[condition :rdf/type :sepio/GeneticCondition]
+                    [condition :sepio/is-about-gene (q/resource (first v))]])))
+       (remove nil?)))
 
 (defn transform-genemap2 [genemap2]
   (let [genemap2-table (nthrest (csv/read-csv genemap2 :separator \tab) 4)]

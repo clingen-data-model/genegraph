@@ -3,24 +3,32 @@
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
             [clingen-search.database.load :as db]
-            [clingen-search.transform.core :refer [transform-doc src-path]]))
+            [clingen-search.transform.core :refer [transform-doc src-path]]
+            [clingen-search.database.query :refer [resource]]))
 
 ;; symbol -> skos:prefLabel ? rdf:label
 ;; name -> skos:altLabel 
 ;; everything else that needs to be searchable -> skos:hiddenLabel
 ;; uri -> munge of entrez id and https://www.ncbi.nlm.nih.gov/gene/
 
+(def hgnc (resource "https://www.genenames.org"))
+(def ensembl (resource "https://www.ensembl.org"))
+
 (defn genes-from-file [path]
   (with-open [rdr (io/reader path)]
     (json/parse-stream rdr true)))
 
 (defn gene-as-triple [gene]
-  (let [uri (str "https://www.ncbi.nlm.nih.gov/gene/" (:entrez_id gene))]
+  (let [uri (str "https://www.ncbi.nlm.nih.gov/gene/" (:entrez_id gene))
+        hgnc-id (:hgnc_id gene)
+        ensembl-iri (str "http://rdf.ebi.ac.uk/resource/ensembl/"
+                                    (:ensembl_gene_id gene))]
     (concat [[uri :skos/preferred-label (:symbol gene)]
              [uri :skos/alternative-label (:name gene)]
-             ^{:object :Resource} [uri :owl/same-as (:hgnc_id gene)]
-             ^{:object :Resource} [uri :owl/same-as (str "http://rdf.ebi.ac.uk/resource/ensembl/"
-                                    (:ensembl_gene_id gene))]
+             ^{:object :Resource} [uri :owl/same-as hgnc-id]
+             [hgnc-id :dc/source hgnc]
+             ^{:object :Resource} [uri :owl/same-as ensembl-iri]
+             [ensembl-iri :dc/source ensembl]
              [uri :rdf/type :so/Gene]]
             (map #(vector uri :skos/hidden-label %)
                  (:alias_symbol gene))
