@@ -1,4 +1,0 @@
-- name: Copy local TDB to target
-  synchronize:
-    src: ../tdb
-    dest: /app/db

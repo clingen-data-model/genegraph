@@ -11,8 +11,8 @@
 ;; everything else that needs to be searchable -> skos:hiddenLabel
 ;; uri -> munge of entrez id and https://www.ncbi.nlm.nih.gov/gene/
 
-(def hgnc (resource "https://www.genenames.org"))
-(def ensembl (resource "https://www.ensembl.org"))
+(def hgnc  "https://www.genenames.org")
+(def ensembl  "https://www.ensembl.org")
 
 (defn genes-from-file [path]
   (with-open [rdr (io/reader path)]
@@ -26,9 +26,9 @@
     (concat [[uri :skos/preferred-label (:symbol gene)]
              [uri :skos/alternative-label (:name gene)]
              ^{:object :Resource} [uri :owl/same-as hgnc-id]
-             [hgnc-id :dc/source hgnc]
+             [hgnc-id :dc/source (resource hgnc)]
              ^{:object :Resource} [uri :owl/same-as ensembl-iri]
-             [ensembl-iri :dc/source ensembl]
+             [ensembl-iri :dc/source (resource ensembl)]
              [uri :rdf/type :so/Gene]]
             (map #(vector uri :skos/hidden-label %)
                  (:alias_symbol gene))

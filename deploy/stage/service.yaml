@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: clingen-ds
+  name: clingen-ds
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 34.74.244.24
+  ports:
+    - port: 80
+      targetPort: 8888
+      protocol: TCP
+  selector:
+    app: clingen-ds
+  
