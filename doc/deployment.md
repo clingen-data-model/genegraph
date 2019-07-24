@@ -1,5 +1,9 @@
 The ClinGen Data Service is intended to be deployed on Kubernetes, in the Geisinger/Broad Google Cloud environment. The following steps describe the process for setting up a running instance of this from scratch, assuming no Kubernetes related services are running. It may be possible to reuse existing resources, for example, a running Kubernetes cluster. This process will change when we transition to a GitOps based deployment strategy.
 
+It is recommended to run through at least the first tutorial for using Google Kubernetes Engine, both to ensure your local machine is configured appropriately and also to get a feel for the steps.
+
+https://cloud.google.com/kubernetes-engine/docs/tutorials/hello-app
+
 
 # Enable k8s API
 
