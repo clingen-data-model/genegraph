@@ -14,7 +14,7 @@ https://console.cloud.google.com/kubernetes/
 
 # Configure cluster resources.
 
-ClinGen Search requires Kubernetes-configured nodes with Local SSD available. Only one disk is required, more may be needed if the size of the database expands in future. More detail is available here: https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/local-ssd . At minimum, a machine with 8GB RAM and 2 cores is recommended (n1-standard-2 is appropriate). If scaling is required, it is preferable to increase the number of cores and amount of RAM on a single node, rather than spin up additional nodes (although two nodes would be more appropriate for a production configuraiton)
+ClinGen Search requires Kubernetes-configured nodes with Local SSD available. Only one disk is required, more may be needed if the size of the database expands in future. More detail is available here: https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/local-ssd . At minimum, a machine with 8GB RAM and 2 cores is recommended (n1-standard-2 is appropriate). If scaling is required, it is preferable to increase the number of cores and amount of RAM on a single node, rather than spin up additional nodes (although two nodes would be more appropriate for a production configuraton)
 
 The following command configures an appropriate one-node cluster in the staging environment:
 

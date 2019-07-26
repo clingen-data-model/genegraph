@@ -11,11 +11,13 @@
 (def base-schema 
   {:interfaces
    {:resource
-    {:fields {:iri {:type 'String}
+    {:description "An RDF Resource; generic type suitable for return when a variety of resources may be returned as the result of a function all"
+     :fields {:iri {:type 'String}
               :label {:type 'String}}}
-    :curation {:wg_label {:type 'String}
-               :classification_description {:type 'String}
-               :report_date {:type 'String}}}
+    :curation 
+    {:fields {:wg_label {:type 'String}
+              :classification_description {:type 'String}
+              :report_date {:type 'String}}}}
 
    :objects
    {:gene

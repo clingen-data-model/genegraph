@@ -8,7 +8,8 @@
             [clojure.edn :as edn]
             [io.pedestal.log :as log]
             [clingen-search.transform.actionability]
-            [clojure.string :as s])
+            [clojure.string :as s]
+            [clojure.data :as data])
   (:import java.util.Properties
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
             ConsumerRecords]
@@ -18,6 +19,7 @@
 (def offset-file (str env/data-vol "/partition_offsets.edn"))
 
 (def current-offsets (atom {}))
+
 
 
 (def client-properties
@@ -61,12 +63,10 @@
 (defn- assign-topic! [consumer topic]
   (let [tp (topic-partitions consumer topic)]
     (.assign consumer tp)
-    (if-let [offsets (get @current-offsets topic)]
-      (doseq [part tp]
-        (if-let [offset (get offsets (.partition part))]
-          (.seek consumer part offset)
-          (.seekToBeginning consumer [part])))
-      (.seekToBeginning consumer tp))))
+    (doseq [part tp]
+      (if-let [offset (get @current-offsets [topic (.partition part)])]
+        (.seek consumer part offset)
+        (.seekToBeginning consumer [part])))))
 
 (defn import-record! [record]
   (try
@@ -86,7 +86,7 @@
 
 (defn update-offsets! [consumer tps]
   (doseq [tp tps]
-    (swap! current-offsets assoc-in [(.topic tp) (.partition tp)] (.position consumer tp)))
+    (swap! current-offsets assoc [(.topic tp) (.partition tp)] (.position consumer tp)))
   (spit offset-file (pr-str @current-offsets)))
 
 (def run-consumer (atom true))
@@ -95,6 +95,25 @@
   (if (.exists (io/as-file offset-file))
     (reset! current-offsets (-> offset-file slurp edn/read-string))
     (reset! current-offsets {})))
+
+(def end-offsets (atom {}))
+
+(defn read-end-offsets! [consumer topic-partitions]
+  (let [kafka-end-offsets (.endOffsets consumer topic-partitions)
+        end-offset-map (reduce (fn [acc [k v]]
+                                 (assoc acc [(.topic k) (.partition k)] v))
+                               {} kafka-end-offsets)]
+    (reset! end-offsets end-offset-map)))
+
+(defn up-to-date? 
+  "Returns true if all partitions of all topics subscribed to have had messages
+  consumed up to the latest offset when the consumer was started."
+  []
+  (when (= (set (keys @current-offsets)) (set (keys @end-offsets)))
+    (let [partition-is-up-to-date? (merge-with <= @end-offsets @current-offsets)]
+      (if (some false? (vals partition-is-up-to-date?))
+        false
+        true))))
 
 (defn subscribe!
   "Start a Kafka consumer listening to topics in topic-list
@@ -105,6 +124,7 @@
     (doseq [topic topic-list]
       (assign-topic! consumer topic))
     (let [tps (mapcat #(topic-partitions consumer %) topic-list)]
+      (read-end-offsets! consumer tps)
       (while @run-consumer
         (doseq [record (poll-once consumer)]
           (import-record! record))

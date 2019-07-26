@@ -157,3 +157,31 @@ Should we load all data in the sequence it was recieved in (as the NY Times does
 * Returning meaningful results when something is 'not found' in graphql
   
 Right now graphql queries are doing no checking to make sure an entity exists of the type that's being requested. Despite the fact that anything (even a resource not in the triplestore) can be represented as a resource, most anything without an explicit type, and certainly without any statements, is unlikely to be a usable concept and should get the graphql equivalent of a 404
+* Database 'migrations'
+
+The data service doesn't really have in-place manipulation of data, per-se. Rather, when the structure of the database changes, the input scripts are modified to target the new structure, and the input data is reprocessed according to the new code.
+
+There is currently no mechanism to trigger this. A naive (and possibly completely adequate approach) would be to have a numeric migration version as part of a deploy. Whenever this number advances, all deployments blow away their local data and recreate it all from scratch. This process can happen as part of a new k8s rollout, so that availability is not affected. Liveness and readiness monitoring will need to be implemented for this to work properly.
+
+A more sophisticated approach would specify which resources have changed, and update only those resources. There may be resources downstream of that change which may also need to be updated. Implementing a resource dependency tree would be necessary for this approach to function correctly. This may be desirable for other reasons.
+
+* Incoming data validation and shapes
+
+The data service relies on incoming data from a variety of external services. This data may come across the wire in different serializations: JSON, CSV, and various flavors of RDF. Both JSON and RDF have techniques and libraries that can be used to describe the expected 'shape' of incoming data, between JSON Schema, SHACL, and even Clojure spec for data that parses into Clojure data types.
+
+Passing incoming data through these validators may help tremendously with identifying and diagnosing issues as they come up. These may be either baked into the data service, or constructed in such a way that they can be deployed as independent services (in the stream of data being passed through Kafka, for instance).
+
+Regardless, these should be written in such a way that they can be separated from the graphql service later. There is also the question of how to report and log validation errors.
+
+* Factoring out modules and libraries
+
+Right now everything is being built all-together in the same project, largely because requirements for loading and querying data are still resulting in significant changes to the core query interface. This will have to change somewhat when the query interface is used in other contexts. It would also be nice to factor it for clojurescript as well at some point.
+
+* Multithreading
+
+Based on the lacinia documentation, the service is configured to run on a single service resolving thread. The service should be tested and changed so that multiple threads can be used.
+
+* Transactions
+
+It would be best to wrap a response in a single transaction to guarantee consistency of data. Right now each data access opens its own transaction.
+
