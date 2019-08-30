@@ -79,9 +79,10 @@
   Datafiable
   (datafy [_] (datafy resource))
 
-  ThreadableData
+
   ;; TODO Flattening the ld-> has potentially undesirable behavior with RDFList, consider
   ;; how flatten is being used in this context
+  ThreadableData
   (ld-> [this ks] (reduce (fn [nodes k]
                             (->> nodes
                                  (map #(step k % model))

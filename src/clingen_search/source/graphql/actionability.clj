@@ -12,7 +12,7 @@
    last))
 
 (defn wg-label [context args value]
-  "Actionability WG")
+  (q/ld1-> value [:sepio/qualified-contribution :sepio/has-agent :rdfs/label]))
 
 (defn classification-description [context args value]
   "View report for scoring details")

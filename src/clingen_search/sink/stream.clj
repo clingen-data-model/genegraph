@@ -36,8 +36,17 @@
    "ssl.keystore.password" env/dx-key-pass
    "ssl.key.password" env/dx-key-pass})
 
+;; (def topic-handlers
+;;   {"actionability" :actionability-v1
+;;    "gene_dosage_beta" :rdf})
+
+
 (def topic-handlers
-  {"actionability" :actionability-v1})
+  {"actionability" {:format :actionability-v1}
+   "gene_dosage_beta" {:format :rdf, :reader-opts {:format :json-ld}}})
+
+
+
 
 ;; Java Properties object defining configuration of Kafka client
 (defn- client-configuration 
@@ -71,7 +80,7 @@
 (defn import-record! [record]
   (try
     (let [iri (-> record .value json/parse-string (get "iri"))
-          doc-model (transform-doc {:name iri :format (get topic-handlers (.topic record))}
+          doc-model (transform-doc (assoc (get topic-handlers (.topic record)) :name iri)
                                    (.value record))]
       (log/info :fn :import-record! :msg :importing :iri iri)
       (db/load-model doc-model iri))
@@ -122,6 +131,7 @@
   (read-offsets!)
   (with-open [consumer (create-kafka-consumer)]
     (doseq [topic topic-list]
+      (println "assigning " topic)
       (assign-topic! consumer topic))
     (let [tps (mapcat #(topic-partitions consumer %) topic-list)]
       (read-end-offsets! consumer tps)
@@ -162,7 +172,9 @@
     (println (count records))
     (doseq [record-payload records]
       (if-let [record (consumer-record-to-clj record-payload)]
-        (let  [id (re-find #"[A-Za-z0-9-]+$" (get record "iri"))]
+        
+        (let  [id (re-find #"[A-Za-z0-9-]+$" (or (str (get record "iri") ) (get-in record ["interpretation" "id"])))
+               wg (get-in record ["affiliations" 0 "id"])]
               (spit (str folder "/" id ".json") (.value record-payload)))))))
 
 (defn load-local-data 
@@ -174,4 +186,6 @@
       (println "importing " (.getName file))
       (with-open [is (io/input-stream file)]
         (db/store-rdf is {:format :json-ld, :name (.getName file)})))))
+
+
 

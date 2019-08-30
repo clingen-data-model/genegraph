@@ -25,7 +25,8 @@
                  [mount "0.1.14"]
                  [com.velisco/clj-ftp "0.3.9"] ;; For downloading ftp docs
                  [clj-http "3.9.1"] ;; For downloading 
-                 [com.walmartlabs/lacinia-pedestal "0.12.0"]]
+                 [com.walmartlabs/lacinia-pedestal "0.12.0"]
+                 [me.raynes/fs "1.4.6"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
   ;; If you use HTTP/2 or ALPN, use the java-agent to pull in the correct alpn-boot dependency

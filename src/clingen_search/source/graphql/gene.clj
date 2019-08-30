@@ -22,5 +22,12 @@
 (defn conditions [context args value]
   (get value [:sepio/is-about-gene :<]))
 
+;; TODO check for type (hopefully before structurally necessary)
 (defn actionability-curations [context args value]
-  (concat (q/ld-> value [[:sepio/is-about-gene :<] [:sepio/is-about-condition :<]])))
+  (q/ld-> value [[:sepio/is-about-gene :<] [:sepio/is-about-condition :<]]))
+
+;; TODO check for type (hopefully before structurally necessary)
+(defn dosage-curations [context args value]
+  (q/ld-> value [[:geno/is-feature-affected-by :<]
+                 [:sepio/has-subject :<]
+                 [:sepio/has-subject :<]]))

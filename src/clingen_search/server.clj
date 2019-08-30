@@ -6,6 +6,7 @@
             [mount.core :as mount :refer [defstate]]
             [clingen-search.sink.base :as base]
             [clingen-search.sink.stream :as stream]
+            [clingen-search.migration :refer [migrate!]]
             [clingen-search.env :as env]))
 
 
@@ -31,9 +32,12 @@
 (defn -main
   "The entry-point for 'lein run'"
   [& args]
+  ;; Start server first to support health check
+  (mount.core/start #'server)
+  (env/log-environment)
+  (migrate!)
   ;; It's not possible to consume messages before the base state has been loaded
   ;; Make sure this happens first (synchronously)
-  (env/log-environment)
   (mount.core/start-without #'clingen-search.sink.stream/consumer-thread)
   (base/initialize-db!)
   (reset! initialized? true)

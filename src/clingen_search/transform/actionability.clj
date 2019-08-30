@@ -23,23 +23,28 @@
          [gc-node :sepio/is-about-gene gene]
          [gc-node :rdfs/label (genetic-condition-label condition-resource gene)]]))))
 
-(defn search-contributions [curation-iri search-date]
+(defn search-contributions [curation-iri search-date agent-iri]
   (let [contrib-iri (l/blank-node)]
     [[curation-iri :sepio/qualified-contribution contrib-iri]
      [contrib-iri :sepio/activity-date search-date]
-     [contrib-iri :bfo/realizes :sepio/EvidenceRole]]))
+     [contrib-iri :bfo/realizes :sepio/EvidenceRole]
+     [contrib-iri :sepio/has-agent agent-iri]]))
 
 (defn transform [curation]
   (let [curation-iri (:iri curation)
         contrib-iri (l/blank-node)
+        agent-iri (l/blank-node)
         statements (concat 
                     [[curation-iri :rdf/type :sepio/ActionabilityReport]
                      [curation-iri :sepio/qualified-contribution contrib-iri]
                      [curation-iri :dc/source (:scoreDetails curation)]
                      [contrib-iri :sepio/activity-date (:dateISO8601 curation)]
-                     [contrib-iri :bfo/realizes :sepio/ApproverRole]]
+                     [contrib-iri :bfo/realizes :sepio/ApproverRole]
+                     [contrib-iri :sepio/has-agent agent-iri]
+                     [agent-iri :rdfs/label (-> curation :affiliations first :name)]]
                     (mapcat #(genetic-condition curation-iri %) (:conditions curation))
-                    (mapcat #(search-contributions curation-iri %) (:searchDates curation)))]
+                    (mapcat #(search-contributions curation-iri % agent-iri)
+                            (:searchDates curation)))]
     (l/statements-to-model statements)))
 
 (defmethod transform-doc :actionability-v1

@@ -12,4 +12,7 @@
 (defmethod transform-doc :rdf 
   ([doc-def] 
    (with-open [is (io/input-stream (str target-base (:target doc-def)))] 
+     (l/read-rdf is (:reader-opts doc-def))))
+  ([doc-def doc]
+   (let [is (-> doc .getBytes java.io.ByteArrayInputStream.)]
      (l/read-rdf is (:reader-opts doc-def)))))

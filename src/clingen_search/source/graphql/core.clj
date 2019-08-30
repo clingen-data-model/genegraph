@@ -3,7 +3,10 @@
             [clingen-search.source.graphql.gene :as gene]
             [clingen-search.source.graphql.resource :as resource]
             [clingen-search.source.graphql.actionability :as actionability]
+            [clingen-search.source.graphql.gene-dosage :as gene-dosage]
             [clingen-search.source.graphql.condition :as condition]
+            [clingen-search.source.graphql.server-status :as server-status]
+            [clingen-search.source.graphql.evidence :as evidence]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]))
@@ -28,7 +31,9 @@
               :curations {:type '(list :curation) :resolve gene/curations}
               :conditions {:type '(list :condition) :resolve gene/conditions}
               :actionability_curations {:type '(list :actionability_curation)
-                                        :resolve gene/actionability-curations}}}
+                                        :resolve gene/actionability-curations}
+              :dosage_curations {:type '(list :gene_dosage_curation)
+                                 :resolve gene/dosage-curations}}}
 
     :condition
     {:implements [:resource]
@@ -40,6 +45,20 @@
               :genetic_conditions {:type '(list :condition)
                                    :resolve condition/genetic_conditions}}}
 
+    :evidence
+    {:fields {:source {:type 'String :resolve evidence/source}
+              :description {:type 'String :resolve evidence/description}}}
+
+    :gene_dosage_curation
+    {:implements [:resource :curation]
+     :fields {:iri {:type 'String :resolve resource/iri}
+              :label {:type 'String :resolve gene-dosage/label}
+              :wg_label {:type 'String :resolve gene-dosage/wg-label}
+              :classification_description {:type 'String 
+                                           :resolve gene-dosage/classification-description}
+              :report_date {:type 'String :resolve gene-dosage/report-date}
+              :evidence {:type '(list :evidence) :resolve gene-dosage/evidence}}}
+    
     :actionability_curation
     {:implements [:resource :curation]
      :fields 
@@ -50,7 +69,12 @@
       :classification_description {:type 'String :resolve actionability/classification-description}
       :conditions {:type '(list :condition)
                    :resolve actionability/conditions}
-      :source {:type 'String :resolve actionability/source}}}}
+      :source {:type 'String :resolve actionability/source}}}
+
+    :server_status
+    {:fields
+     {:migration_version {:type 'String
+                          :resolve server-status/migration-version}}}}
 
    :queries
    {:gene {:type '(non-null :gene)
@@ -61,7 +85,9 @@
                 :resolve condition/condition-query}
     :actionability {:type '(non-null :actionability_curation)
                     :args {:iri {:type 'String}}
-                    :resolve actionability/actionability-query}}})
+                    :resolve actionability/actionability-query}
+    :server_status {:type '(non-null :server_status)
+             :resolve server-status/server-version-query}}})
 
 (defn schema []
   (schema/compile base-schema))

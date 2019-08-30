@@ -9,6 +9,7 @@
 (def dx-topics (System/getenv "CG_SEARCH_TOPICS"))
 (def dx-truststore (System/getenv "SERVEUR_TRUSTSTORE"))
 
+
 (defn log-environment []
   (log/info :fn :log-environment
             :data-vol data-vol
