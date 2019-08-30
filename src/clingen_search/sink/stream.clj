@@ -9,7 +9,8 @@
             [io.pedestal.log :as log]
             [clingen-search.transform.actionability]
             [clojure.string :as s]
-            [clojure.data :as data])
+            [clojure.data :as data]
+            [clingen-search.database.query :as q])
   (:import java.util.Properties
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
             ConsumerRecords]
@@ -19,8 +20,6 @@
 (def offset-file (str env/data-vol "/partition_offsets.edn"))
 
 (def current-offsets (atom {}))
-
-
 
 (def client-properties
   {"bootstrap.servers" env/dx-host
@@ -36,17 +35,19 @@
    "ssl.keystore.password" env/dx-key-pass
    "ssl.key.password" env/dx-key-pass})
 
-;; (def topic-handlers
-;;   {"actionability" :actionability-v1
-;;    "gene_dosage_beta" :rdf})
-
-
 (def topic-handlers
-  {"actionability" {:format :actionability-v1}
-   "gene_dosage_beta" {:format :rdf, :reader-opts {:format :json-ld}}})
+  {"actionability" {:format :actionability-v1
+                    :root-type :sepio/ActionabilityReport}
+   "gene_dosage_beta" {:format :rdf
+                       :reader-opts {:format :json-ld}
+                       :root-type :sepio/DosageSensitivityProposition}})
 
-
-
+(defn document-name [doc-def model]
+  (-> (q/select "select ?x where {?x a ?type}"
+                {:type (:root-type doc-def)}
+                model)
+      first
+      str))
 
 ;; Java Properties object defining configuration of Kafka client
 (defn- client-configuration 
@@ -79,9 +80,9 @@
 
 (defn import-record! [record]
   (try
-    (let [iri (-> record .value json/parse-string (get "iri"))
-          doc-model (transform-doc (assoc (get topic-handlers (.topic record)) :name iri)
-                                   (.value record))]
+    (let [doc-def (get topic-handlers (.topic record))
+          doc-model (transform-doc doc-def(.value record))
+          iri (document-name doc-def doc-model)]
       (log/info :fn :import-record! :msg :importing :iri iri)
       (db/load-model doc-model iri))
     (catch Exception e 
