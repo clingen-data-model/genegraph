@@ -55,4 +55,46 @@ retrieves the superclasses of the given resource (intellectual disability is a s
     
 Instead of using the property name directly, we use a vector with the property name and a keyword signifying direction, :< is used to specify that the resource is the intended object of the property, :> is used to specify the resource is the intended subject of the property, :- is used to specify links going both directions.
 
+### Property chains
 
+Frequently, the properties one is looking to find are nested in the graph a few layers deep. The ld-> and ld1-> functions are convenience methods designed to make finding this data easier. They both accept as an argument a property list and return the set of results found after traversing the given properties. For example, the labels of the subclasses of Intellectual Disability:
+
+```
+(ld-> intellectual-disability [[:rdfs/sub-class-of :<] :rdfs/label])
+("Ruzicka-Goerz-Anton syndrome"
+ "cartwright Nelson Fryns syndrome"
+ "intellectual developmental disorder with neuropsychiatric features"
+ "syndromic intellectual disability"
+ "non-syndromic intellectual disability"
+ "hordnes engebretsen knudtson syndrome"
+ "intellectual disability, X-linked, with panhypopituitarism"
+ "microcephaly sparse hair mental retardation seizures"
+ "Baraitser Rodeck garner syndrome"
+ "boudhina yedes khiari syndrome")
+```
+
+### Selecting nodes with SPARQL
+
+In addition to selecting nodes directly with an identifier, it is also possible to use a SPARQL query. The [select](#) function is intended for this purpose. It takes as an argument a string containing a SPARQL query, which is expected to return a list of nodes. Optionally, it takes an argument list and/or a model to query. One may embed [keyword identifiers](#) in the SPARQL string, but be sure to separate them from surrounding syntax with whitespace.
+
+Finding the first three genes:
+
+```
+(select "select ?x where { ?x a :so/Gene } limit 3")
+[#object[clingen_search.database.query.RDFResource 0x5602dea6 "https://www.ncbi.nlm.nih.gov/gene/55847"]
+ #object[clingen_search.database.query.RDFResource 0x6812403b "https://www.ncbi.nlm.nih.gov/gene/106481385"]
+ #object[clingen_search.database.query.RDFResource 0x6b9e7003 "https://www.ncbi.nlm.nih.gov/gene/8559"]
+```
+
+The same, but passing the type as an argument:
+
+```
+(select "select ?x where {?x a ?type} limit 3" {:type :so/Gene})
+[#object[clingen_search.database.query.RDFResource 0x78111691 "https://www.ncbi.nlm.nih.gov/gene/55847"]
+ #object[clingen_search.database.query.RDFResource 0x2aca5c9 "https://www.ncbi.nlm.nih.gov/gene/106481385"]
+ #object[clingen_search.database.query.RDFResource 0x4f2d4e04 "https://www.ncbi.nlm.nih.gov/gene/8559"]]
+```
+
+The (optional) second argument to select accepts a map of parameters. Variables in the query (any term beginning with ?) that match a key in the map will be substituted for the associated value.
+
+The third (optional) parameter accepts a Jena model, in case you want to run the query against a model other than the database for the application. The RDFResources returned from the query will be in the context of the passed-in model, rather than the entire database.
