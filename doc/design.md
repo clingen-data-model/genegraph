@@ -1,30 +1,41 @@
-# First iteration and lessons learned
+# Design and Architecture
 
-The first version of ClinGen search (beyond the ProcessWire derived interface) was built on Ruby on Rails using a neo4j backend. For us, Neo4j was a fairly new technology, selected because we knew we'd be working with graph-structured ontological data, and prior experience trying to integrate that into a relational database was painful. Neo4j was used by the folks who developed the most sophisticated ontologies we needed to use (Monarch Initiative). Additionally, there appeared to be a reasonably mature integration with Ruby and Rails (neo4jrb). Meanwhile Rails was a familiar and fast way to get up and running with a working web application.
+## Goal
 
-TODO: work in a description of 
+This application is intended to synthesize data from various sources: gene information (HGNC), disease information (OMIM, MONDO, HPO),  and curated information from ClinGen (Gene Validity, Actionability, Gene Dosage), and present it with APIs useful for presentation to viewers. The supporting data, particularly the curated information, is structurally complex; there is a need to support multiple versions, with multiple distinct data models simultaneously. The goal of this software is to provide an interface to this data that does not require viewers to cope with the underlying complexity of the data that can be used easily from front-end applications.
 
-Shortly prior to this project kicking off, I'd picked up Clojure for the first time. I needed to load the data from these ontologies into Neo4j, and a few things made me not want to do this in the Ruby on Rails app. Ruby can be painful at processing large chunks of data, library support for the type of data we're using (RDF/OWL) is strongest on the Java platform, and jRuby doesn't have the most elegant Java interoperability, even if it's a pretty decent piece of software in it's own right. I was poking around for a language and environment that could do large(er) scale data processing coupled with good Java interop, without, you know, being Java. Scala and Clojure had enough buzz for me to be aware of them. Of the two, Clojure was a Lisp, and I had a good time writing Common Lisp for an AI course I'd take a few years ago, so that was enough reason to give Clojure a go.
+## Design
 
-That piece of the code worked pretty well. It was of reasonable scope for kicking the tires on a new language. The Java interop on Clojure was delightful to work with after JRuby. The OWLAPI Java library was a bit of a pain to work with, but Neo4j was great. In the end, it all worked quickly and well.
+### Environment ####
 
-The Rails web app came along well enough. The integration with Neo4j came with a significant learning curve. Neo4jrb comes with an Object Graph Mapper library, similar to an Object Relational Mapper. This proved to be of less utility than one would have liked. One of the important tricks with an ORM is to specify what related data is going to be used in the initial SELECT query (however that gets formed) so that you don't wind up with n * n ( * n ... ) queries just to track down the data you need to write out a list. The Rails ORM makes this magic work most of the time. The Neo4j library did not. The only performant way to do this was to skip the OGM and use Cypher queries to build a projection of the desired graph into a JSON-like structure. This approach worked, but required large, bespoke queries for most every page, which was at least partially the reason why OGMs and their ilk existed in the first place.
+The data service exists within the ClinGen Architecture, and relies on two important elements to provide its functionality: the ClinGen Streaming Service (Apache Kafka), and the SEPIO model for ClinGen Curations.
 
-In the meantime, the source data for this project is increasingly structured as RDF in JSON-LD form. This is an entity-attribute-value format where entities and attributes are specified using URIs, essentially giving everything a global namespace when used correctly. The explicit goal of this is to allow datasets collected from disparate sources to be combined effectively. This is something we do a lot of in the life sciences. While this structure translates nicely into a property graph database like Neo4J, there are RDF-native databases that can load and translate RDF data in its native format. By keeping the data in its native format, we can avoid errors in translation.
+#### Streaming Service ####
 
-We'd also built a few more components using Clojure, and at least one of us on the team (me) was beginning to internalize the Clojure way of doing things. When I'd first tackled Clojure, it was as a Lisp that could Java. This alone is great, but there's a lot more to the design of the language than this. (TODO, review Rich Hickey talks) Once you've internalized these concepts, it's hard to look at an ORM and think it's a sensible design choice.
+All data in the data service are synthesized from external sources; the base data is supported by outside authorities, while the ClinGen curations are constructed from data built from the streaming service. This service does not durabily persist data, durable persistence is provided by layers outside this application, especially the streaming service. It should always be possible to reconstruct the state of the data by reading the base data, then reading the streams of curations provided by the streaming service.
 
-From the previous version of the site we'd learned:
+#### SEPIO Model ####
 
-* There's value in storing RDF data as RDF
-* Avoiding n*n query patterns is hard
+Because the data service is required to present data on a variety of topics, with multiple of versions and structures within those topics, a data model that identifies common elements between these topics and presents them in a semantically consistent way is an invaluable tool. In ClinGen, the SEPIO-based data models fill this role. Ideally, producers of data are contract-bound to provide data in the model format for their particular domain, which are validated and consumed via the streaming service by this application. This not always being the case, facilities for transforming input data are included in this application.
 
-What we want is a library that allows us to traverse the graph that represents the information in our database as easily as any other data structure in Clojure. Ideally the data is stored as native RDF. We add some functionality on top of this that allows us to query the data using human friendly names (not using RDF URIs), SPARQL is used for queries to select the initial set of nodes to work with, as well as to create subgraphs when one wants to limit the set of data available to traverse.
+### Data
 
-We aren't building this system from whole cloth. Apache Jena exists as an RDF API, with capability for reasoning with OWL, a persistent triplestore with transaction support, and a SPARQL engine. Its API is Java--enough that one would prefer not to use it directly. Building a translation layer also allows us to boil things down to the core functions of querying a graph (via SPARQL) and traversing a graph (via data.xml-like traversal) so doing building a layer of indirection around the actual graph library (which might change).
+#### Database requirements 
 
+* The data that this service recieves may arrive in a range of different structures; there is a need to present the data with the structure it was first recieved in. This makes writing migrations to coerce the data into a rigorously structured format, such as a RDBMS schema, somewhat hazardous, since there is a risk of losing the original intent of the authors over time. 
+* There is a desire to make the data accessible and queryable by top-level associations (such as a gene or disease linked to a curation), as well as associations at a much lower level (such as a publication used as evidence supporting the relevance of a gene to a disease).
+* Much of the supporting data is graph-structured, such as the MONDO disease ontology, and the Human Phenotype Ontology (HPO). It is strongly preferable to query such data with graph semantics.
+* There is a commitment across ClinGen to provide our data as linked, open data in RDF, using JSON-LD.
+* The size of the data we are working with is not particularly large, in the tens to hundreds of gigabytes, well within the range that fits within disk (and even main memory) of a single computer.
+* Because the data is loosely structured, being able to interrogate the data and decide on codepaths as the data is being read is highly desirable. It is difficult to declare all the possible structure for the underlying data, as in an SQL query.
 
+These factors make an RDF triplestore a natural choice for data storage and access. The most important data sources are already in RDF, the format supports schemaless data, while permitting query of embedded data elements without requiring knowledge of the structure of the incoming data, as long as appropriate conventions are followed. Embedded options are available for RDF triplestores, allowing the data to be read and queried with the performance of an in-memory graph, rather than a remote database.
 
+Apache Jena TDB2, running in embedded mode, was selected to meet these requirements. Because the data is read through the Jena Dataset interface, any underlying store that supports this interface (including a remotely accessed network database) can be plugged in without code modification, though other stores may not support the expected level of performance.
 
+### Service design
 
+Multiple instances of the data service can be stood up and expected to maintain relatively consistent state. Each will have its own Jena TDB2 instance and local data store, but all rely on the same data stream from Apache Kafka.
+
+Each instance is expected to have its own data store. Instance-local SSD storage is the most appropriate format for this data store, as persistence and durability are not requirements of this application, but performance could be adversely affected by storage with long seek times or network contention.
 

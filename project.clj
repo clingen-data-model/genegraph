@@ -35,5 +35,6 @@
                    :dependencies [[io.pedestal/pedestal.service-tools "0.5.5"]]}
              :uberjar {:aot [clingen-search.server]
                        :uberjar-name "app.jar"}}
+  :plugins [[lein-codox "0.10.7"]]
   :main ^{:skip-aot true} clingen-search.server)
 
