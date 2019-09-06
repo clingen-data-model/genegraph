@@ -1,4 +1,4 @@
-(defproject clingen-search "0.0.1-SNAPSHOT"
+(defproject genegraph "0.0.1-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
