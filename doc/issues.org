@@ -1,5 +1,7 @@
 * On data import, there is no typechecking when a property should have a resource as its object, but instead recieves a literal
 
+Priority LOW: probably SHACL serves any purpose required for validation and it's not worth performing this check for now
+
 This was noticed as a part of the malfunctioning gene / load triples script. The resource expected as a target a gene IRI, and instead imported a string literal with the Gene IRI. This error was corrected, but leaves an issue where object properties may instead return a literal.
 
 ** Suggested resolution:
@@ -8,18 +10,9 @@ Properties in OWL have either a Data Property or a Object Property type. Ensure 
 
 Alternatively, use these properties to determine the type of the referrent imported. Throw an error when type does not align as expected.
 
-* There may be classes and properties that aren't namespaced appropriately in local-names
-
-When the base is imported, a check should be made for any un-namespaced keywords in local-names, these should be at least pointed out.
-
-For the time being, (2019-02-08) all known classes are covered
-
-* Implement bi-directional traversal of names
-* Complete datafy/nav implementation
-
-  Being able to use the Cognitect REBL would be huge, need a substitute for the browser in Neo4j.
-
 * Need appropriate migration path when class and property labels change in OWL file
+
+Priority LOW: currenty practice is to set all labels manually, including name changes
 
 Since local names in the code are based on labels defined in the base ontology and RDF files, there should exist code that can do the following steps:
 
@@ -36,13 +29,6 @@ Where do the update methods belong? Does it make sense to create an admin namesp
 ** Identify instances of that name in queries and code
 
 ** Automatically (or interactively) update the name to the new iteration
-
-
-* Admin operations
-** Refresh names
-
-A fully robust implementation of this should be able to:
-
 *** Identify relevant names in the database
 Done, existing queries support this
 
@@ -56,30 +42,7 @@ Perhaps report the disparity and abort unless a flag is set. User is encouraged 
 
 *** Way beyond MVP: automatically update them.
 
-* Check for class names that have no label
 
-"select distinct ?x where { [] a ?x }" returns 42, there are 37 entries in class-names, some classes are likely unlabeled
-
-
-
-* Replace symbol in query should cover case where symbol is not terminated by space
-
-For example:
-
-clingen-search.source.html.elements> (q/register-query ::genes "select ?x where {?x a :so/Gene} limit 5")
-Execution error (QueryParseException) at org.apache.jena.sparql.lang.ParserBase/throwParseException (ParserBase.java:522).
-Line 1, column 23: Unresolved prefixed name: :so
-clingen-search.source.html.elements> (q/register-query ::genes "select ?x where { ?x a :so/Gene } limit 5")
-true
-* Consider what to do when a resource has multiple types in dispatch of sink/html/elements
-* Consider implications of OWL subclassing/inheritance in dispatch of sink/html/elements
-
-In particular, is it possible to represent elements based on their more specific classes when available, and more general classes when not. Would be lovely to create a construct based on the ad-hoc subtyping available in the multimethod intervace.
-* Implement interface to RDFResource that always returns properties as a collection
-
-Being able to access properties as if a resource were simply a hash is super slick. Sometimes one wants to iterate over properties as if they were guaranteed to be a collection, along the lines of the xml-> and xml1-> zipper syntax.
-
-Maybe the solution is to bring the zipper interface to RDFResource.
 
 * Post-processing to consider:
 
