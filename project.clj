@@ -31,10 +31,10 @@
   :resource-paths ["config", "resources"]
   ;; If you use HTTP/2 or ALPN, use the java-agent to pull in the correct alpn-boot dependency
   ;:java-agents [[org.mortbay.jetty.alpn/jetty-alpn-agent "2.0.5"]]
-  :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "clingen-search.server/run-dev"]}
+  :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "genegraph.server/run-dev"]}
                    :dependencies [[io.pedestal/pedestal.service-tools "0.5.5"]]}
-             :uberjar {:aot [clingen-search.server]
+             :uberjar {:aot [genegraph.server]
                        :uberjar-name "app.jar"}}
   :plugins [[lein-codox "0.10.7"]]
-  :main ^{:skip-aot true} clingen-search.server)
+  :main ^{:skip-aot true} genegraph.server)
 

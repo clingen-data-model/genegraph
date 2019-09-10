@@ -81,7 +81,7 @@
 (defn import-record! [record]
   (try
     (let [doc-def (get topic-handlers (.topic record))
-          doc-model (transform-doc doc-def(.value record))
+          doc-model (transform-doc (assoc doc-def :document (.value record)))
           iri (document-name doc-def doc-model)]
       (log/info :fn :import-record! :msg :importing :iri iri)
       (db/load-model doc-model iri))

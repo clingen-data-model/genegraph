@@ -5,7 +5,6 @@
             [cheshire.core :as json]
             [clojure.java.io :as io]))
 
-
 (defn genetic-condition-label [parent-condition gene]
   (str (q/ld1-> parent-condition [:rdfs/label]) ", " (q/ld1-> gene [:skos/preferred-label])))
 
@@ -47,8 +46,8 @@
                             (:searchDates curation)))]
     (l/statements-to-model statements)))
 
-(defmethod transform-doc :actionability-v1
-  ([doc-def] (transform-doc doc-def (slurp (src-path doc-def))))
-  ([doc-def doc] (transform (json/parse-string doc true))))
+(defmethod transform-doc :actionability-v1 [doc-def]
+  (let [doc (or (:document doc-def) (slurp (src-path doc-def)))]
+    (transform (json/parse-string doc true))))
 
 
