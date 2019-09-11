@@ -4,6 +4,7 @@
   (:require [genegraph.database.instance :refer [db]]
             [io.pedestal.log :as log])
   (:import [org.apache.jena.rdf.model ResourceFactory]
+           [org.apache.jena.tdb2 TDB2Factory]
            [org.apache.jena.query ReadWrite QueryFactory QueryExecutionFactory]))
 
 (defn property [uri]
@@ -32,6 +33,13 @@
          result#)
        (catch Exception e# (log/error :fn :tx :msg e#) (.abort db))
        (finally (.end db)))))
+
+(defmacro with-test-database 
+  "Uses with-redefs to replace reference to production database with temporary,
+  empty in-memory database. Useful for running unit tests."
+  [& form]
+  `(with-redefs [genegraph.database.instance/db (TDB2Factory/createDataset)]
+     ~@form))
 
 (defn select [query-str]
   (let [model (.getUnionModel db)
