@@ -15,6 +15,18 @@ from the project directory. Resulting documentation is available in target/doc.
 To configure logging see config/logback.xml. By default, the app logs to stdout and logs/.
 To learn more about configuring Logback, read its [documentation](http://logback.qos.ch/documentation.html).
 
+## REBL
+
+To run REBL for Genegraph:
+
+```
+genegraph.server> (require 'cognitect.rebl)
+nil
+genegraph.server> (cognitect.rebl/ui)
+nil
+```
+
+
 ### [Docker](https://www.docker.com/) container support
 
 1. Build an uberjar of your service: `lein uberjar`
