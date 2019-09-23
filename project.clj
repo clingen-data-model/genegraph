@@ -28,6 +28,7 @@
                  [com.walmartlabs/lacinia-pedestal "0.12.0"]
                  [me.raynes/fs "1.4.6"]
                  ;; REBL reqs
+                 [lein-cljfmt "0.6.4"]
                  [org.openjfx/javafx-fxml "11.0.1"]
                  [org.openjfx/javafx-controls "11.0.1"]
                  [org.openjfx/javafx-swing "11.0.1"]
