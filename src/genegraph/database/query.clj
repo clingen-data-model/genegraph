@@ -3,12 +3,13 @@
             [genegraph.database.util :refer [tx]]
             [genegraph.database.names :as names :refer
              [local-class-names local-property-names
-              class-uri->keyword local-names ns-prefix-map prefix-ns-map]]
+              class-uri->keyword local-names ns-prefix-map
+              prefix-ns-map property-uri->keyword]]
             [clojure.pprint :refer [pprint]]
             [clojure.set :as set]
             [clojure.string :as s]
-            [clojure.core.protocols :refer [Datafiable]]
-            [clojure.datafy :refer [datafy]])
+            [clojure.core.protocols :as protocols :refer [Datafiable]]
+            [clojure.datafy :as datafy :refer [datafy nav]])
   (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList SimpleSelector]
            [org.apache.jena.query QueryFactory Query QueryExecution
             QueryExecutionFactory QuerySolutionMap]
@@ -49,6 +50,20 @@
 (defprotocol AsJenaResource
   (as-jena-resource [this]))
 
+(declare datafy-resource)
+
+(defn- compose-object-for-datafy [o]
+  (cond (instance? Literal o) (.toString o)
+        (instance? Resource o) 
+        (with-meta (-> o .toString symbol)
+          {::datafy/obj o
+           ::datafy/class (class o)
+           `protocols/datafy #(-> % meta ::datafy/obj datafy-resource)})))
+
+
+
+(declare navize)
+
 (deftype RDFResource [resource model]
 
   AsJenaResource
@@ -69,16 +84,27 @@
 
   Object
   (toString [_] (.getURI resource))
-  ;; (equals [this o] (when (instance? RDFResource o)
-  ;;                    (= (str resource) (str o))))
-  ;; (hashCode [_] (-> resource .getURI .hashCode))
-  
+
   AsReference
   (to-ref [_] (class-uri->keyword resource))
 
   Datafiable
-  (datafy [_] (datafy resource))
+  (datafy [_] 
+    (tx 
+     (let [out-attributes (-> model (.listStatements resource nil nil) iterator-seq)
+           in-attributes (-> model (.listStatements nil nil resource) iterator-seq)]
 
+       (with-meta
+         (into [] (concat
+                   (mapv #(with-meta [[(-> % .getPredicate property-uri->keyword) :>]
+                                      (-> % .getObject compose-object-for-datafy)]
+                            {::value  (.getObject %)})
+                         out-attributes)
+                   (mapv #(with-meta [[(-> % .getPredicate property-uri->keyword) :<]
+                                      (-> % .getSubject compose-object-for-datafy)]
+                            {::value (.getSubject %)})
+                         in-attributes)))
+         {`protocols/nav (navize model)}))))
 
   ;; TODO Flattening the ld-> has potentially undesirable behavior with RDFList, consider
   ;; how flatten is being used in this context
@@ -97,6 +123,13 @@
                   full-ns (prefix-ns-map short-ns)
                   id (subs uri (count full-ns))]
               (str "/r/" short-ns "_" id))))
+
+(defn- navize [model]
+  (fn [coll k v]
+    (let [target (::value (meta v))]
+      (if (instance? Resource target)
+        (->RDFResource target model)
+        target))))
 
 (defonce query-register (atom {}))
 

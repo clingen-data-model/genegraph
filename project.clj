@@ -3,7 +3,7 @@
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.10.0"]
+  :dependencies [[org.clojure/clojure "1.10.1"]
                  [org.clojure/core.async "0.4.500"]
                  [io.pedestal/pedestal.service "0.5.5"]
                  [io.pedestal/pedestal.jetty "0.5.5"]
@@ -26,9 +26,15 @@
                  [com.velisco/clj-ftp "0.3.9"] ;; For downloading ftp docs
                  [clj-http "3.9.1"] ;; For downloading 
                  [com.walmartlabs/lacinia-pedestal "0.12.0"]
-                 [me.raynes/fs "1.4.6"]]
+                 [me.raynes/fs "1.4.6"]
+                 ;; REBL reqs
+                 [org.openjfx/javafx-fxml "11.0.1"]
+                 [org.openjfx/javafx-controls "11.0.1"]
+                 [org.openjfx/javafx-swing "11.0.1"]
+                 [org.openjfx/javafx-base "11.0.1"]
+                 [org.openjfx/javafx-web "11.0.1"]]
   :min-lein-version "2.0.0"
-  :resource-paths ["config", "resources"]
+  :resource-paths ["config", "resources", "jars/REBL-0.9.220.jar"]
   ;; If you use HTTP/2 or ALPN, use the java-agent to pull in the correct alpn-boot dependency
   ;:java-agents [[org.mortbay.jetty.alpn/jetty-alpn-agent "2.0.5"]]
   :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "genegraph.server/run-dev"]}
