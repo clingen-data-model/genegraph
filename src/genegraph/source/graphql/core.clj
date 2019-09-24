@@ -66,6 +66,7 @@
       :label {:type 'String :resolve resource/label}
       :report_date {:type 'String :resolve actionability/report-date}
       :wg_label {:type 'String :resolve actionability/wg-label}
+      :report_id {:type 'String :resolve actionability/report-id}
       :classification_description {:type 'String :resolve actionability/classification-description}
       :conditions {:type '(list :condition)
                    :resolve actionability/conditions}

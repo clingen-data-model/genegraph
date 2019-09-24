@@ -11,6 +11,9 @@
    sort
    last))
 
+(defn report-id [context args value]
+  (->> value str (re-find #"\w+$")))
+
 (defn wg-label [context args value]
   (q/ld1-> value [:sepio/qualified-contribution :sepio/has-agent :rdfs/label]))
 
