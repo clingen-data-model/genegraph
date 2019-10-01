@@ -29,9 +29,8 @@ nil
 
 ### [Docker](https://www.docker.com/) container support
 
-1. Build an uberjar of your service: `lein uberjar`
-2. Build a Docker image: `docker build -t clingen-search .`
-3. Run your Docker image: `docker run -p 8888:8888 clingen-search`
+1. Build a Docker image: `docker build -t clingen-search .`
+2. Run your Docker image: `docker run -p 8888:8888 clingen-search`
 
 ## Links
 * [Other examples](https://github.com/pedestal/samples)
