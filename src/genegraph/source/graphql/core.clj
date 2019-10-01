@@ -7,6 +7,9 @@
             [genegraph.source.graphql.condition :as condition]
             [genegraph.source.graphql.server-status :as server-status]
             [genegraph.source.graphql.evidence :as evidence]
+            [genegraph.source.graphql.value-set :as value-set]
+            [genegraph.source.graphql.class :as rdf-class]
+            [genegraph.source.graphql.property :as property]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]))
@@ -75,7 +78,45 @@
     :server_status
     {:fields
      {:migration_version {:type 'String
-                          :resolve server-status/migration-version}}}}
+                          :resolve server-status/migration-version}}}
+
+    :concept
+    {:implements [:resource]
+     :fields
+     {:iri {:type 'String :resolve resource/iri}
+      :label {:type 'String :resolve resource/label}
+      :definition {:type 'String :resolve rdf-class/definition}}}
+
+
+    :property
+    {:implements [:resource]
+     :fields
+     {:iri {:type 'String :resolve property/iri}
+      :label {:type 'String :resolve property/label}
+      :definition {:type 'String :resolve property/definition}
+      :min {:type 'Int :resolve property/min-count}
+      :max {:type 'Int :resolve property/max-count}
+      :display_arity {:type 'String :resolve property/display-arity}}}
+
+    :class
+    {:implements [:resource]
+     :fields
+     {:iri {:type 'String :resolve resource/iri}
+      :label {:type 'String :resolve resource/label}
+      :definition {:type 'String :resolve rdf-class/definition}
+      :properties {:type '(list :property) :resolve rdf-class/properties}
+      :subclasses {:type '(list :class) :resolve rdf-class/subclasses}
+      :superclasses {:type '(list :class) :resolve rdf-class/superclasses}}}
+
+    :value_set
+    {:implements [:resource]
+     :fields
+     {:iri {:type 'String :resolve resource/iri}
+      :label {:type 'String :resolve resource/label}
+      :definition {:type 'String :resolve rdf-class/definition}
+      :concepts {:type '(list :concept) :resolve value-set/concepts}}}}
+
+   
 
    :queries
    {:gene {:type '(non-null :gene)
@@ -87,6 +128,10 @@
     :actionability {:type '(non-null :actionability_curation)
                     :args {:iri {:type 'String}}
                     :resolve actionability/actionability-query}
+    :value_sets {:type '(list :value_set)
+                 :resolve value-set/value-sets-query}
+    :model_classes {:type '(list :class)
+                    :resolve rdf-class/model-classes-query}
     :server_status {:type '(non-null :server_status)
              :resolve server-status/server-version-query}}})
 
