@@ -15,23 +15,68 @@
   [params]
   [:head
    [:meta {:charset "utf-8"}]
+   [:meta {:http-equiv "X-UA-Compatible" :content "IE=edge"}]
    [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
-   [:title "ClinGen"]
-   [:link {:rel "stylesheet", :media "all", :href "/css/bulma.css"}]])
+   [:title "ClinGen Data Model"]
+   ;;[:link {:rel "stylesheet", :media "all", :href "/css/bulma.css"}]
+   [:link {:rel "stylesheet", :type "text/css" :href "https://cdn.datatables.net/v/bs/dt-1.10.13/fh-3.1.2/datatables.min.css"}]
+   [:link {:rel "stylesheet", :type "text/css" :href "/css/bootstrap.css"}]
+   [:link {:rel "stylesheet", :type "text/css" :href "/css/bootstrap-theme.css"}]
+   [:link {:rel "stylesheet", :type "text/css" :href "/css/brand2.css"}]
+   [:link {:rel "stylesheet", :type "text/css" :href "/css/jquery.jsonview.css"}]])
 
 (defn template
   [body params]
   [:html
    (head params)
-   [:body
-    (body params)]])
+   [:body.documentation
+    [:div.container-fluid.hero-background
+     [:div.container
+      [:div.row
+       [:nav.navbar.navbar-default
+        [:div.navbar-header
+         [:button.navbar-toggle.collapsed {:type "button" :data-toggle "collapse" :data-target "#navbar" :aria-expanded "false" :aria-controls "navbar"}
+          [:span.sr-only "Toggle navigation"]
+          [:span.icon-bar]
+          [:span.icon-bar]
+          [:span.icon-bar]]
+         [:a.navbar-brand {:href "/"}
+          [:img.img-responsive {:src "/img/clingen-doc-logo.png" :width "240px" :alt "ClinGen Data Model WG Documentation"}]]]
+        [:div#navbar.navbar-collapse.collapse
+         [:ul.nav.navbar-nav.navbar-right
+          [:li
+           [:a {:href "/"} [:i.glyphicon.glyphicon-home] "Home"]]]]]]]]
+    [:div.container
+     [:div.row
+      [:div.col-sm-8.col-xs-12.col-md-9.col-lg-10
+       [:article (body params)]]
+      [:div.col-sm-4.col-md-3.col-lg-2
+       [:div.list-group.sidenav
+        [:ul.list-unstyled
+         [:li.list-group-item
+          [:h5 [:a {:href "/index"} "Model Overview"]]]
+         [:li.list-group-item
+          [:h5 [:a {:href "/index"} "Model Overview"]]]
+         [:li.list-group-item
+          [:h5 [:a {:href "/index"} "Model Overview"]]]
+         [:li.list-group-item
+          [:h5 [:a {:href "/index"} "Model Overview"]]]
+         [:li.list-group-item
+          [:h5 [:a {:href "/index"} "Model Overview"]]]]]]]]
+    [:div#footer.container.background-trans.padding-top-xl
+     [:div.row
+      [:hr]
+      [:div.col-md-col-sm-12.text-center "ClinGen"]]]
+    [:script {:type "text/javascript" :src "/js/jquery.js"}]
+    [:script {:type "text/javascript" :src "/js/jquery.jsonview.js"}]
+    [:script {:type "text/javascript" :src "/js/bootstrap.js"}]
+    [:script {:type "text/javascript" :src "https://cdn.datatables.net/v/bs/dt-1.10.13/fh-3.1.2/datatables.min.js"}]]])
 
 (defn index
   "Template to wrap every HTML request, returns structure in Hiccup syntax"
   [params]
-  [:section.section
-   [:div.container
-    [:h1.title "ClinGen Search."]]])
+  [:p "Data model documentation"]
+)
 
 (defn- resolve-resource [curie]
   (when-let [[_ ns-prefix id] (re-find #"([A-Za-z-]*)_(.*)$" curie)]

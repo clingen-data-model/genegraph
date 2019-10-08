@@ -33,16 +33,20 @@
 
 
 
-(def hello-schema (schema/compile
-                   {:queries {:hello
-                              ;; String is quoted here; in EDN the quotation is not required
-                              {:type 'String
-                               :resolve (constantly "world")}}}))
-
 ;; Defines "/" and "/about" routes with their associated :get handlers.
 ;; The interceptors defined after the verb map (e.g., {:get home-page}
 ;; apply to / and its children (/about).
 (def common-interceptors [(body-params/body-params) http/html-body])
+
+
+(def model-pages {::http/routes
+                  [["/model"
+                    :get (conj common-interceptors `home-page)
+                    :route-name ::model-home]
+                   ["/model/:id"
+                    :get (conj common-interceptors `resource-page)
+                    :route-name ::model-resource]]
+                  ::http/resource-path "/public"})
 
 ;; Tabular routes
 (def routes #{["/" :get (conj common-interceptors `home-page)]
@@ -65,8 +69,10 @@
 
 ;;(def service (lacinia/service-map (graphql-schema) {:graphiql true}))
 (defn service []
-  (merge (lacinia/service-map (gql/schema) {:graphiql true})
-         {::http/host "0.0.0.0"}))
+  (merge-with into  
+              (lacinia/service-map (gql/schema) {:graphiql true})
+              model-pages
+              {::http/host "0.0.0.0"}))
 
 ;; Consumed by genegraph.server/create-server
 ;; See http/default-interceptors for additional options you can configure
@@ -95,7 +101,8 @@
 ;;               ;;                                                          :frame-ancestors "'none'"}}
 
 ;;               ;; Root for resource interceptor that is available by default.
-;;               ::http/resource-path "/public"
+;;
+
 
 ;;               ;; Either :jetty, :immutant or :tomcat (see comments in project.clj)
 ;;               ;;  This can also be your own chain provider/server-fn -- http://pedestal.io/reference/architecture-overview#_chain_provider
