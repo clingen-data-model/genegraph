@@ -19,6 +19,7 @@ target/
 repl-port
 .nrepl-port
 .repl
+.rebl
 
 # Temp Files
 *.orig

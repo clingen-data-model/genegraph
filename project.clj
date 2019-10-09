@@ -43,5 +43,6 @@
              :uberjar {:aot [genegraph.server]
                        :uberjar-name "app.jar"}}
   :plugins [[lein-codox "0.10.7"]]
+  :codox {:output-path "docs"}
   :main ^{:skip-aot true} genegraph.server)
 
