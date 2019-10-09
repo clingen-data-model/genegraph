@@ -8,7 +8,11 @@ The Codox plugin is installed for this project. In order to build the documentat
 
     lein codox
     
-from the project directory. Resulting documentation is available in target/doc.
+from the project directory. Resulting documentation is available in docs.
+
+Built documentation available in github pages:
+
+http://dataexchange.clinicalgenome.org/genegraph/index.html
 
 ## Configuration
 
