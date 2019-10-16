@@ -5,9 +5,9 @@
 (defn gene-query [context args value]
   (let [gene (q/resource (:iri args))]
     (println gene)
-    (if (q/is-rdf-type? gene :so/Gene)
+    (if (q/is-rdf-type? gene :so/ProteinCodingGene)
        gene
-       (first (filter #(q/is-rdf-type? % :so/Gene) (get gene [:owl/same-as :<]))))))
+       (first (filter #(q/is-rdf-type? % :so/ProteinCodingGene) (get gene [:owl/same-as :<]))))))
 
 (defn hgnc-id [context args value]
   (->> (q/ld-> value [:owl/same-as])

@@ -4,4 +4,5 @@
  [:sepio/ApproverRole "http://purl.obolibrary.org/obo/SEPIO_0000155"]
  [:sepio/GeneticCondition "http://purl.obolibrary.org/obo/SEPIO_0000219"]
  [:sepio/EvidenceRole "http://purl.obolibrary.org/obo/SEPIO_0000148"]
- [:cg/DomainModel "http://dataexchange.clinicalgenome.org/terms/DomainModel"]]
+ [:cg/DomainModel "http://dataexchange.clinicalgenome.org/terms/DomainModel"]
+ [:so/ProteinCodingGene "http://purl.obolibrary.org/obo/SO_0001217"]]
