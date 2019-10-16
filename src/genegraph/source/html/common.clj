@@ -30,39 +30,7 @@
   [:html
    (head params)
    [:body.documentation
-    [:div.container-fluid.hero-background
-     [:div.container
-      [:div.row
-       [:nav.navbar.navbar-default
-        [:div.navbar-header
-         [:button.navbar-toggle.collapsed {:type "button" :data-toggle "collapse" :data-target "#navbar" :aria-expanded "false" :aria-controls "navbar"}
-          [:span.sr-only "Toggle navigation"]
-          [:span.icon-bar]
-          [:span.icon-bar]
-          [:span.icon-bar]]
-         [:a.navbar-brand {:href "/"}
-          [:img.img-responsive {:src "/img/clingen-doc-logo.png" :width "240px" :alt "ClinGen Data Model WG Documentation"}]]]
-        [:div#navbar.navbar-collapse.collapse
-         [:ul.nav.navbar-nav.navbar-right
-          [:li
-           [:a {:href "/"} [:i.glyphicon.glyphicon-home] "Home"]]]]]]]]
-    [:div.container
-     [:div.row
-      [:div.col-sm-8.col-xs-12.col-md-9.col-lg-10
-       [:article (body params)]]
-      [:div.col-sm-4.col-md-3.col-lg-2
-       [:div.list-group.sidenav
-        [:ul.list-unstyled
-         [:li.list-group-item
-          [:h5 [:a {:href "/index"} "Model Overview"]]]
-         [:li.list-group-item
-          [:h5 [:a {:href "/index"} "Model Overview"]]]
-         [:li.list-group-item
-          [:h5 [:a {:href "/index"} "Model Overview"]]]
-         [:li.list-group-item
-          [:h5 [:a {:href "/index"} "Model Overview"]]]
-         [:li.list-group-item
-          [:h5 [:a {:href "/index"} "Model Overview"]]]]]]]]
+    (body params)
     [:div#footer.container.background-trans.padding-top-xl
      [:div.row
       [:hr]
@@ -71,6 +39,7 @@
     [:script {:type "text/javascript" :src "/js/jquery.jsonview.js"}]
     [:script {:type "text/javascript" :src "/js/bootstrap.js"}]
     [:script {:type "text/javascript" :src "https://cdn.datatables.net/v/bs/dt-1.10.13/fh-3.1.2/datatables.min.js"}]]])
+
 
 (defn index
   "Template to wrap every HTML request, returns structure in Hiccup syntax"
@@ -82,7 +51,54 @@
   (when-let [[_ ns-prefix id] (re-find #"([A-Za-z-]*)_(.*)$" curie)]
     (q/resource ns-prefix id)))
 
+(defn hero [r]
+  [:div.container-fluid.hero-background
+   [:div.container
+    [:div.row
+     [:nav.navbar.navbar-default
+      [:div.navbar-header
+       [:button.navbar-toggle.collapsed {:type "button" :data-toggle "collapse" :data-target "#navbar" :aria-expanded "false" :aria-controls "navbar"}
+        [:span.sr-only "Toggle navigation"]
+        [:span.icon-bar]
+        [:span.icon-bar]
+        [:span.icon-bar]]
+       [:a.navbar-brand {:href "/"}
+        [:img.img-responsive {:src "/img/clingen-doc-logo.png" :width "240px" :alt "ClinGen Data Model WG Documentation"}]]]
+      [:div#navbar.navbar-collapse.collapse
+       [:ul.nav.navbar-nav.navbar-right
+        (for [model (q/select "select ?x where { ?x a :cg/DomainModel } ")]
+          [:li (e/link model)])
+        [:li
+         [:a {:href "/"} [:i.glyphicon.glyphicon-home] "Home"]]]]]]
+    [:div.row
+     [:div.col-sm-12
+      [:h1.header (e/title r)]
+      [:blockquote
+       [:p (e/definition r)]
+       [:strong
+        [:div (e/iri r)]]]]]]])
+
+(defn sidebar []
+  [:div.col-sm-4.col-md-3.col-lg-2
+   [:div.list-group.sidenav
+    [:ul.list-unstyled
+     [:li.list-group-item
+      [:h5 [:a {:href "/index"} "Model Overview"]]]
+     [:li.list-group-item
+      [:h5 [:a {:href "/index"} "Model Overview"]]]
+     [:li.list-group-item
+      [:h5 [:a {:href "/index"} "Model Overview"]]]
+     [:li.list-group-item
+      [:h5 [:a {:href "/index"} "Model Overview"]]]
+     [:li.list-group-item
+      [:h5 [:a {:href "/index"} "Model Overview"]]]]]])
+
 (defn resource [params]
   (let [r (resolve-resource (get-in params [:path-params :id]))]
-    [:section.section
-     (e/page r)]))
+    [:div
+     (hero r)
+     [:div.container
+      [:div.row
+       [:div.col-sm-8.col-xs-12.col-md-9.col-lg-10
+        [:article (e/page r)]]
+       (sidebar)]]]))

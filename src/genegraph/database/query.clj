@@ -117,6 +117,7 @@
                           ks))
   (ld1-> [this ks] (first (ld-> this ks)))
   
+  ;; TODO Root path is hardcoded in--this should be configurable
   Addressable
   (path [_] (let [uri (.getURI resource)
                   short-ns (names/curie uri)

@@ -43,7 +43,7 @@
                   [["/model"
                     :get (conj common-interceptors `home-page)
                     :route-name ::model-home]
-                   ["/model/:id"
+                   ["/r/:id"
                     :get (conj common-interceptors `resource-page)
                     :route-name ::model-resource]]
                   ::http/resource-path "/public"})

@@ -23,10 +23,14 @@
       t
       :undefined)))
 
+
+(defmulti title resource-dispatch)
+
+(defmethod title :default ([r] (first (concat (:skos/preferred-label r) (:rdfs/label r)))))
+
 (defmulti link resource-dispatch)
 
-(defmethod link :default ([r] [:a {:href (q/path r)} 
-                               (first (concat (:skos/preferred-label r) (:rdfs/label r)))]))
+(defmethod link :default ([r] [:a {:href (q/path r)} (title r)]))
 
 (defmulti page resource-dispatch)
 
@@ -56,17 +60,20 @@
 
 (defmethod paragraph :default ([r] [:p "resource not found: paragraph "]))
 
-(defmulti title resource-dispatch)
-
-(defmethod title :default ([r] [:h1.title (link r)]))
-
 (defmulti tile resource-dispatch)
 
 (defmethod tile :default ([r] [:div.tile
                                 [:h1.title "tile not found for resource."]
                                 [:p (str r)]]))
 
+(defmulti definition resource-dispatch)
 
+(defmethod definition :default ([r] (first (concat (:iao/definition r)
+                                                   (:dc/description r)))))
+
+(defmulti iri resource-dispatch)
+
+(defmethod iri :default ([r] (str r)))
 
 
 
