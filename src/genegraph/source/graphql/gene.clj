@@ -10,6 +10,7 @@
        (first (filter #(q/is-rdf-type? % :so/ProteinCodingGene) (get gene [:owl/same-as :<]))))))
 
 (defn hgnc-id [context args value]
+  (println "IN HGNC-ID - Value = " value)
   (->> (q/ld-> value [:owl/same-as])
        (filter #(= (str (q/ld1-> % [:dc/source])) "https://www.genenames.org"))
        first
@@ -31,3 +32,45 @@
   (q/ld-> value [[:geno/is-feature-affected-by :<]
                  [:sepio/has-subject :<]
                  [:sepio/has-subject :<]]))
+
+(defn gene-facts [context args value]
+  (q/ld-> value []))
+
+(defn hgnc-symbol [context args value]
+  (q/ld-> value []))
+
+(defn hgnc-name [context args value]
+  (q/ld-> value []))
+
+(defn gene-type [context args value]
+  (q/ld-> value []))
+
+(defn locus-type [context args value]
+  (q/ld-> value []))
+
+(defn previous-symbols [context args value]
+  (q/ld-> value []))
+
+(defn alias-symbols [context args value]
+  (q/ld-> value []))
+
+(defn chromo-loc [context args value]
+ (q/ld-> value []))
+
+(defn function [context args value]
+  (q/ld-> value []))
+
+(defn coordinates [context args value]
+  (q/ld-> value []))
+
+(defn build [context args value]
+  (q/ld-> value []))
+
+(defn chromosome [context args value]
+  (q/ld-> value []))
+
+(defn start-pos [context args value]
+  (q/ld-> value []))
+
+(defn end-pos [context args value]
+  (q/ld-> value []))

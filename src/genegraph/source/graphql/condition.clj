@@ -24,6 +24,6 @@
 (defn actionability-curations [context args value]
   (q/ld-> value [[:sepio/is-about-condition :<]]))
 
-(defn genetic_conditions [context args value]
+(defn genetic-conditions [context args value]
   (->> (q/ld-> value [[:rdfs/sub-class-of :<]])
        (filter #(q/is-rdf-type? % :sepio/GeneticCondition))))

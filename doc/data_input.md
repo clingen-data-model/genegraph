@@ -1,7 +1,7 @@
 # Data Input
-(clingen-search.sink, clingen-search.transform)
+(genegraph.sink, genegraph.transform)
 
-The data service takes data from predefined input sources and presents it via an API. This process occurs in the clingen-search.sink namespace and the clingen-search.transform namespace.
+The data service takes data from predefined input sources and presents it via an API. This process occurs in the genegraph.sink namespace and the genegraph.transform namespace.
 
 ## Document definition
 
@@ -30,19 +30,19 @@ And the doc def for pre-SEPIO actionability curations from the streaming service
 ```
 
 ## Transforming input data
-(clingen-search.transform.core)
+(genegraph.transform.core)
 
-The data service is designed to import and make accessible data in RDF form. That said, not all the data we need is accessible in this format. In order to use this data, we need to define a transformation that extracts the important elements into RDF. The code provides a framework for doing this via the [transform-doc](#) multimethod in clingen-search.transform.core.
+The data service is designed to import and make accessible data in RDF form. That said, not all the data we need is accessible in this format. In order to use this data, we need to define a transformation that extracts the important elements into RDF. The code provides a framework for doing this via the [transform-doc](#) multimethod in genegraph.transform.core.
 
 This method expects a map with a :format key, and either a :target key in the map defining the document's location (used when importing the base data after it's already been downloaded), or a second argument containing the document itself (usually in a string, but this is not a requirement.)
 
 ## Base Data
-(clingen-search.sink.base)
+(genegraph.sink.base)
 
 The [initialize-db!](#) function in this namespace is run whenever the service is started. It downloads any of the documents defined in resources/base.edn that have not already been downloaded (using $DATA_DIR/base_state.edn as a reference). It then imports each of these into the database, passing them through the transformation function defined for the specified :format.
 
 ## Streaming data
-(clingen-search.sink.stream)
+(genegraph.sink.stream)
 
 The software opens a single-threaded connection to the streaming service, using the CG_SEARCH_TOPICS environment variable to select the topics to subscribe to. All offsets are maintained locally (in $CG_SEARCH_DATA_VOL/partition_offsets.edn), and not on the Kafka server. 
 

@@ -1,5 +1,5 @@
 # Database search and retrieval
-(clingen-search.database.query)
+(genegraph.database.query)
 
 This namespace provides read access to the underlying triplestore. It provides functions that allow one to select a single node as a starting point for traversal using an IRI [resource](#) or a set of nodes to use as a starting point using a SPARQL query [select](#). Traversal can be accomplished using the [ld->](#) and [ld1->](#) functions, as well as standard Clojure hash access [get](#). This namespace wraps the underlying Jena Resource object in a Clojure type [RDFResource](#), which extends the Clojure [ISeq](#) interface, providing hash-like access to elements in the knowledge graph.
 
