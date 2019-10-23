@@ -27,45 +27,83 @@
 
    :objects
    {:gene
-    {:implements [:resource]
-     :fields {:iri {:type 'String :resolve resource/iri}
-              :label {:type 'String :resolve resource/label}
-              :hgnc_id {:type 'String :resolve gene/hgnc-id}
+    {:description "A gene. Along with conditions, one of the basic units of curation."
+     :implements [:resource]
+     :fields {:iri {:type 'String
+                    :resolve resource/iri
+                    :description "IRI representing the gene. Uses NCBI gene identifiers"}
+              :label {:type 'String
+                      :resolve resource/label
+                      :description "Gene symbol"}
+              :hgnc_id {:type 'String  
+                        :resolve gene/hgnc-id
+                        :description "HGNC ID of gene"}
               :curations {:type '(list :curation) :resolve gene/curations}
-              :conditions {:type '(list :condition) :resolve gene/conditions}
+              :conditions {:type '(list :condition)
+                           :resolve gene/conditions
+                           :description "Genetic conditions associated with gene. This field is most frequently used for accessing actionability curations linked to a gene."}
               :actionability_curations {:type '(list :actionability_curation)
-                                        :resolve gene/actionability-curations}
+                                        :resolve gene/actionability-curations
+                                        :description "Actionability curations linked to a gene. Prefer using conditions.actionability_curations for most use cases, as this makes visible the gene-disease pairing used in the context of the curation."}
               :dosage_curations {:type '(list :gene_dosage_curation)
-                                 :resolve gene/dosage-curations}}}
+                                 :resolve gene/dosage-curations
+                                 :description "Gene Dosage curations associated with the gene."}}}
 
     :condition
-    {:implements [:resource]
-     :fields {:iri {:type 'String :resolve condition/iri}
-              :label {:type 'String :resolve condition/label}
-              :gene {:type :gene :resolve condition/gene}
+    {:description "A disease or condition. May be a genetic condition, linked to a specific disease or mode of inheritance. Along with gene, one of the basic units of curation."
+     :implements [:resource]
+     :fields {:iri {:type 'String
+                    :resolve condition/iri
+                    :description "IRI for the condition. Currently MONDO ids are supported."}
+              :label {:type 'String
+                      :resolve condition/label
+                      :description "Label for the condition."}
+              :gene {:type :gene
+                     :resolve condition/gene
+                     :description "If the condiiton is a genetic condition, the gene associated with the condition."}
               :actionability_curations {:type '(list :actionability_curation)
-                                        :resolve condition/actionability-curations}
+                                        :resolve condition/actionability-curations
+                                        :description "Actionability curations associated with the condition"}
               :genetic_conditions {:type '(list :condition)
-                                   :resolve condition/genetic_conditions}}}
+                                   :resolve condition/genetic_conditions
+                                   :description "Genetic conditions that are direct subclasses of this condition."}}}
 
     :evidence
-    {:fields {:source {:type 'String :resolve evidence/source}
-              :description {:type 'String :resolve evidence/description}}}
+    {:description "An evidence item, typically used in support of an assertion made as a part of a curation"
+     :fields {:source {:type 'String
+                       :resolve evidence/source
+                       :description "Origin of the evidence, i.e. PubMed reference"}
+              :description {:type 'String
+                            :resolve evidence/description
+                            :description "Description of the evidence being cited."}}}
 
     :gene_dosage_curation
-    {:implements [:resource :curation]
-     :fields {:iri {:type 'String :resolve resource/iri}
-              :label {:type 'String :resolve gene-dosage/label}
-              :wg_label {:type 'String :resolve gene-dosage/wg-label}
+    {
+     :implements [:resource :curation]
+     :fields {:iri {:type 'String
+                    :resolve resource/iri
+                    :description "Identifier for the curation"}
+              :label {:type 'String
+                      :resolve gene-dosage/label
+                      :description "Curation label"}
+              :wg_label {:type 'String
+                         :resolve gene-dosage/wg-label
+                         :description "Label for the working group responsible for the curation"}
               :classification_description {:type 'String 
-                                           :resolve gene-dosage/classification-description}
-              :report_date {:type 'String :resolve gene-dosage/report-date}
-              :evidence {:type '(list :evidence) :resolve gene-dosage/evidence}}}
+                                           :resolve gene-dosage/classification-description
+                                           :description "Summary of the classification and the rationale behind it"}
+              :report_date {:type 'String
+                            :resolve gene-dosage/report-date
+                            :description "Date the report was last issued by the working group."}
+              :evidence {:type '(list :evidence)
+                         :resolve gene-dosage/evidence
+                         :description "Evidence relating to the gene dosage curation."}}}
     
     :actionability_curation
     {:implements [:resource :curation]
      :fields 
-     {:iri {:type 'String :resolve resource/iri}
+     {:iri {:type 'String
+            :resolve resource/iri}
       :label {:type 'String :resolve resource/label}
       :report_date {:type 'String :resolve actionability/report-date}
       :wg_label {:type 'String :resolve actionability/wg-label}

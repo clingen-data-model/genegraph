@@ -1,28 +1,50 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: clingen-ds
+  name: genegraph
   labels:
-    app: clingen-ds
+    app: genegraph
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
-      app: clingen-ds
+      app: genegraph
   template:
     metadata:
       labels:
-        app: clingen-ds
+        app: genegraph
     spec:
       nodeSelector:
         cloud.google.com/gke-local-ssd: "true"
       volumes:
-        - name: clingen-ds-vol
+        - name: genegraph-vol
           hostPath:
             path: "/mnt/disks/ssd0"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - genegraph
+            topologyKey: "kubernetes.io/hostname"
       containers:
-        - image: gcr.io/clingen-dev/clingen-ds:v1
-          name: clingen-ds
+        - image: gcr.io/clingen-dev/genegraph:v1
+          name: genegraph
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8888
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8888
+            initialDelaySeconds: 10
+            periodSeconds: 10
           env:
             - name: CG_SEARCH_DATA_VOL
               value: "/data/"
@@ -43,9 +65,9 @@ spec:
               value: actionability
           ports:
             - containerPort: 8888
-              name: clingen-ds
+              name: genegraph
           volumeMounts:
-            - name: clingen-ds-vol
+            - name: genegraph-vol
               mountPath: /data/
 
               
