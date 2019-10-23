@@ -10,6 +10,9 @@
             [genegraph.source.graphql.value-set :as value-set]
             [genegraph.source.graphql.class :as rdf-class]
             [genegraph.source.graphql.property :as property]
+            [genegraph.source.graphql.coordinates :as coordinates]
+            [genegraph.source.graphql.dosage-curation :as dosage-curation]
+            [genegraph.source.graphql.gene-facts :as gene-facts]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]))
@@ -32,16 +35,16 @@
               :label {:type 'String :resolve resource/label}
               :build {:type 'String
                       :description "The build name"
-                      :resolve gene/build}
+                      :resolve coordinates/build}
               :chromosome {:type 'String
                            :description "The chromosome name"
-                           :resolve gene/chromosome}
+                           :resolve coordinates/chromosome}
               :start_pos {:type 'Int
                           :description "Start coordinate of the gene"
-                          :resolve gene/start-pos}
+                          :resolve coordinates/start-pos}
               :end_pos {:type 'Int
                         :description "End coordinate of the gene"
-                        :resolve gene/end-pos}}}
+                        :resolve coordinates/end-pos}}}
 
     :gene_facts
     {:implements [:resource]
@@ -49,31 +52,31 @@
               :label {:type 'String :resolve resource/label}
               :hgnc_symbol {:type 'String
                             :description "The HGNC symbol of the gene"
-                            :resolve gene/hgnc-symbol}
+                            :resolve gene-facts/hgnc-symbol}
               :hgnc_name {:type 'String
                           :description "The HGNC name for the gene"
-                          :resolve gene/hgnc-name}
+                          :resolve gene-facts/hgnc-name}
               :gene_type {:type 'String
                           :description "The gene type"
-                          :resolve gene/gene-type}
+                          :resolve gene-facts/gene-type}
               :locus_type {:type 'String
                            :description "The gene locus type"
-                           :resolve gene/locus-type}
+                           :resolve gene-facts/locus-type}
               :previous_symbols {:type 'String
                                  :description "The list of previous gene symbols"
-                                 :resolve gene/previous-symbols}
+                                 :resolve gene-facts/previous-symbols}
               :alias_symbols {:type 'String
                               :description "The list of gene aliases"
-                              :resolve gene/alias-symbols}
+                              :resolve gene-facts/alias-symbols}
               :chromo_loc {:type 'String
                            :description "The chromosomal location"
-                           :resolve gene/chromo-loc}
+                           :resolve gene-facts/chromo-loc}
               :function {:type 'String
                          :description "A description of the genes function"
-                         :resolve gene/function}
+                         :resolve gene-facts/function}
               :coordinates {:type '(list :coordinates)
                             :description "A list of the gene coordinates"
-                            :resolve gene/coordinates}}}
+                            :resolve gene-facts/coordinates}}}
     :gene
     {:implements [:resource]
      :fields {:iri {:type 'String :resolve resource/iri}
@@ -84,8 +87,8 @@
               :conditions {:type '(list :condition) :resolve gene/conditions}
               :actionability_curations {:type '(list :actionability_curation)
                                         :resolve gene/actionability-curations}
-              :dosage_curations {:type '(list :gene_dosage_curation)
-                                 :resolve gene/dosage-curations}}}
+              :dosages {:type '(list :gene_dosage)
+                                 :resolve gene/dosages}}}
 
 
     :condition
@@ -105,30 +108,32 @@
               :source {:type 'String :resolve evidence/source}
               :description {:type 'String :resolve evidence/description}}}
 
-    :dosage
+    :dosage_curation
     {:implements [:resource :curation]
      :fields {:iri {:type 'String :resolve resource/iri}
               :label {:type 'String :resolve resource/label}
-              :wg_label {:type 'String}
+              :wg_label {:type 'String :resolve dosage-curation/wg-label}
               :classification_description {:type 'String
                                            :description "A statement about the strength of evidence" 
-                                           :resolve gene-dosage/classification-description}
+                                           :resolve dosage-curation/classification-description}
 
-              :report_date {:type 'String}
+              :report_date {:type 'String
+                            :description "The date this curation was reported"
+                            :resolve dosage-curation/report-date}
               :score {:type 'Int
                       :description "Sufficiency score"
-                      :resolve gene-dosage/score}
-              :phenotype {:type 'String
+                      :resolve dosage-curation/score}
+              :phenotypes {:type 'String
                           :description "The phenotypes to which the evidence applies"
-                          :resolve gene-dosage/phenotype}
-              :evidences {:type '(list :evidence)
+                          :resolve dosage-curation/phenotypes}
+              :evidence {:type '(list :evidence)
                           :description "Evidence statements"
-                          :resolve gene-dosage/evidence}
+                          :resolve dosage-curation/evidence}
               :comments {:type 'String
                          :description "Comments"
-                         :resolve gene-dosage/comments}}}
+                         :resolve dosage-curation/comments}}}
     
-    :gene_dosage_curation
+    :gene_dosage
     {:implements [:resource]
      :fields {:iri {:type 'String :resolve resource/iri}
               :label {:type 'String :resolve gene-dosage/label}
@@ -136,10 +141,10 @@
               :report_date {:type 'String :resolve gene-dosage/report-date}
               :gene_name {:type 'String :resolve gene-dosage/gene-name}
               :gene {:type :gene :resolve gene-dosage/gene}
-              :haplo {:type :dosage
+              :haplo {:type :dosage_curation
                        :description "Haploinsufficiency"
                        :resolve gene-dosage/haplo}
-              :triplo {:type :dosage
+              :triplo {:type :dosage_curation
                        :description "Triplosensitivity"
                        :resolve gene-dosage/triplo}
               :haplo_index {:type 'String
@@ -208,16 +213,6 @@
       :definition {:type 'String :resolve rdf-class/definition}
       :concepts {:type '(list :concept) :resolve value-set/concepts}}}
 
-    :genes
-    {:fields
-     {:gene {:type 'String :resolve gene-dosage/gene-name}
-      :has_haplo {:type 'String :resolve gene-dosage/has-haplo?}
-      :haplo_evidence_level {:type 'String :resolve gene-dosage/haplo-evidence-level}
-      :haplo_description {:type 'String :resolve gene-dosage/haplo-description}
-      :has_triplo {:type 'String :resolve gene-dosage/has-triplo?}
-      :triplo_evidence_level {:type 'String :resolve gene-dosage/triplo-evidence-level}
-      :triplo_description {:type 'String :resolve gene-dosage/triplo-description}}}
-
     :totals
     {:fields
      {:total {:type 'Int :resolve gene-dosage/total-count}
@@ -240,7 +235,7 @@
                     :resolve rdf-class/model-classes-query}
     :server_status {:type '(non-null :server_status)
                     :resolve server-status/server-version-query}
-    :dosage_list{:type '(list :gene_dosage_curation)
+    :dosage_list{:type '(list :gene_dosage)
                :resolve gene-dosage/dosage-list-query}
     :totals {:type :totals
              :resolve gene-dosage/totals-query}}})

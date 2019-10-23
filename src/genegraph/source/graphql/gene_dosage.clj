@@ -79,18 +79,15 @@
   (q/ld-> value [[:sepio/has-subject :<] :sepio/has-evidence-level]));;:sepio/has-evidence-line-with-item]))
 
 (defn gene [context args value]
-  (println "IN GENE for value" value)
   (-> (dosages-for value)
       first
-      (q/ld-> [:sepio/has-subject :geno/is-feature-affected-by])))
+      (q/ld-> [:sepio/has-subject :geno/is-feature-affected-by])
+      first))
 
 (defn score [context args value]
   (q/ld-> value []))
 
 (defn comments [context args value]
-  (q/ld-> value []))
-
-(defn evidence [context args value]
   (q/ld-> value []))
 
 (defn dosages [context args value]
