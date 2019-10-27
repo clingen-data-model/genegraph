@@ -40,7 +40,9 @@
                     :root-type :sepio/ActionabilityReport}
    "gene_dosage_beta" {:format :rdf
                        :reader-opts {:format :json-ld}
-                       :root-type :sepio/DosageSensitivityProposition}})
+                       :root-type :sepio/DosageSensitivityProposition}
+   "gene_validity" {:format :gene-validity-v1
+                    :root-type :sepio/GeneValidityReport}})
 
 (defn document-name [doc-def model]
   (-> (q/select "select ?x where {?x a ?type}"

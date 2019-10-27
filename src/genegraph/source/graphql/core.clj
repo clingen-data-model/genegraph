@@ -35,6 +35,9 @@
               :label {:type 'String
                       :resolve resource/label
                       :description "Gene symbol"}
+              :chromosome_band {:type 'String
+                                 :resolve gene/chromosome-band
+                                 :description "Cytogenetic band of gene."}
               :hgnc_id {:type 'String  
                         :resolve gene/hgnc-id
                         :description "HGNC ID of gene"}

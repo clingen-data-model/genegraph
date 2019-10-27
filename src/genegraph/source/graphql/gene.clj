@@ -9,6 +9,9 @@
        gene
        (first (filter #(q/is-rdf-type? % :so/ProteinCodingGene) (get gene [:owl/same-as :<]))))))
 
+(defn chromosome-band [context args value]
+  (first (:so/chromosome-band value)))
+
 (defn hgnc-id [context args value]
   (->> (q/ld-> value [:owl/same-as])
        (filter #(= (str (q/ld1-> % [:dc/source])) "https://www.genenames.org"))

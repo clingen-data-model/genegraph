@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: genegraph
+  labels:
+    app: genegraph
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: genegraph
+  template:
+    metadata:
+      labels:
+        app: genegraph
+    spec:
+      nodeSelector:
+        cloud.google.com/gke-local-ssd: "true"
+      volumes:
+        - name: genegraph-vol
+          hostPath:
+            path: "/mnt/disks/ssd0"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - genegraph
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+        - image: gcr.io/clingen-dx/genegraph:v1
+          name: genegraph
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8888
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8888
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          env:
+            - name: CG_SEARCH_DATA_VOL
+              value: "/data/"
+            - name: DATA_EXCHANGE_HOST
+              value: "exchange.clinicalgenome.org:9093"
+            - name: SERVEUR_GROUP
+              value: "serveur_dev"
+            - name: SERVEUR_KEY_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: serveur-key-pass
+                  key: password
+            - name: SERVEUR_KEYSTORE
+              value: "/keys/dev.serveur.keystore.jks"
+            - name: SERVEUR_TRUSTSTORE
+              value: "/keys/serveur.truststore.jks"
+            - name: CG_SEARCH_TOPICS
+              value: actionability
+          ports:
+            - containerPort: 8888
+              name: genegraph
+          volumeMounts:
+            - name: genegraph-vol
+              mountPath: /data/
+
+              
+  
