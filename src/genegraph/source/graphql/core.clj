@@ -12,7 +12,6 @@
             [genegraph.source.graphql.property :as property]
             [genegraph.source.graphql.coordinates :as coordinates]
             [genegraph.source.graphql.dosage-curation :as dosage-curation]
-            [genegraph.source.graphql.gene-facts :as gene-facts]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]))
@@ -46,50 +45,44 @@
                         :description "End coordinate of the gene"
                         :resolve coordinates/end-pos}}}
 
-    :gene_facts
-    {:implements [:resource]
-     :fields {:iri {:type 'String :resolve resource/iri}
-              :label {:type 'String :resolve resource/label}
-              :hgnc_symbol {:type 'String
-                            :description "The HGNC symbol of the gene"
-                            :resolve gene-facts/hgnc-symbol}
-              :hgnc_name {:type 'String
-                          :description "The HGNC name for the gene"
-                          :resolve gene-facts/hgnc-name}
-              :gene_type {:type 'String
-                          :description "The gene type"
-                          :resolve gene-facts/gene-type}
-              :locus_type {:type 'String
-                           :description "The gene locus type"
-                           :resolve gene-facts/locus-type}
-              :previous_symbols {:type 'String
-                                 :description "The list of previous gene symbols"
-                                 :resolve gene-facts/previous-symbols}
-              :alias_symbols {:type 'String
-                              :description "The list of gene aliases"
-                              :resolve gene-facts/alias-symbols}
-              :chromo_loc {:type 'String
-                           :description "The chromosomal location"
-                           :resolve gene-facts/chromo-loc}
-              :function {:type 'String
-                         :description "A description of the genes function"
-                         :resolve gene-facts/function}
-              :coordinates {:type '(list :coordinates)
-                            :description "A list of the gene coordinates"
-                            :resolve gene-facts/coordinates}}}
     :gene
     {:implements [:resource]
      :fields {:iri {:type 'String :resolve resource/iri}
               :label {:type 'String :resolve resource/label}
               :hgnc_id {:type 'String :resolve gene/hgnc-id}
-              :gene_facts {:type :gene_facts :resolve gene/gene-facts}
+              :hgnc_symbol {:type 'String
+                            :description "The HGNC symbol of the gene"
+                            :resolve gene/hgnc-symbol}
+              :hgnc_name {:type 'String
+                          :description "The HGNC name for the gene"
+                          :resolve gene/hgnc-name}
+              :gene_type {:type 'String
+                          :description "The gene type"
+                          :resolve gene/gene-type}
+              :locus_type {:type 'String
+                           :description "The gene locus type"
+                           :resolve gene/locus-type}
+              :previous_symbols {:type 'String
+                                 :description "The list of previous gene symbols"
+                                 :resolve gene/previous-symbols}
+              :alias_symbols {:type 'String
+                              :description "The list of gene aliases"
+                              :resolve gene/alias-symbols}
+              :chromo_loc {:type 'String
+                           :description "The chromosomal location"
+                           :resolve gene/chromo-loc}
+              :function {:type 'String
+                         :description "A description of the genes function"
+                         :resolve gene/function}
+              :coordinates {:type '(list :coordinates)
+                            :description "A list of the gene coordinates"
+                            :resolve gene/coordinates}
               :curations {:type '(list :curation) :resolve gene/curations}
               :conditions {:type '(list :condition) :resolve gene/conditions}
               :actionability_curations {:type '(list :actionability_curation)
                                         :resolve gene/actionability-curations}
               :dosages {:type '(list :gene_dosage)
-                                 :resolve gene/dosages}}}
-
+                        :resolve gene/dosages}}}
 
     :condition
     {:implements [:resource]
@@ -236,7 +229,7 @@
     :server_status {:type '(non-null :server_status)
                     :resolve server-status/server-version-query}
     :dosage_list{:type '(list :gene_dosage)
-               :resolve gene-dosage/dosage-list-query}
+                 :resolve gene-dosage/dosage-list-query}
     :totals {:type :totals
              :resolve gene-dosage/totals-query}}})
 

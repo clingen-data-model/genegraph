@@ -9,8 +9,8 @@
   (q/select "select ?s where { ?s a :sepio/DosageSensitivityProposition }"))
 
 (defn dosages-for [name]
-  (let [gene-resources (q/select (str "select ?s where { ?s :skos/preferred-label \"" name "\" }"))
-        region-resources (q/select (str "select ?s where { ?s :rdfs/label \"" name "\" }"))
+  (let [gene-resources (q/select ("select ?s where { ?s :skos/preferred-label ?name }" {:name name}))
+        region-resources (q/select (str "select ?s where { ?s :rdfs/label ?name}" {:name name}))
         resource (first (if (empty? gene-resources) region-resources gene-resources))]
     (q/ld-> resource [[:geno/is-feature-affected-by :<] [:sepio/has-subject :<]])))
 
@@ -117,13 +117,11 @@
 (defn gene-name [context args value]
   value)
 
-
 (defn evidence-level [dosage]
     (q/ld1-> dosage [[:sepio/has-subject :<] :sepio/has-object :rdfs/label]))
 
 (defn description [dosage]
     (q/ld1-> dosage [[:sepio/has-subject :<] :dc/description]))
-
 
 (defn haplo-evidence-level [context args value]
   (if-let [haplo (first (haplo context args value))]
