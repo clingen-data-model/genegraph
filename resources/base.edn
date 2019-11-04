@@ -62,6 +62,11 @@
   :target "sepio-clingen-dosage-shapes.ttl"
   :format :rdf
   :reader-opts {:format :turtle}}
+ {:name "http://dataexchange.clinicalgenome.org/models/sepio-clingen-actionability-shapes.ttl"
+  :source "https://raw.githubusercontent.com/clingen-data-model/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-actionability/sepio-clingen-actionability-shapes.ttl"
+  :target "sepio-clingen-actionability-shapes.ttl"
+  :format :rdf
+  :reader-opts {:format :turtle}}
  {:name "http://purl.obolibrary.org/obo/sepio-valueset.owl"
   :source "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/sepio-valueset.owl" 
   :target "sepio-valueset.owl"
