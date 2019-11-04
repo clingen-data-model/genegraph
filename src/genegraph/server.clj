@@ -29,6 +29,13 @@
            (merge-with into (service/service) status-routes)))
   :stop (server/stop server))
 
+(defn run-dev
+  "Run a development-focused environment: skip connection to Kafka unless
+  requested, watch for updates in base data."
+  []
+  (mount.core/start-without #'genegraph.sink.stream/consumer-thread)
+  (base/watch-base-dir))
+
 (defn -main
   "The entry-point for 'lein run'"
   [& args]

@@ -13,13 +13,14 @@
             [genegraph.transform.gene]
             [genegraph.transform.omim]
             [genegraph.env :as env]
-            [io.pedestal.log :as log])
+            [io.pedestal.log :as log]
+            [juxt.dirwatch :refer [watch-dir]])
   (:import java.io.PushbackReader
            java.time.Instant))
 
 ;; TODO ensure target directory exists
 (def target-base (str env/data-vol "/base/"))
-(def base-resources "base.edn")
+(def base-resources-edn "base.edn")
 (def state-file (str env/data-vol "/base_state.edn"))
 
 (defstate current-state
@@ -32,7 +33,11 @@
     (edn/read rdr)))
 
 (defn read-base-resources []
-  (read-edn base-resources))
+  (read-edn base-resources-edn))
+
+(def base-resources (read-base-resources))
+
+
 
 (defn- update-state! [resource-name k v]
   (swap! current-state assoc-in [resource-name k] v)
@@ -71,6 +76,15 @@
 (defn- set-ns-prefixes []
   (let [prefixes (read-edn "namespaces.edn")]
     (db/set-ns-prefixes prefixes)))
+
+(defn watch-base-dir
+  "Watch for changes in directory containing base files and update triplestore whenever changes are noticed. Intended for use in development"
+  []
+  (watch-dir 
+   (fn [event]
+     (let [changed-documents (filter #(= (-> event :file .getName) (:target %)) base-resources)]
+       (import-documents! changed-documents)))
+   (io/file target-base)))
 
 (defn read-actionability-curations [path]
   (let [files (filter #(.isFile %) (-> path io/file file-seq))]
