@@ -4,7 +4,6 @@
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.pprint :refer [pprint]]
-            [genegraph.sink.validation :as v]
             [genegraph.database.query :as q]
             [genegraph.database.util :refer [tx]]
             [genegraph.transform.core :refer [transform-doc]]
