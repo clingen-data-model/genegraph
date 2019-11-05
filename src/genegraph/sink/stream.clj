@@ -10,9 +10,7 @@
             [genegraph.transform.actionability]
             [clojure.string :as s]
             [clojure.data :as data]
-            [genegraph.database.query :as q]
-            [genegraph.database.util :refer [tx]]
-            [genegraph.database.validation :as v])
+            [genegraph.database.query :as q])
   (:import java.util.Properties
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
             ConsumerRecords]
@@ -88,7 +86,7 @@
           doc-model (transform-doc (assoc doc-def :document (.value record)))
           iri (document-name doc-def doc-model)]
       (log/info :fn :import-record! :msg :importing :iri iri)
-      (db/load-model doc-model iri))
+      (db/load-model doc-model iri {:validate true}))
     (catch Exception e 
       (.printStackTrace e)
       (log/warn :fn :import-record!
