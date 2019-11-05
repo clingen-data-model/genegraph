@@ -10,7 +10,9 @@
             [genegraph.transform.actionability]
             [clojure.string :as s]
             [clojure.data :as data]
-            [genegraph.database.query :as q])
+            [genegraph.database.query :as q]
+            [genegraph.database.util :refer [tx]]
+            [genegraph.database.validation :as v])
   (:import java.util.Properties
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
             ConsumerRecords]

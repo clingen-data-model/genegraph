@@ -12,27 +12,31 @@
 
 (def ^:dynamic *in-tx* false)
 
-(defmacro tx [& body]
+(defmacro tx 
+  "Open a read transaction on the persistent database. Most commands that read data from the databse will call this internally, since Jena TDB explicitly requires opening a transaction to read any data. If one wishes to issue multiple read commands within the scope of a single transaction, it is perfectly acceptable to wrap them all in a tx call, as this uses the var *in-tx* to ensure only a single transaction per thread is opened."
+  [& body]
   `(if *in-tx*
      (do ~@body)
      (binding [*in-tx* true]
-       (.begin db)
+       (.begin db ReadWrite/READ)
        (try
          (let [result# (do ~@body)]
-           (.commit db)
            result#)
          (catch Exception e# (log/error :fn :tx :msg e#) (.abort db))
          (finally (.end db))))))
 
-(defmacro write-tx [& body]
-  `(do
-     (.begin db ReadWrite/WRITE)
-     (try
-       (let [result# (do ~@body)]
-         (.commit db)
-         result#)
-       (catch Exception e# (log/error :fn :tx :msg e#) (.abort db))
-       (finally (.end db)))))
+(defmacro write-tx 
+  "Open a write transaction on the persistent database. Will roll back in case an exception is raised, does not propagate the exception currently. Users will need to explicitly call .commit within the context of a transaction."
+  [& body]
+  `(if *in-tx*
+     (do ~@body)
+     (binding [*in-tx* true]
+       (.begin db ReadWrite/WRITE)
+       (try
+         (let [result# (do ~@body)]
+           result#)
+         (catch Exception e# (log/error :fn :tx :msg e#) (.abort db))
+         (finally (.end db))))))
 
 (defmacro with-test-database 
   "Uses with-redefs to replace reference to production database with temporary,
