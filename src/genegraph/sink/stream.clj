@@ -15,7 +15,8 @@
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
             ConsumerRecords]
            [org.apache.kafka.common PartitionInfo TopicPartition]
-           java.time.Duration))
+           [java.time Duration ZonedDateTime ZoneOffset LocalDateTime LocalDate]
+           [java.time.format DateTimeFormatter]))
 
 (def offset-file (str env/data-vol "/partition_offsets.edn"))
 
@@ -40,7 +41,9 @@
                     :root-type :sepio/ActionabilityReport}
    "gene_dosage_beta" {:format :rdf
                        :reader-opts {:format :json-ld}
-                       :root-type :sepio/DosageSensitivityProposition}})
+                       :root-type :sepio/DosageSensitivityProposition}
+   "gene_validity" {:format :gene-validity-v1
+                    :root-type :sepio/GeneValidityReport}})
 
 (defn document-name [doc-def model]
   (-> (q/select "select ?x where {?x a ?type}"
@@ -83,8 +86,18 @@
     (let [doc-def (get topic-handlers (.topic record))
           doc-model (transform-doc (assoc doc-def :document (.value record)))
           iri (document-name doc-def doc-model)]
-      (log/info :fn :import-record! :msg :importing :iri iri)
-      (db/load-model doc-model iri))
+      (log/info :fn :import-record!
+                :msg :importing
+                :iri iri
+                :topic (.topic record)
+                :partition (.partition record)
+                :offset (.offset record)
+                :time (.format DateTimeFormatter/ISO_DATE_TIME
+                               (LocalDateTime/ofEpochSecond (/ (.timestamp record) 1000)
+                                                            0
+                                                            ZoneOffset/UTC))
+                 )
+      (db/load-model doc-model iri {:validate true}))
     (catch Exception e 
       (.printStackTrace e)
       (log/warn :fn :import-record!

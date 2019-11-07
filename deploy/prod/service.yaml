@@ -6,7 +6,7 @@ metadata:
   name: genegraph
 spec:
   type: LoadBalancer
-  loadBalancerIP: 35.196.195.211
+  loadBalancerIP: 34.74.127.4
   ports:
     - port: 80
       targetPort: 8888

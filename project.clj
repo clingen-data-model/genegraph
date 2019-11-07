@@ -27,6 +27,8 @@
                  [clj-http "3.9.1"] ;; For downloading 
                  [com.walmartlabs/lacinia-pedestal "0.12.0"]
                  [me.raynes/fs "1.4.6"]
+                 ;; Dirwatch for updating base files in development
+                 [juxt/dirwatch "0.2.5"]
                  ;; REBL reqs
                  [lein-cljfmt "0.6.4"]
                  [org.openjfx/javafx-fxml "11.0.1"]

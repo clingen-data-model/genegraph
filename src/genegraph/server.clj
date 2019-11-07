@@ -7,7 +7,8 @@
             [genegraph.sink.base :as base]
             [genegraph.sink.stream :as stream]
             [genegraph.migration :refer [migrate!]]
-            [genegraph.env :as env]))
+            [genegraph.env :as env]
+            [io.pedestal.log :as log]))
 
 
 (def initialized? (atom false))
@@ -29,10 +30,18 @@
            (merge-with into (service/service) status-routes)))
   :stop (server/stop server))
 
+(defn run-dev
+  "Run a development-focused environment: skip connection to Kafka unless
+  requested, watch for updates in base data."
+  []
+  (mount.core/start-without #'genegraph.sink.stream/consumer-thread)
+  (base/watch-base-dir))
+
 (defn -main
   "The entry-point for 'lein run'"
   [& args]
   ;; Start server first to support health check
+  (log/info :fn :-main :message "Starting Genegraph")
   (mount.core/start #'server)
   (env/log-environment)
   (migrate!)

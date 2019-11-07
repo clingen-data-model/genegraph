@@ -46,8 +46,8 @@ Docker and the GCP command line tools are required on the local machine in order
 
 To build and upload image in the staging environment (change project name  and version tag as appropriate):
 
-    docker build -t gcr.io/clingen-stage/clingen-ds:v1
-    docker push gcr.io/clingen-stage/clingen-ds:v1
+    docker build -t gcr.io/clingen-stage/genegraph:v1
+    docker push gcr.io/clingen-stage/genegraph:v1
     
 Make sure the image name is updated in deploy/<environment>/deployment.yaml for the target environment.
 

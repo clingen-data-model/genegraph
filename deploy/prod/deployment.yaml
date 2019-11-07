@@ -31,7 +31,7 @@ spec:
                 - genegraph
             topologyKey: "kubernetes.io/hostname"
       containers:
-        - image: gcr.io/clingen-dev/genegraph:v1
+        - image: gcr.io/clingen-dx/genegraph:v1
           name: genegraph
           livenessProbe:
             httpGet:

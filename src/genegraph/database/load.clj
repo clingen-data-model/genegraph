@@ -6,7 +6,9 @@
             [genegraph.database.instance :refer [db]]
             [genegraph.database.util :refer [property tx write-tx]]
             [genegraph.database.names :refer [local-property-names local-class-names]]
-            [genegraph.database.query :as q])
+            [genegraph.database.query :as q]
+            [genegraph.database.validation :as v]
+            [io.pedestal.log :as log])
   (:import [org.apache.jena.tdb2 TDB2Factory]
            [org.apache.jena.query TxnType Dataset]
            [org.apache.jena.rdf.model Model ModelFactory Literal Resource ResourceFactory
@@ -62,10 +64,33 @@
         constructed-statements (into-array Statement (map construct-statement stmts))]
     (.add m constructed-statements)))
 
-(defn load-model [model name]
+(defn load-model 
+  "Store model in the local, persistent database as named graph with name. Replace named graph if already present. Optionally, accepts an options map. At present the only option is :validate true/false. Defaults to false. If true, load-model will attempt to validate the model in the context of the local persistent data with whatever SHACL constraints are loaded in the database. If any constraints fail, will rollback the transaction, log an error, and return a structure signaling the failure, the reason, and a report with the result."
+  ([model name]
+   (load-model model name {}))
+  ([model name opts]
+   (write-tx
+    (.replaceNamedModel db name model)
+    (if (:validate opts)
+      (let [validation-result (v/validate (q/get-all-graphs) (q/get-all-graphs))]
+        (if (v/did-validate? validation-result)
+          (do (.commit db)
+              {:succeeded true})
+          (do (.abort db)
+              (log/warn :fn :load-model :name name :msg (q/to-turtle validation-result))
+              {:succeeded false
+               :reason :validation-failure
+               :validation-report validation-result})))
+      (do (.commit db)
+          {:succeeded true})))))
+
+(defn remove-model
+  "Remove a named model from the database."
+  [name]
   (write-tx
-   (.replaceNamedModel db name model)
-   true))
+   (.removeNamedModel db name)
+   (.commit db)
+   {:succeded true}))
 
 (defn load-statements 
   "Statements are a three-item sequence. Will be imported as a named graph into TDB"

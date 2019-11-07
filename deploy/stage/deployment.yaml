@@ -21,7 +21,7 @@ spec:
           hostPath:
             path: "/mnt/disks/ssd0"
       containers:
-        - image: gcr.io/clingen-stage/genegraph:v1
+        - image: gcr.io/clingen-stage/genegraph:v6
           name: genegraph
           env:
             - name: CG_SEARCH_DATA_VOL
