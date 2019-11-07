@@ -7,7 +7,8 @@
             [genegraph.sink.base :as base]
             [genegraph.sink.stream :as stream]
             [genegraph.migration :refer [migrate!]]
-            [genegraph.env :as env]))
+            [genegraph.env :as env]
+            [io.pedestal.log :as log]))
 
 
 (def initialized? (atom false))
@@ -40,6 +41,7 @@
   "The entry-point for 'lein run'"
   [& args]
   ;; Start server first to support health check
+  (log/info :fn :-main :message "Starting Genegraph")
   (mount.core/start #'server)
   (env/log-environment)
   (migrate!)

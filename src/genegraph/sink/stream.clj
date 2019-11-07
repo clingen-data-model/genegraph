@@ -15,7 +15,8 @@
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
             ConsumerRecords]
            [org.apache.kafka.common PartitionInfo TopicPartition]
-           java.time.Duration))
+           [java.time Duration ZonedDateTime ZoneOffset LocalDateTime LocalDate]
+           [java.time.format DateTimeFormatter]))
 
 (def offset-file (str env/data-vol "/partition_offsets.edn"))
 
@@ -85,7 +86,17 @@
     (let [doc-def (get topic-handlers (.topic record))
           doc-model (transform-doc (assoc doc-def :document (.value record)))
           iri (document-name doc-def doc-model)]
-      (log/info :fn :import-record! :msg :importing :iri iri)
+      (log/info :fn :import-record!
+                :msg :importing
+                :iri iri
+                :topic (.topic record)
+                :partition (.partition record)
+                :offset (.offset record)
+                :time (.format DateTimeFormatter/ISO_DATE_TIME
+                               (LocalDateTime/ofEpochSecond (/ (.timestamp record) 1000)
+                                                            0
+                                                            ZoneOffset/UTC))
+                 )
       (db/load-model doc-model iri {:validate true}))
     (catch Exception e 
       (.printStackTrace e)
