@@ -1,4 +1,4 @@
-(ns genegraph.source.graphql.dosage-curation
+(ns genegraph.source.graphql.dosage-proposition
   (:require [genegraph.database.query :as q]
             [clojure.string :as str]))
 

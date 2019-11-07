@@ -4,14 +4,15 @@
             [genegraph.source.graphql.resource :as resource]
             [genegraph.source.graphql.actionability :as actionability]
             [genegraph.source.graphql.gene-dosage :as gene-dosage]
+            [genegraph.source.graphql.gene-feature :as gene-feature]
+            [genegraph.source.graphql.region-feature :as region-feature]
+            [genegraph.source.graphql.dosage-proposition :as dosage-proposition]
             [genegraph.source.graphql.condition :as condition]
             [genegraph.source.graphql.server-status :as server-status]
             [genegraph.source.graphql.evidence :as evidence]
             [genegraph.source.graphql.value-set :as value-set]
             [genegraph.source.graphql.class :as rdf-class]
             [genegraph.source.graphql.property :as property]
-            [genegraph.source.graphql.coordinates :as coordinates]
-            [genegraph.source.graphql.dosage-curation :as dosage-curation]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]))
@@ -22,140 +23,213 @@
     {:description "An RDF Resource; generic type suitable for return when a variety of resources may be returned as the result of a function all"
      :fields {:iri {:type 'String}
               :label {:type 'String}}}
+
+    :genomic_feature
+    {:description "Genomic feature represented by a Gene or Region"
+     :fields {:label {:type 'String}
+              :build {:type 'String
+                      :description "The build name"}
+              :chromosome {:type 'String
+                           :description "The chromosome name"}
+              :start_pos {:type 'Int
+                          :description "Start coordinate"}
+              :end_pos {:type 'Int
+                        :description "End coordinate"}}}
     :curation 
     {:fields {:wg_label {:type 'String}
               :classification_description {:type 'String}
               :report_date {:type 'String}}}}
 
    :objects
-   {:coordinates
-    {:implements [:resource]
-     :fields {:iri {:type 'String :resolve resource/iri}
-              :label {:type 'String :resolve resource/label}
-              :build {:type 'String
-                      :description "The build name"
-                      :resolve coordinates/build}
-              :chromosome {:type 'String
-                           :description "The chromosome name"
-                           :resolve coordinates/chromosome}
-              :start_pos {:type 'Int
-                          :description "Start coordinate of the gene"
-                          :resolve coordinates/start-pos}
-              :end_pos {:type 'Int
-                        :description "End coordinate of the gene"
-                        :resolve coordinates/end-pos}}}
-
-    :gene
-    {:implements [:resource]
-     :fields {:iri {:type 'String :resolve resource/iri}
-              :label {:type 'String :resolve resource/label}
-              :hgnc_id {:type 'String :resolve gene/hgnc-id}
-              :hgnc_symbol {:type 'String
-                            :description "The HGNC symbol of the gene"
-                            :resolve gene/hgnc-symbol}
-              :hgnc_name {:type 'String
-                          :description "The HGNC name for the gene"
-                          :resolve gene/hgnc-name}
-              :gene_type {:type 'String
-                          :description "The gene type"
-                          :resolve gene/gene-type}
-              :locus_type {:type 'String
-                           :description "The gene locus type"
-                           :resolve gene/locus-type}
-              :previous_symbols {:type 'String
-                                 :description "The list of previous gene symbols"
-                                 :resolve gene/previous-symbols}
-              :alias_symbols {:type 'String
-                              :description "The list of gene aliases"
-                              :resolve gene/alias-symbols}
-              :chromo_loc {:type 'String
-                           :description "The chromosomal location"
-                           :resolve gene/chromo-loc}
-              :function {:type 'String
-                         :description "A description of the genes function"
-                         :resolve gene/function}
-              :coordinates {:type '(list :coordinates)
-                            :description "A list of the gene coordinates"
-                            :resolve gene/coordinates}
-              :curations {:type '(list :curation) :resolve gene/curations}
-              :conditions {:type '(list :condition) :resolve gene/conditions}
+   {:gene
+    {:description "A genomic feature (a gene or a region). Along with conditions, one of the basic units of curation."
+     :implements [:resource]
+     :fields {:iri {:type 'String
+                   :resolve resource/iri
+                    :description "IRI representing the gene. Uses NCBI gene identifiers"}
+              :label {:type 'String
+                      :resolve resource/label
+                      :description "Gene symbol"}
+              :chromosome_band {:type 'String
+                                :resolve gene/chromosome-band
+                                :description "Cytogenetic band of gene."}
+              :hgnc_id {:type 'String  
+                        :resolve gene/hgnc-id
+                        :description "HGNC ID of gene"}
+              :curations {:type '(list :curation)
+                          :resolve gene/curations}
+              :conditions {:type '(list :condition)
+                           :resolve gene/conditions
+                           :description "Genetic conditions associated with gene. This field is most frequently used for accessing actionability curations linked to a gene."}
               :actionability_curations {:type '(list :actionability_curation)
-                                        :resolve gene/actionability-curations}
-              :dosages {:type '(list :gene_dosage)
-                        :resolve gene/dosages}}}
+                                        :resolve gene/actionability-curations
+                                        :description "Actionability curations linked to a gene. Prefer using conditions.actionability_curations for most use cases, as this makes visible the gene-disease pairing used in the context of the curation."}
+              :dosage_curations {:type '(list :gene_dosage_curation)
+                        :resolve gene/dosage-curations
+                        :description "Gene Dosage curations associated with the gene or region."}}}
+
+    :gene_feature
+    {:description "A gene feature"
+     :implements [:resource :genomic_feature]
+     :fields {:iri {:type 'String
+                    :resolve resource/iri
+                    :description "IRI representing the gene. Uses NCBI gene identifiers"}
+              :label {:type 'String
+                      :resolve resource/label
+                      :description "Gene symbol"}
+              :hgnc_id {:type 'String
+                        :resolve gene-feature/hgnc-id
+                        :description "HGNC ID of gene"}
+              :gene_type {:type 'String
+                          :resolve gene-feature/gene-type
+                          :description "The gene type"}
+              :locus_type {:type 'String
+                           :resolve gene-feature/locus-type
+                           :description "The gene locus type"}
+              :previous_symbols {:type 'String
+                                 :resolve gene-feature/previous-symbols
+                                 :description "The list of previous gene symbols"}
+              :alias_symbols {:type 'String
+                              :resolve gene-feature/alias-symbols
+                              :description "The list of gene aliases"}
+              :chromo_loc {:type 'String
+                           :resolve gene-feature/chromo-loc
+                           :description "The chromosomal location"}
+              :function {:type 'String
+                         :resolve gene-feature/function
+                         :description "A description of the genes function"}
+              :build {:type 'String
+                      :resolve gene-feature/build
+                      :description "The build name"}
+              :chromosome {:type 'String
+                           :resolve gene-feature/chromosome
+                           :description "The chromosome name"}
+              :start_pos {:type 'Int
+                          :resolve gene-feature/start-pos
+                          :description "Start coordinate of the gene"}
+              :end_pos {:type 'Int
+                        :resolve gene-feature/end-pos
+                        :description "End coordinate of the gene"}}}
+    
+    :region_feature
+    {:description "A region feature."
+     :implements [:resource :genomic_feature]
+     :fields {:iri {:type 'String
+                    :resolve resource/iri
+                    :description "IRI representing the region"}
+              :label {:type 'String
+                      :resolve resource/label
+                      :description "Region symbol"}
+              :build {:type 'String
+                      :resolve region-feature/build
+                      :description "The build name"}
+              :chromosome {:type 'String
+                           :resolve region-feature/chromosome
+                           :description "The chromosome name"}
+              :start_pos {:type 'Int
+                          :resolve region-feature/start-pos
+                          :description "Start coordinate of the gene"}
+              :end_pos {:type 'Int
+                        :resolve region-feature/end-pos
+                        :description "End coordinate of the gene"}}}
 
     :condition
-    {:implements [:resource]
-     :fields {:iri {:type 'String :resolve condition/iri}
-              :label {:type 'String :resolve condition/label}
-              :gene {:type :gene :resolve condition/gene}
+    {:description "A disease or condition. May be a genetic condition, linked to a specific disease or mode of inheritance. Along with gene, one of the basic units of curation."
+     :implements [:resource]
+     :fields {:iri {:type 'String
+                    :resolve condition/iri
+                    :description "IRI for the condition. Currently MONDO ids are supported."}
+              :label {:type 'String
+                      :resolve condition/label
+                      :description "Label for the condition."}
+              :gene {:type :gene
+                     :resolve condition/gene
+                     :description "If the condiiton is a genetic condition, the gene associated with the condition."}
               :actionability_curations {:type '(list :actionability_curation)
-                                        :resolve condition/actionability-curations}
+                                        :resolve condition/actionability-curations
+                                        :description "Actionability curations associated with the condition"}
               :genetic_conditions {:type '(list :condition)
-                                   :resolve condition/genetic-conditions}}}
+                                   :resolve condition/genetic-conditions
+                                   :description "Genetic conditions that are direct subclasses of this condition."}}}
 
     :evidence
-    {:implements [:resource]
-     :fields {:iri {:type 'String :resolve resource/iri}
-              :label {:type 'String :resolve resource/label}
-              :source {:type 'String :resolve evidence/source}
-              :description {:type 'String :resolve evidence/description}}}
+    {:description "An evidence item, typically used in support of an assertion made as a part of a curation"
+     :fields {:source {:type 'String
+                       :resolve evidence/source
+                       :description "Origin of the evidence, i.e. PubMed reference"}
+              :description {:type 'String
+                            :resolve evidence/description
+                            :description "Description of the evidence being cited."}}}
 
-    :dosage_curation
-    {:implements [:resource :curation]
-     :fields {:iri {:type 'String :resolve resource/iri}
-              :label {:type 'String :resolve resource/label}
-              :wg_label {:type 'String :resolve dosage-curation/wg-label}
-              :classification_description {:type 'String
-                                           :description "A statement about the strength of evidence" 
-                                           :resolve dosage-curation/classification-description}
-
+    :gene_dosage_curation
+    {:description "A complete gene dosage curation containing one or more dosage propositions"
+     :implements [:resource]
+     :fields {:iri {:type 'String
+                    :resolve resource/iri}
+              :label {:type 'String
+                      :resolve gene-dosage/label}
+              :wg_label {:type 'String
+                         :resolve gene-dosage/wg-label}
               :report_date {:type 'String
-                            :description "The date this curation was reported"
-                            :resolve dosage-curation/report-date}
-              :score {:type 'Int
-                      :description "Sufficiency score"
-                      :resolve dosage-curation/score}
-              :phenotypes {:type 'String
-                          :description "The phenotypes to which the evidence applies"
-                          :resolve dosage-curation/phenotypes}
-              :evidence {:type '(list :evidence)
-                          :description "Evidence statements"
-                          :resolve dosage-curation/evidence}
-              :comments {:type 'String
-                         :description "Comments"
-                         :resolve dosage-curation/comments}}}
-    
-    :gene_dosage
-    {:implements [:resource]
-     :fields {:iri {:type 'String :resolve resource/iri}
-              :label {:type 'String :resolve gene-dosage/label}
-              :wg_label {:type 'String :resolve gene-dosage/wg-label}
-              :report_date {:type 'String :resolve gene-dosage/report-date}
-              :gene_name {:type 'String :resolve gene-dosage/gene-name}
-              :gene {:type :gene :resolve gene-dosage/gene}
-              :haplo {:type :dosage_curation
-                       :description "Haploinsufficiency"
-                       :resolve gene-dosage/haplo}
-              :triplo {:type :dosage_curation
-                       :description "Triplosensitivity"
-                       :resolve gene-dosage/triplo}
+                            :resolve gene-dosage/report-date}
+              :genomic_feature {:type :genomic_feature
+                                :resolve gene-dosage/genomic-feature}
+              :haplo {:type :dosage_proposition
+                      :resolve gene-dosage/haplo
+                      :description "Haploinsufficiency"}
+              :triplo {:type :dosage_proposition
+                       :resolve gene-dosage/triplo
+                       :description "Triplosensitivity"}
               :haplo_index {:type 'String
-                            :description "Haploinsufficiency index percent"
-                            :resolve gene-dosage/haplo-index}
-              :morbid {:type 'Boolean :resolve gene-dosage/morbid}
+                            :resolve gene-dosage/haplo-index
+                            :description "Haploinsufficiency index percent"}
+              :morbid {:type 'Boolean
+                       :resolve gene-dosage/morbid}
               :omim {:type 'Boolean
-                     :description ""
                      :resolve gene-dosage/omim}
               :pli_score {:type 'String
-                          :description "Loss intolerence (pLI)"
-                          :resolve gene-dosage/pli-score}
-              :location_relationship {:type 'String :resolve gene-dosage/location-relationship}}}
-    
+                          :resolve gene-dosage/pli-score
+                          :description "Loss intolerence (pLI)"}
+              :location_relationship {:type 'String
+                                      :resolve gene-dosage/location-relationship
+                                      :description "Location relationship"}}}
+
+    :dosage_proposition
+    {:description "An individual dosage proposition, either a Haplo Insufficiency proposition or a Triplo Sensitivity proposition"
+     :implements [:resource :curation]
+     :fields {:iri {:type 'String
+                    :resolve resource/iri
+                    :description "Identifier for the curation"}
+              :label {:type 'String
+                      :resolve resource/label
+                      :description "Curation label"}
+              :wg_label {:type 'String
+                         :resolve dosage-proposition/wg-label
+                         :description "Label for the working group responsible for the curation"}
+              :classification_description {:type 'String
+                                           :resolve dosage-proposition/classification-description
+                                           :description "Summary of the classification and the rationale behind it"}
+              :report_date {:type 'String
+                            :resolve dosage-proposition/report-date
+                            :description "Date the report was last issued by the working group."}
+              :evidence {:type '(list :evidence)
+                         :resolve dosage-proposition/evidence
+                         :description "Evidence relating to the gene dosage curation."}
+              :score {:type 'Int
+                      :resolve dosage-proposition/score
+                      :description "Sufficiency score"}
+              :phenotypes {:type 'String
+                           :resolve dosage-proposition/phenotypes
+                           :description "The phenotypes to which the evidence applies"}
+              :comments {:type 'String
+                         :resolve dosage-proposition/comments
+                         :description "Comments related to this curation"}}}
+
     :actionability_curation
     {:implements [:resource :curation]
      :fields 
-     {:iri {:type 'String :resolve resource/iri}
+     {:iri {:type 'String
+            :resolve resource/iri}
       :label {:type 'String :resolve resource/label}
       :report_date {:type 'String :resolve actionability/report-date}
       :wg_label {:type 'String :resolve actionability/wg-label}
@@ -228,7 +302,7 @@
                     :resolve rdf-class/model-classes-query}
     :server_status {:type '(non-null :server_status)
                     :resolve server-status/server-version-query}
-    :dosage_list{:type '(list :gene_dosage)
+    :dosage_list{:type '(list :gene_dosage_curation)
                  :resolve gene-dosage/dosage-list-query}
     :totals {:type :totals
              :resolve gene-dosage/totals-query}}})

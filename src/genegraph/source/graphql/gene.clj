@@ -9,6 +9,9 @@
        gene
        (first (filter #(q/is-rdf-type? % :so/ProteinCodingGene) (get gene [:owl/same-as :<]))))))
 
+(defn chromosome-band [context args value]
+  (first (:so/chromosome-band value)))
+
 (defn hgnc-id [context args value]
   (->> (q/ld-> value [:owl/same-as])
        (filter #(= (str (q/ld1-> % [:dc/source])) "https://www.genenames.org"))
@@ -27,18 +30,12 @@
   (q/ld-> value [[:sepio/is-about-gene :<] [:sepio/is-about-condition :<]]))
 
 ;; TODO check for type (hopefully before structurally necessary)
-(defn dosages [context args value]
+(defn dosage-curations [context args value]
   (q/ld-> value [[:geno/is-feature-affected-by :<]
                  [:sepio/has-subject :<]
                  [:sepio/has-subject :<]]))
 
-(defn gene-facts [context args value]
-  (q/ld-> value []))
-
 (defn hgnc-symbol [context args value]
-  (q/ld-> value []))
-
-(defn hgnc-name [context args value]
   (q/ld-> value []))
 
 (defn gene-type [context args value]
