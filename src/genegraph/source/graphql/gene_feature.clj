@@ -1,11 +1,12 @@
 (ns genegraph.source.graphql.gene-feature
-  (:require [genegraph.database.query :as q]))
+  (:require [genegraph.database.query :as q]
+            [clojure.string :as str]))
 
 (defn hgnc-id [context args value]
-  )
+  (q/ld1-> value [:owl/same-as]))
 
 (defn hgnc-symbol [context args value]
-  )
+  (q/ld1-> value [:skos/preferred-label]))
 
 (defn gene-type [context args value]
   )
@@ -17,10 +18,10 @@
   )
 
 (defn alias-symbols [context args value]
-  )
+  (str/join ", " (q/ld-> value [:skos/hidden-label])))
 
-(defn chromo-loc [context args value]
- )
+(defn chromosome-band [context args value]
+  (q/ld1-> value [:so/chromosome-band]))
 
 (defn function [context args value]
   )
@@ -32,7 +33,7 @@
   )
 
 (defn chromosome [context args value]
-  (q/ld1-> value [:skos/chromosome-band]))
+  (q/ld1-> value [:so/chromosome-band]))
 
 (defn start-pos [context args value]
   )

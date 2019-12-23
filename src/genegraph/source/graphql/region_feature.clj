@@ -15,3 +15,6 @@
 
 (defn end-pos [context args value]
   (q/ld1-> value [:geno/end-position]))
+
+(defn chromosome-band [context args value]
+  (q/ld1-> value [:so/chromosome-band]))

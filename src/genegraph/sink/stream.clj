@@ -24,26 +24,26 @@
 
 (def client-properties
   {"bootstrap.servers" env/dx-host
-   "group.id" env/dx-group
    "enable.auto.commit" "false"
    "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
    "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
-   "security.protocol" "SSL"
-   ;;"ssl.truststore.location" "keys/serveur.truststore.jks"
-   "ssl.truststore.location" env/dx-truststore
-   "ssl.truststore.password" env/dx-key-pass
-   "ssl.keystore.location" env/dx-keystore
-   "ssl.keystore.password" env/dx-key-pass
-   "ssl.key.password" env/dx-key-pass})
+   "request.timeout.ms" "20000"
+   "retry.backoff.ms" "500"
+   "sasl.mechanism" "PLAIN"
+   "security.protocol" "SASL_SSL"
+   "ssl.endpoint.identification.algorithm" "https"
+   "sasl.jaas.config"
+   (str "org.apache.kafka.common.security.plain.PlainLoginModule required username=\""
+        env/dx-user "\" password=\"" env/dx-pass "\";")})
 
 (def topic-handlers
   {"actionability" {:format :actionability-v1
                     :root-type :sepio/ActionabilityReport}
-   "gene_dosage_beta" {:format :rdf
-                       :reader-opts {:format :json-ld}
-                       :root-type :sepio/DosageSensitivityProposition}
    "gene_validity" {:format :gene-validity-v1
-                    :root-type :sepio/GeneValidityReport}})
+                    :root-type :sepio/GeneValidityReport}
+   "gene_dosage_sepio_in" {:format :rdf
+                           :reader-opts {:format :json-ld}
+                           :root-type :sepio/GeneDosageReport}})
 
 (defn document-name [doc-def model]
   (-> (q/select "select ?x where {?x a ?type}"
@@ -53,7 +53,7 @@
       str))
 
 ;; Java Properties object defining configuration of Kafka client
-(defn- client-configuration 
+(defn- client-configuration
   "Create client "
   []
   (let [props (new Properties)]
@@ -70,7 +70,7 @@
   (let [partition-infos (.partitionsFor c topic)]
     (map #(TopicPartition. (.topic %) (.partition %)) partition-infos)))
 
-(defn- poll-once 
+(defn- poll-once
   ([c] (-> c (.poll (Duration/ofMillis 100)) .iterator iterator-seq)))
 
 (defn- assign-topic! [consumer topic]
@@ -95,10 +95,9 @@
                 :time (.format DateTimeFormatter/ISO_DATE_TIME
                                (LocalDateTime/ofEpochSecond (/ (.timestamp record) 1000)
                                                             0
-                                                            ZoneOffset/UTC))
-                 )
-      (db/load-model doc-model iri {:validate true}))
-    (catch Exception e 
+                                                            ZoneOffset/UTC)))
+      (db/load-model doc-model iri {:validate false}))
+    (catch Exception e
       (.printStackTrace e)
       (log/warn :fn :import-record!
                 :topic (.topic record)
@@ -114,7 +113,7 @@
 
 (def run-consumer (atom true))
 
-(defn read-offsets! [] 
+(defn read-offsets! []
   (if (.exists (io/as-file offset-file))
     (reset! current-offsets (-> offset-file slurp edn/read-string))
     (reset! current-offsets {})))
@@ -128,7 +127,7 @@
                                {} kafka-end-offsets)]
     (reset! end-offsets end-offset-map)))
 
-(defn up-to-date? 
+(defn up-to-date?
   "Returns true if all partitions of all topics subscribed to have had messages
   consumed up to the latest offset when the consumer was started."
   []
@@ -177,7 +176,7 @@
             (recur (concat records addl-records))))))))
 
 (defn consumer-record-to-clj [consumer-record]
-  (try 
+  (try
     (-> consumer-record .value json/parse-string)
     (catch Exception e (println "invalid JSON"))))
 
@@ -186,12 +185,12 @@
     (println (count records))
     (doseq [record-payload records]
       (if-let [record (consumer-record-to-clj record-payload)]
-        
-        (let  [id (re-find #"[A-Za-z0-9-]+$" (or (str (get record "iri") ) (get-in record ["interpretation" "id"])))
-               wg (get-in record ["affiliations" 0 "id"])]
-              (spit (str folder "/" id ".json") (.value record-payload)))))))
 
-(defn load-local-data 
+        (let  [id (re-find #"[A-Za-z0-9-]+$" (or (str (get record "iri")) (get-in record ["interpretation" "id"])))
+               wg (get-in record ["affiliations" 0 "id"])]
+          (spit (str folder "/" id ".json") (.value record-payload)))))))
+
+(defn load-local-data
   "Treat all files stored in dir as loadable data in json-ld form, load them
   into base datastore"
   [dir]

@@ -1,7 +1,11 @@
 # Project related
 /db/
 /data/
+/base/
 env.list
+base_state.edn
+partition_offsets.edn
+version.edn
 
 # Java related
 pom.xml
@@ -15,6 +19,7 @@ lib/
 native/
 checkouts/
 target/
+deps
 .lein-*
 repl-port
 .nrepl-port
@@ -41,4 +46,4 @@ out/
 build/
 
 # Jena 
-tdb/**
+/tdb/**

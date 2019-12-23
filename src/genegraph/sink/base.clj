@@ -36,8 +36,6 @@
 
 (def base-resources (read-base-resources))
 
-
-
 (defn- update-state! [resource-name k v]
   (swap! current-state assoc-in [resource-name k] v)
   (spit state-file (prn-str @current-state)))

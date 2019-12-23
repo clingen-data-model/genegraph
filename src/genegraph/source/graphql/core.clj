@@ -92,8 +92,8 @@
               :alias_symbols {:type 'String
                               :resolve gene-feature/alias-symbols
                               :description "The list of gene aliases"}
-              :chromo_loc {:type 'String
-                           :resolve gene-feature/chromo-loc
+              :chromosome_band {:type 'String
+                           :resolve gene-feature/chromosome-band
                            :description "The chromosomal location"}
               :function {:type 'String
                          :resolve gene-feature/function
@@ -123,6 +123,9 @@
               :build {:type 'String
                       :resolve region-feature/build
                       :description "The build name"}
+              :chromosome_band {:type 'String
+                                :resolve region-feature/chromosome-band
+                                :description "The chromosomal location"}
               :chromosome {:type 'String
                            :resolve region-feature/chromosome
                            :description "The chromosome name"}
@@ -183,8 +186,12 @@
               :haplo_index {:type 'String
                             :resolve gene-dosage/haplo-index
                             :description "Haploinsufficiency index percent"}
-              :morbid {:type 'Boolean
-                       :resolve gene-dosage/morbid}
+              :morbid {:type '(list String)
+                       :resolve gene-dosage/morbid
+                       :description "Gene morbidity OMIM numbers"}
+              :morbid_phenotypes {:type '(list String)
+                                  :resolve gene-dosage/morbid-phenotypes
+                                  :description "Gene morbidity phenotypes"}
               :omim {:type 'Boolean
                      :resolve gene-dosage/omim}
               :pli_score {:type 'String

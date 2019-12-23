@@ -53,7 +53,9 @@
          object (cond 
                   (keyword? o) (local-class-names o)
                   (= :Resource (:object (meta stmt))) (ResourceFactory/createResource o)
-                  (string? o) (ResourceFactory/createTypedLiteral o)
+                  (or (string? o)
+                      (int? o)
+                      (float? o)) (ResourceFactory/createTypedLiteral o)
                   (satisfies? q/AsJenaResource o) (q/as-jena-resource o)
                   :else o)]
      (ResourceFactory/createStatement subject predicate object))))
@@ -69,20 +71,22 @@
   ([model name]
    (load-model model name {}))
   ([model name opts]
-   (write-tx
-    (.replaceNamedModel db name model)
-    (if (:validate opts)
-      (let [validation-result (v/validate (q/get-all-graphs) (q/get-all-graphs))]
-        (if (v/did-validate? validation-result)
-          (do (.commit db)
-              {:succeeded true})
-          (do (.abort db)
-              (log/warn :fn :load-model :name name :msg (q/to-turtle validation-result))
-              {:succeeded false
-               :reason :validation-failure
-               :validation-report validation-result})))
-      (do (.commit db)
-          {:succeeded true})))))
+   (try
+     (write-tx
+      (.replaceNamedModel db name model)
+      (if (:validate opts)
+        (let [validation-result (v/validate (q/get-all-graphs) (q/get-all-graphs))]
+          (if (v/did-validate? validation-result)
+            (do (.commit db)
+                {:succeeded true})
+            (do (.abort db)
+                (log/warn :fn :load-model :name name :msg (q/to-turtle validation-result))
+                {:succeeded false
+                 :reason :validation-failure
+                 :validation-report validation-result})))
+        (do (.commit db)
+            {:succeeded true})))
+     (catch Exception e# (log/error :fn :tx :msg e#)))))
 
 (defn remove-model
   "Remove a named model from the database."
@@ -92,10 +96,10 @@
    (.commit db)
    {:succeded true}))
 
-(defn load-statements 
+(defn load-statements
   "Statements are a three-item sequence. Will be imported as a named graph into TDB"
   ([stmts name]
-   (load-model (statements-to-model stmts))))
+   (load-model (statements-to-model stmts) name)))
 
 (defn set-ns-prefixes [prefixes]
   (write-tx
