@@ -53,7 +53,9 @@
          object (cond 
                   (keyword? o) (local-class-names o)
                   (= :Resource (:object (meta stmt))) (ResourceFactory/createResource o)
-                  (string? o) (ResourceFactory/createTypedLiteral o)
+                  (or (string? o)
+                      (int? o)
+                      (float? o)) (ResourceFactory/createTypedLiteral o)
                   (satisfies? q/AsJenaResource o) (q/as-jena-resource o)
                   :else o)]
      (ResourceFactory/createStatement subject predicate object))))
