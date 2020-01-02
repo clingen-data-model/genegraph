@@ -20,7 +20,7 @@
 (defn alias-symbols [context args value]
   (str/join ", " (q/ld-> value [:skos/hidden-label])))
 
-(defn chromosome-band [context args value]
+(defn chromosomal-band [context args value]
   (q/ld1-> value [:so/chromosome-band]))
 
 (defn function [context args value]
@@ -29,14 +29,6 @@
 (defn label [context args value]
   (q/ld1-> value [:skos/preferred-label]))
 
-(defn build [context args value]
-  )
+(defn coordinates [context args value]
+  (q/ld-> value [:geno/has-location]))
 
-(defn chromosome [context args value]
-  (q/ld1-> value [:so/chromosome-band]))
-
-(defn start-pos [context args value]
-  )
-
-(defn end-pos [context args value]
-  )

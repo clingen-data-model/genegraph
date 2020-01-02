@@ -4,17 +4,8 @@
 (defn label [context args value]
   (q/ld1-> value [:rdfs/label]))
 
-(defn build [context args value]
-  )
-
-(defn chromosome [context args value]
-  (q/ld1-> value [:faldo/reference]))
-
-(defn start-pos [context args value]
-  (q/ld1-> value [:geno/start-position]))
-
-(defn end-pos [context args value]
-  (q/ld1-> value [:geno/end-position]))
-
-(defn chromosome-band [context args value]
+(defn chromosomal-band [context args value]
   (q/ld1-> value [:so/chromosome-band]))
+
+(defn coordinates [context args value]
+  (q/ld-> value [:geno/has-location]))

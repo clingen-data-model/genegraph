@@ -1,4 +1,4 @@
-(ns genegraph.transform.coordinates
+(ns genegraph.transform.features
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q]
             [clojure.data.csv :as csv]
@@ -24,16 +24,16 @@
 (defn features-to-triples [rows]
   (reduce (fn [triples row]
             (let [[build chromosome assembly-uri start end strand gene-uri] row
-                  feature-blank (l/blank-node)
+                  location-blank (l/blank-node)
                   interval-blank (l/blank-node)]
               (conj triples
-                    [(q/resource gene-uri) :geno/sequence-feature-set feature-blank]
-                    [feature-blank :data/genome-build-identifier build]
-                    [feature-blank :rdf/type :so/SequenceFeatureSet]
-                    [feature-blank :so/chromosome chromosome]
-                    [feature-blank :so/assembly (q/resource assembly-uri)]
-                    [feature-blank :geno/on-strand strand]
-                    [feature-blank :geno/has-interval interval-blank]
+                    [(q/resource gene-uri) :geno/has-location location-blank]
+                    [location-blank :data/genome-build-identifier build]
+                    [location-blank :rdf/type :geno/SequenceFeatureLocation]
+                    [location-blank :so/chromosome chromosome]
+                    [location-blank :so/assembly (q/resource assembly-uri)]
+                    [location-blank :geno/on-strand strand]
+                    [location-blank :geno/has-interval interval-blank]
                     [interval-blank :rdf/type :geno/SequenceInterval]
                     [interval-blank :geno/start-position (Integer. (re-find #"[0-9]*" start))]
                     [interval-blank :geno/end-position (Integer. (re-find #"[0-9]*" end))])))

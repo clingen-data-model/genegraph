@@ -6,6 +6,7 @@
             [genegraph.source.graphql.gene-dosage :as gene-dosage]
             [genegraph.source.graphql.gene-feature :as gene-feature]
             [genegraph.source.graphql.region-feature :as region-feature]
+            [genegraph.source.graphql.coordinate :as coordinate]
             [genegraph.source.graphql.dosage-proposition :as dosage-proposition]
             [genegraph.source.graphql.condition :as condition]
             [genegraph.source.graphql.server-status :as server-status]
@@ -24,17 +25,25 @@
      :fields {:iri {:type 'String}
               :label {:type 'String}}}
 
-    :genomic_feature
-    {:description "Genomic feature represented by a Gene or Region"
-     :fields {:label {:type 'String}
-              :build {:type 'String
+    :genomic_coordinate
+    {:description "Genomic coordinate of a Gene or Region"
+     :fields {:build {:type 'String
                       :description "The build name"}
+              :assembly {:type 'String
+                      :description "The assembly name"}
               :chromosome {:type 'String
                            :description "The chromosome name"}
               :start_pos {:type 'Int
                           :description "Start coordinate"}
               :end_pos {:type 'Int
-                        :description "End coordinate"}}}
+                        :description "End coordinate"}
+              :strand {:type 'String
+                       :description "Strand the feature appears on."}}}
+    
+    :genomic_feature
+    {:description "Genomic feature represented by a Gene or Region"
+     :fields {:coordinates {:type '(list genomic_coordinate)}}}
+
     :curation 
     {:fields {:wg_label {:type 'String}
               :classification_description {:type 'String}
@@ -68,6 +77,22 @@
                         :resolve gene/dosage-curations
                         :description "Gene Dosage curations associated with the gene or region."}}}
 
+    :coordinate
+    {:description "a genomic coordinate"
+     :implements [:genomic_coordinate]
+     :fields {:build {:type 'String
+                      :resolve coordinate/build}
+              :assembly {:type 'String
+                      :resolve coordinate/assembly}
+              :chromosome {:type 'String
+                           :resolve coordinate/chromosome}
+              :strand {:type 'String
+                       :resolve coordinate/strand}
+              :start_pos {:type 'Int
+                          :resolve coordinate/start-pos}
+              :end_pos {:type 'Int
+                        :resolve coordinate/end-pos}}}
+    
     :gene_feature
     {:description "A gene feature"
      :implements [:resource :genomic_feature]
@@ -92,27 +117,18 @@
               :alias_symbols {:type 'String
                               :resolve gene-feature/alias-symbols
                               :description "The list of gene aliases"}
-              :chromosome_band {:type 'String
-                           :resolve gene-feature/chromosome-band
+              :chromosomal_band {:type 'String
+                           :resolve gene-feature/chromosomal-band
                            :description "The chromosomal location"}
               :function {:type 'String
                          :resolve gene-feature/function
                          :description "A description of the genes function"}
-              :build {:type 'String
-                      :resolve gene-feature/build
-                      :description "The build name"}
-              :chromosome {:type 'String
-                           :resolve gene-feature/chromosome
-                           :description "The chromosome name"}
-              :start_pos {:type 'Int
-                          :resolve gene-feature/start-pos
-                          :description "Start coordinate of the gene"}
-              :end_pos {:type 'Int
-                        :resolve gene-feature/end-pos
-                        :description "End coordinate of the gene"}}}
+              :coordinates {:type '(list :coordinate)
+                            :resolve gene-feature/coordinates
+                            :description "Coordinates of the feature"}}}
     
     :region_feature
-    {:description "A region feature."
+    {:description "A region feature"
      :implements [:resource :genomic_feature]
      :fields {:iri {:type 'String
                     :resolve resource/iri
@@ -120,21 +136,12 @@
               :label {:type 'String
                       :resolve resource/label
                       :description "Region symbol"}
-              :build {:type 'String
-                      :resolve region-feature/build
-                      :description "The build name"}
-              :chromosome_band {:type 'String
-                                :resolve region-feature/chromosome-band
+              :chromosomal_band {:type 'String
+                                :resolve region-feature/chromosomal-band
                                 :description "The chromosomal location"}
-              :chromosome {:type 'String
-                           :resolve region-feature/chromosome
-                           :description "The chromosome name"}
-              :start_pos {:type 'Int
-                          :resolve region-feature/start-pos
-                          :description "Start coordinate of the gene"}
-              :end_pos {:type 'Int
-                        :resolve region-feature/end-pos
-                        :description "End coordinate of the gene"}}}
+              :coordinates {:type '(list :coordinate)
+                            :resolve region-feature/coordinates
+                            :description "Coordinates of the feature"}}}
 
     :condition
     {:description "A disease or condition. May be a genetic condition, linked to a specific disease or mode of inheritance. Along with gene, one of the basic units of curation."
