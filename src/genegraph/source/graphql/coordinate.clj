@@ -3,13 +3,13 @@
             [clojure.string :as str]))
 
 (defn build [context args value]
-  (q/ld1-> value [:data/genome-build-identifier]))
+  (q/ld1-> value [:so/assembly :data/genome-build-identifier]))
 
 (defn assembly [context args value]
   (q/ld1-> value [:so/assembly]))
 
 (defn chromosome [context args value]
-  (q/ld1-> value [:so/chromosome]))
+  (q/ld1-> value [:so/assembly :so/chromosome]))
 
 (defn strand [context args value]
   (q/ld1-> value [:geno/on-strand]))

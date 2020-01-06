@@ -106,15 +106,18 @@
   :target "clingen-terms.ttl"
   :format :rdf
   :reader-opts {:format :turtle}}
+  {:name "http://dataexchange.clinicalgenome.org/build-assembly-chr.ttl"
+  :source "https://raw.githubusercontent.com/clingen-data-model/clingen-terms/master/build-assembly-chr.ttl"
+  :target "build-assembly-chr.ttl"
+  :format :rdf
+  :reader-opts {:format :turtle}}
  {:name "ftp://ftp.ncbi.nih.gov/GRCh37.p13"
   :source "ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.25_GRCh37.p13/GCF_000001405.25_GRCh37.p13_feature_table.txt.gz"
   :target "ncbi_grch37_features.txt.gz"
   :format :features
-  :reader-opts {:build "GRCh37"}
   }
  {:name "ftp://ftp.ncbi.nih.gov/GRCh38.p13"
   :source "ftp://ftp.ncbi.nih.gov/genomes/Homo_sapiens/current/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_feature_table.txt.gz"
   :target "ncbi_grch38_features.txt.gz"
   :format :features
-  :reader-opts {:build "GRCh38"}
   }]

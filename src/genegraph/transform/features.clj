@@ -10,27 +10,23 @@
 (def nucore-prefix "https://www.ncbi.nlm.nih.gov/nuccore/")
 
 (defn ncbi-row-to-features [row]
-  (let [chromosome (nth row 5)
-        assembly (nth row 6)
-        assembly-uri (str nucore-prefix assembly)
+  (let [assembly-uri (str nucore-prefix (nth row 6))
         start (nth row 7)
         end (nth row 8)
         strand (nth row 9)
         ncbi-gene-symbol (nth row 14)
         ncbi-gene-id (nth row 15)
         ncbi-gene-uri (str gene-prefix ncbi-gene-id)]
-    (vector chromosome assembly-uri start end strand ncbi-gene-uri)))
+    (vector assembly-uri start end strand ncbi-gene-uri)))
 
 (defn features-to-triples [rows]
   (reduce (fn [triples row]
-            (let [[build chromosome assembly-uri start end strand gene-uri] row
+            (let [[assembly-uri start end strand gene-uri] row
                   location-blank (l/blank-node)
                   interval-blank (l/blank-node)]
               (conj triples
                     [(q/resource gene-uri) :geno/has-location location-blank]
-                    [location-blank :data/genome-build-identifier build]
                     [location-blank :rdf/type :geno/SequenceFeatureLocation]
-                    [location-blank :so/chromosome chromosome]
                     [location-blank :so/assembly (q/resource assembly-uri)]
                     [location-blank :geno/on-strand strand]
                     [location-blank :geno/has-interval interval-blank]
@@ -40,17 +36,16 @@
           []
           rows))
 
-(defn transform-features [ncbi-features build]
+(defn transform-features [ncbi-features]
   (let [ncbi-feature-table (csv/read-csv ncbi-features :separator \tab)]
     (->> ncbi-feature-table
          (filter #(= "gene" (first %)))
-         (mapcat #(vector (cons build (ncbi-row-to-features %))))
+         (mapcat #(vector (ncbi-row-to-features %)))
          features-to-triples
          l/statements-to-model)))
 
 (defmethod transform-doc :features
   [doc-def]
-  (let [build (:build (:reader-opts doc-def))]
-    (with-open [in (java.util.zip.GZIPInputStream. (io/input-stream (src-path doc-def)))]
-      (transform-features (slurp in) build))))
+  (with-open [in (java.util.zip.GZIPInputStream. (io/input-stream (src-path doc-def)))]
+    (transform-features (slurp in))))
 
