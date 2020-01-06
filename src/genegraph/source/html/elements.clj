@@ -8,6 +8,8 @@
 (defn- get-defined-symbols [ns]
   (->> ns get-multis (map var-get) (map methods) (map keys) (apply concat) (into #{})))
 
+
+;; TODO -- Technically there is a dependency on all other namespaces here
 (defstate defined-symbols :start (get-defined-symbols 'genegraph.source.html.elements))
 
 (defn resource-dispatch 

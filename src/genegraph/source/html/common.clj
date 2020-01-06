@@ -41,35 +41,47 @@
     [:script {:type "text/javascript" :src "https://cdn.datatables.net/v/bs/dt-1.10.13/fh-3.1.2/datatables.min.js"}]]])
 
 
+(defn header []
+  [:div.row
+   [:nav.navbar.navbar-default
+    [:div.navbar-header
+     [:button.navbar-toggle.collapsed {:type "button" :data-toggle "collapse" :data-target "#navbar" :aria-expanded "false" :aria-controls "navbar"}
+      [:span.sr-only "Toggle navigation"]
+      [:span.icon-bar]
+      [:span.icon-bar]
+      [:span.icon-bar]]
+     [:a.navbar-brand {:href "/"}
+      [:img.img-responsive {:src "/img/clingen-doc-logo.png" :width "240px" :alt "ClinGen Data Model WG Documentation"}]]]
+    [:div#navbar.navbar-collapse.collapse
+     [:ul.nav.navbar-nav.navbar-right
+      (for [model (q/select "select ?x where { ?x a :cg/DomainModel } ")]
+        [:li (e/link model)])
+      [:li
+       [:a {:href "/"} [:i.glyphicon.glyphicon-home] "Home"]]]]]])
+
 (defn index
   "Template to wrap every HTML request, returns structure in Hiccup syntax"
   [params]
-  [:p "Data model documentation"]
-)
+  [:div
+   [:div.container-fluid.hero-background
+    [:div.container
+     (header)]]
+   [:div.container
+    [:div.row
+     [:div.col-sm-8.col-xs-12.col-md-9.col-lg-10
+      [:article "ClinGen Data Model"]]
+     (sidebar)]]])
 
 (defn- resolve-resource [curie]
   (when-let [[_ ns-prefix id] (re-find #"([A-Za-z-]*)_(.*)$" curie)]
     (q/resource ns-prefix id)))
 
+
+
 (defn hero [r]
   [:div.container-fluid.hero-background
    [:div.container
-    [:div.row
-     [:nav.navbar.navbar-default
-      [:div.navbar-header
-       [:button.navbar-toggle.collapsed {:type "button" :data-toggle "collapse" :data-target "#navbar" :aria-expanded "false" :aria-controls "navbar"}
-        [:span.sr-only "Toggle navigation"]
-        [:span.icon-bar]
-        [:span.icon-bar]
-        [:span.icon-bar]]
-       [:a.navbar-brand {:href "/"}
-        [:img.img-responsive {:src "/img/clingen-doc-logo.png" :width "240px" :alt "ClinGen Data Model WG Documentation"}]]]
-      [:div#navbar.navbar-collapse.collapse
-       [:ul.nav.navbar-nav.navbar-right
-        (for [model (q/select "select ?x where { ?x a :cg/DomainModel } ")]
-          [:li (e/link model)])
-        [:li
-         [:a {:href "/"} [:i.glyphicon.glyphicon-home] "Home"]]]]]]
+    (header)
     [:div.row
      [:div.col-sm-12
       [:h1.header (e/title r)]
