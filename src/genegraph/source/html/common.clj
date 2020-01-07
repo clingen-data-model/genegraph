@@ -18,27 +18,21 @@
    [:meta {:http-equiv "X-UA-Compatible" :content "IE=edge"}]
    [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
    [:title "ClinGen Data Model"]
-   ;;[:link {:rel "stylesheet", :media "all", :href "/css/bulma.css"}]
-   [:link {:rel "stylesheet", :type "text/css" :href "https://cdn.datatables.net/v/bs/dt-1.10.13/fh-3.1.2/datatables.min.css"}]
-   [:link {:rel "stylesheet", :type "text/css" :href "/css/bootstrap.css"}]
-   [:link {:rel "stylesheet", :type "text/css" :href "/css/bootstrap-theme.css"}]
-   [:link {:rel "stylesheet", :type "text/css" :href "/css/brand2.css"}]
-   [:link {:rel "stylesheet", :type "text/css" :href "/css/jquery.jsonview.css"}]])
+   [:link {:rel "stylesheet", :media "all", :href "/css/bulma.css"}]
+   ;; [:link {:rel "stylesheet", :type "text/css" :href "https://cdn.datatables.net/v/bs/dt-1.10.13/fh-3.1.2/datatables.min.css"}]
+   ;; [:link {:rel "stylesheet", :type "text/css" :href "/css/bootstrap.css"}]
+   ;; [:link {:rel "stylesheet", :type "text/css" :href "/css/bootstrap-theme.css"}]
+   ;; [:link {:rel "stylesheet", :type "text/css" :href "/css/brand2.css"}]
+   ;; [:link {:rel "stylesheet", :type "text/css" :href "/css/jquery.jsonview.css"}]
+   ])
 
 (defn template
   [body params]
   [:html
    (head params)
-   [:body.documentation
+   [:body
     (body params)
-    [:div#footer.container.background-trans.padding-top-xl
-     [:div.row
-      [:hr]
-      [:div.col-md-col-sm-12.text-center "ClinGen"]]]
-    [:script {:type "text/javascript" :src "/js/jquery.js"}]
-    [:script {:type "text/javascript" :src "/js/jquery.jsonview.js"}]
-    [:script {:type "text/javascript" :src "/js/bootstrap.js"}]
-    [:script {:type "text/javascript" :src "https://cdn.datatables.net/v/bs/dt-1.10.13/fh-3.1.2/datatables.min.js"}]]])
+    ]])
 
 
 (defn header []
@@ -62,15 +56,11 @@
 (defn index
   "Template to wrap every HTML request, returns structure in Hiccup syntax"
   [params]
-  [:div
-   [:div.container-fluid.hero-background
-    [:div.container
-     (header)]]
-   [:div.container
-    [:div.row
-     [:div.col-sm-8.col-xs-12.col-md-9.col-lg-10
-      [:article "ClinGen Data Model"]]
-     (sidebar)]]])
+  [:section.section
+   [:div.columns
+    [:div.column.is-one-fifth [:h1.title.is-6 "ClinGen Data Model Navigation"]]
+    [:div.column [:h1.title.is-4 "ClinGen Data Model Content"]]
+    [:div.column [:h1.title.is-5 "ClinGen Data Model Data example"]]]])
 
 (defn- resolve-resource [curie]
   (when-let [[_ ns-prefix id] (re-find #"([A-Za-z-]*)_(.*)$" curie)]
@@ -107,10 +97,4 @@
 
 (defn resource [params]
   (let [r (resolve-resource (get-in params [:path-params :id]))]
-    [:div
-     (hero r)
-     [:div.container
-      [:div.row
-       [:div.col-sm-8.col-xs-12.col-md-9.col-lg-10
-        [:article (e/page r)]]
-       (sidebar)]]]))
+    (e/page r)))
