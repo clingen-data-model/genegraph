@@ -52,6 +52,11 @@
 
 (declare datafy-resource)
 
+(defn curie
+  "Return a curie string for resource. Return the IRI of the resource if no prefix has been defined"
+  [resource]
+  (names/curie (str resource)))
+
 (defn- compose-object-for-datafy [o]
   (cond (instance? Literal o) (.toString o)
         (instance? Resource o) 
