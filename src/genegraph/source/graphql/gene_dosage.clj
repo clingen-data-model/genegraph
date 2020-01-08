@@ -104,16 +104,17 @@
   (q/ld1-> value []))
 
 (defn haplo-percent [context args value]
-  (q/ld-> value []))
+  (q/ld1-> value [:iao/is-about :so/gain-of-function-variant]))
 
 (defn pli-score [context args value]
-  (q/ld-> value []))
+  (q/ld1-> value [:iao/is-about :so/loss-of-function-variant]))
+
+(defn haplo-index [context args value]
+  (q/ld1-> value [:iao/is-about :so/gain-of-function-variant]))
 
 (defn phenotype [context args value]
   (q/ld-> value []))
 
-(defn haplo-index [context args value]
-  (q/ld-> value []))
 
 (defn location-relationship [context args value]
   (q/ld-> value []))

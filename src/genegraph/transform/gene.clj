@@ -55,7 +55,9 @@
                     (map #(vector uri :skos/hidden-label %)
                          (:alias_symbol gene))
                     (map #(vector uri :skos/hidden-label %)
-                         (:prev_name gene))))))
+                         (:prev_name gene))
+                    (map #(vector uri :skos/hidden-label %)
+                         (:prev_symbol gene))))))
 
 (defn genes-as-triple [genes-json]
   (let [genes (get-in genes-json [:response :docs])]
