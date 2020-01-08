@@ -13,6 +13,8 @@
   (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList SimpleSelector]
            [org.apache.jena.query QueryFactory Query QueryExecution
             QueryExecutionFactory QuerySolutionMap]
+           org.apache.jena.riot.writer.JsonLDWriter
+           org.apache.jena.riot.RDFFormat$JSONLDVariant
            java.io.ByteArrayOutputStream))
 
 (defprotocol Steppable
@@ -275,3 +277,6 @@
   (let [os (ByteArrayOutputStream.)]
     (.write model os "TURTLE")
     (.toString os)))
+
+(defn to-json-ld [resource]
+  )

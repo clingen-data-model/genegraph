@@ -18,13 +18,7 @@
    [:meta {:http-equiv "X-UA-Compatible" :content "IE=edge"}]
    [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
    [:title "ClinGen Data Model"]
-   [:link {:rel "stylesheet", :media "all", :href "/css/bulma.css"}]
-   ;; [:link {:rel "stylesheet", :type "text/css" :href "https://cdn.datatables.net/v/bs/dt-1.10.13/fh-3.1.2/datatables.min.css"}]
-   ;; [:link {:rel "stylesheet", :type "text/css" :href "/css/bootstrap.css"}]
-   ;; [:link {:rel "stylesheet", :type "text/css" :href "/css/bootstrap-theme.css"}]
-   ;; [:link {:rel "stylesheet", :type "text/css" :href "/css/brand2.css"}]
-   ;; [:link {:rel "stylesheet", :type "text/css" :href "/css/jquery.jsonview.css"}]
-   ])
+   [:link {:rel "stylesheet", :media "all", :href "/css/bulma.css"}]])
 
 (defn template
   [body params]
