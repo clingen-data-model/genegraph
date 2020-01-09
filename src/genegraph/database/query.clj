@@ -84,6 +84,13 @@
   (valAt [this k] (step k this model))
   (valAt [this k nf] nf)
 
+
+  ;; Conforms to the expectations for a sequence representation of a map. Includes only
+  clojure.lang.Seqable
+  (seq [this]
+    (let [out-attributes (-> model (.listStatements resource nil nil) iterator-seq)]
+      (map #(vector (-> % .getPredicate property-uri->keyword) (.getObject %)) out-attributes)))
+
   Object
   (toString [_] (.getURI resource))
 
@@ -213,7 +220,10 @@
   (to-rdf-node [x] (ResourceFactory/createPlainLiteral x))
   
   clojure.lang.Keyword
-  (to-rdf-node [x] (local-names x)))
+  (to-rdf-node [x] (local-names x))
+  
+  RDFResource
+  (to-rdf-node [x] (as-jena-resource x)))
 
 (defn- construct-query-solution-map [params]
   (let [qs-map (QuerySolutionMap.)]

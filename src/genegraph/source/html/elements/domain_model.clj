@@ -55,8 +55,11 @@
              (q/ld1-> owl-property [:iao/definition])]))]]
       [:div.column [:pre 
                     [:code
-                     ;;(let [example (q/ld1-> shape [:shacl/class [:< :rdf/type]])])
-                     (json/generate-string {"stuff" "things" "other_stuff" "other_things"} {:pretty true})]]]]]]])
+                     (let [example (q/select
+                                    "select ?x where { ?x a ?type } limit 1"
+                                    {:type (q/ld1-> shape [:shacl/class])})]
+                       
+                       )]]]]]]])
 
 (defmethod e/page :cg/DomainModel [model]
   [:div
