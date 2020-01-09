@@ -32,7 +32,9 @@
            (map #(.getSubject %) statements)))
 
 (defn curie [iri]
-  (some #(when (s/starts-with? iri (first %)) (second %)) ns-prefix-map))
+  (if-let [[prefix curie-result] (some #(when (s/starts-with? iri (first %)) %) ns-prefix-map)]
+    (str (s/upper-case curie-result) ":" (subs iri (count prefix)))
+    iri))
 
 (defn- label-valid? [l]
   (and l
