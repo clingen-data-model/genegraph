@@ -58,8 +58,10 @@
                      (let [example (q/select
                                     "select ?x where { ?x a ?type } limit 1"
                                     {:type (q/ld1-> shape [:shacl/class])})]
-                       
-                       )]]]]]]])
+                       (for [[property value] (seq example)]
+                         [:div.columns
+                          [:div.column property]
+                          [:div.column value]]))]]]]]]])
 
 (defmethod e/page :cg/DomainModel [model]
   [:div
