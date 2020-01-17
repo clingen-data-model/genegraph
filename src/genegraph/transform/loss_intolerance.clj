@@ -1,6 +1,7 @@
 (ns genegraph.transform.loss-intolerance
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q]
+            [genegraph.transform.common-score :as com]
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [clojure.string :as str]
@@ -9,24 +10,26 @@
 
 ;; TODO - try using the ensembl id (nth row 63) from the file to lookup using
 ;; "select ?s where { ?s a :so/ProteinCodingGene . ?s :owl/same-as ?ensembl }" {:ensembl "URI" }
-;; if that doesn't work than consider refactoring this symbol lookup up to a common namespace
-;; shared between hi_index.clj and loss_intolerance.clj
-(def symbol-query "select ?s where { { ?s a :so/ProteinCodingGene . ?s :skos/preferred-label ?gene } union { ?s a :so/ProteinCodingGene . ?s :skos/hidden-label ?gene } }")
+;; (def ensembl-base "http://rdf.ebi.ac.uk/resource/ensembl/")
+;; (def ensembl-query "select ?s where { ?s a :so/ProteinCodingGene . ?s :owl/same-as ?ensembl }")
+;; (def ensembl-query "select ?s where { ?s :owl/same-as ?ensembl }")
 
-(defn loss-row-to-triple [row]
+(defn loss-row-to-triples [row]
   (let [gene-symbol (first row)
-        gene-uri (first (q/select symbol-query {:gene gene-symbol}))
-        loss-score (nth row 69)]
-    (when (not (nil? gene-uri))
-      (log/debug :fn loss-row-to-triple :gene gene-symbol :msg "Triple created for row" :row row)
-      (if (= "NA" loss-score)
-        (vector gene-uri :so/loss-of-function-variant loss-score)
-        (vector gene-uri :so/loss-of-function-variant (.toString (Double. loss-score)))))))
+        ;; ensembl-uri (str ensembl-base (nth row 63))
+        ;; gene-uri (first (q/select ensembl-query {:ensembl ensembl-uri}))
+        gene-uri (first (q/select com/symbol-query {:gene gene-symbol}))
+        loss-score (nth row 69)
+        import-date (com/date-time-now)]
+    (when (and (not (nil? gene-uri))
+               (not (= "NA" loss-score)))
+      (log/debug :fn :loss-row-to-triples :gene gene-symbol :msg "Triple created for row" :row row)
+      (com/common-row-to-triples gene-uri :cg/TriplosensitivityScore loss-score import-date "http://www.gnomad.org"))))
 
 (defn transform-loss-scores [loss-records]
   (let [loss-table (nthrest (csv/read-csv loss-records :separator \tab) 1)]
     (->> loss-table
-         (mapcat #(vector (loss-row-to-triple %)))
+         (mapcat loss-row-to-triples)
          (remove nil?)
          l/statements-to-model)))
 
