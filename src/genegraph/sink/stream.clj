@@ -116,10 +116,11 @@
   [topic]
   (fn []
     (let [consumer (consumer-for-topic topic)
-          tp (topic-partitions consumer topic)]
+          tp (topic-partitions consumer topic)
+          topic-name (-> config :topics topic :name)]
       (.assign consumer tp)
       (doseq [part tp]
-        (if-let [offset (get @current-offsets [topic (.partition part)])]
+        (if-let [offset (get @current-offsets [topic-name (.partition part)])]
           (.seek consumer part offset)
           (.seekToBeginning consumer [part])))
       (read-end-offsets! consumer tp)
