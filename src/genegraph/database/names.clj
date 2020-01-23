@@ -10,11 +10,11 @@
   (:import [org.apache.jena.shared PrefixMapping]
            [org.apache.jena.rdf.model Model ModelFactory Literal Resource ResourceFactory]))
 
-(defstate prefix-ns-map
-  :start (-> "namespaces.edn" io/resource slurp edn/read-string))
+(def prefix-ns-map
+  (-> "namespaces.edn" io/resource slurp edn/read-string))
 
-(defstate ns-prefix-map
-  :start (set/map-invert prefix-ns-map))
+(def ns-prefix-map
+  (set/map-invert prefix-ns-map))
 
 (defn get-label [resource]
   (let [p (property "http://www.w3.org/2000/01/rdf-schema#label")
@@ -32,7 +32,9 @@
            (map #(.getSubject %) statements)))
 
 (defn curie [iri]
-  (some #(when (s/starts-with? iri (first %)) (second %)) ns-prefix-map))
+  (if-let [[prefix curie-result] (some #(when (s/starts-with? iri (first %)) %) ns-prefix-map)]
+    (str (s/upper-case curie-result) ":" (subs iri (count prefix)))
+    iri))
 
 (defn- label-valid? [l]
   (and l
@@ -61,8 +63,8 @@
   (let [kw-to-iri  (-> "property-names.edn" io/resource slurp edn/read-string)]
     (into {} (map (fn [[k v]]  [k (ResourceFactory/createProperty v)]) kw-to-iri))))
 
-(defstate local-property-names
-  :start (read-local-property-names))
+(def local-property-names
+  (read-local-property-names))
 
 (defn- local-name-uri-class [resource]
   (let [label (some-> resource get-label csk/->PascalCase)
@@ -83,15 +85,15 @@
   (let [kw-to-iri  (-> "class-names.edn" io/resource slurp edn/read-string)]
     (into {} (map (fn [[k v]]  [k (ResourceFactory/createResource v)]) kw-to-iri))))
 
-(defstate local-class-names
-  :start (read-local-class-names))
+(def local-class-names
+  (read-local-class-names))
 
-(defstate property-uri->keyword
-  :start (set/map-invert local-property-names))
+(def property-uri->keyword
+  (set/map-invert local-property-names))
 
-(defstate class-uri->keyword
-  :start (set/map-invert local-class-names))
+(def class-uri->keyword
+  (set/map-invert local-class-names))
 
-(defstate local-names
-  :start (merge local-class-names local-property-names))
+(def local-names
+  (merge local-class-names local-property-names))
 

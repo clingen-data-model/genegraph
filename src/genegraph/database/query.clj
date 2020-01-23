@@ -54,6 +54,11 @@
 
 (declare datafy-resource)
 
+(defn curie
+  "Return a curie string for resource. Return the IRI of the resource if no prefix has been defined"
+  [resource]
+  (names/curie (str resource)))
+
 (defn- compose-object-for-datafy [o]
   (cond (instance? Literal o) (.toString o)
         (instance? Resource o) 
@@ -141,6 +146,7 @@
         (->RDFResource target model)
         target))))
 
+;; deprecated--to be removed
 (defonce query-register (atom {}))
 
 (defn- substitute-known-iri-short-name [k-ns k]
@@ -161,11 +167,21 @@
 (defn- expand-query-str [query-str]
   (s/replace query-str #":(\S+)/(\S+)" substitute-keyword))
 
-(defn register-query [name query-str]
+(defn register-query 
+  "DEPRECATED -- to be replaced with a different approach to stored queries"
+  [name query-str]
   (let [q (QueryFactory/create (expand-query-str query-str))]
     (swap! query-register assoc name q)
     true))
 
+
+(deftype StoredQuery [query]
+  clojure.lang.IFn
+  (invoke [this] "thing")
+  (invoke [this params] "thing"))
+
+(defn stored-query [query-str]
+  (->StoredQuery (QueryFactory/create (expand-query-str query-str))))
 
 (def first-property (ResourceFactory/createProperty "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"))
 

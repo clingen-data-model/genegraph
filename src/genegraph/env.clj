@@ -8,7 +8,7 @@
 (def dx-keystore (System/getenv "SERVEUR_KEYSTORE"))
 (def dx-topics (System/getenv "CG_SEARCH_TOPICS"))
 (def dx-truststore (System/getenv "SERVEUR_TRUSTSTORE"))
-
+(def dx-stage-jaas (System/getenv "DX_STAGE_JAAS"))
 
 (defn log-environment []
   (log/info :fn :log-environment
