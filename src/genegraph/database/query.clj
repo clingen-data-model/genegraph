@@ -227,7 +227,10 @@
   (to-rdf-node [x] (ResourceFactory/createPlainLiteral x))
   
   clojure.lang.Keyword
-  (to-rdf-node [x] (local-names x)))
+  (to-rdf-node [x] (local-names x))
+  
+  RDFResource
+  (to-rdf-node [x] (as-jena-resource x)))
 
 (defn- construct-query-solution-map [params]
   (let [qs-map (QuerySolutionMap.)]
