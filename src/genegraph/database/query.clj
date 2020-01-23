@@ -91,10 +91,15 @@
 
 
   ;; Conforms to the expectations for a sequence representation of a map. Includes only
+  ;; properties where this resource is the subject. Sequence is fully realized
+  ;; in order to permit access outside transaction
   clojure.lang.Seqable
   (seq [this]
-    (let [out-attributes (-> model (.listStatements resource nil nil) iterator-seq)]
-      (map #(vector (-> % .getPredicate property-uri->keyword) (.getObject %)) out-attributes)))
+    (tx
+     (let [out-attributes (-> model (.listStatements resource nil nil) iterator-seq)]
+       (doall (map #(vector 
+                     (-> % .getPredicate property-uri->keyword)
+                     (.getObject %)) out-attributes)))))
 
   Object
   (toString [_] (.getURI resource))
