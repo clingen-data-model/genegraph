@@ -22,46 +22,58 @@
       (= 1 max-count) "zero or one"
       :else "zero or more")))
 
+
+(defn shape-menu [shape]
+  [:div.menu
+   [:p.menu-label (q/ld1-> shape [:cg/is-in-model :rdfs/label])]
+   [:ul.menu-list
+    (for [model-member (q/ld-> shape [:cg/is-in-model [:cg/is-in-model :<]])]
+      [:li (e/link model-member)])]])
+
+(defn shape-description [shape]
+  [:div.column
+   [:div.content.is-size-5 (e/definition shape)]
+   [:div.content
+    [:h1.title.is-4 "Scope and Usage"]
+    (q/ld1-> shape [:shacl/class :skos/scope-note])]
+   [:div.content
+    [:h1.title.is-4 "Attributes"]
+    (for [shacl-property (:shacl/property shape)]
+      (let [owl-property (q/ld1-> shacl-property [:shacl/path])
+            ;; TODO handle scalars defined by shacl/datatype
+            property-type (first (concat (:shacl/node shacl-property)
+                                         (:shacl/has-value shacl-property)
+                                         (:shacl/datatype shacl-property)))]
+        [:div.content
+         [:h1.title.is-5 (q/ld1-> owl-property [:rdfs/label])]
+         [:h1.subtitle.is-6.has-text-weight-light
+          (when property-type (e/link property-type)) " "
+          [:code (cardinality shacl-property)]]
+         (q/ld1-> owl-property [:iao/definition])]))]])
+
+(defn shape-example [shape]
+  (let [example (first (q/select
+                        "select ?x where { ?x a ?type } limit 1"
+                        {:type (q/ld1-> shape [:shacl/class])}))]
+    [:div.column
+     (for [[property value] (seq example)]
+       [:div.columns
+        [:div.column.has-text-right [:code property]]
+        [:div.column.has-text-left
+         [:code
+          (if (satisfies? q/AsJenaResource value)
+            (e/link value))]]])]))
+
 (defmethod e/page :shacl/NodeShape [shape]
   [:section.section
    [:div.columns
     [:div.column.is-one-fifth
-     [:div.menu
-      [:p.menu-label (q/ld1-> shape [:cg/is-in-model :rdfs/label])]
-      [:ul.menu-list
-       (for [model-member (q/ld-> shape [:cg/is-in-model [:cg/is-in-model :<]])]
-         [:li (e/link model-member)])]]]
+     (shape-menu shape)]
     [:div.column 
      [:h1.title.is-3 (e/title shape)]
      [:div.columns
-      [:div.column
-       [:div.content.is-size-5 (e/definition shape)]
-       [:div.content
-        [:h1.title.is-4 "Scope and Usage"]
-        (q/ld1-> shape [:shacl/class :skos/scope-note])]
-       [:div.content
-        [:h1.title.is-4 "Attributes"]
-        (for [shacl-property (:shacl/property shape)]
-          (let [owl-property (q/ld1-> shacl-property [:shacl/path])
-                ;; TODO handle scalars defined by shacl/datatype
-                property-type (first (concat (:shacl/node shacl-property)
-                                             (:shacl/has-value shacl-property)
-                                             (:shacl/datatype shacl-property)))]
-            [:div.content
-             [:h1.title.is-5 (q/ld1-> owl-property [:rdfs/label])]
-             [:h1.subtitle.is-6.has-text-weight-light
-              (when property-type (e/link property-type)) " "
-              [:code (cardinality shacl-property)]]
-             (q/ld1-> owl-property [:iao/definition])]))]]
-      [:div.column [:pre 
-                    [:code
-                     (let [example (first (q/select
-                                           "select ?x where { ?x a ?type } limit 1"
-                                           {:type (q/ld1-> shape [:shacl/class])}))]
-                       (for [[property value] (seq example)]
-                         [:div.columns
-                          [:div.column.has-text-right property]
-                          [:div.column.has-text-left (q/curie value)]]))]]]]]]])
+      (shape-description shape)
+      (shape-example shape)]]]])
 
 (defmethod e/page :cg/DomainModel [model]
   [:div

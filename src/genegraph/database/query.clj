@@ -54,6 +54,16 @@
 
 (declare datafy-resource)
 
+(extend-protocol AsClojureType
+
+  Resource
+  (to-clj [x model] (if (.hasProperty x first-property)
+                      (rdf-list-to-vector x model)
+                      (->RDFResource x model)))
+  
+  Literal
+  (to-clj [x model] (.getValue x)))
+
 (defn curie
   "Return a curie string for resource. Return the IRI of the resource if no prefix has been defined"
   [resource]
@@ -66,8 +76,6 @@
           {::datafy/obj o
            ::datafy/class (class o)
            `protocols/datafy #(-> % meta ::datafy/obj datafy-resource)})))
-
-
 
 (declare navize)
 
@@ -99,7 +107,7 @@
      (let [out-attributes (-> model (.listStatements resource nil nil) iterator-seq)]
        (doall (map #(vector 
                      (-> % .getPredicate property-uri->keyword)
-                     (.getObject %)) out-attributes)))))
+                     (to-clj (.getObject %) model)) out-attributes)))))
 
   Object
   (toString [_] (.getURI resource))
@@ -196,15 +204,7 @@
     (->> rdf-list .iterator iterator-seq (mapv #(to-clj % model)))
     ))
 
-(extend-protocol AsClojureType
 
-  Resource
-  (to-clj [x model] (if (.hasProperty x first-property)
-                      (rdf-list-to-vector x model)
-                      (->RDFResource x model)))
-  
-  Literal
-  (to-clj [x model] (.getValue x)))
 
 (extend-protocol Steppable
 
