@@ -54,15 +54,7 @@
 
 (declare datafy-resource)
 
-(extend-protocol AsClojureType
 
-  Resource
-  (to-clj [x model] (if (.hasProperty x first-property)
-                      (rdf-list-to-vector x model)
-                      (->RDFResource x model)))
-  
-  Literal
-  (to-clj [x model] (.getValue x)))
 
 (defn curie
   "Return a curie string for resource. Return the IRI of the resource if no prefix has been defined"
@@ -78,6 +70,8 @@
            `protocols/datafy #(-> % meta ::datafy/obj datafy-resource)})))
 
 (declare navize)
+
+(declare to-clj)
 
 (deftype RDFResource [resource model]
 
@@ -297,6 +291,16 @@
   clojure.lang.Keyword
   (resource [r] (when-let [res (local-names r)]
                   (->RDFResource res (.getUnionModel db)))))
+
+(extend-protocol AsClojureType
+
+  Resource
+  (to-clj [x model] (if (.hasProperty x first-property)
+                      (rdf-list-to-vector x model)
+                      (->RDFResource x model)))
+  
+  Literal
+  (to-clj [x model] (.getValue x)))
 
 (defn get-named-graph [name]
   (.getNamedModel db name))
