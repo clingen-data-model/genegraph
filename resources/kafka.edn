@@ -1,0 +1,33 @@
+{:clusters {:dx-prod {"bootstrap.servers" "exchange.clinicalgenome.org:9093"
+                     "enable.auto.commit" "false"
+                     "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
+                     "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
+                     "security.protocol" "SSL"
+                     "ssl.truststore.location" "keys/serveur.truststore.jks"
+                     "ssl.truststore.password" genegraph.env/dx-key-pass
+                     "ssl.keystore.location" "keys/dev.serveur.keystore.jks"
+                     "ssl.keystore.password" genegraph.env/dx-key-pass
+                     "ssl.key.password" genegraph.env/dx-key-pass}
+           :dx-stage {"ssl.endpoint.identification.algorithm" "https"
+                      "sasl.mechanism" "PLAIN"
+                      "request.timeout.ms" "20000"
+                      "bootstrap.servers" "pkc-4yyd6.us-east1.gcp.confluent.cloud:9092"
+                      "retry.backoff.ms" "500"
+                      "security.protocol" "SASL_SSL"
+                      "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
+                      "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
+                      "sasl.jaas.config" genegraph.env/dx-stage-jaas}}
+ :topics   {:actionability {:name "actionability"
+                            :format :actionability-v1
+                            :root-type :sepio/ActionabilityReport
+                            :cluster :dx-prod}
+            :gene-dosage-stage {:name "gene_dosage_sepio_in"
+                                :format :rdf
+                                :reader-opts {:format :json-ld}
+                                :root-type :sepio/DosageSensitivityProposition
+                                :cluster :dx-stage}
+            :gene-validity  {:format :gene-validity-v1
+                             :root-type :sepio/GeneValidityReport
+                             :cluster :dx-prod}
+            :gene-validity-events-dev {:name "gene_validity_events_dev"
+                                       :cluster :dx-prod}}}
