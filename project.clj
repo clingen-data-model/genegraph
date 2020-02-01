@@ -29,6 +29,8 @@
                  [me.raynes/fs "1.4.6"]
                  ;; Dirwatch for updating base files in development
                  [juxt/dirwatch "0.2.5"]
+                 ;; for generating jsonld context
+                 [org.flatland/ordered "1.5.7"]
                  ;; REBL reqs
                  [lein-cljfmt "0.6.4"]
                  [org.openjfx/javafx-fxml "11.0.1"]

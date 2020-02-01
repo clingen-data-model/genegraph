@@ -45,6 +45,10 @@
   :source "http://purl.obolibrary.org/obo/bfo/2.0/bfo.owl",
   :target "bfo.owl",
   :format :rdf}
+ {:name "http://purl.obolibrary.org/obo/ro.owl"
+  :source "http://purl.obolibrary.org/obo/ro.owl",
+  :target "ro.owl",
+  :format :rdf}
  {:name "http://purl.obolibrary.org/obo/geno.owl"
   :source "https://raw.githubusercontent.com/monarch-initiative/GENO-ontology/develop/src/ontology/geno.owl"
   :target "geno.owl"
@@ -84,6 +88,21 @@
   :source "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg-valueset.owl",
   :target "sepio-clingen-acmg-valueset.owl",
   :format :rdf}
+ {:name "http://purl.obolibrary.org/obo/sepio-clingen-gene-validity"
+  :source "https://raw.githubusercontent.com/clingen-data-model/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-gene-validity/sepio-clingen-gene-validity.ttl"
+  :target "sepio-clingen-gene-validity.ttl"
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:name "http://purl.obolibrary.org/obo/sepio-clingen-gene-validity-valueset"
+  :source "https://raw.githubusercontent.com/clingen-data-model/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-gene-validity/sepio-clingen-gene-validity-valueset.ttl"
+  :target "sepio-clingen-gene-validity-valueset.ttl"
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:name "http://purl.obolibrary.org/obo/sepio-clingen-gene-validity-shapes"
+  :source "https://raw.githubusercontent.com/clingen-data-model/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-gene-validity/sepio-clingen-gene-validity-shapes.ttl"
+  :target "sepio-clingen-gene-validity-shapes.ttl"
+  :format :rdf
+  :reader-opts {:format :turtle}}
  {:name "http://purl.obolibrary.org/obo/hp.owl"
   :source "http://purl.obolibrary.org/obo/hp.owl",
   :target "hp.owl",
