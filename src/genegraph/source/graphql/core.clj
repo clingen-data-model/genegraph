@@ -318,6 +318,9 @@
                     :resolve server-status/server-version-query}
     :dosage_list{:type '(list :gene_dosage_curation)
                  :resolve gene-dosage/dosage-list-query}
+    :dosage_query{:type '(non-null :gene_dosage_curation)
+                  :args {:iri {:type 'String}}
+                  :resolve gene-dosage/gene-dosage-query}
     :totals {:type :totals
              :resolve gene-dosage/totals-query}}})
 

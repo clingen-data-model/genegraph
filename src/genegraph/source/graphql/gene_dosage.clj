@@ -46,6 +46,9 @@
   "Returns a list of labelled gene and region dosage reports combined and ordered by label"
   (all-labelled-dosage-reports))
 
+(defn gene-dosage-query [context args value]
+  (q/resource (:iri args)))
+
 (defn wg-label [context args value]
   "Gene Dosage Working Group")
 
@@ -103,14 +106,17 @@
 (defn omim [context args value]
   (q/ld1-> value []))
 
-(defn haplo-percent [context args value]
-  (q/ld1-> value [:iao/is-about :so/gain-of-function-variant]))
-
 (defn pli-score [context args value]
-  (q/ld1-> value [:iao/is-about :so/loss-of-function-variant]))
-
+  (if-let [triplo (first (q/select "select ?s where { ?s :iao/is-about ?gene ; a :cg/TriplosensitivityScore }"
+                {:gene (first (:iao/is-about value))}))]
+    (q/ld1-> triplo [:sepio/confidence-score])
+    nil))
+   
 (defn haplo-index [context args value]
-  (q/ld1-> value [:iao/is-about :so/gain-of-function-variant]))
+  (if-let [haplo (first (q/select "select ?s where { ?s :iao/is-about ?gene ; a :cg/HaploinsufficiencyScore }"
+                {:gene (first (:iao/is-about value))}))]
+    (q/ld1-> haplo [:sepio/confidence-score])
+    nil))
 
 (defn phenotype [context args value]
   (q/ld-> value []))
