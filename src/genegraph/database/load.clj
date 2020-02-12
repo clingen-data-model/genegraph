@@ -25,8 +25,10 @@
 
 (defn read-rdf
   ([src] (read-rdf src {}))
-  ([src opts] (-> (ModelFactory/createDefaultModel)
-                 (.read src nil (jena-rdf-format (:format opts :rdf-xml))))))
+  ([src opts] (try
+                (-> (ModelFactory/createDefaultModel)
+                    (.read src nil (jena-rdf-format (:format opts :rdf-xml))))
+                (catch Exception e (log/error :fn :read-rdf :src src :msg (.message e)))))) 
 
 (defn store-rdf 
   "Expects src to be compatible with Model.read(src, nil). A java.io.InputStream is
@@ -74,8 +76,9 @@
    (try
      (write-tx
       (.replaceNamedModel db name model)
-      (if (:validate opts)
-        (let [validation-result (v/validate (q/get-all-graphs) (q/get-all-graphs))]
+      (if-let [shape-def (:validate opts)]
+        (let [shape (q/get-named-graph shape-def)
+              validation-result (v/validate model shape)]
           (if (v/did-validate? validation-result)
             (do (.commit db)
                 {:succeeded true})

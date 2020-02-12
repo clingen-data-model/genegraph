@@ -81,11 +81,12 @@
                 :topic (.topic record)
                 :partition (.partition record)
                 :offset (.offset record)
+                :validation-model (:validation-model doc-def)
                 :time (.format DateTimeFormatter/ISO_DATE_TIME
                                (LocalDateTime/ofEpochSecond (/ (.timestamp record) 1000)
                                                             0
                                                             ZoneOffset/UTC)))
-      (db/load-model doc-model iri {:validate false}))
+      (db/load-model doc-model iri {:validate (:validation-model doc-def)}))
     (catch Exception e 
       (.printStackTrace e)
       (log/warn :fn :import-record!
@@ -93,6 +94,7 @@
                 :partition (.partition record)
                 :offset (.offset record)
                 :record record
+                :validation-model (:validation-model doc-def)
                 :msg (str e)))))
 
 (defn update-offsets! [consumer tps]
