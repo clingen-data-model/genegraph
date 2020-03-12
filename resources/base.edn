@@ -7,7 +7,11 @@
   :source "http://www.w3.org/2000/01/rdf-schema.ttl",
   :target "rdf-schema.ttl",
   :format :rdf
-  :reader-opts {:format :turtle}}
+  :reader-opts {:format :turtle}} 
+ {:name "http://www.w3.org/2011/content#"
+  :source "http://www.w3.org/2011/content.rdf",
+  :target "content.ttl",
+  :format :rdf} 
  {:name "http://www.w3.org/ns/sparql-service-description#"
   :source "https://www.w3.org/ns/sparql-service-description.ttl"
   :target "sparql-service-description.ttl"
@@ -19,15 +23,15 @@
   :format :rdf
   :reader-opts {:format :turtle}}
  {:name "http://purl.org/dc/terms/"
-  :source "http://dublincore.org/2012/06/14/dcterms.ttl",
+  :source "https://www.dublincore.org/specifications/dublin-core/dcmi-terms/dublin_core_terms.ttl"
   :target "dcterms.ttl",
   :format :rdf
   :reader-opts {:format :turtle}}
- {:name "http://purl.org/dc/elements/1.1/"
-  :source "http://dublincore.org/2012/06/14/dcelements.ttl"
-  :target "dcelements.ttl"
-  :format :rdf
-  :reader-opts {:format :turtle}}
+ ;; {:name "http://purl.org/dc/elements/1.1/"
+ ;;  :source "http://dublincore.org/2012/06/14/dcelements.ttl"
+ ;;  :target "dcelements.ttl"
+ ;;  :format :rdf
+ ;;  :reader-opts {:format :turtle}}
  {:name "http://www.w3.org/2004/02/skos/core"
   :source "https://www.w3.org/2009/08/skos-reference/skos.rdf",
   :target "skos.rdf",
@@ -120,8 +124,17 @@
   :source "https://data.omim.org/downloads/U7rx7IRhSIah-gm1M-yBDA/genemap2.txt"
   :target "genemap2.txt"
   :format :omim-genemap}
+ {:name "http://dataexchange.clinicalgenome.org/gci-express"
+  :source "https://raw.githubusercontent.com/clingen-data-model/data-exchange-shared-json/master/json-from-gene-express/ClinGen-Gene-Expess-Data-01092020.json"
+  :target "gci-express.json"
+  :format :gci-express}
  {:name "http://dataexchange.clinicalgenome.org/terms"
   :source "https://raw.githubusercontent.com/clingen-data-model/clingen-terms/master/clingen-terms.ttl"
   :target "clingen-terms.ttl"
   :format :rdf
-  :reader-opts {:format :turtle}}]
+  :reader-opts {:format :turtle}}
+ {:name "https://clinicalgenome.org/gene-validity/a0a9ec11-ef90-4095-9c9e-696eabd0395b"
+  :source "https://raw.githubusercontent.com/clingen-data-model/data-examples/master/gene-validity/gci-sepio-example-GDI1.json"
+  :target "a0a9ec11-ef90-4095-9c9e-696eabd0395b.jsonld"
+  :format :rdf
+  :reader-opts {:format :json-ld}}]

@@ -3,6 +3,10 @@
             [genegraph.database.query :as q]
             [cheshire.core :as json]))
 
+(defmethod e/page :cg/DomainModel [shape]
+  [:div.columns
+   [:div.column "This is the list of domain models"]])
+
 (defmethod e/title :shacl/NodeShape [shape]
   (q/ld1-> shape [:shacl/class :rdfs/label]))
 
