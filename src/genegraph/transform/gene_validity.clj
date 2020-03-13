@@ -42,7 +42,10 @@
   (let [gene-hgnc-id (-> report :genes first second :curie)
         gene (when gene-hgnc-id
                (q/ld1-> (q/resource gene-hgnc-id) [[:owl/same-as :<]]))
-        moi (->> (-> report json-content (json/parse-string true) :data :ModeOfInheritance)
+        parsed-json (json/parse-string (json-content report) true)
+        moi-string (or (-> parsed-json :data :ModeOfInheritance)
+                       (-> parsed-json :scoreJson :ModeOfInheritance))
+        moi (->> moi-string
                  (re-find #"\(HP:(\d+)\)")
                  second
                  (str "http://purl.obolibrary.org/obo/HP_")
@@ -53,11 +56,39 @@
      [iri :sepio/has-object (q/resource (-> report :conditions :MONDO :iri))]
      [iri :sepio/has-qualifier moi]]))
 
+(defn contribution [report iri]
+  [[iri :bfo/realizes :sepio/ApproverRole]
+   [iri :sepio/has-agent (str affiliation-root
+                              (-> report :affiliation :id))]
+   [iri :sepio/activity-date (:dateISO8601 report)]])
+
+(def evidence-level-label-to-concept
+  {"Definitive" :sepio/DefinitiveEvidence
+   "Limited" :sepio/LimitedEvidence
+   "Moderate" :sepio/ModerateEvidence
+   "No Reported Evidence" :sepio/NoEvidence
+   "Strong*" :sepio/StrongEvidence
+   "Contradictory (disputed)" :sepio/DisputingEvidence
+   "Strong" :sepio/StrongEvidence
+   "Contradictory (refuted)" :sepio/RefutingEvidence})
+
+(defn sop-version [report]
+  (if (< 0 (count (:scoreJsonSerialized report)))
+    :sepio/ClinGenGeneValidityEvaluationCriteriaSOP4
+    :sepio/ClinGenGeneValidityEvaluationCriteriaSOP5))
+
 (defn evidence-level-assertion [report iri]
-  (let [prop-iri (l/blank-node)]
+  (let [prop-iri (l/blank-node)
+        contribution-iri (l/blank-node)]
     (concat [[iri :rdf/type :sepio/GeneValidityEvidenceLevelAssertion]
-             [iri :sepio/has-subject prop-iri]]
-            (validity-proposition report prop-iri))))
+             [iri :sepio/has-subject prop-iri]
+             [iri :sepio/has-predicate :sepio/HasEvidenceLevel]
+             [iri :sepio/has-object (evidence-level-label-to-concept
+                                     (-> report :scores vals first :label))]
+             [iri :sepio/qualified-contribution contribution-iri]
+             [iri :sepio/is-specified-by (sop-version report)]]
+            (validity-proposition report prop-iri)
+            (contribution report contribution-iri))))
 
 (defn gci-express-report-to-triples [report]
   (let [content (second report)
@@ -65,7 +96,9 @@
         iri (str root-version "-" (:dateISO8601 content))
         content-id (l/blank-node)
         assertion-id (l/blank-node)]
+    (println iri)
     (concat [[iri :rdf/type :sepio/GeneValidityReport] 
+             [iri :rdfs/label (:title content)]
              [iri :bfo/has-part content-id]
              [iri :bfo/has-part assertion-id]]
             (evidence-level-assertion content assertion-id)
