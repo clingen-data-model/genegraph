@@ -1,30 +1,8 @@
-;; TODO contribution, remainder of assertion, including evidence level and methodology
-
-(ns genegraph.transform.gene-validity
+(ns genegraph.transform.gci-express
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q]
             [genegraph.transform.core :refer [transform-doc src-path]]
             [cheshire.core :as json]))
-
-(defn gene-validity-triples [report]
-  (let [iri (str "gene-validity:" (:iri report))
-        genetic-condition-iri (l/blank-node)
-        condition (get-in report [:conditions 0 :iri])
-        gene-hgnc-id (get-in report [:genes 0 :curie])
-        gene (when gene-hgnc-id
-               (q/ld1-> (q/resource gene-hgnc-id) [[:owl/same-as :<]]))
-        genetic-condition (when (and condition gene)
-                            [[genetic-condition-iri :rdf/type :sepio/GeneticCondition]
-                             [genetic-condition-iri :rdfs/sub-class-of condition]])]
-    (println "gene-validity:" iri)
-    [[iri :sepio/is-about-condition genetic-condition-iri]
-     [iri :rdf/type :sepio/GeneValidityReport]]))
-
-(defmethod transform-doc :gene-validity-v1 [doc-def]
-  (let [raw-report (or (:document doc-def) (slurp (src-path doc-def)))
-        report-json (json/parse-string raw-report true)
-        report-triples (gene-validity-triples report-json)]
-    (l/statements-to-model report-triples)))
 
 (def gci-express-root "http://dataexchange.clinicalgenome.org/gci-express/")
 (def affiliation-root "http://dataexchange.clinicalgenome.org/agent/")
@@ -104,28 +82,9 @@
              [iri :bfo/has-part content-id]
              [iri :bfo/has-part assertion-id]]
             (evidence-level-assertion content assertion-id)
-            ;;(json-content-node content content-id)
-            )))
+            (json-content-node content content-id))))
 
 (defmethod transform-doc :gci-express [doc-def]
   (let [raw-report (or (:document doc-def) (slurp (src-path doc-def)))
         report-json (json/parse-string raw-report true)]
     (l/statements-to-model (mapcat gci-express-report-to-triples report-json))))
-
-(def gci-sop-version 
-  {"6" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP6
-   "7" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP7})
-
-(defn gci-minimal-report-to-triples [report]
-  (let [prop-iri (l/blank-node)
-        contribution-iri (l/blank-node)]
-    (concat [[iri :rdf/type :sepio/GeneValidityEvidenceLevelAssertion]
-             [iri :sepio/has-subject prop-iri]
-             [iri :sepio/has-predicate :sepio/HasEvidenceLevel]
-             [iri :sepio/has-object (evidence-level-label-to-concept
-                                     (-> report :scoreJson :summary :FinalClassification))]
-             [iri :sepio/qualified-contribution contribution-iri]
-             [iri :sepio/is-specified-by (gci-sop-version (:sopVersion report))]]
-            ;; (validity-proposition report prop-iri)
-            ;; (contribution report contribution-iri)
-            )))

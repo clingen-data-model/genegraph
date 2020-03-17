@@ -11,7 +11,8 @@
             [mount.core :refer [defstate]]
             [genegraph.transform.gene]
             [genegraph.transform.omim]
-            [genegraph.transform.gene-validity]
+            ;;[genegraph.transform.gene-validity]
+            [genegraph.transform.gci-express]
             [genegraph.env :as env]
             [io.pedestal.log :as log]
             [juxt.dirwatch :refer [watch-dir]])
