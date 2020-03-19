@@ -3,6 +3,7 @@
             [genegraph.source.graphql.gene :as gene]
             [genegraph.source.graphql.resource :as resource]
             [genegraph.source.graphql.actionability :as actionability]
+            [genegraph.source.graphql.gene-validity :as gene-validity]
             [genegraph.source.graphql.gene-dosage :as gene-dosage]
             [genegraph.source.graphql.condition :as condition]
             [genegraph.source.graphql.server-status :as server-status]
@@ -50,7 +51,10 @@
                                         :description "Actionability curations linked to a gene. Prefer using conditions.actionability_curations for most use cases, as this makes visible the gene-disease pairing used in the context of the curation."}
               :dosage_curations {:type '(list :gene_dosage_curation)
                                  :resolve gene/dosage-curations
-                                 :description "Gene Dosage curations associated with the gene."}}}
+                                 :description "Gene Dosage curations associated with the gene."}
+              :validity_curations {:type '(list :gene_validity_curation)
+                                   :resolve gene/validity-curations
+                                   :description "Gene Validity curations associated with the gene."}}}
 
     :condition
     {:description "A disease or condition. May be a genetic condition, linked to a specific disease or mode of inheritance. Along with gene, one of the basic units of curation."
@@ -79,6 +83,7 @@
               :description {:type 'String
                             :resolve evidence/description
                             :description "Description of the evidence being cited."}}}
+
 
     :gene_dosage_curation
     {
@@ -115,6 +120,17 @@
       :conditions {:type '(list :condition)
                    :resolve actionability/conditions}
       :source {:type 'String :resolve actionability/source}}}
+
+    :gene_validity_curation
+    {:implements [:resource :curation]
+     :fields
+     {:iri {:type 'String
+            :resolve resource/iri}
+      :label {:type 'String :resolve resource/label}
+      :report_date {:type 'String :resolve gene-validity/report-date}
+      :wg_label {:type 'String :resolve gene-validity/wg-label}
+      :classification_description {:type 'String 
+                                   :resolve gene-validity/classification-description}}}
 
     :server_status
     {:fields
@@ -156,8 +172,6 @@
       :label {:type 'String :resolve resource/label}
       :definition {:type 'String :resolve rdf-class/definition}
       :concepts {:type '(list :concept) :resolve value-set/concepts}}}}
-
-   
 
    :queries
    {:gene {:type '(non-null :gene)

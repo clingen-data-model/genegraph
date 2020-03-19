@@ -30,5 +30,9 @@
                              :name "gene_validity"
                              :root-type :sepio/GeneValidityReport
                              :cluster :dx-prod}
+            :gci-legacy  {:format :gci-legacy
+                             :name "gene_validity"
+                             :root-type :sepio/GeneValidityReport
+                             :cluster :dx-prod}
             :gene-validity-events-dev {:name "gene_validity_events_dev"
                                        :cluster :dx-prod}}}

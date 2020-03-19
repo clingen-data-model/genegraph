@@ -82,6 +82,5 @@
 
 
 (defmethod transform-doc :gci-legacy [doc-def]
-  (let [raw-report (or (:document doc-def) (slurp (src-path doc-def)))
-        report-json (json/parse-string raw-report true)]
-    (l/statements-to-model (mapcat gci-legacy-report-to-triples report-json))))
+  (let [report-json (json/parse-string (:document doc-def) true)]
+    (l/statements-to-model  (gci-legacy-report-to-triples report-json))))

@@ -8,6 +8,7 @@
             [clojure.edn :as edn]
             [io.pedestal.log :as log]
             [genegraph.transform.actionability]
+            [genegraph.transform.gci-legacy]
             [clojure.string :as s]
             [clojure.data :as data]
             [genegraph.database.query :as q]
@@ -169,6 +170,14 @@
           (if-not (seq addl-records)
             records
             (recur (concat records addl-records))))))))
+
+(defn import-topic-from-beginning
+  "Open a consumer, read all messages on the topic from the start, and
+  import them into the RDF datastore.
+  Intended to be used from the REPL to (re)-populate datastore during development."
+  [topic]
+  (doseq [record (topic-data topic)]
+    (import-record! record (-> config :topics topic))))
 
 (defn consumer-record-to-clj [consumer-record]
   (try 

@@ -34,3 +34,11 @@
   (q/ld-> value [[:geno/is-feature-affected-by :<]
                  [:sepio/has-subject :<]
                  [:sepio/has-subject :<]]))
+
+
+(defn validity-curations [context args value]
+  (q/select "select ?report where { ?report a :sepio/GeneValidityReport .
+ ?report :bfo/has-part ?assertion .
+ ?assertion :sepio/has-subject ?proposition .
+ ?proposition :sepio/has-subject ?gene }"
+            {:gene value}))
