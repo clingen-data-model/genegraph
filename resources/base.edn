@@ -45,7 +45,7 @@
   :target "bfo.owl",
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/geno.owl"
-  :source "https://raw.githubusercontent.com/monarch-initiative/GENO-ontology/develop/src/ontology/geno.owl"
+  :source "https://github.com/monarch-initiative/GENO-ontology/blob/develop/geno.owl"
   :target "geno.owl"
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/sepio-clingen-dosage-valueset"
