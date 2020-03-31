@@ -1,7 +1,11 @@
 (ns genegraph.source.graphql.gene-dosage
-  (:require [genegraph.database.query :as q]
+  (:require [clojure.string :as string]
             [genegraph.database.names :as names]
-            [com.walmartlabs.lacinia.schema :refer [tag-with-type]]))
+            [genegraph.database.query :as q :refer [->RDFResource]]
+            [com.walmartlabs.lacinia.schema :refer [tag-with-type]]
+            [genegraph.database.instance :refer [db]])
+  (:import  [org.apache.jena.query ReadWrite QueryFactory QueryExecutionFactory]
+            [org.apache.jena.sparql.util QueryExecUtils]))
 
 (defn all-dosage-reports []
   (q/select "select ?report where {  
@@ -25,7 +29,7 @@
   (q/select "select ?report where { 
     ?report :iao/is-about ?feature .
     ?feature a :so/ProteinCodingGene .
-    ?feature :skos/preferred-label ?label }
+    ?Feature :skos/preferred-label ?label }
     ORDER BY ?label"))
 
 (defn all-non-gene-dosage-reports []
@@ -42,9 +46,84 @@
     ?feature :rdfs/label ?label }
     ORDER BY ?label"))
 
+(defn dedupe-resources [query-results]
+  "Takes a seq of Resources returned from a select query 
+   and de-duplicates based on the uniqueness of the resource iri
+   and returns as unique list of resources"
+  (map #(->> % q/resource)
+       ;; remove duplicates from a resource returning select query
+       ;; by transforming resources to their iri and
+       ;; then mapping all unique iri's back to resources
+       (distinct (reduce (fn [v resource]
+                           (->> resource
+                                .toString
+                                (conj v)))
+                         []
+                         query-results))))
+
+(defn gene-filter [genes]
+  ;; cg-genes is a property-list defined in resources/genegraph-assembly.ttl
+  ;; its a search across a number of triple properties and will return duplicates.
+  (let [genes-or-lower (->> (map string/lower-case genes)
+                         (string/join " OR "))
+        gq (str "PREFIX text: <http://jena.apache.org/text#> 
+             PREFIX cg: <http://dataexchange.clinicalgenome.org/terms/>
+             SELECT ?report WHERE { 
+             ?feature text:query ( cg:genes '( " genes-or-lower " )' ) .
+             ?feature a :so/ProteinCodingGene .
+             ?report :iao/is-about ?feature .
+             ?report a :sepio/GeneDosageReport }")]
+    ;; (q/select gq {:genes genes-or-lower})))
+    (q/select gq)))
+
+(defn region-filter [regions]
+  (let [regions-or-lower (->> (map string/lower-case regions)
+                         (string/join " OR "))
+        rq (str "PREFIX text: <http://jena.apache.org/text#> 
+             SELECT ?report WHERE { 
+             ?feature text:query ( :rdfs/label '( " regions-or-lower " )' ) .
+             ?feature a :so/SequenceFeature .
+             ?report :iao/is-about ?feature .
+             ?report a :sepio/GeneDosageReport }")]
+    ;; (q/select rq {:regions regions-or-lower})))
+    (q/select rq)))
+
+(defn diseases-filter [diseases]
+  (let [diseases-or-lower (->> (map string/lower-case diseases)
+                         (string/join " OR "))
+        dq (str "PREFIX text: <http://jena.apache.org/text#> 
+             PREFIX cg: <http://dataexchange.clinicalgenome.org/terms/>
+             SELECT ?report WHERE { 
+             ?condition text:query ( cg:diseases '( " diseases-or-lower " )' ) .
+             ?condition a :sepio/GeneticCondition .
+             ?condition :owl/equivalent-class ?equivclass .
+             ?equivclass :sepio/is-about-gene ?gene .
+             ?report :iao/is-about ?gene .
+             ?report a :sepio/GeneDosageReport }")]
+    ;; (q/select dq {:diseases diseases-or-lower})))
+    (q/select dq)))
+
+(defn filtered-dosage-reports [filters]
+  (let [results (reduce (fn [vec [k v]]
+            (cond
+              (= :regions k) (conj vec (region-filter v))
+              (= :genes k) (conj vec (gene-filter v))
+              (and (= :protein_coding k)
+                   (= 1 (count (keys filters)))) (conj vec (all-gene-dosage-reports))
+              (= :diseases k) (conj vec (diseases-filter v))))
+          []
+          filters)]
+    (if (> 1 (count (keys filters)))
+      (->> results
+           flatten
+           dedupe-resources)
+      results)))
+
 (defn dosage-list-query [context args value]
   "Returns a list of labelled gene and region dosage reports combined and ordered by label"
-  (all-labelled-dosage-reports))
+  (if (:filters args)
+    (filtered-dosage-reports (:filters args))
+    (all-labelled-dosage-reports)))
 
 (defn gene-dosage-query [context args value]
   (q/resource (:iri args)))
@@ -69,8 +148,8 @@
   (not (nil? (triplo context args value))))
 
 (defn label [context args value]
-  (str (q/ld1-> value [:iao/is-about :rdfs/label])
-       (q/ld1-> value [:iao/is-about :skos/preferred-label])))
+  (str (q/ld1-> value [:iao/is-about :rdfs/label]))
+       (q/ld1-> value [:iao/is-about :skos/preferred-label]))
 
 (defn classification-description [context args value]
   (str (q/ld1-> value [:bfo/has-part :sepio/has-object :rdfs/label]) " for dosage pathogenicity"))

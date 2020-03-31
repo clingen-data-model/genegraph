@@ -1,0 +1,115 @@
+## Licensed under the terms of http://www.apache.org/licenses/LICENSE-2.0
+
+## Example of a Fuseki server configuration file with a TDB2 dataset
+
+PREFIX :        <#>
+PREFIX fuseki:  <http://jena.apache.org/fuseki#>
+PREFIX ja:      <http://jena.hpl.hp.com/2005/11/Assembler#>
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX tdb2:    <http://jena.apache.org/2016/tdb#>
+PREFIX text:    <http://jena.apache.org/text#>
+PREFIX skos:    <http://www.w3.org/2004/02/skos/core#>
+PREFIX cg: 	 <http://dataexchange.clinicalgenome.org/terms/>
+PREFIX sepio: 	 <http://purl.obolibrary.org/obo/SEPIO_>
+PREFIX geno: 	 <http://purl.obolibrary.org/obo/GENO_>
+PREFIX iao: 	 <http://purl.obolibrary.org/obo/IAO_>
+PREFIX dc: 	 <http://purl.org/dc/elements/1.1/>
+PREFIX faldo: 	 <http://biohackathon.org/resource/faldo#>
+PREFIX so: 	 <http://purl.obolibrary.org/obo/SO_>
+PREFIX mondo: 	 <http://purl.obolibrary.org/obo/MONDO_>
+PREFIX owl: 	 <http://www.w3.org/2002/07/owl#>
+PREFIX omim: 	 <http://purl.obolibrary.org/obo/OMIM_>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX bfo: 	 <http://purl.obolibrary.org/obo/BFO_>
+PREFIX dct:	 <http://purl.org/dc/terms/>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+
+# Text
+[] ja:loadClass "org.apache.jena.query.text.TextQuery" .
+text:TextDataset      rdfs:subClassOf   ja:RDFDataset .
+text:TextIndexLucene  rdfs:subClassOf   text:TextIndex .
+
+[] rdf:type fuseki:Server ;
+   fuseki:services (
+     <#service_tdb2>
+   ) .
+
+<#service_tdb2> rdf:type fuseki:Service ;
+    rdfs:label                      "TDB2 Service (RW)" ;
+    fuseki:name                     "tdb2-dosage" ;
+    fuseki:serviceQuery             "query" ;
+    fuseki:serviceQuery             "sparql" ;
+    fuseki:serviceUpdate            "update" ;
+    fuseki:serviceUpload            "upload" ;
+    fuseki:serviceReadWriteGraphStore      "data" ;
+    fuseki:serviceReadGraphStore    "get" ;
+    fuseki:dataset           <#tdb_dataset_readwrite>
+    .
+
+<#tdb_dataset_readwrite> rdf:type      text:TextDataset ;
+    text:dataset   <#dataset> ;
+    text:index     <#indexLucene> ;
+    .
+
+<#dataset> rdf:type	tdb2:DatasetTDB2 ;
+    tdb2:location "/Users/toneill/dev/git/genegraph/tdb" ;
+    tdb2:unionDefaultGraph true ;
+    .
+
+# Text index description
+<#indexLucene> a text:TextIndexLucene ;
+    text:directory <file:///Users/toneill/dev/git/genegraph/lucene_index> ;
+    text:entityMap <#entMap> ;
+    text:storeValues true ; 
+    text:analyzer [ a text:StandardAnalyzer ] ;
+    text:queryAnalyzer [ a text:KeywordAnalyzer ] ;
+    ### text:queryParser text:AnalyzingQueryParser ;
+    text:propLists ( [ text:propListProp cg:genes ;
+      		       text:props ( skos:prefLabel
+		       		    skos:altLabel
+				    skos:hiddenLabel ) ; ]
+		     [ text:propListProp cg:diseases ;
+      		       text:props ( rdfs:label
+		       		    oboInOwl:hasExactSynonym
+				    iao:0000115 ) ; ]
+   		   ) ;
+    #    text:defineAnalyzers ( [ . . . ] . . . ) ;
+    text:multilingualSupport false ; # optional
+.
+
+# Entity map (see documentation for other options)
+<#entMap> a text:EntityMap ;
+    text:defaultField     "gene" ;
+    text:entityField      "uri" ;
+    text:langField        "lang" ;
+    text:graphField       "graph" ;
+    text:map (
+        [ text:field "gene" ; 
+            text:predicate skos:prefLabel ; ]
+	[ text:field "gene-alt" ; 
+            text:predicate skos:altLabel ; ]
+	[ text:field "gene-hidden" ; 
+            text:predicate skos:hiddenLabel ; ]
+        [ text:field "label" ; 
+            text:predicate rdfs:label ; ]
+	[ text:field "synonym" ;
+	    text:predicate oboInOwl:hasExactSynonym ; ]
+	[ text:field "definition" ;
+	    text:predicate iao:0000115 ; ]
+	[ text:field "chromosome-band" ;
+	    text:predicate so:0000341 ; ]
+	[ text:field "start-position" ; 
+	    text:predicate geno:0000894 ; ]
+	[ text:field "end-position" ; 
+	    text:predicate geno:0000895 ; ]
+        [ text:field "member-count" ; 
+            text:predicate geno:0000917 ; ]
+        [ text:field "evidence-description" ; 
+            text:predicate dc:description ; ]
+        #[ text:field "evidence-source" ; # pubmedid url
+        #    text:predicate dcterms:source ; ]
+        [ text:field "activity-date" ; 
+            text:predicate sepio:0000160 ; ]
+        )
+.

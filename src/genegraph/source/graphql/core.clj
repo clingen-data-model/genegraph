@@ -299,7 +299,48 @@
      {:total {:type 'Int :resolve gene-dosage/total-count}
       :genes  {:type 'Int :resolve gene-dosage/gene-count}
       :regions  {:type 'Int :resolve gene-dosage/region-count}}}}
-  
+
+   :input-objects
+   {:range
+    {:fields
+     {:start {:type 'Int}
+      :end {:type 'Int}}}
+    :date_range
+    {:fields
+     {:start {:type 'String} ;; TODO chnge to dates
+      :end {:type 'String}}} ;; see https://lacinia.readthedocs.io/en/latest/custom-scalars.html
+    :genomic_locus
+    {:fields
+     {:build {:type 'String}
+      :chr {:type 'String}
+      :start {:type 'Int}
+      :end {:type 'Int}}}
+    :chromo_locus
+    {:fields
+     {:build {:type 'String}
+      :cyto_locus {:type 'String}}}
+    :filters
+    {:fields
+     {:genes {:type '(list String)}
+      :regions {:type '(list String)}
+      :diseases {:type '(list String)}
+      :haplo_desc {:type '(list String)}
+      :genomic_location {:type :genomic_locus}
+      :chomo_location {:type :chromo_locus}
+      :hi_score {:type 'String}
+      :ti_score {:type 'String}
+      :protein_coding {:type 'Boolean}
+      :omim {:type 'Boolean}
+      :morbid {:type 'Boolean}
+      :location_overlap {:type 'Boolean}
+      :location_contained {:type 'Boolean}
+      :gene_disease_validity {:type 'Boolean}
+      :clinical_actionability {:type 'Boolean}
+      :hi_range {:type :range}
+      :pli_range {:type :range}
+      :reviewed_range {:type :date_range}
+      }}}   
+
    :queries
    {:gene {:type '(non-null :gene)
            :args {:iri {:type 'String}}
@@ -317,6 +358,8 @@
     :server_status {:type '(non-null :server_status)
                     :resolve server-status/server-version-query}
     :dosage_list{:type '(list :gene_dosage_curation)
+                 ;; :args {:filters {:type '(list String)}}
+                 :args {:filters {:type :filters}}
                  :resolve gene-dosage/dosage-list-query}
     :dosage_query{:type '(non-null :gene_dosage_curation)
                   :args {:iri {:type 'String}}

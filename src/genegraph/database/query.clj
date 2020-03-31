@@ -9,9 +9,10 @@
             [clojure.set :as set]
             [clojure.string :as s]
             [clojure.core.protocols :as protocols :refer [Datafiable]]
-            [clojure.datafy :as datafy :refer [datafy nav]])
+            [clojure.datafy :as datafy :refer [datafy nav]]
+            [io.pedestal.log :as log])
   (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList SimpleSelector]
-           [org.apache.jena.query QueryFactory Query QueryExecution
+           [org.apache.jena.query Dataset QueryFactory Query QueryExecution
             QueryExecutionFactory QuerySolutionMap]
            java.io.ByteArrayOutputStream))
 
@@ -242,33 +243,51 @@
   
   ;; TODO--consider removing this method into a function, do not want to expose
   ;; interfaces against Jena types
+  ;;
+  ;; The whole db-or-model ugliness below is due to an issue where QueryExecutionFactory/create
+  ;; has the same method signature where the second param is either a Dataset or a Model.
+  ;; If it is a Dataset that supports text indexing, we need to use the Dataset form otherwise
+  ;; TextIndexPF complains about not finding a text index if we are doing a text search.
+  ;; Also, the Dataset form needs to call .getUnionModel when resolving to Resources.
+  ;; If we are querying (non-text) against a plain old Model then there is no .getUnionModel
+  ;; call supported.
+  ;;
   Query
   (select
     ([query-def] (select query-def {}))
-    ([query-def params] (select query-def params (.getUnionModel db)))
-    ([query-def params model]
+    ([query-def params] (select query-def params db))
+    ([query-def params db-or-model]
+     (log/info :fn :select-query
+                :msg "Executing select query"
+                :query query-def
+                :params params)
      (let [qs-map (construct-query-solution-map (dissoc params :-model))]
        (tx
-        (with-open [qexec (QueryExecutionFactory/create query-def model qs-map)]
+        (with-open [qexec (QueryExecutionFactory/create query-def db-or-model qs-map)]
           (when-let [result (-> qexec .execSelect)]
             (let [result-var (-> result .getResultVars first)
-                  result-seq (iterator-seq result)]
+                  result-seq (iterator-seq result)
+                  ;; TODO - needs to be refactored to not use type
+                  model (if (instance? org.apache.jena.query.Dataset (type db-or-model))
+                          (.getUnionModel db-or-model)
+                          db-or-model)]
+             
               (mapv #(->RDFResource (.getResource % result-var) model) result-seq))))))))
   
   java.lang.String
   (select 
     ([query-def] (select query-def {}))
-    ([query-def params] (select query-def params (.getUnionModel db)))
-    ([query-def params model] 
-     (select (QueryFactory/create (expand-query-str query-def)) params model)))
+    ([query-def params] (select query-def params db))
+    ([query-def params db-or-model]
+     (select (QueryFactory/create (expand-query-str query-def)) params db-or-model)))
   
   clojure.lang.Keyword
   (select
     ([query-def] (select query-def {}))
-    ([query-def params] (select query-def params (.getUnionModel db)))
-    ([query-def params model]
+    ([query-def params] (select query-def params db))
+    ([query-def params db-or-model]
      (if-let [q (@query-register query-def)]
-       (select q params model)
+       (select q params db-or-model)
        #{}))))
 
 (extend-protocol AsResource

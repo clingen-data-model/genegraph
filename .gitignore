@@ -47,3 +47,12 @@ build/
 
 # Jena 
 /tdb/**
+
+# Lucene
+lucene_index/
+
+# intellij
+doc/.idea/
+
+# saves
+tdb.baseline/

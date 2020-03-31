@@ -4,7 +4,6 @@
 
 (defn gene-query [context args value]
   (let [gene (q/resource (:iri args))]
-    (println gene)
     (if (q/is-rdf-type? gene :so/ProteinCodingGene)
        gene
        (first (filter #(q/is-rdf-type? % :so/ProteinCodingGene) (get gene [:owl/same-as :<]))))))
