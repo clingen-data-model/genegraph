@@ -104,7 +104,7 @@
     (q/select dq)))
 
 (defn filtered-dosage-reports [filters]
-  (let [results (reduce (fn [vec [k v]]
+  (->> (reduce (fn [vec [k v]]
             (cond
               (= :regions k) (conj vec (region-filter v))
               (= :genes k) (conj vec (gene-filter v))
@@ -112,12 +112,8 @@
                    (= 1 (count (keys filters)))) (conj vec (all-gene-dosage-reports))
               (= :diseases k) (conj vec (diseases-filter v))))
           []
-          filters)]
-    (if (> 1 (count (keys filters)))
-      (->> results
-           flatten
-           dedupe-resources)
-      results)))
+          filters)
+       flatten))
 
 (defn dosage-list-query [context args value]
   "Returns a list of labelled gene and region dosage reports combined and ordered by label"
@@ -132,24 +128,25 @@
   "Gene Dosage Working Group")
 
 (defn haplo [context args value]
-  (->> (q/ld-> value [:bfo/has-part :sepio/has-subject :sepio/has-subject])
-       (filter #(= 1 (q/ld1-> % [:geno/has-member-count])))
+  (->> (q/ld-> value [:bfo/has-part])
+       (filter #(= 1 (q/ld1-> % [:sepio/has-subject :sepio/has-subject :geno/has-member-count])))
        (first)))
 
 (defn has-haplo? [context args value]
   (not (nil? (haplo context args value))))
        
 (defn triplo [context args value]
-  (->> (q/ld-> value [:bfo/has-part :sepio/has-subject :sepio/has-subject])
-       (filter #(= 3 (q/ld1-> % [:geno/has-member-count])))
+  (->> (q/ld-> value [:bfo/has-part])
+       (filter #(= 3 (q/ld1-> % [ :sepio/has-subject :sepio/has-subject :geno/has-member-count])))
        (first)))
   
 (defn has-triplo? [context args value]
   (not (nil? (triplo context args value))))
 
 (defn label [context args value]
-  (str (q/ld1-> value [:iao/is-about :rdfs/label]))
-       (q/ld1-> value [:iao/is-about :skos/preferred-label]))
+  (str (q/ld1-> value [:iao/is-about :rdfs/label])
+       (q/ld1-> value [:iao/is-about :skos/preferred-label])))
+       
 
 (defn classification-description [context args value]
   (str (q/ld1-> value [:bfo/has-part :sepio/has-object :rdfs/label]) " for dosage pathogenicity"))
@@ -165,12 +162,6 @@
   (if (gene? value)
     (first (:iao/is-about value))
     nil))
-
-(defn score [context args value]
-  (q/ld-> value []))
-
-(defn comments [context args value]
-  (q/ld-> value []))
 
 (defn morbid [context args value]
   (when-let [gene (gene context args value)] 
@@ -197,15 +188,8 @@
     (q/ld1-> haplo [:sepio/confidence-score])
     nil))
 
-(defn phenotype [context args value]
-  (q/ld-> value []))
-
-
 (defn location-relationship [context args value]
   (q/ld-> value []))
-
-(defn gene-name [context args value]
-  value)
 
 (defn evidence-level [dosage]
     (q/ld1-> dosage [[:sepio/has-subject :<] [:sepio/has-subject :<] :sepio/has-object :rdfs/label]))

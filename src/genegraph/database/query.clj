@@ -268,10 +268,9 @@
             (let [result-var (-> result .getResultVars first)
                   result-seq (iterator-seq result)
                   ;; TODO - needs to be refactored to not use type
-                  model (if (instance? org.apache.jena.query.Dataset (type db-or-model))
+                  model (if (instance? org.apache.jena.query.Dataset db-or-model)
                           (.getUnionModel db-or-model)
                           db-or-model)]
-             
               (mapv #(->RDFResource (.getResource % result-var) model) result-seq))))))))
   
   java.lang.String

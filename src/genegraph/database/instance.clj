@@ -5,5 +5,5 @@
   (:import [org.apache.jena.query.text TextDatasetFactory]))
 
 (defstate db
-  :start (TextDatasetFactory/create "resources/genegraph-assembly.ttl")
+  :start (TextDatasetFactory/create "genegraph-assembly.ttl")
   :stop (.close db))
