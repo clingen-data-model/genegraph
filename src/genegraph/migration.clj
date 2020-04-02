@@ -34,6 +34,7 @@
   (when (needs-migration?)
     (fs/delete-dir (str env/data-vol "/tdb"))
     (fs/delete-dir (str env/data-vol "/base"))
+    (fs/delete-dir (str env/data-vol "/lucene_index"))
     (fs/delete (str env/data-vol "base_state.edn"))
     (fs/delete (str env/data-vol "partition_offsets.edn"))
     (spit version-file (pr-str {:migration (desired-version)}))))
