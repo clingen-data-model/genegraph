@@ -47,6 +47,7 @@ build/
 
 # Jena 
 /tdb/**
+genegraph-assembly.ttl
 
 # Lucene
 lucene_index/

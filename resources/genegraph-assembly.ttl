@@ -53,13 +53,13 @@ text:TextIndexLucene  rdfs:subClassOf   text:TextIndex .
     .
 
 <#dataset> rdf:type	tdb2:DatasetTDB2 ;
-    tdb2:location "/Users/toneill/dev/git/genegraph/tdb" ;
+    tdb2:location "$CG_SEARCH_DATA_VOL/tdb" ;
     tdb2:unionDefaultGraph true ;
     .
 
 # Text index description
 <#indexLucene> a text:TextIndexLucene ;
-    text:directory <file:///Users/toneill/dev/git/genegraph/lucene_index> ;
+    text:directory "$CG_SEARCH_DATA_VOL/lucene_index" ;
     text:entityMap <#entMap> ;
     text:storeValues true ; 
     text:analyzer [ a text:StandardAnalyzer ] ;
