@@ -1,0 +1,1 @@
+select ?x where { ?x a :so/ProteinCodingGene } limit 5

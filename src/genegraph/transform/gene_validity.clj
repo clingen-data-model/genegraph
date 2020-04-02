@@ -1,131 +1,43 @@
-;; TODO contribution, remainder of assertion, including evidence level and methodology
-
 (ns genegraph.transform.gene-validity
   (:require [genegraph.database.load :as l]
-            [genegraph.database.query :as q]
+            [genegraph.database.query :as q :refer [select construct ld-> ld1-> declare-query]]
             [genegraph.transform.core :refer [transform-doc src-path]]
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [clojure.string :as s]
+            [clojure.java.io :refer [resource]])
+  (:import java.io.ByteArrayInputStream ))
 
-(defn gene-validity-triples [report]
-  (let [iri (str "gene-validity:" (:iri report))
-        genetic-condition-iri (l/blank-node)
-        condition (get-in report [:conditions 0 :iri])
-        gene-hgnc-id (get-in report [:genes 0 :curie])
-        gene (when gene-hgnc-id
-               (q/ld1-> (q/resource gene-hgnc-id) [[:owl/same-as :<]]))
-        genetic-condition (when (and condition gene)
-                            [[genetic-condition-iri :rdf/type :sepio/GeneticCondition]
-                             [genetic-condition-iri :rdfs/sub-class-of condition]])]
-    (println "gene-validity:" iri)
-    [[iri :sepio/is-about-condition genetic-condition-iri]
-     [iri :rdf/type :sepio/GeneValidityReport]]))
+(def base "http://dataexchange.clinicalgenome.org/gci/")
 
-(defmethod transform-doc :gene-validity-v1 [doc-def]
-  (let [raw-report (or (:document doc-def) (slurp (src-path doc-def)))
-        report-json (json/parse-string raw-report true)
-        report-triples (gene-validity-triples report-json)]
-    (l/statements-to-model report-triples)))
+(declare-query construct-proposition
+               five-genes)
 
-(def gci-express-root "http://dataexchange.clinicalgenome.org/gci-express/")
-(def affiliation-root "http://dataexchange.clinicalgenome.org/agent/")
+;; Trim trailing }, intended to be appended to gci json
+(def context
+  (s/join ""
+        (drop-last
+         (json/generate-string
+          {"@context" 
+           {"@vocab" "http://gci.clinicalgenome.org/"
+            "@base" "http://gci.clinicalgenome.org/"
+            "gci" "http://gci.clinicalgenome.org/"
+            "MONDO" "http://purl.obolibrary.org/obo/MONDO_"
+            "hgncId" {"@type" "@id"}
+            "diseaseId" {"@type" "@id"}
+            }}))))
 
-(defn json-content [report]
-  (if (< 0 (count (:scoreJsonSerialized report)))
-    (:scoreJsonSerialized report)
-    (:scoreJsonSerializedSop5 report)))
+(defn parse-gdm [gdm-json]
+  (let [gdm-with-fixed-curies (s/replace gdm-json #"MONDO_" "MONDO:")
+        is (-> (str context "," (subs gdm-with-fixed-curies 1))
+               .getBytes
+               ByteArrayInputStream.)]
+    (l/read-rdf is {:format :json-ld})))
 
-(defn json-content-node [report iri]
-  [[iri :rdf/type :cnt/ContentAsText]
-   [iri :cnt/chars (json-content report)]])
 
-(defn validity-proposition [report iri]
-  (let [gene-hgnc-id (-> report :genes first second :curie)
-        gene (when gene-hgnc-id
-               (q/ld1-> (q/resource gene-hgnc-id) [[:owl/same-as :<]]))
-        parsed-json (json/parse-string (json-content report) true)
-        moi-string (or (-> parsed-json :data :ModeOfInheritance)
-                       (-> parsed-json :scoreJson :ModeOfInheritance))
-        moi (->> moi-string
-                 (re-find #"\(HP:(\d+)\)")
-                 second
-                 (str "http://purl.obolibrary.org/obo/HP_")
-                 q/resource)]
-    [[iri :rdf/type :sepio/GeneValidityProposition]
-     [iri :sepio/has-subject gene]
-     [iri :sepio/has-predicate :ro/IsCausalGermlineMutationIn]
-     [iri :sepio/has-object (q/resource (-> report :conditions :MONDO :iri))]
-     [iri :sepio/has-qualifier moi]]))
+;; TODO, this is incomplete, need more data on this
+;; ask at next data model meeting
+(def case-info-type-to-sepio-type
+  {"PREDICTED_OR_PROVEN_NULL_VARIANT" :sepio/fixme
+   "OTHER_VARIANT_TYPE_WITH_GENE_IMPACT" :sepio/fixme })
 
-(defn contribution [report iri]
-  [[iri :bfo/realizes :sepio/ApproverRole]
-   [iri :sepio/has-agent (str affiliation-root
-                              (-> report :affiliation :id))]
-   [iri :sepio/activity-date (:dateISO8601 report)]])
 
-(def evidence-level-label-to-concept
-  {"Definitive" :sepio/DefinitiveEvidence
-   "Limited" :sepio/LimitedEvidence
-   "Moderate" :sepio/ModerateEvidence
-   "No Reported Evidence" :sepio/NoEvidence
-   "Strong*" :sepio/StrongEvidence
-   "Contradictory (disputed)" :sepio/DisputingEvidence
-   "Strong" :sepio/StrongEvidence
-   "Contradictory (refuted)" :sepio/RefutingEvidence
-   "Refuted" :sepio/RefutingEvidence
-   "Disputed" :sepio/DisputingEvidence})
-
-(defn sop-version-gci-e [report]
-  (if (< 0 (count (:scoreJsonSerialized report)))
-    :sepio/ClinGenGeneValidityEvaluationCriteriaSOP4
-    :sepio/ClinGenGeneValidityEvaluationCriteriaSOP5))
-
-(defn evidence-level-assertion [report iri]
-  (let [prop-iri (l/blank-node)
-        contribution-iri (l/blank-node)]
-    (concat [[iri :rdf/type :sepio/GeneValidityEvidenceLevelAssertion]
-             [iri :sepio/has-subject prop-iri]
-             [iri :sepio/has-predicate :sepio/HasEvidenceLevel]
-             [iri :sepio/has-object (evidence-level-label-to-concept
-                                     (-> report :scores vals first :label))]
-             [iri :sepio/qualified-contribution contribution-iri]
-             [iri :sepio/is-specified-by (sop-version-gci-e report)]]
-            (validity-proposition report prop-iri)
-            (contribution report contribution-iri))))
-
-(defn gci-express-report-to-triples [report]
-  (let [content (second report)
-        root-version (str gci-express-root (-> report first name))
-        iri (str root-version "-" (:dateISO8601 content))
-        content-id (l/blank-node)
-        assertion-id (l/blank-node)]
-    (println iri)
-    (concat [[iri :rdf/type :sepio/GeneValidityReport] 
-             [iri :rdfs/label (:title content)]
-             [iri :bfo/has-part content-id]
-             [iri :bfo/has-part assertion-id]]
-            (evidence-level-assertion content assertion-id)
-            ;;(json-content-node content content-id)
-            )))
-
-(defmethod transform-doc :gci-express [doc-def]
-  (let [raw-report (or (:document doc-def) (slurp (src-path doc-def)))
-        report-json (json/parse-string raw-report true)]
-    (l/statements-to-model (mapcat gci-express-report-to-triples report-json))))
-
-(def gci-sop-version 
-  {"6" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP6
-   "7" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP7})
-
-(defn gci-minimal-report-to-triples [report]
-  (let [prop-iri (l/blank-node)
-        contribution-iri (l/blank-node)]
-    (concat [[iri :rdf/type :sepio/GeneValidityEvidenceLevelAssertion]
-             [iri :sepio/has-subject prop-iri]
-             [iri :sepio/has-predicate :sepio/HasEvidenceLevel]
-             [iri :sepio/has-object (evidence-level-label-to-concept
-                                     (-> report :scoreJson :summary :FinalClassification))]
-             [iri :sepio/qualified-contribution contribution-iri]
-             [iri :sepio/is-specified-by (gci-sop-version (:sopVersion report))]]
-            ;; (validity-proposition report prop-iri)
-            ;; (contribution report contribution-iri)
-            )))
