@@ -1,0 +1,16 @@
+prefix gci: <http://gci.clinicalgenome.org/> 
+construct {
+  ?assertion a :sepio/GeneValidityEvidenceLevelAssertion .
+  ?assertion :sepio/has-subject ?prop .
+  ?assertion :sepio/has-predicate :sepio/HasEvidenceLevel .
+  ?assertion :sepio/has-object ?evidencelevel .
+}
+where {
+  ?classification a gci:provisionalClassification . 
+  ?classification gci:uuid ?classificationuuid . 
+  ?classification gci:autoClassification ?evidencelevel .
+  BIND (IRI(CONCAT(?gcibase, "assertion/", ?classificationuuid)) AS ?assertion) .
+  ?gdm a gci:gdm . 
+  ?gdm gci:uuid ?gdmuuid . 
+  BIND (IRI(CONCAT(?gcibase, "proposition/", ?gdmuuid)) AS ?prop)
+}

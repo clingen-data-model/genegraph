@@ -11,7 +11,7 @@
             [clojure.core.protocols :as protocols :refer [Datafiable]]
             [clojure.datafy :as datafy :refer [datafy nav]]
             [clojure.java.io :as io])
-  (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList SimpleSelector]
+  (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList SimpleSelector ModelFactory]
            [org.apache.jena.query QueryFactory Query QueryExecution
             QueryExecutionFactory QuerySolutionMap]
            org.apache.jena.riot.writer.JsonLDWriter
@@ -359,3 +359,8 @@ use io/slurp"
     `(do ~@(map #(let [filename# (str root# (s/replace % #"-" "_" ) ".sparql")]
                    `(def ~% (-> ~filename# io/resource slurp create-query)))
                 queries))))
+
+(defn union [& models]
+  (let [union-model (ModelFactory/createDefaultModel)]
+    (doseq [model models] (.add union-model model))
+    union-model))

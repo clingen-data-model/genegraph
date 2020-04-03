@@ -26,7 +26,7 @@
 (defn read-rdf
   ([src] (read-rdf src {}))
   ([src opts] (-> (ModelFactory/createDefaultModel)
-                 (.read src nil (jena-rdf-format (:format opts :rdf-xml))))))
+                  (.read src nil (jena-rdf-format (:format opts :rdf-xml))))))
 
 (defn store-rdf 
   "Expects src to be compatible with Model.read(src, nil). A java.io.InputStream is
