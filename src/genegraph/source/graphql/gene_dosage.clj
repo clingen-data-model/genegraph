@@ -27,20 +27,23 @@
 (defn all-gene-dosage-reports []
   "Selects all dosage reports for protein coding genes with a label"
   (q/select "select ?report where { 
+    ?report a :sepio/GeneDosageReport .
     ?report :iao/is-about ?feature .
     ?feature a :so/ProteinCodingGene .
-    ?Feature :skos/preferred-label ?label }
+    ?feature :skos/preferred-label ?label }
     ORDER BY ?label"))
 
 (defn all-non-gene-dosage-reports []
   "Selects all dosage reports for non-protein coding genes"
-  (q/select "select ?report where { 
+  (q/select "select ?report where {
+    ?report a :sepio/GeneDosageReport .
     ?report :iao/is-about ?feature .
     FILTER NOT EXISTS {?feature a :so/ProteinCodingGene .} }"))
 
 (defn all-region-dosage-reports []
   "Selects all dosage reports for regions with a label"
   (q/select "select ?report where { 
+    ?report a :sepio/GeneDosageReport .
     ?report :iao/is-about ?feature .
     ?feature a :so/SequenceFeature .
     ?feature :rdfs/label ?label }
