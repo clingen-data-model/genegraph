@@ -8,7 +8,7 @@ construct {
 
   ?evidenceItem a ?evidenceItemType ;
   :sepio/is-about-allele ?allele ;
-  :dc/source ?article ;
+  # :dc/source ?article ;
   :rdfs/label ?individualLabel .
 
 }
@@ -27,8 +27,13 @@ where {
   gci:variants ?variant ;
   gci:label ?individualLabel .
 
-  ?family gci:individualIncluded ?individual .
-  ?annotation gci:families ?family .
+  # ?family gci:individualIncluded ?individual .
+  # ?annotation gci:families ?family .
+  # ?annotation gci:article ?publication .
+  # ?publication gci:pmid ?pmid .
+  # BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
+
+  ?annotation gci:individuals ?individual .
   ?annotation gci:article ?publication .
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .

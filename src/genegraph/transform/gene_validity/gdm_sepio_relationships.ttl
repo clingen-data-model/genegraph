@@ -14,3 +14,6 @@ gci:PREDICTED_OR_PROVEN_NULL_VARIANT :hasEvidenceLineType sepio:0004079 ;
 gci:VARIANT_IS_DE_NOVO :hasEvidenceLineType sepio:0004078 ;
     :hasEvidenceItemType sepio:0004033 .
     
+gci:OTHER_VARIANT_TYPE_WITH_GENE_IMPACT :hasEvidenceLineType sepio:0004080 ;
+    :hasEvidenceItemType sepio:sepio:0004035 .
+    
