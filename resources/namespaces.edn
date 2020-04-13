@@ -45,4 +45,6 @@
  "sparql" "http://www.w3.org/ns/sparql-service-description#"
  "shacl" "http://www.w3.org/ns/shacl#"
  "omim" "http://purl.obolibrary.org/obo/OMIM_"
- "pubmed" "https://www.ncbi.nlm.nih.gov/pubmed/"}
+ "pubmed" "https://www.ncbi.nlm.nih.gov/pubmed/"
+ "text" "http://jena.apache.org/text#"
+ }

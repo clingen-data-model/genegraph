@@ -11,6 +11,9 @@
             [mount.core :refer [defstate]]
             [genegraph.transform.gene]
             [genegraph.transform.omim]
+            [genegraph.transform.features]
+            [genegraph.transform.loss-intolerance]
+            [genegraph.transform.hi-index]
             [genegraph.env :as env]
             [io.pedestal.log :as log]
             [juxt.dirwatch :refer [watch-dir]])
@@ -35,8 +38,6 @@
   (read-edn base-resources-edn))
 
 (def base-resources (read-base-resources))
-
-
 
 (defn- update-state! [resource-name k v]
   (swap! current-state assoc-in [resource-name k] v)

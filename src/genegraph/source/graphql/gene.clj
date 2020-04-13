@@ -4,7 +4,6 @@
 
 (defn gene-query [context args value]
   (let [gene (q/resource (:iri args))]
-    (println gene)
     (if (q/is-rdf-type? gene :so/ProteinCodingGene)
        gene
        (first (filter #(q/is-rdf-type? % :so/ProteinCodingGene) (get gene [:owl/same-as :<]))))))
@@ -34,3 +33,39 @@
   (q/ld-> value [[:geno/is-feature-affected-by :<]
                  [:sepio/has-subject :<]
                  [:sepio/has-subject :<]]))
+
+(defn hgnc-symbol [context args value]
+  (q/ld-> value []))
+
+(defn gene-type [context args value]
+  (q/ld-> value []))
+
+(defn locus-type [context args value]
+  (q/ld-> value []))
+
+(defn previous-symbols [context args value]
+  (q/ld-> value []))
+
+(defn alias-symbols [context args value]
+  (q/ld-> value []))
+
+(defn chromo-loc [context args value]
+ (q/ld-> value []))
+
+(defn function [context args value]
+  (q/ld-> value []))
+
+(defn coordinates [context args value]
+  (q/ld-> value []))
+
+(defn build [context args value]
+  (q/ld-> value []))
+
+(defn chromosome [context args value]
+  (q/ld-> value []))
+
+(defn start-pos [context args value]
+  (q/ld-> value []))
+
+(defn end-pos [context args value]
+  (q/ld-> value []))

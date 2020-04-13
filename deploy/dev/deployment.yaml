@@ -5,7 +5,7 @@ metadata:
   labels:
     app: genegraph
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: genegraph
@@ -31,7 +31,7 @@ spec:
                 - genegraph
             topologyKey: "kubernetes.io/hostname"
       containers:
-        - image: gcr.io/clingen-dev/genegraph:v1
+        - image: gcr.io/clingen-dev/genegraph:v2
           name: genegraph
           livenessProbe:
             httpGet:
@@ -62,7 +62,20 @@ spec:
             - name: SERVEUR_TRUSTSTORE
               value: "/keys/serveur.truststore.jks"
             - name: CG_SEARCH_TOPICS
-              value: actionability
+              # value: actionability
+              value: gene_dosage_sepio_in
+            - name: KAFKA_HOST
+              value: "pkc-4yyd6.us-east1.gcp.confluent.cloud:9092"
+            - name: KAFKA_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-credentials
+                  key: user
+            - name: KAFKA_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-credentials
+                  key: password
           ports:
             - containerPort: 8888
               name: genegraph

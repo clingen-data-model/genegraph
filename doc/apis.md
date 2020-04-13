@@ -1,10 +1,10 @@
 # APIs and code organization overview
 
-* RDF query and manipulation (clingen-search.database)
-  * RDF Parsing and Storage (clingen-search.database.load)
-  * RDF Query and inspection (clingen-search-database.query)
-  * Transaction Handling (clingen-search.database.util)
-* Transformation into RDF (clingen-search.transform.core)
-* Connecting data sources to database (clingen-search.sink)
-  * Collect and import base state from original sources (clingen-search.sink.base)
-  * Establish and maintain state through connection to Apache Kafka (clingen-search.sink.stream)
+* RDF query and manipulation (genegraph.database)
+  * RDF Parsing and Storage (genegraph.database.load)
+  * RDF Query and inspection (genegraph-database.query)
+  * Transaction Handling (genegraph.database.util)
+* Transformation into RDF (genegraph.transform.core)
+* Connecting data sources to database (genegraph.sink)
+  * Collect and import base state from original sources (genegraph.sink.base)
+  * Establish and maintain state through connection to Apache Kafka (genegraph.sink.stream)

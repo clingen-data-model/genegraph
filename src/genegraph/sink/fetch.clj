@@ -46,6 +46,17 @@
         (unzip-target target-file))
     (log/warn :fn :get-http :msg :cant-retrieve :url url)))
 
+(defn get-file
+  "Retreive, store and (if necessary) decompress a local file (file:/// url)
+  and store at target-file. Useful for testing against a local file."
+  [url target-file opts]
+  (let [f (.getFile url)]
+    (->> f
+         slurp
+         (spit target-file))
+    (unzip-target target-file)
+    (log/info :fn :get-file :msg :processed-file :file f :target target-file)))
+
 (defn fetch-data
   "retrieve file from remote url and store in data directory
   used to stage imports from external sources. Currently supports only
@@ -57,6 +68,7 @@
       (= "http" (.getProtocol url)) (get-http url-str target-file opts)
       (= "https" (.getProtocol url)) (get-http url-str target-file opts)
       (= "ftp" (.getProtocol url)) (get-ftp url target-file opts)
+      (= "file" (.getProtocol url)) (get-file url target-file opts)
       :default (log/error :fn :fetch-data :msg :invalid-protocol :url url-str))))
 
 (defn fetch-all-remote-assets

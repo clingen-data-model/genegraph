@@ -1,13 +1,13 @@
 # Reading and Storing Data
-(clingen-search.database.load)
+(genegraph.database.load)
 
 The data service has a simple interface for storing data in the database. Data may be read into a Jena model [read-rdf](#), and stored into the database with [load-model](#). Data stored in the database must have an associated named graph, any graph with that name currently in the database will be replaced with the new data. Replacing a named graph in entierty using this API is currently the only recommended mechanism for updating the database. It is possible to access the underlying models for the database and update them using Jena APIs, but this is not recommended.
 
 ## Reading RDF
 
-Most commonly, one will want to take incoming RDF in a serialized form and store it in the database. RDF/XML, JSON-LD, and Turtle are the formats currently supported (because they're the only formats listed in clingen-search.database.load/jena-rdf-format), but  any of the serializations supported by Jena can be added. 
+Most commonly, one will want to take incoming RDF in a serialized form and store it in the database. RDF/XML, JSON-LD, and Turtle are the formats currently supported (because they're the only formats listed in genegraph.database.load/jena-rdf-format), but  any of the serializations supported by Jena can be added. 
 
-The transform-doc method in clingen-search.transform.core has an example of this:
+The transform-doc method in genegraph.transform.core has an example of this:
 
 ```
 (defmethod transform-doc :rdf 
@@ -27,7 +27,7 @@ Once a document has been read into a model, it can be stored in the database. Th
 
 ## Constructing RDF
 
-When reading documents not already serialized in RDF it's necessary to tranform them first into a Jena model. A simple mechanism is provided for this via the [statements-to-model](#) function. This model accepts a sequence of subject-predicate-object triples and constructs them into a Jena model. The gene-as-triple function from clingen-search.transform.gene illustrates the features of this:
+When reading documents not already serialized in RDF it's necessary to tranform them first into a Jena model. A simple mechanism is provided for this via the [statements-to-model](#) function. This model accepts a sequence of subject-predicate-object triples and constructs them into a Jena model. The gene-as-triple function from genegraph.transform.gene illustrates the features of this:
 
 ```
 (defn gene-as-triple [gene]

@@ -19,12 +19,12 @@
   :format :rdf
   :reader-opts {:format :turtle}}
  {:name "http://purl.org/dc/terms/"
-  :source "http://dublincore.org/2012/06/14/dcterms.ttl",
+  :source "https://www.dublincore.org/specifications/dublin-core/dcmi-terms/dublin_core_terms.ttl"
   :target "dcterms.ttl",
   :format :rdf
   :reader-opts {:format :turtle}}
  {:name "http://purl.org/dc/elements/1.1/"
-  :source "http://dublincore.org/2012/06/14/dcelements.ttl"
+  :source "https://www.dublincore.org/specifications/dublin-core/dcmi-terms/dublin_core_elements.ttl"
   :target "dcelements.ttl"
   :format :rdf
   :reader-opts {:format :turtle}}
@@ -37,8 +37,7 @@
   :target "so.owl",
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/iao/ontology-metadata.owl"
-  :source
-  "http://purl.obolibrary.org/obo/iao/2015-02-23/ontology-metadata.owl",
+  :source "http://purl.obolibrary.org/obo/iao/2015-02-23/ontology-metadata.owl",
   :target "iao.owl",
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/bfo.owl"
@@ -46,7 +45,7 @@
   :target "bfo.owl",
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/geno.owl"
-  :source "https://raw.githubusercontent.com/monarch-initiative/GENO-ontology/develop/src/ontology/geno.owl"
+  :source "https://raw.githubusercontent.com/monarch-initiative/GENO-ontology/develop/geno.owl"
   :target "geno.owl"
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/sepio-clingen-dosage-valueset"
@@ -105,4 +104,25 @@
   :source "https://raw.githubusercontent.com/clingen-data-model/clingen-terms/master/clingen-terms.ttl"
   :target "clingen-terms.ttl"
   :format :rdf
-  :reader-opts {:format :turtle}}]
+  :reader-opts {:format :turtle}}
+  {:name "http://dataexchange.clinicalgenome.org/build-assembly-chr.ttl"
+  :source "https://raw.githubusercontent.com/clingen-data-model/clingen-terms/master/build-assembly-chr.ttl"
+  :target "build-assembly-chr.ttl"
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:name "http://ftp.ncbi.nih.gov/GRCh37.p13"
+  :source "http://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.25_GRCh37.p13/GCF_000001405.25_GRCh37.p13_feature_table.txt.gz"
+  :target "ncbi_grch37_features.txt.gz"
+  :format :features}
+ {:name "http://ftp.ncbi.nih.gov/GRCh38.p13"
+  :source "http://ftp.ncbi.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_feature_table.txt.gz"
+  :target "ncbi_grch38_features.txt.gz"
+  :format :features}
+ {:name "https://decipher.sanger.ac.uk/HI_Predictions.bed.gz"
+  :source "https://decipher.sanger.ac.uk/files/downloads/HI_Predictions_Version3.bed.gz"
+  :target "Deciher_HI_Predictions_Version3.bed.gz"
+  :format :hi-index}
+ {:name "https://storage.googleapis.com/gnomad-public/lof_metrics.by_gene"
+  :source "https://storage.googleapis.com/gnomad-public/release/2.1.1/constraint/gnomad.v2.1.1.lof_metrics.by_gene.txt.bgz"
+  :target "gnomad_v2.1.1.lof_metrics_by_gene.txt.gz"
+  :format :loss-intolerance}]

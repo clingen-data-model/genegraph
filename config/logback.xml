@@ -13,7 +13,7 @@
 
     <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
       <!-- rollover daily -->
-      <fileNamePattern>logs/clingen-search-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+      <fileNamePattern>logs/genegraph-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
       <!-- or whenever the file size reaches 64 MB -->
       <maxFileSize>64 MB</maxFileSize>
     </rollingPolicy>

@@ -1,0 +1,157 @@
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix cg: <http://dataexchange.clinicalgenome.org/terms/> .
+@prefix sepio: <http://purl.obolibrary.org/obo/SEPIO_> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix geno: <http://purl.obolibrary.org/obo/GENO_> .
+@prefix iao: <http://purl.obolibrary.org/obo/IAO_> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix faldo: <http://biohackathon.org/resource/faldo#> .
+@prefix so: <http://purl.obolibrary.org/obo/SO_> .
+@prefix mondo: <http://purl.obolibrary.org/obo/MONDO_> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix omim: <http://purl.obolibrary.org/obo/OMIM_> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bfo: <http://purl.obolibrary.org/obo/BFO_> .
+@prefix oboInOwl: <http://www.geneontology.org/formats/oboInOwl#> .
+
+cg:GeneDosageReportShape
+    a sh:NodeShape ;
+    sh:targetClass sepio:0002015 ;
+    sh:class sepio:0002015 ; # :sepio/GeneDosageReport; Gene Dosage Report ;; ID = http://dx.clinicalgenome.org/entities/ISCA-2046-2017-06-01T03:31:15Z 
+    sh:property [
+    	sh:path dcterms:isVersionOf ; # http://dx.clinicalgenome.org/entities/ISCA-2046 singleton
+	sh:minCount 1 ;
+	sh:maxCount 1 ;
+	] ;
+    sh:property [
+	sh:path iao:0000136 ;    # iao/is-about either a protein coding   gene   https://www.ncbi.nlm.nih.gov/gene/1188 (:rdf/type SO_0001217 :so/ProteinCodingGene/)
+			       #     or a sequence feature region http://dx.clinicalgenome.org/entities/region-ISCA-37490 (:rdf/type SO_0000110 :so/SequenceFeature)
+	sh:minCount 1 ;
+	sh:maxCount 1 ;
+	sh:xone ( [
+	            sh:node cg:ProteinCodingShape ; 
+                ]
+	        [
+                    sh:node cg:SequenceFeatureShape ; 
+                ])
+	] ;
+    sh:property [
+	sh:path bfo:0000051 ;  # bfo/has-part http://dx.clinicalgenome.org/entities/ISCA-2046x1-2017-06-01T03:31:15Z array -> sepio/0002001
+				# http://dx.clinicalgenome.org/entities/ISCA-2046x3-2017-06-01T03:31:15Z
+	sh:node cg:EvidenceLevelAssertion ; # sepio_0002001
+	sh:maxCount 2 ;
+	] ;
+    sh:property [
+	sh:path sepio:0000159 ; # sepio/qualified-contribution ; 	#_:b0	array
+	sh:minCount 1 ;
+	] .
+
+cg:ProteinCodingGeneShape
+    a sh:NodeShape ;
+    sh:targetClass so:0001217 ;
+    sh:class so:0001217 ;
+    sh:property [	
+        sh:path skos:prefLabel ;
+	sh:minCount 1 ;
+	] .
+	
+cg:SequenceFeatureShape
+    a sh:NodeShape ;
+    sh:targetClass so:0000110 ;
+    sh:class so:0000110 ;
+    sh:property [	
+        sh:path rdfs:label ;
+	sh:minCount 1 ;
+    ] .
+
+cg:EvidenceLevelAssertionShape
+    a sh:NodeShape ;
+    sh:targetClass sepio:0002001 ;
+    sh:class sepio:0002001 ; # evidence level assertion
+    sh:property [
+        sh:path sepio:0000388 ; # has-subject
+        sh:name "Gene Dosage Proposition" ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:node cg:GeneDosagePropositionShape ; # Gene dosage proposition shape
+        ] ;
+    sh:property [
+        sh:path sepio:0000389 ; # has-predicate - !was previously (sepio:0000389 skos:inScheme)
+        sh:name "Evidence Level Predicate" ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        ] ;
+    sh:property [
+        sh:path sepio:0000390 ; # has-object - !was previously (sepio:0000390 skos:inScheme)
+        sh:name "Evidence Level Object" ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        ] ;
+    sh:property [
+        sh:path dc:description ;
+	sh:maxCount 1  ;
+	] ;
+    sh:property [
+        sh:path sepio:0000189 ; # has_evidence_line_with_item
+        sh:node cg:StudyFindingShape ; # study finding shape
+        ] .
+
+#
+# sepio:qualified-contribution?
+# sepio:is-specified-by?
+        
+cg:GeneDosagePropositionShape 
+    a sh:NodeShape ;
+    sh:class sepio:0002003 ; # dosage sensitivity proposition
+    sh:property [
+        sh:path sepio:0000388 ; # has-subject
+        sh:name "Proposition Subject" ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:node cg:GeneDosageShape ; # dosage shape
+        ] ;
+    sh:property [
+        sh:path sepio:0000389 ; # has-predicate
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        ] ;
+    sh:property [
+        sh:path sepio:0000390 ; # has-object
+        sh:name "Proposition Object" ;
+        sh:minCount 1 ;
+	] .
+
+cg:GeneDosageShape
+    a sh:NodeShape ;
+    sh:class geno:0000963 ; # genetic_dosage
+    sh:property [
+        sh:path geno:0000917 ; # has_member_count
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        ] ;
+   sh:property [
+       sh:path geno:0000903 ; # geno/has-location ;    
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        ] .
+
+cg:StudyFindingShape
+    a sh:NodeShape ;
+    sh:class sepio:0000173 ; # study finding
+    sh:property [
+        sh:path sepio:0000164 ; # sepio/activity-date ; 
+	sh:maxCount 1 ;
+        ] ;
+    sh:property [
+        sh:path dc:description ;
+        sh:maxCount 1 ;
+        ] ;
+    sh:property [
+        sh:path dcterms:source ;
+        sh:maxCount 1 ;
+        ] .
