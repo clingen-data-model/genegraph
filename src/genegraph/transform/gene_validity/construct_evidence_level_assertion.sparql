@@ -1,52 +1,66 @@
 prefix gci: <http://gci.clinicalgenome.org/> 
 construct {
-  ?assertion a :sepio/GeneValidityEvidenceLevelAssertion .
-  ?assertion :sepio/has-subject ?prop .
-  ?assertion :sepio/has-predicate :sepio/HasEvidenceLevel .
-  ?assertion :sepio/has-object ?evidencelevel .
-  ?assertion :sepio/evidence-line-strength-score ?evidencePointsTotal .
+  ?assertion a :sepio/GeneValidityEvidenceLevelAssertion ;
+  :sepio/has-subject ?prop ;
+  :sepio/has-predicate :sepio/HasEvidenceLevel ;
+  :sepio/has-object ?evidencelevel ;
+  :sepio/evidence-line-strength-score ?evidencePointsTotal .
 
+  ?experimentalEvidenceLine a :sepio/ExperimentalEvidenceLine ;
+  :sepio/evidence-line-strength-score ?experimentalEvidenceTotal .
 
-  ?segregationEvidenceLine a :sepio/SegregationEvidenceLine .
-  ?functionalAlterationInPatientCellsEvidenceLine a :sepio/FunctionalAlterationInPatientCellsEvidenceLine .
-  ?rescueInPatientCellsEvidenceLine a :sepio/RescueInPatientCellsEvidenceLine .
-  ?autosomalDominantOtherVariantEvidenceLine a :sepio/AutosomalDominantOtherVariantEvidenceLine .
-  ?geneExpressionEvidenceLine a :sepio/GeneExpressionEvidenceLine .
-  ?autosomalDominantDeNovoVariantEvidenceLine a :sepio/AutosomalDominantDeNovoVariantEvidenceLine .
-  ?rescueInCellCultureEvidenceLine a :sepio/RescueInCellCultureEvidenceLine .
-  ?singleGeneSegregationEvidenceLine a :sepio/SingleGeneSegregationEvidenceLine .
-  ?humanModelRescueEvidenceLine a :sepio/HumanModelRescueEvidenceLine .
-  ?autosomalDominantNullVariantEvidenceLine a :sepio/AutosomalDominantNullVariantEvidenceLine .
-  ?proteinInteractionEvidenceLine a :sepio/ProteinInteractionEvidenceLine .
-  ?autosomalRecessiveVariantEvidenceLine a :sepio/AutosomalRecessiveVariantEvidenceLine .
-  ?nonHumanModelRescueEvidenceLine a :sepio/NonHumanModelRescueEvidenceLine .
-  ?modelAndRescueEvidenceLine a :sepio/ModelAndRescueEvidenceLine .
-  ?cellCultureModelEvidenceLine a :sepio/CellCultureModelEvidenceLine .
-  ?biochemicalFunctionEvidenceLine a :sepio/BiochemicalFunctionEvidenceLine .
-  ?caseControlEvidenceLine a :sepio/CaseControlEvidenceLine .
-  ?functionalAlterationEvidenceLine a :sepio/FunctionalAlterationEvidenceLine .
-  ?nonHumanModelEvidenceLine a :sepio/NonHumanModelEvidenceLine .
-  ?caseControlAggregateEvidenceLine a :sepio/CaseControlAggregateEvidenceLine .
-  ?experimentalEvidenceLine a :sepio/ExperimentalEvidenceLine .
-  ?functionalEvidenceLine a :sepio/FunctionalEvidenceLine .
-  ?functionalAlterationInNonPatientCellsEvidenceLine a :sepio/FunctionalAlterationInNonPatientCellsEvidenceLine .
-  ?geneticEvidenceLine a :sepio/GeneticEvidenceLine .
-  ?multiLocusSegregationEvidenceLine a :sepio/MultiLocusSegregationEvidenceLine .
+  ?experimentalEvidenceCriterionAssessment a :sepio/ExperimentalEvidenceCriterionAssessment .
+
+  ?geneticEvidenceLine a :sepio/GeneticEvidenceLine ;
+  :sepio/evidence-line-strength-score ?geneticEvidenceTotal .
+
+  ?geneticEvidenceCriterionAssessment a :sepio/GeneticEvidenceCriterionAssessment .
+
+  ?autosomalDominantOtherVariantEvidenceLine a :sepio/AutosomalDominantOtherVariantEvidenceLine ;
+  :sepio/evidence-line-strength-score ?probandWithOtherVariantTypeWithGeneImpactTotal .
+
+  ?autosomalDominantOtherVariantCriterionAssessment a :sepio/AutosomalDominantOtherVariantCriterionAssessment .
+
+  ?autosomalDominantNullVariantEvidenceLine a :sepio/AutosomalDominantNullVariantEvidenceLine ;
+  :sepio/evidence-line-strength-score ?probandWithPredictedOrProvenNullVariantTotal .
+
+  ?autosomalDominantNullVariantCriterionAssessment a :sepio/AutosomalDominantNullVariantCriterionAssessment .
+
+  ?autosomalDominantDeNovoVariantEvidenceLine a :sepio/AutosomalDominantDeNovoVariantEvidenceLine ;
+  :sepio/evidence-line-strength-score ?variantIsDeNovoTotal .
+
+  ?autosomalDominantDeNovoVariantCriterionAssessment a :sepio/AutosomalDominantDeNovoVariantCriterionAssessment .
+
+  ?autosomalRecessiveVariantEvidenceLine a :sepio/AutosomalRecessiveVariantEvidenceLine ;
+  :sepio/evidence-line-strength-score ?autosomalRecessiveDisorderTotal .
+
+  ?autosomalRecessiveVariantCriterionAssessment a :sepio/AutosomalRecessiveVariantCriterionAssessment .
+
+  ?caseControlEvidenceLine a :sepio/CaseControlEvidenceLine ;
+  :sepio/evidence-line-strength-score ?caseControlTotal .
+
+  ?caseControlEvidenceCriterionAssessment a :sepio/CaseControlEvidenceCriterionAssessment .
+
+  ?functionalEvidenceLine a :sepio/FunctionalEvidenceLine ;
+  :sepio/evidence-line-strength-score ?functionTotal .
+
+  # find functional CA
+
+  ?functionalAlterationEvidenceLine a :sepio/FunctionalAlterationEvidenceLine ;
+  :sepio/evidence-line-strength-score ?functionalAlterationTotal .
+
+  ?functionalAlterationCriterionAssessment a :sepio/FunctionalAlterationCriterionAssessment .  
+
+  ?modelAndRescueEvidenceLine a :sepio/ModelAndRescueEvidenceLine ;
+  :sepio/evidence-line-strength-score  ?modelsRescueTotal .
+
+  ?modelAndRescueCriterionAssessment a :sepio/ModelAndRescueCriterionAssessment .
+
+  ?segregationEvidenceLine a :sepio/SegregationEvidenceLine ;
+  :sepio/evidence-line-strength-score ?segregationTotal .
 
   ?segregationCriterionAssessment a :sepio/SegregationCriterionAssessment .
-  ?experimentalEvidenceCriterionAssessment a :sepio/ExperimentalEvidenceCriterionAssessment .
-  ?proteinFunctionCriterionAssessment a :sepio/ProteinFunctionCriterionAssessment .
-  ?autosomalDominantOtherVariantCriterionAssessment a :sepio/AutosomalDominantOtherVariantCriterionAssessment .
-  ?geneticEvidenceCriterionAssessment a :sepio/GeneticEvidenceCriterionAssessment .
-  ?autosomalDominantNullVariantCriterionAssessment a :sepio/AutosomalDominantNullVariantCriterionAssessment .
-  ?autosomalDominantDeNovoVariantCriterionAssessment a :sepio/AutosomalDominantDeNovoVariantCriterionAssessment .
-  ?autosomalRecessiveVariantCriterionAssessment a :sepio/AutosomalRecessiveVariantCriterionAssessment .
-  ?modelAndRescueCriterionAssessment a :sepio/ModelAndRescueCriterionAssessment .
-  ?caseControlEvidenceCriterionAssessment a :sepio/CaseControlEvidenceCriterionAssessment .
-  ?functionalAlterationCriterionAssessment a :sepio/FunctionalAlterationCriterionAssessment .
-  ?singleGeneSegregationCriterionAssessment a :sepio/SingleGeneSegregationCriterionAssessment .
-  ?multiLocusSegregationCriterionAssessment a :sepio/MultiLocusSegregationCriterionAssessment .
-  
+
 }
 where {
   ?classification a gci:provisionalClassification . 
@@ -74,7 +88,7 @@ where {
   ?autosomalRecessiveDisorderTree gci:pointsCounted  ?autosomalRecessiveDisorderTotal .
 
   ?pointsTree gci:caseControl ?caseControlTree .
-  ?caseControlTree gci:pointsCounted ?caseControlPoints .
+  ?caseControlTree gci:pointsCounted ?caseControlTotal .
 
   ?pointsTree gci:function ?functionTree .
   ?functionTree gci:pointsCounted ?functionTotal .
