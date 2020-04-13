@@ -4,62 +4,82 @@ construct {
   :sepio/has-subject ?prop ;
   :sepio/has-predicate :sepio/HasEvidenceLevel ;
   :sepio/has-object ?evidencelevel ;
+  :sepio/has-evidence-line ?experimentalEvidenceLine, ?geneticEvidenceLine ;
   :sepio/evidence-line-strength-score ?evidencePointsTotal .
 
-  ?experimentalEvidenceLine a :sepio/ExperimentalEvidenceLine ;
-  :sepio/evidence-line-strength-score ?experimentalEvidenceTotal .
-
-  ?experimentalEvidenceCriterionAssessment a :sepio/ExperimentalEvidenceCriterionAssessment .
-
   ?geneticEvidenceLine a :sepio/GeneticEvidenceLine ;
+  :sepio/has-evidence-item ?geneticEvidenceCriterionAssessment ;
   :sepio/evidence-line-strength-score ?geneticEvidenceTotal .
 
-  ?geneticEvidenceCriterionAssessment a :sepio/GeneticEvidenceCriterionAssessment .
+  ?geneticEvidenceCriterionAssessment a :sepio/GeneticEvidenceCriterionAssessment ;
+  :sepio/has-evidence-line ?autosomalDominantOtherVariantEvidenceLine ,
+  ?autosomalDominantNullVariantEvidenceLine ,
+  ?autosomalDominantDeNovoVariantEvidenceLine , 
+  ?autosomalRecessiveVariantEvidenceLine ,
+  ?caseControlEvidenceLine ,
+  ?segregationEvidenceLine .
 
   ?autosomalDominantOtherVariantEvidenceLine a :sepio/AutosomalDominantOtherVariantEvidenceLine ;
+  :sepio/has-evidence-item ?autosomalDominantOtherVariantCriterionAssessment ;
   :sepio/evidence-line-strength-score ?probandWithOtherVariantTypeWithGeneImpactTotal .
 
   ?autosomalDominantOtherVariantCriterionAssessment a :sepio/AutosomalDominantOtherVariantCriterionAssessment .
 
   ?autosomalDominantNullVariantEvidenceLine a :sepio/AutosomalDominantNullVariantEvidenceLine ;
+  :sepio/has-evidence-item ?autosomalDominantNullVariantCriterionAssessment ;
   :sepio/evidence-line-strength-score ?probandWithPredictedOrProvenNullVariantTotal .
 
   ?autosomalDominantNullVariantCriterionAssessment a :sepio/AutosomalDominantNullVariantCriterionAssessment .
 
   ?autosomalDominantDeNovoVariantEvidenceLine a :sepio/AutosomalDominantDeNovoVariantEvidenceLine ;
+  :sepio/has-evidence-item ?autosomalDominantDeNovoVariantCriterionAssessment ;
   :sepio/evidence-line-strength-score ?variantIsDeNovoTotal .
 
   ?autosomalDominantDeNovoVariantCriterionAssessment a :sepio/AutosomalDominantDeNovoVariantCriterionAssessment .
 
   ?autosomalRecessiveVariantEvidenceLine a :sepio/AutosomalRecessiveVariantEvidenceLine ;
+  :sepio/has-evidence-item ?autosomalRecessiveVariantCriterionAssessment ;
   :sepio/evidence-line-strength-score ?autosomalRecessiveDisorderTotal .
 
   ?autosomalRecessiveVariantCriterionAssessment a :sepio/AutosomalRecessiveVariantCriterionAssessment .
 
   ?caseControlEvidenceLine a :sepio/CaseControlEvidenceLine ;
+  :sepio/has-evidence-item ?caseControlEvidenceCriterionAssessment ;
   :sepio/evidence-line-strength-score ?caseControlTotal .
 
   ?caseControlEvidenceCriterionAssessment a :sepio/CaseControlEvidenceCriterionAssessment .
 
+  ?segregationEvidenceLine a :sepio/SegregationEvidenceLine ;
+  :sepio/has-evidence-item ?segregationCriterionAssessment ;
+  :sepio/evidence-line-strength-score ?segregationTotal .
+
+  ?segregationCriterionAssessment a :sepio/SegregationCriterionAssessment .
+
+  ?experimentalEvidenceLine a :sepio/ExperimentalEvidenceLine ;
+  :sepio/has-evidence-item ?experimentalEvidenceCriterionAssessment ;
+  :sepio/evidence-line-strength-score ?experimentalEvidenceTotal .
+
+  ?experimentalEvidenceCriterionAssessment a :sepio/ExperimentalEvidenceCriterionAssessment ;
+  :sepio/has-evidence-line ?functionalEvidenceLine, ?functionalAlterationEvidenceLine, ?modelAndRescueEvidenceLine .
+
   ?functionalEvidenceLine a :sepio/FunctionalEvidenceLine ;
+  :sepio/has-evidence-item ?functionalCriterionAssessment ;
   :sepio/evidence-line-strength-score ?functionTotal .
 
-  # find functional CA
+  ?functionalCriterionAssessment a :sepio/FunctionalCriterionAssessment .
 
   ?functionalAlterationEvidenceLine a :sepio/FunctionalAlterationEvidenceLine ;
+  :sepio/has-evidence-item ?functionalAlterationCriterionAssessment ;
   :sepio/evidence-line-strength-score ?functionalAlterationTotal .
 
   ?functionalAlterationCriterionAssessment a :sepio/FunctionalAlterationCriterionAssessment .  
 
   ?modelAndRescueEvidenceLine a :sepio/ModelAndRescueEvidenceLine ;
+  :sepio/has-evidence-item ?modelAndRescueCriterionAssessment ;
   :sepio/evidence-line-strength-score  ?modelsRescueTotal .
 
   ?modelAndRescueCriterionAssessment a :sepio/ModelAndRescueCriterionAssessment .
 
-  ?segregationEvidenceLine a :sepio/SegregationEvidenceLine ;
-  :sepio/evidence-line-strength-score ?segregationTotal .
-
-  ?segregationCriterionAssessment a :sepio/SegregationCriterionAssessment .
 
 }
 where {
@@ -109,7 +129,6 @@ where {
 
   BIND (IRI(CONCAT(?gcibase, "segregation_criterion_assessment", ?gdmuuid)) AS ?segregationCriterionAssessment) .
   BIND (IRI(CONCAT(?gcibase, "experimental_evidence_criterion_assessment", ?gdmuuid)) AS ?experimentalEvidenceCriterionAssessment) .
-  BIND (IRI(CONCAT(?gcibase, "protein_function_criterion_assessment", ?gdmuuid)) AS ?proteinFunctionCriterionAssessment) .
   BIND (IRI(CONCAT(?gcibase, "autosomal_dominant_other_variant_criterion_assessment", ?gdmuuid)) AS ?autosomalDominantOtherVariantCriterionAssessment) .
   BIND (IRI(CONCAT(?gcibase, "genetic_evidence_criterion_assessment", ?gdmuuid)) AS ?geneticEvidenceCriterionAssessment) .
   BIND (IRI(CONCAT(?gcibase, "autosomal_dominant_null_variant_criterion_assessment", ?gdmuuid)) AS ?autosomalDominantNullVariantCriterionAssessment) .
@@ -117,36 +136,18 @@ where {
   BIND (IRI(CONCAT(?gcibase, "autosomal_recessive_variant_criterion_assessment", ?gdmuuid)) AS ?autosomalRecessiveVariantCriterionAssessment) .
   BIND (IRI(CONCAT(?gcibase, "model_and_rescue_criterion_assessment", ?gdmuuid)) AS ?modelAndRescueCriterionAssessment) .
   BIND (IRI(CONCAT(?gcibase, "case_control_evidence_criterion_assessment", ?gdmuuid)) AS ?caseControlEvidenceCriterionAssessment) .
-  BIND (IRI(CONCAT(?gcibase, "functional_alteration_criterion_assessment", ?gdmuuid)) AS ?functionalAlterationCriterionAssessment) .
-  BIND (IRI(CONCAT(?gcibase, "single_gene_segregation_criterion_assessment", ?gdmuuid)) AS ?singleGeneSegregationCriterionAssessment) .
-  BIND (IRI(CONCAT(?gcibase, "multi_locus_segregation_criterion_assessment", ?gdmuuid)) AS ?multiLocusSegregationCriterionAssessment) .
-
+  BIND (IRI(CONCAT(?gcibase, "functional_criterion_assessment", ?gdmuuid)) AS ?functionalCriterionAssessment) .
 
   BIND (IRI(CONCAT(?gcibase, "segregation_evidence_line", ?gdmuuid)) AS ?segregationEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "functional_alteration_in_patient_cells_evidence_line", ?gdmuuid)) AS ?functionalAlterationInPatientCellsEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "rescue_in_patient_cells_evidence_line", ?gdmuuid)) AS ?rescueInPatientCellsEvidenceLine) .
   BIND (IRI(CONCAT(?gcibase, "autosomal_dominant_other_variant_evidence_line", ?gdmuuid)) AS ?autosomalDominantOtherVariantEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "gene_expression_evidence_line", ?gdmuuid)) AS ?geneExpressionEvidenceLine) .
   BIND (IRI(CONCAT(?gcibase, "autosomal_dominant_de_novo_variant_evidence_line", ?gdmuuid)) AS ?autosomalDominantDeNovoVariantEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "rescue_in_cell_culture_evidence_line", ?gdmuuid)) AS ?rescueInCellCultureEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "single_gene_segregation_evidence_line", ?gdmuuid)) AS ?singleGeneSegregationEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "human_model_rescue_evidence_line", ?gdmuuid)) AS ?humanModelRescueEvidenceLine) .
   BIND (IRI(CONCAT(?gcibase, "autosomal_dominant_null_variant_evidence_line", ?gdmuuid)) AS ?autosomalDominantNullVariantEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "protein_interaction_evidence_line", ?gdmuuid)) AS ?proteinInteractionEvidenceLine) .
   BIND (IRI(CONCAT(?gcibase, "autosomal_recessive_variant_evidence_line", ?gdmuuid)) AS ?autosomalRecessiveVariantEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "non_human_model_rescue_evidence_line", ?gdmuuid)) AS ?nonHumanModelRescueEvidenceLine) .
   BIND (IRI(CONCAT(?gcibase, "model_and_rescue_evidence_line", ?gdmuuid)) AS ?modelAndRescueEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "cell_culture_model_evidence_line", ?gdmuuid)) AS ?cellCultureModelEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "biochemical_function_evidence_line", ?gdmuuid)) AS ?biochemicalFunctionEvidenceLine) .
   BIND (IRI(CONCAT(?gcibase, "case_control_evidence_line", ?gdmuuid)) AS ?caseControlEvidenceLine) .
   BIND (IRI(CONCAT(?gcibase, "functional_alteration_evidence_line", ?gdmuuid)) AS ?functionalAlterationEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "non_human_model_evidence_line", ?gdmuuid)) AS ?nonHumanModelEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "case_control_aggregate_evidence_line", ?gdmuuid)) AS ?caseControlAggregateEvidenceLine) .
   BIND (IRI(CONCAT(?gcibase, "experimental_evidence_line", ?gdmuuid)) AS ?experimentalEvidenceLine) .
   BIND (IRI(CONCAT(?gcibase, "functional_evidence_line", ?gdmuuid)) AS ?functionalEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "functional_alteration_in_non_patient_cells_evidence_line", ?gdmuuid)) AS ?functionalAlterationInNonPatientCellsEvidenceLine) .
   BIND (IRI(CONCAT(?gcibase, "genetic_evidence_line", ?gdmuuid)) AS ?geneticEvidenceLine) .
-  BIND (IRI(CONCAT(?gcibase, "multi_locus_segregation_evidence_line", ?gdmuuid)) AS ?multiLocusSegregationEvidenceLine) .
-
 
 }

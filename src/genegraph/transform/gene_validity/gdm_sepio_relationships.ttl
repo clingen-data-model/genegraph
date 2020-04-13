@@ -15,5 +15,12 @@ gci:VARIANT_IS_DE_NOVO :hasEvidenceLineType sepio:0004078 ;
     :hasEvidenceItemType sepio:0004033 .
     
 gci:OTHER_VARIANT_TYPE_WITH_GENE_IMPACT :hasEvidenceLineType sepio:0004080 ;
-    :hasEvidenceItemType sepio:sepio:0004035 .
+    :hasEvidenceItemType sepio:0004035 .
     
+gci:TWO_VARIANTS_WITH_GENE_IMPACT_IN_TRANS :hasEvidenceLineType sepio:0004019 ;
+    :hasEvidenceItemType sepio:0004037 .
+    
+gci:TWO_VARIANTS_IN_TRANS_WITH_ONE_DE_NOVO :hasEvidenceLineType sepio:0004018 ;
+    :hasEvidenceItemType sepio:0004038 .
+    
+

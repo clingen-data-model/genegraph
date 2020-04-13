@@ -48,7 +48,7 @@
   "http://purl.obolibrary.org/obo/SEPIO_0004066"]
  [:sepio/ProbandWithTwoVariantsAtLeastOneNullEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004038"]
- [:sepio/ProteinFunctionCriterionAssessment
+ [:sepio/FunctionalCriterionAssessment
   "http://purl.obolibrary.org/obo/SEPIO_0004060"]
  [:sepio/RescueInPatientCellsEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004032"]

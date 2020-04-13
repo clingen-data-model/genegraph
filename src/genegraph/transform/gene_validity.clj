@@ -75,7 +75,7 @@
                 :arbase "http://reg.genome.network/allele/"
                 :cvbase "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
                 :pmbase "https://pubmed.ncbi.nlm.nih.gov/"}]
-    (q/union (construct-proposition params)
-             (construct-evidence-level-assertion params)
-             ;;(construct-proband-score params)
-             )))
+    (q/union 
+     ;; (construct-proposition params)
+     ;; (construct-evidence-level-assertion params)
+     (construct-proband-score params))))
