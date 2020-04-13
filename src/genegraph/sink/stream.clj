@@ -73,8 +73,7 @@
 
 (defn import-record! [record doc-def]
   (try
-    (let [payload (.value record)
-          doc-model (transform-doc (assoc doc-def :document payload))
+    (let [doc-model (transform-doc (assoc doc-def :document (.value record)))
           iri (document-name doc-def doc-model)]
       (log/info :fn :import-record!
                 :msg :importing
@@ -95,7 +94,6 @@
                 :partition (.partition record)
                 :offset (.offset record)
                 :record record
-                :validation-model (:validation-model doc-def)
                 :msg (str e)))))
 
 (defn update-offsets! [consumer tps]
