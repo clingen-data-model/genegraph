@@ -1,0 +1,8 @@
+prefix gci: <http://gci.clinicalgenome.org/> 
+prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+construct {
+  
+}
+where {
+
+}

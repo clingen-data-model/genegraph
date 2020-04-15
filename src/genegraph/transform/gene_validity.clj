@@ -29,6 +29,7 @@
 (declare-query construct-proposition
                construct-evidence-level-assertion
                construct-proband-score
+               construct-model-systems-evidence
                five-genes)
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -42,6 +43,7 @@
             "@vocab" "http://gci.clinicalgenome.org/"
             "@base" "http://gci.clinicalgenome.org/"
             "gci" "http://gci.clinicalgenome.org/"
+            "gcixform" "http://dataexchange.clinicalgenome.org/gcixform/"
 
             ;; common prefixes
             "MONDO" "http://purl.obolibrary.org/obo/MONDO_"
@@ -51,9 +53,32 @@
             "hgncId" {"@type" "@id"}
             "diseaseId" {"@type" "@id"}
             "caseInfoType" {"@type" "@id"}
+            "experimental_scored" {"@type" "@id"}
             "autoClassification" {"@type" "@vocab"}
-            
-            ;; Vocab values
+            "modelSystemsType" {"@type" "@vocab"}
+            "evidenceType" {"@type" "@vocab"}
+
+            ;; Category names
+            "Model Systems" "gcixform:ModelSystems"
+            "Functional Alteration" "gcixform:FunctionalAlteration"
+
+            ;; Experimental evidence types
+            "Expression" "gcixform:Expression"
+            "Biochemical Function" "gcixform:BiochemicalFunction"
+            "Protein Interactions" "gcixform:ProteinInteraction"
+
+            ;; rescue
+            "Cell culture" "gcixform:CellCulture"
+            "Non-human model organism" "gcixform:NonHumanModel"
+            "Patient cells" "gcixform:PatientCells"
+            "Human" "gcixform:Human"
+
+            ;; model systems
+            "Cell culture model" "gcixform:CellCultureModel"
+
+            ;; functional alteration
+            "Non-patient cells" "gcixform:NonPatientCells"
+            "patient cells" "gcixform:PatientCells"
 
             ;; evidence strength
             "Moderate" "SEPIO:0004506"
@@ -78,4 +103,6 @@
     (q/union 
      ;; (construct-proposition params)
      ;; (construct-evidence-level-assertion params)
-     (construct-proband-score params))))
+     (construct-model-systems-evidence params)
+     ;;(construct-proband-score params)
+     )))
