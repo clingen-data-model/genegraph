@@ -7,7 +7,11 @@
   :source "http://www.w3.org/2000/01/rdf-schema.ttl",
   :target "rdf-schema.ttl",
   :format :rdf
-  :reader-opts {:format :turtle}}
+  :reader-opts {:format :turtle}} 
+ {:name "http://www.w3.org/2011/content#"
+  :source "http://www.w3.org/2011/content.rdf",
+  :target "content.ttl",
+  :format :rdf} 
  {:name "http://www.w3.org/ns/sparql-service-description#"
   :source "https://www.w3.org/ns/sparql-service-description.ttl"
   :target "sparql-service-description.ttl"
@@ -23,11 +27,11 @@
   :target "dcterms.ttl",
   :format :rdf
   :reader-opts {:format :turtle}}
- {:name "http://purl.org/dc/elements/1.1/"
-  :source "https://www.dublincore.org/specifications/dublin-core/dcmi-terms/dublin_core_elements.ttl"
-  :target "dcelements.ttl"
-  :format :rdf
-  :reader-opts {:format :turtle}}
+ ;; {:name "http://purl.org/dc/elements/1.1/"
+ ;;  :source "http://dublincore.org/2012/06/14/dcelements.ttl"
+ ;;  :target "dcelements.ttl"
+ ;;  :format :rdf
+ ;;  :reader-opts {:format :turtle}}
  {:name "http://www.w3.org/2004/02/skos/core"
   :source "https://www.w3.org/2009/08/skos-reference/skos.rdf",
   :target "skos.rdf",
@@ -43,6 +47,10 @@
  {:name "http://purl.obolibrary.org/obo/bfo.owl"
   :source "http://purl.obolibrary.org/obo/bfo/2.0/bfo.owl",
   :target "bfo.owl",
+  :format :rdf}
+ {:name "http://purl.obolibrary.org/obo/ro.owl"
+  :source "http://purl.obolibrary.org/obo/ro.owl",
+  :target "ro.owl",
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/geno.owl"
   :source "https://raw.githubusercontent.com/monarch-initiative/GENO-ontology/develop/geno.owl"
@@ -83,6 +91,21 @@
   :source "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg-valueset.owl",
   :target "sepio-clingen-acmg-valueset.owl",
   :format :rdf}
+ {:name "http://purl.obolibrary.org/obo/sepio-clingen-gene-validity"
+  :source "https://raw.githubusercontent.com/clingen-data-model/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-gene-validity/sepio-clingen-gene-validity.ttl"
+  :target "sepio-clingen-gene-validity.ttl"
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:name "http://purl.obolibrary.org/obo/sepio-clingen-gene-validity-valueset"
+  :source "https://raw.githubusercontent.com/clingen-data-model/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-gene-validity/sepio-clingen-gene-validity-valueset.ttl"
+  :target "sepio-clingen-gene-validity-valueset.ttl"
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:name "http://purl.obolibrary.org/obo/sepio-clingen-gene-validity-shapes"
+  :source "https://raw.githubusercontent.com/clingen-data-model/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-gene-validity/sepio-clingen-gene-validity-shapes.ttl"
+  :target "sepio-clingen-gene-validity-shapes.ttl"
+  :format :rdf
+  :reader-opts {:format :turtle}}
  {:name "http://purl.obolibrary.org/obo/hp.owl"
   :source "http://purl.obolibrary.org/obo/hp.owl",
   :target "hp.owl",
@@ -100,6 +123,10 @@
   :source "https://data.omim.org/downloads/U7rx7IRhSIah-gm1M-yBDA/genemap2.txt"
   :target "genemap2.txt"
   :format :omim-genemap}
+ {:name "http://dataexchange.clinicalgenome.org/gci-express"
+  :source "https://raw.githubusercontent.com/clingen-data-model/data-exchange-shared-json/master/json-from-gene-express/ClinGen-Gene-Expess-Data-01092020.json"
+  :target "gci-express.json"
+  :format :gci-express}
  {:name "http://dataexchange.clinicalgenome.org/terms"
   :source "https://raw.githubusercontent.com/clingen-data-model/clingen-terms/master/clingen-terms.ttl"
   :target "clingen-terms.ttl"
@@ -125,4 +152,9 @@
  {:name "https://storage.googleapis.com/gnomad-public/lof_metrics.by_gene"
   :source "https://storage.googleapis.com/gnomad-public/release/2.1.1/constraint/gnomad.v2.1.1.lof_metrics.by_gene.txt.bgz"
   :target "gnomad_v2.1.1.lof_metrics_by_gene.txt.gz"
-  :format :loss-intolerance}]
+  :format :loss-intolerance}
+ {:name "https://clinicalgenome.org/gene-validity/a0a9ec11-ef90-4095-9c9e-696eabd0395b"
+  :source "https://raw.githubusercontent.com/clingen-data-model/data-examples/master/gene-validity/gci-sepio-example-GDI1.json"
+  :target "a0a9ec11-ef90-4095-9c9e-696eabd0395b.jsonld"
+  :format :rdf
+  :reader-opts {:format :json-ld}}]

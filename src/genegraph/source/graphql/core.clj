@@ -3,6 +3,7 @@
             [genegraph.source.graphql.gene :as gene]
             [genegraph.source.graphql.resource :as resource]
             [genegraph.source.graphql.actionability :as actionability]
+            [genegraph.source.graphql.gene-validity :as gene-validity]
             [genegraph.source.graphql.gene-dosage :as gene-dosage]
             [genegraph.source.graphql.gene-feature :as gene-feature]
             [genegraph.source.graphql.region-feature :as region-feature]
@@ -171,6 +172,7 @@
                             :resolve evidence/description
                             :description "Description of the evidence being cited."}}}
 
+
     :gene_dosage_curation
     {:description "A complete gene dosage curation containing one or more dosage propositions"
      :implements [:resource]
@@ -252,6 +254,17 @@
       :conditions {:type '(list :condition)
                    :resolve actionability/conditions}
       :source {:type 'String :resolve actionability/source}}}
+
+    :gene_validity_curation
+    {:implements [:resource :curation]
+     :fields
+     {:iri {:type 'String
+            :resolve resource/iri}
+      :label {:type 'String :resolve resource/label}
+      :report_date {:type 'String :resolve gene-validity/report-date}
+      :wg_label {:type 'String :resolve gene-validity/wg-label}
+      :classification_description {:type 'String 
+                                   :resolve gene-validity/classification-description}}}
 
     :server_status
     {:fields

@@ -1,4 +1,8 @@
-[[:rdf/List "http://www.w3.org/1999/02/22-rdf-syntax-ns#List"] [:rdf/Property "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"] [:rdfs/Datatype "http://www.w3.org/2000/01/rdf-schema#Datatype"] [:rdfs/Resource "http://www.w3.org/2000/01/rdf-schema#Resource"] [:rdfs/Class "http://www.w3.org/2000/01/rdf-schema#Class"] [:owl/Ontology "http://www.w3.org/2002/07/owl#Ontology"] [:sparql/Feature "http://www.w3.org/ns/sparql-service-description#Feature"] [:sparql/Language "http://www.w3.org/ns/sparql-service-description#Language"] [:owl/InverseFunctionalProperty "http://www.w3.org/2002/07/owl#InverseFunctionalProperty"] [:owl/DatatypeProperty "http://www.w3.org/2002/07/owl#DatatypeProperty"] [:owl/AnnotationProperty "http://www.w3.org/2002/07/owl#AnnotationProperty"] [:owl/OntologyProperty "http://www.w3.org/2002/07/owl#OntologyProperty"] [:owl/ObjectProperty "http://www.w3.org/2002/07/owl#ObjectProperty"] [:owl/Restriction "http://www.w3.org/2002/07/owl#Restriction"] [:owl/Class "http://www.w3.org/2002/07/owl#Class"] [:owl/FunctionalProperty "http://www.w3.org/2002/07/owl#FunctionalProperty"] [:owl/SymmetricProperty "http://www.w3.org/2002/07/owl#SymmetricProperty"] [:owl/NamedIndividual "http://www.w3.org/2002/07/owl#NamedIndividual"] [:owl/AllDifferent "http://www.w3.org/2002/07/owl#AllDifferent"] [:owl/IrreflexiveProperty "http://www.w3.org/2002/07/owl#IrreflexiveProperty"] [:owl/AsymmetricProperty "http://www.w3.org/2002/07/owl#AsymmetricProperty"] [:owl/Axiom "http://www.w3.org/2002/07/owl#Axiom"] [:owl/AllDisjointClasses "http://www.w3.org/2002/07/owl#AllDisjointClasses"] [:owl/TransitiveProperty "http://www.w3.org/2002/07/owl#TransitiveProperty"] [:dcterms/AgentClass "http://purl.org/dc/terms/AgentClass"] [:skos/Concept "http://www.w3.org/2004/02/skos/core#Concept"] [:so/Gene "http://purl.obolibrary.org/obo/SO_0000704"] [:iao/DenotatorType "http://purl.obolibrary.org/obo/IAO_0000409"] [:iao/DataAboutAnOntologyPart "http://purl.obolibrary.org/obo/IAO_0000102"] [:iao/CurationStatusSpecification "http://purl.obolibrary.org/obo/IAO_0000078"] [:iao/ObsolescenceReasonSpecification "http://purl.obolibrary.org/obo/IAO_0000225"] [:geno/GenomicLocation "http://purl.obolibrary.org/obo/GENO_0000902"] [:geno/FunctionalCopyNumberComplement "http://purl.obolibrary.org/obo/GENO_0000963"] [:sepio/DosageSensitivityEvaluationGuideline "http://purl.obolibrary.org/obo/SEPIO_0002002"] [:sepio/DosageSensitivityProposition "http://purl.obolibrary.org/obo/SEPIO_0002003"] [:sepio/EvidenceLevelAssertion "http://purl.obolibrary.org/obo/SEPIO_0002001"] [:sepio/EvidenceDirection "http://purl.obolibrary.org/obo/SEPIO_0000402"] [:foaf/Group "http://xmlns.com/foaf/0.1/Group"] [:foaf/Organization "http://xmlns.com/foaf/0.1/Organization"] [:sepio/StudyFinding "http://purl.obolibrary.org/obo/SEPIO_0000173"] [:sepio/PopulationAscertainmentMethod "http://purl.obolibrary.org/obo/SEPIO_0000260"] [:sepio/Acmg2015EvidenceStrength "http://purl.obolibrary.org/obo/SEPIO_0000408"] [:sepio/VariantInterpretationGuideline "http://purl.obolibrary.org/obo/SEPIO_0000193"] [:sepio/VariantInterpretationCriterionScoringRules "http://purl.obolibrary.org/obo/SEPIO_0000224"] [:sepio/VariantInterpretationCriterion2015AcmgGuidelinesV1 "http://purl.obolibrary.org/obo/SEPIO_0000195"] [:shacl/Parameter "http://www.w3.org/ns/shacl#Parameter"] [:shacl/Severity "http://www.w3.org/ns/shacl#Severity"] [:shacl/ConstraintComponent "http://www.w3.org/ns/shacl#ConstraintComponent"] [:shacl/NodeKind "http://www.w3.org/ns/shacl#NodeKind"] [:shacl/NodeShape "http://www.w3.org/ns/shacl#NodeShape"]
+[[:rdf/List "http://www.w3.org/1999/02/22-rdf-syntax-ns#List"] [:rdf/Property "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"] [:rdfs/Datatype "http://www.w3.org/2000/01/rdf-schema#Datatype"] [:rdfs/Resource "http://www.w3.org/2000/01/rdf-schema#Resource"]
+ [:rdfs/Class "http://www.w3.org/2000/01/rdf-schema#Class"]
+ [:rdfs/Property "http://www.w3.org/2000/01/rdf-schema#Property"]
+ [:rdfs/Literal "http://www.w3.org/2000/01/rdf-schema#Literal"]
+ [:owl/Ontology "http://www.w3.org/2002/07/owl#Ontology"] [:sparql/Feature "http://www.w3.org/ns/sparql-service-description#Feature"] [:sparql/Language "http://www.w3.org/ns/sparql-service-description#Language"] [:owl/InverseFunctionalProperty "http://www.w3.org/2002/07/owl#InverseFunctionalProperty"] [:owl/DatatypeProperty "http://www.w3.org/2002/07/owl#DatatypeProperty"] [:owl/AnnotationProperty "http://www.w3.org/2002/07/owl#AnnotationProperty"] [:owl/OntologyProperty "http://www.w3.org/2002/07/owl#OntologyProperty"] [:owl/ObjectProperty "http://www.w3.org/2002/07/owl#ObjectProperty"] [:owl/Restriction "http://www.w3.org/2002/07/owl#Restriction"] [:owl/Class "http://www.w3.org/2002/07/owl#Class"] [:owl/FunctionalProperty "http://www.w3.org/2002/07/owl#FunctionalProperty"] [:owl/SymmetricProperty "http://www.w3.org/2002/07/owl#SymmetricProperty"] [:owl/NamedIndividual "http://www.w3.org/2002/07/owl#NamedIndividual"] [:owl/AllDifferent "http://www.w3.org/2002/07/owl#AllDifferent"] [:owl/IrreflexiveProperty "http://www.w3.org/2002/07/owl#IrreflexiveProperty"] [:owl/AsymmetricProperty "http://www.w3.org/2002/07/owl#AsymmetricProperty"] [:owl/Axiom "http://www.w3.org/2002/07/owl#Axiom"] [:owl/AllDisjointClasses "http://www.w3.org/2002/07/owl#AllDisjointClasses"] [:owl/TransitiveProperty "http://www.w3.org/2002/07/owl#TransitiveProperty"] [:dcterms/AgentClass "http://purl.org/dc/terms/AgentClass"] [:skos/Concept "http://www.w3.org/2004/02/skos/core#Concept"] [:so/Gene "http://purl.obolibrary.org/obo/SO_0000704"] [:iao/DenotatorType "http://purl.obolibrary.org/obo/IAO_0000409"] [:iao/DataAboutAnOntologyPart "http://purl.obolibrary.org/obo/IAO_0000102"] [:iao/CurationStatusSpecification "http://purl.obolibrary.org/obo/IAO_0000078"] [:iao/ObsolescenceReasonSpecification "http://purl.obolibrary.org/obo/IAO_0000225"] [:geno/GenomicLocation "http://purl.obolibrary.org/obo/GENO_0000902"] [:geno/FunctionalCopyNumberComplement "http://purl.obolibrary.org/obo/GENO_0000963"] [:sepio/DosageSensitivityEvaluationGuideline "http://purl.obolibrary.org/obo/SEPIO_0002002"] [:sepio/DosageSensitivityProposition "http://purl.obolibrary.org/obo/SEPIO_0002003"] [:sepio/EvidenceLevelAssertion "http://purl.obolibrary.org/obo/SEPIO_0002001"] [:sepio/EvidenceDirection "http://purl.obolibrary.org/obo/SEPIO_0000402"] [:foaf/Group "http://xmlns.com/foaf/0.1/Group"] [:foaf/Organization "http://xmlns.com/foaf/0.1/Organization"] [:sepio/StudyFinding "http://purl.obolibrary.org/obo/SEPIO_0000173"] [:sepio/PopulationAscertainmentMethod "http://purl.obolibrary.org/obo/SEPIO_0000260"] [:sepio/Acmg2015EvidenceStrength "http://purl.obolibrary.org/obo/SEPIO_0000408"] [:sepio/VariantInterpretationGuideline "http://purl.obolibrary.org/obo/SEPIO_0000193"] [:sepio/VariantInterpretationCriterionScoringRules "http://purl.obolibrary.org/obo/SEPIO_0000224"] [:sepio/VariantInterpretationCriterion2015AcmgGuidelinesV1 "http://purl.obolibrary.org/obo/SEPIO_0000195"] [:shacl/Parameter "http://www.w3.org/ns/shacl#Parameter"] [:shacl/Severity "http://www.w3.org/ns/shacl#Severity"] [:shacl/ConstraintComponent "http://www.w3.org/ns/shacl#ConstraintComponent"] [:shacl/NodeKind "http://www.w3.org/ns/shacl#NodeKind"] [:shacl/NodeShape "http://www.w3.org/ns/shacl#NodeShape"]
  [:sepio/ValueSet "http://purl.obolibrary.org/obo/SEPIO_0000412"]
  [:sepio/ActionabilityReport "http://purl.obolibrary.org/obo/SEPIO_0003010"]
  [:sepio/GeneValidityReport "http://purl.obolibrary.org/obo/SEPIO_0004004"]
@@ -15,4 +19,195 @@
  [:cg/HaploinsufficiencyScore "http://dataexchange.clinicalgenome.org/terms/HaploinsufficiencyScore"]
  [:cg/TriplosensitivityScore "http://dataexchange.clinicalgenome.org/terms/TriplosensitivityScore"]
  [:sepio/Contribution "http://purl.obolibrary.org/obo/SEPIO_0000158"]
- ]
+ [:cnt/ContentAsText "http://www.w3.org/2011/content#ContentAsText"]
+ [:sepio/GeneValidityEvidenceLevelAssertion "http://purl.obolibrary.org/obo/SEPIO_0004002"]
+ [:sepio/GeneValidityProposition "http://purl.obolibrary.org/obo/SEPIO_0004001"]
+ [:ro/IsCausalGermlineMutationIn "http://purl.obolibrary.org/obo/RO_0004013"]
+ [:sepio/HasEvidenceLevel "http://purl.obolibrary.org/obo/SEPIO_0000146"]
+ [:sepio/DefinitiveEvidence "http://purl.obolibrary.org/obo/SEPIO_0004504"]
+ [:sepio/LimitedEvidence "http://purl.obolibrary.org/obo/SEPIO_0004507"]
+ [:sepio/ModerateEvidence "http://purl.obolibrary.org/obo/SEPIO_0004506"]
+ [:sepio/NoEvidence "http://purl.obolibrary.org/obo/SEPIO_0004508"]
+ [:sepio/RefutingEvidence "http://purl.obolibrary.org/obo/SEPIO_0004510"]
+ [:sepio/DisputingEvidence "http://purl.obolibrary.org/obo/SEPIO_0000404"]
+ [:sepio/StrongEvidence "http://purl.obolibrary.org/obo/SEPIO_0004505"]
+ [:sepio/Contribution "http://purl.obolibrary.org/obo/SEPIO_0000158"]
+ [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP4 "http://purl.obolibrary.org/obo/SEPIO_0004092"]
+ [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP5 "http://purl.obolibrary.org/obo/SEPIO_0004093"]
+ [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP6 "http://purl.obolibrary.org/obo/SEPIO_0004094"]
+ [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP7 "http://purl.obolibrary.org/obo/SEPIO_0004095"]
+[:sepio/ClinGenProteinFunctionCriteria
+  "http://purl.obolibrary.org/obo/SEPIO_0004074"]
+ [:sepio/NonHumanModelOrganismEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004046"]
+ [:sepio/ProbandWithAutosomalRecessiveNullVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004018"]
+ [:sepio/SegregationCriterionAssessment
+  "http://purl.obolibrary.org/obo/SEPIO_0004059"]
+ [:sepio/CaseControlAggregateStudyEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004040"]
+ [:sepio/SegregationEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004012"]
+ [:sepio/ExperimentalEvidenceCriterionAssessment
+  "http://purl.obolibrary.org/obo/SEPIO_0004053"]
+ [:sepio/FunctionalAlterationInPatientCellsEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004025"]
+ [:sepio/ClinGenGeneticEvidenceCriteria
+  "http://purl.obolibrary.org/obo/SEPIO_0004066"]
+ [:sepio/ProbandWithTwoVariantsAtLeastOneNullEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004038"]
+ [:sepio/FunctionalCriterionAssessment
+  "http://purl.obolibrary.org/obo/SEPIO_0004060"]
+ [:sepio/RescueInPatientCellsEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004032"]
+ [:sepio/GeneValidityReport
+  "http://purl.obolibrary.org/obo/SEPIO_0004004"]
+ [:sepio/ClinGenSegregationCriteria
+  "http://purl.obolibrary.org/obo/SEPIO_0004073"]
+ [:sepio/FunctionalAlterationInNonPatientCellsEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004045"]
+ [:sepio/ProbandWithAutosomalRecessiveDeNovoNullVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004017"]
+ [:sepio/AutosomalDominantOtherVariantCriterionAssessment
+  "http://purl.obolibrary.org/obo/SEPIO_0004058"]
+ [:sepio/AutosomalDominantOtherVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004011"]
+ [:sepio/GeneticEvidenceCriterionAssessment
+  "http://purl.obolibrary.org/obo/SEPIO_0004052"]
+ [:sepio/GeneExpressionEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004024"]
+ [:sepio/ProbandWithTwoVariantsInTransEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004037"]
+ [:sepio/AutosomalDominantDeNovoVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004009"]
+ [:sepio/RescueInCellCultureEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004031"]
+ [:sepio/GeneValidityEvaluationGuideline
+  "http://purl.obolibrary.org/obo/SEPIO_0004003"]
+ [:sepio/ClinGenAutosomalDominantOtherVariantCriteria
+  "http://purl.obolibrary.org/obo/SEPIO_0004072"]
+ [:sepio/FunctionalAlterationInPatientCellsEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004044"]
+ [:sepio/SingleGeneSegregationEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004016"]
+ [:sepio/AutosomalDominantNullVariantCriterionAssessment
+  "http://purl.obolibrary.org/obo/SEPIO_0004057"]
+ [:sepio/HumanModelRescueEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004029"]
+ [:sepio/AutosomalDominantNullVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004010"]
+ [:sepio/RescueInPatientCellsEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004051"]
+ [:sepio/ProteinInteractionEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004023"]
+ [:sepio/ClinGenGeneValidityEvaluationGuideline
+  "http://purl.obolibrary.org/obo/SEPIO_0004064"]
+ [:sepio/SegregationEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004036"]
+ [:sepio/AutosomalRecessiveVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004008"]
+ [:sepio/RescueInNonHumanModelEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004049"]
+ [:sepio/NonHumanModelRescueEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004030"]
+ [:sepio/GeneValidityEvidenceLevelAssertion
+  "http://purl.obolibrary.org/obo/SEPIO_0004002"]
+ [:sepio/ClinGenAutosomalDominantNullVariantCriteria
+  "http://purl.obolibrary.org/obo/SEPIO_0004071"]
+ [:sepio/GeneExpressionEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004043"]
+ [:sepio/ModelAndRescueEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004015"]
+ [:sepio/AutosomalDominantDeNovoVariantCriterionAssessment
+  "http://purl.obolibrary.org/obo/SEPIO_0004056"]
+ [:sepio/CellCultureModelEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004028"]
+ [:sepio/ClinGenAutosomalRecessiveVariantCriteria
+  "http://purl.obolibrary.org/obo/SEPIO_0004069"]
+ [:sepio/RescueInCellCultureEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004050"]
+ [:sepio/BiochemicalFunctionEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004022"]
+ [:sepio/ProbandWithOtherVariantEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004035"]
+ [:sepio/CaseControlEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004007"]
+ [:sepio/ClinGenModelAndRescueEvidenceCriteria
+  "http://purl.obolibrary.org/obo/SEPIO_0004076"]
+ [:sepio/RescueInHumanEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004048"]
+ [:sepio/GeneValidityProposition
+  "http://purl.obolibrary.org/obo/SEPIO_0004001"]
+ [:sepio/ClinGenAutosomalDominantDeNovoVariantCriteria
+  "http://purl.obolibrary.org/obo/SEPIO_0004070"]
+ [:sepio/ProteinInteractionEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004042"]
+ [:sepio/FunctionalAlterationEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004014"]
+ [:sepio/AutosomalRecessiveVariantCriterionAssessment
+  "http://purl.obolibrary.org/obo/SEPIO_0004055"]
+ [:sepio/NonHumanModelEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004027"]
+ [:sepio/ClinGenCaseControlEvidenceCriteria
+  "http://purl.obolibrary.org/obo/SEPIO_0004068"]
+ [:sepio/CaseControlAggregateEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004021"]
+ [:sepio/ModelAndRescueCriterionAssessment
+  "http://purl.obolibrary.org/obo/SEPIO_0004062"]
+ [:sepio/ProbandWithNullVariantEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004034"]
+ [:sepio/ExperimentalEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004006"]
+ [:sepio/ClinGenFunctionalAlterationEvidenceCriteria
+  "http://purl.obolibrary.org/obo/SEPIO_0004075"]
+ [:sepio/CellCultureModelEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004047"]
+ [:sepio/ProbandWithAutosomalRecessiveOtherVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004019"]
+ [:sepio/BiochemicalFunctionEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004041"]
+ [:sepio/FunctionalEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004013"]
+ [:sepio/CaseControlEvidenceCriterionAssessment
+  "http://purl.obolibrary.org/obo/SEPIO_0004054"]
+ [:sepio/FunctionalAlterationInNonPatientCellsEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004026"]
+ [:sepio/ClinGenExperimentalEvidenceCriteria
+  "http://purl.obolibrary.org/obo/SEPIO_0004067"]
+ [:sepio/CaseControlSingleStudyEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004039"]
+ [:sepio/CaseControlSingleStudyEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004020"]
+ [:sepio/FunctionalAlterationCriterionAssessment
+  "http://purl.obolibrary.org/obo/SEPIO_0004061"]
+ [:sepio/ProbandWithDeNovoVariantEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004033"]
+ [:sepio/GeneticEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004005"]
+ [:sepio/ProbandWithAutosomalDominantNullVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004079"]
+ [:sepio/ProbandWithAutosomalDominantOtherVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004080"]
+ [:sepio/ProbandWithAutosomalDominantDeNovoVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004078"]
+ [:sepio/ProbandWithVariantEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004081"]
+ [:sepio/GeneValidityEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004082"]
+ [:sepio/GeneValidityGeneticEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004083"]
+ [:sepio/MultiLocusSegregationEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004084"]
+ [:sepio/MultiLocusBasedSegregationEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004086"]
+ [:sepio/SingleGeneBasedSegregationEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004085"]
+ [:sepio/SingleGeneSegregationCriterionAssessment
+  "http://purl.obolibrary.org/obo/SEPIO_0004087"]
+ [:sepio/MultiLocusSegregationCriterionAssessment
+  "http://purl.obolibrary.org/obo/SEPIO_0004088"]
+ [:sepio/FamilyWithSingleGeneSegregationEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004090"]
+ [:sepio/FamilyWithMultiLocusSegregationEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004091"]]
+

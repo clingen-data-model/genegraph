@@ -1,25 +1,116 @@
 (ns genegraph.transform.gene-validity
   (:require [genegraph.database.load :as l]
-            [genegraph.database.query :as q]
+            [genegraph.database.query :as q :refer [select construct ld-> ld1-> declare-query]]
             [genegraph.transform.core :refer [transform-doc src-path]]
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [clojure.string :as s]
+            [clojure.java.io :refer [resource]])
+  (:import java.io.ByteArrayInputStream ))
 
-(defn gene-validity-triples [report]
-  (let [iri (str "gene-validity:" (:iri report))
-        genetic-condition-iri (l/blank-node)
-        condition (get-in report [:conditions 0 :iri])
-        gene-hgnc-id (get-in report [:genes 0 :curie])
-        gene (when gene-hgnc-id
-               (q/ld1-> (q/resource gene-hgnc-id) [[:owl/same-as :<]]))
-        genetic-condition (when (and condition gene)
-                            [[genetic-condition-iri :rdf/type :sepio/GeneticCondition]
-                             [genetic-condition-iri :rdfs/sub-class-of condition]])]
-    (println "gene-validity:" iri)
-    [[iri :sepio/is-about-condition genetic-condition-iri]
-     [iri :rdf/type :sepio/GeneValidityReport]]))
+(def base "http://dataexchange.clinicalgenome.org/gci/")
 
-(defmethod transform-doc :gene-validity-v1 [doc-def]
-  (let [raw-report (or (:document doc-def) (slurp (src-path doc-def)))
-        report-json (json/parse-string raw-report true)
-        report-triples (gene-validity-triples report-json)]
-    (l/statements-to-model report-triples)))
+(def gdm-sepio-relationships (l/read-rdf (str (resource "genegraph/transform/gene_validity/gdm_sepio_relationships.ttl")) {:format :turtle}))
+
+(def ns-prefixes {"dx" "http://dataexchange.clinicalgenome.org/"
+                  "sepio" "http://purl.obolibrary.org/obo/SEPIO_"
+                  "dc" "http://purl.org/dc/terms/"
+                  "rdfs" "http://www.w3.org/2000/01/rdf-schema#"
+                  ;; "evidence_item" "http://dataexchange.clinicalgenome.org/gci/evidence_item/"
+                  ;; "evidence_line" "http://dataexchange.clinicalgenome.org/gci/evidence_line/"
+                  ;; "proposition" "http://dataexchange.clinicalgenome.org/gci/proposition/"
+                  ;; "assertion" "http://dataexchange.clinicalgenome.org/gci/assertion/"
+                  "dxgci" "http://dataexchange.clinicalgenome.org/gci/"
+                  "ro" "http://purl.obolibrary.org/obo/RO_"
+                  "mondo" "http://purl.obolibrary.org/obo/MONDO_"
+                  "car" "http://reg.genome.network/allele/"
+                  "cv" "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
+                  "pmid" "https://pubmed.ncbi.nlm.nih.gov/"})
+
+(declare-query construct-proposition
+               construct-evidence-level-assertion
+               construct-proband-score
+               construct-model-systems-evidence
+               construct-functional-alteration-evidence
+               construct-functional-evidence
+               construct-rescue-evidence
+               five-genes)
+
+;; Trim trailing }, intended to be appended to gci json
+(def context
+  (s/join ""
+        (drop-last
+         (json/generate-string
+          {"@context" 
+           {
+            ;; frontmatter
+            "@vocab" "http://gci.clinicalgenome.org/"
+            "@base" "http://gci.clinicalgenome.org/"
+            "gci" "http://gci.clinicalgenome.org/"
+            "gcixform" "http://dataexchange.clinicalgenome.org/gcixform/"
+
+            ;; common prefixes
+            "MONDO" "http://purl.obolibrary.org/obo/MONDO_"
+            "SEPIO" "http://purl.obolibrary.org/obo/SEPIO_"
+            
+            ;; declare attributes with @id, @vocab types
+            "hgncId" {"@type" "@id"}
+            "diseaseId" {"@type" "@id"}
+            "caseInfoType" {"@type" "@id"}
+            "experimental_scored" {"@type" "@id"}
+            "autoClassification" {"@type" "@vocab"}
+            "modelSystemsType" {"@type" "@vocab"}
+            "evidenceType" {"@type" "@vocab"}
+            "functionalAlterationType" {"@type" "@vocab"}
+            "rescueType" {"@type" "@vocab"}
+
+            ;; Category names
+            "Model Systems" "gcixform:ModelSystems"
+            "Functional Alteration" "gcixform:FunctionalAlteration"
+
+            ;; Experimental evidence types
+            "Expression" "gcixform:Expression"
+            "Biochemical Function" "gcixform:BiochemicalFunction"
+            "Protein Interactions" "gcixform:ProteinInteraction"
+
+            ;; rescue
+            "Cell culture" "gcixform:CellCulture"
+            "Non-human model organism" "gcixform:NonHumanModel"
+            "Patient cells" "gcixform:PatientCells"
+            "Human" "gcixform:Human"
+
+            ;; model systems
+            "Cell culture model" "gcixform:CellCultureModel"
+
+            ;; functional alteration
+            "Non-patient cells" "gcixform:NonPatientCells"
+            "patient cells" "gcixform:PatientCells"
+
+            ;; evidence strength
+            "Moderate" "SEPIO:0004506"
+            "Definitive" "SEPIO:0004504"
+            }}))))
+
+(defn parse-gdm [gdm-json]
+  (let [gdm-with-fixed-curies (s/replace gdm-json #"MONDO_" "MONDO:")
+        is (-> (str context "," (subs gdm-with-fixed-curies 1))
+               .getBytes
+               ByteArrayInputStream.)]
+    (l/read-rdf is {:format :json-ld})))
+
+
+(defn transform-gdm [gdm]
+  (.setNsPrefixes gdm ns-prefixes)
+  (let [params {::q/model (q/union gdm gdm-sepio-relationships)
+                :gcibase base
+                :arbase "http://reg.genome.network/allele/"
+                :cvbase "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
+                :pmbase "https://pubmed.ncbi.nlm.nih.gov/"}]
+    (q/union 
+     ;; (construct-proposition params)
+     ;; (construct-evidence-level-assertion params)
+     ;; (construct-model-systems-evidence params)
+     ;; (construct-functional-alteration-evidence params)
+     ;; (construct-functional-evidence params)
+     ;; (construct-proband-score params)
+     (construct-rescue-evidence params)
+     )))

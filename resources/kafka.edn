@@ -29,6 +29,11 @@
                                 ;; :validation-model "http://dataexchange.clinicalgenome.org/models/sepio-clingen-dosage-shapes.ttl"
                                 :cluster :dx-stage}
             :gene-validity  {:format :gene-validity-v1
+                             :name "gene_validity"
+                             :root-type :sepio/GeneValidityReport
+                             :cluster :dx-prod}
+            :gci-legacy  {:format :gci-legacy
+                             :name "gene_validity"
                              :root-type :sepio/GeneValidityReport
                              :cluster :dx-prod}
             :gene-validity-events-dev {:name "gene_validity_events_dev"

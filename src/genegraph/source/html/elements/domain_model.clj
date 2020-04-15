@@ -1,6 +1,11 @@
 (ns genegraph.source.html.elements.domain-model
   (:require [genegraph.source.html.elements :as e]
-            [genegraph.database.query :as q]))
+            [genegraph.database.query :as q]
+            [cheshire.core :as json]))
+
+(defmethod e/page :cg/DomainModel [shape]
+  [:div.columns
+   [:div.column "This is the list of domain models"]])
 
 (defmethod e/title :shacl/NodeShape [shape]
   (q/ld1-> shape [:shacl/class :rdfs/label]))
@@ -12,37 +17,67 @@
   (q/ld1-> shape [:shacl/class :iao/definition]))
 
 (defn cardinality [property]
-  (str (or (q/ld1-> property [:shacl/min-count]) "0")
-       ".."
-       (or (q/ld1-> property [:shacl/max-count]) "*")))
+  (let [min-count (q/ld1-> property [:shacl/min-count])
+        max-count (q/ld1-> property [:shacl/max-count])]
+    (cond
+      (and (= 0 min-count) (= 1 max-count)) "zero or one"
+      (and (= 1 min-count) (= 1 max-count)) "exactly one"
+      (= 0 min-count) "zero or more"
+      (= 1 max-count) "zero or one"
+      :else "zero or more")))
+
+
+(defn shape-menu [shape]
+  [:div.menu
+   [:p.menu-label (q/ld1-> shape [:cg/is-in-model :rdfs/label])]
+   [:ul.menu-list
+    (for [model-member (q/ld-> shape [:cg/is-in-model [:cg/is-in-model :<]])]
+      [:li (e/link model-member)])]])
+
+(defn shape-description [shape]
+  [:div.column
+   [:div.content.is-size-5 (e/definition shape)]
+   [:div.content
+    [:h1.title.is-4 "Scope and Usage"]
+    (q/ld1-> shape [:shacl/class :skos/scope-note])]
+   [:div.content
+    [:h1.title.is-4 "Attributes"]
+    (for [shacl-property (:shacl/property shape)]
+      (let [owl-property (q/ld1-> shacl-property [:shacl/path])
+            ;; TODO handle scalars defined by shacl/datatype
+            property-type (first (concat (:shacl/node shacl-property)
+                                         (:shacl/has-value shacl-property)
+                                         (:shacl/datatype shacl-property)))]
+        [:div.content
+         [:h1.title.is-5 (q/ld1-> owl-property [:rdfs/label])]
+         [:h1.subtitle.is-6.has-text-weight-light
+          (when property-type (e/link property-type)) " "
+          [:code (cardinality shacl-property)]]
+         (q/ld1-> owl-property [:iao/definition])]))]])
+
+(defn shape-example [shape]
+  (let [example (first (q/select
+                        "select ?x where { ?x a ?type } limit 1"
+                        {:type (q/ld1-> shape [:shacl/class])}))]
+    [:div.column
+     (for [[property value] (seq example)]
+       [:div.columns
+        [:div.column.has-text-right [:code property]]
+        [:div.column.has-text-left
+         [:code
+          (if (satisfies? q/AsJenaResource value)
+            (e/link value))]]])]))
 
 (defmethod e/page :shacl/NodeShape [shape]
-  [:div
-   [:h2 "Scope and Usage"]
-   [:p (q/ld1-> shape [:shacl/class :skos/scope-note])]
-   [:h2 "Attributes"]
-   [:table.table.table-striped.table-bordered {:cellspacing "0" :width "100%"}
-    [:thead
-     [:tr
-      [:th "Name"]
-      [:th "Type"]
-      [:th "Cardinality"]
-      [:th "Description"]
-      [:th "IRI"]]]
-    [:tbody
-     ;; TODO handle xor (union) properties
-     (for [shacl-property (:shacl/property shape)]
-       (let [owl-property (q/ld1-> shacl-property [:shacl/path])
-             ;; TODO handle scalars defined by shacl/datatype
-             property-type (first (concat (:shacl/node shacl-property)
-                                          (:shacl/has-value shacl-property)
-                                          (:shacl/datatype shacl-property)))]
-         [:tr 
-          [:td (q/ld1-> owl-property [:rdfs/label])]
-          [:td (when property-type (e/link property-type))]
-          [:td (cardinality shacl-property)]
-          [:td (q/ld1-> owl-property [:iao/definition])]
-          [:td (str owl-property)]]))]]])
+  [:section.section
+   [:div.columns
+    [:div.column.is-one-fifth
+     (shape-menu shape)]
+    [:div.column 
+     [:h1.title.is-3 (e/title shape)]
+     [:div.columns
+      (shape-description shape)
+      (shape-example shape)]]]])
 
 (defmethod e/page :cg/DomainModel [model]
   [:div

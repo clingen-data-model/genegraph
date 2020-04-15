@@ -18,58 +18,54 @@
    [:meta {:http-equiv "X-UA-Compatible" :content "IE=edge"}]
    [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
    [:title "ClinGen Data Model"]
-   ;;[:link {:rel "stylesheet", :media "all", :href "/css/bulma.css"}]
-   [:link {:rel "stylesheet", :type "text/css" :href "https://cdn.datatables.net/v/bs/dt-1.10.13/fh-3.1.2/datatables.min.css"}]
-   [:link {:rel "stylesheet", :type "text/css" :href "/css/bootstrap.css"}]
-   [:link {:rel "stylesheet", :type "text/css" :href "/css/bootstrap-theme.css"}]
-   [:link {:rel "stylesheet", :type "text/css" :href "/css/brand2.css"}]
-   [:link {:rel "stylesheet", :type "text/css" :href "/css/jquery.jsonview.css"}]])
+   [:link {:rel "stylesheet", :media "all", :href "/css/bulma.css"}]])
 
 (defn template
   [body params]
   [:html
    (head params)
-   [:body.documentation
+   [:body
     (body params)
-    [:div#footer.container.background-trans.padding-top-xl
-     [:div.row
-      [:hr]
-      [:div.col-md-col-sm-12.text-center "ClinGen"]]]
-    [:script {:type "text/javascript" :src "/js/jquery.js"}]
-    [:script {:type "text/javascript" :src "/js/jquery.jsonview.js"}]
-    [:script {:type "text/javascript" :src "/js/bootstrap.js"}]
-    [:script {:type "text/javascript" :src "https://cdn.datatables.net/v/bs/dt-1.10.13/fh-3.1.2/datatables.min.js"}]]])
+    ]])
 
+
+(defn header []
+  [:div.row
+   [:nav.navbar.navbar-default
+    [:div.navbar-header
+     [:button.navbar-toggle.collapsed {:type "button" :data-toggle "collapse" :data-target "#navbar" :aria-expanded "false" :aria-controls "navbar"}
+      [:span.sr-only "Toggle navigation"]
+      [:span.icon-bar]
+      [:span.icon-bar]
+      [:span.icon-bar]]
+     [:a.navbar-brand {:href "/"}
+      [:img.img-responsive {:src "/img/clingen-doc-logo.png" :width "240px" :alt "ClinGen Data Model WG Documentation"}]]]
+    [:div#navbar.navbar-collapse.collapse
+     [:ul.nav.navbar-nav.navbar-right
+      (for [model (q/select "select ?x where { ?x a :cg/DomainModel } ")]
+        [:li (e/link model)])
+      [:li
+       [:a {:href "/"} [:i.glyphicon.glyphicon-home] "Home"]]]]]])
 
 (defn index
   "Template to wrap every HTML request, returns structure in Hiccup syntax"
   [params]
-  [:p "Data model documentation"]
-)
+  [:section.section
+   [:div.columns
+    [:div.column.is-one-fifth [:h1.title.is-6 "ClinGen Data Model Navigation"]]
+    [:div.column [:h1.title.is-4 "ClinGen Data Model Content"]]
+    [:div.column [:h1.title.is-5 "ClinGen Data Model Data example"]]]])
 
 (defn- resolve-resource [curie]
   (when-let [[_ ns-prefix id] (re-find #"([A-Za-z-]*)_(.*)$" curie)]
     (q/resource ns-prefix id)))
 
+
+
 (defn hero [r]
   [:div.container-fluid.hero-background
    [:div.container
-    [:div.row
-     [:nav.navbar.navbar-default
-      [:div.navbar-header
-       [:button.navbar-toggle.collapsed {:type "button" :data-toggle "collapse" :data-target "#navbar" :aria-expanded "false" :aria-controls "navbar"}
-        [:span.sr-only "Toggle navigation"]
-        [:span.icon-bar]
-        [:span.icon-bar]
-        [:span.icon-bar]]
-       [:a.navbar-brand {:href "/"}
-        [:img.img-responsive {:src "/img/clingen-doc-logo.png" :width "240px" :alt "ClinGen Data Model WG Documentation"}]]]
-      [:div#navbar.navbar-collapse.collapse
-       [:ul.nav.navbar-nav.navbar-right
-        (for [model (q/select "select ?x where { ?x a :cg/DomainModel } ")]
-          [:li (e/link model)])
-        [:li
-         [:a {:href "/"} [:i.glyphicon.glyphicon-home] "Home"]]]]]]
+    (header)
     [:div.row
      [:div.col-sm-12
       [:h1.header (e/title r)]
@@ -95,10 +91,4 @@
 
 (defn resource [params]
   (let [r (resolve-resource (get-in params [:path-params :id]))]
-    [:div
-     (hero r)
-     [:div.container
-      [:div.row
-       [:div.col-sm-8.col-xs-12.col-md-9.col-lg-10
-        [:article (e/page r)]]
-       (sidebar)]]]))
+    (e/page r)))

@@ -1,0 +1,14 @@
+prefix gci: <http://gci.clinicalgenome.org/> 
+construct 
+{ ?prop a :sepio/GeneValidityProposition . 
+  ?prop :sepio/has-subject ?hgnc .
+  ?prop :sepio/has-predicate :ro/IsCausalGermlineMutationIn .
+  ?prop :sepio/has-object ?disease }
+where
+{ ?gdm a gci:gdm . 
+  ?gdm gci:gene ?gene .
+  ?gene gci:hgncId ?hgnc . 
+  ?gdm gci:uuid ?gdmuuid . 
+  ?gdm gci:disease ?gcidisease .
+  ?gcidisease gci:diseaseId ?disease .
+  BIND (IRI(CONCAT(?gcibase, "proposition/", ?gdmuuid)) AS ?prop)  }

@@ -10,10 +10,14 @@
             [clojure.string :as s]
             [clojure.core.protocols :as protocols :refer [Datafiable]]
             [clojure.datafy :as datafy :refer [datafy nav]]
-            [io.pedestal.log :as log])
-  (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList SimpleSelector]
+            [io.pedestal.log :as log]
+            [clojure.java.io :as io])
+  (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList SimpleSelector ModelFactory]
            [org.apache.jena.query Dataset QueryFactory Query QueryExecution
             QueryExecutionFactory QuerySolutionMap]
+           org.apache.jena.riot.writer.JsonLDWriter
+           org.apache.jena.sparql.core.Prologue
+           org.apache.jena.riot.RDFFormat$JSONLDVariant
            java.io.ByteArrayOutputStream))
 
 (defprotocol Steppable
@@ -53,6 +57,7 @@
 
 (declare datafy-resource)
 
+
 (defn curie
   "Return a curie string for resource. Return the IRI of the resource if no prefix has been defined"
   [resource]
@@ -66,9 +71,9 @@
            ::datafy/class (class o)
            `protocols/datafy #(-> % meta ::datafy/obj datafy-resource)})))
 
-
-
 (declare navize)
+
+(declare to-clj)
 
 (deftype RDFResource [resource model]
 
@@ -87,6 +92,18 @@
   clojure.lang.ILookup
   (valAt [this k] (step k this model))
   (valAt [this k nf] nf)
+
+
+  ;; Conforms to the expectations for a sequence representation of a map. Includes only
+  ;; properties where this resource is the subject. Sequence is fully realized
+  ;; in order to permit access outside transaction
+  clojure.lang.Seqable
+  (seq [this]
+    (tx
+     (let [out-attributes (-> model (.listStatements resource nil nil) iterator-seq)]
+       (doall (map #(vector 
+                     (-> % .getPredicate property-uri->keyword)
+                     (to-clj (.getObject %) model)) out-attributes)))))
 
   Object
   (toString [_] (.getURI resource))
@@ -117,6 +134,7 @@
   ThreadableData
   (ld-> [this ks] (reduce (fn [nodes k]
                             (->> nodes
+                                 (filter #(satisfies? ThreadableData %))
                                  (map #(step k % model))
                                  (filter seq) flatten))
                           [this] 
@@ -167,13 +185,6 @@
     true))
 
 
-(deftype StoredQuery [query]
-  clojure.lang.IFn
-  (invoke [this] "thing")
-  (invoke [this params] "thing"))
-
-(defn stored-query [query-str]
-  (->StoredQuery (QueryFactory/create (expand-query-str query-str))))
 
 (def first-property (ResourceFactory/createProperty "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"))
 
@@ -183,15 +194,12 @@
     (->> rdf-list .iterator iterator-seq (mapv #(to-clj % model)))
     ))
 
-(extend-protocol AsClojureType
 
-  Resource
-  (to-clj [x model] (if (.hasProperty x first-property)
-                      (rdf-list-to-vector x model)
-                      (->RDFResource x model)))
-  
-  Literal
-  (to-clj [x model] (.getValue x)))
+(defn- kw-to-property [kw]
+  (if-let [prop (names/local-property-names kw)]
+    prop
+    (when-let [ns (-> kw namespace prefix-ns-map)]
+      (ResourceFactory/createProperty (str ns (name kw))))))
 
 (extend-protocol Steppable
 
@@ -206,7 +214,7 @@
   clojure.lang.IPersistentVector
   (step [edge start model]
     (tx 
-     (let [property (names/local-property-names (first edge))
+     (let [property (kw-to-property (first edge))
            out-fn (fn [n] (->> (.listObjectsOfProperty model (.resource n) property)
                                iterator-seq))
            in-fn (fn [n] (->> (.listResourcesWithProperty model property (.resource n))
@@ -262,6 +270,7 @@
                 :query query-def
                 :params params)
      (let [qs-map (construct-query-solution-map (dissoc params :-model))]
+       (.setPrefixMapping query-def model)
        (tx
         (with-open [qexec (QueryExecutionFactory/create query-def db-or-model qs-map)]
           (when-let [result (-> qexec .execSelect)]
@@ -302,6 +311,26 @@
   (resource [r] (when-let [res (local-names r)]
                   (->RDFResource res (.getUnionModel db)))))
 
+(extend-protocol AsClojureType
+
+  Resource
+  (to-clj [x model] (if (.hasProperty x first-property)
+                      (rdf-list-to-vector x model)
+                      (->RDFResource x model)))
+  
+  Literal
+  (to-clj [x model] (.getValue x)))
+
+(defn construct 
+  ([query-string] (construct query-string {}))
+  ([query-string params] (construct query-string {} (.getUnionModel db)))
+  ([query-string params model]
+   (let [query (QueryFactory/create (expand-query-str query-string))
+         qs-map (construct-query-solution-map (dissoc params :-model))]
+     (tx
+      (with-open [qexec (QueryExecutionFactory/create query model qs-map)]
+        (.execConstruct qexec))))))
+
 (defn get-named-graph [name]
   (.getNamedModel db name))
 
@@ -312,3 +341,43 @@
   (let [os (ByteArrayOutputStream.)]
     (.write model os "TURTLE")
     (.toString os)))
+
+(defn- compose-select-result [qexec model]
+  (when-let [result (-> qexec .execSelect)]
+    (let [result-var (-> result .getResultVars first)
+          result-seq (iterator-seq result)]
+      (mapv #(->RDFResource (.getResource % result-var) model) result-seq))))
+
+(defn- exec [query params]
+  (let [qs-map (construct-query-solution-map (dissoc params ::model))
+        model (or (::model params) (.getUnionModel db))]
+    (tx
+     (with-open [qexec (QueryExecutionFactory/create query model qs-map)]
+       (cond 
+         (.isConstructType query) (.execConstruct qexec)
+         (.isSelectType query) (compose-select-result qexec model))))))
+
+(deftype StoredQuery [query]
+  clojure.lang.IFn
+  (invoke [this] (this {}))
+  (invoke [this params] (exec query params)))
+
+(defn create-query 
+  "Return parsed query object. If query is not a string, assume object that can
+use io/slurp"
+  [query-source]
+  (let [query-str (if (string? query-source) 
+                    query-source
+                    (slurp query-source))]
+    (->StoredQuery (QueryFactory/create (expand-query-str query-str)))))
+
+(defmacro declare-query [& queries]
+  (let [root# (-> *ns* str (s/replace #"\." "/") (s/replace #"-" "_") (str "/"))]
+    `(do ~@(map #(let [filename# (str root# (s/replace % #"-" "_" ) ".sparql")]
+                   `(def ~% (-> ~filename# io/resource slurp create-query)))
+                queries))))
+
+(defn union [& models]
+  (let [union-model (ModelFactory/createDefaultModel)]
+    (doseq [model models] (.add union-model model))
+    union-model))
