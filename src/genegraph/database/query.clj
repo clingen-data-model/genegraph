@@ -57,7 +57,6 @@
 
 (declare datafy-resource)
 
-
 (defn curie
   "Return a curie string for resource. Return the IRI of the resource if no prefix has been defined"
   [resource]
@@ -270,7 +269,6 @@
                 :query query-def
                 :params params)
      (let [qs-map (construct-query-solution-map (dissoc params :-model))]
-       (.setPrefixMapping query-def model)
        (tx
         (with-open [qexec (QueryExecutionFactory/create query-def db-or-model qs-map)]
           (when-let [result (-> qexec .execSelect)]

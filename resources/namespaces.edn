@@ -47,5 +47,7 @@
  "omim" "http://purl.obolibrary.org/obo/OMIM_"
  "pubmed" "https://www.ncbi.nlm.nih.gov/pubmed/"
  "text" "http://jena.apache.org/text#"
+ "uberon" "http://purl.obolibrary.org/obo/uberon/core#"
  "gci" "http://gci.clinicalgenome.org/"}
+
 
