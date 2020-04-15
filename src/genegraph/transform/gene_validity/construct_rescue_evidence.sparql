@@ -13,16 +13,19 @@ where {
   ?gciScore a gci:evidenceScore ;
   gci:calculatedScore ?calculatedScore ;
   gci:scoreExplanation ?scoreDescription ;
-  gci:uuid ?scoreUUID ;
-  gci:experimental_scored ?gciEvidence .
+  gci:uuid ?scoreUUID .
 
-  ?gciEvidence gci:label ?evidenceLabel ;
-  gci:evidenceType ?gciType ;  
+  ?gciScore gci:experimental_scored ?gciEvidence .
+  ?gciEvidence gci:rescue ?gciRescue  ;
+  gci:label ?evidenceLabel ;
   gci:uuid ?evidenceUUID .
+
+  ?gciRescue gci:rescueMethod ?evidenceDescription ;
+  gci:rescueType ?gciType .
 
   ?evidenceLineType gcixform:hasGCIType ?gciType ;
   gcixform:hasEvidenceItemType ?evidenceItemType ;
-  gcixform:usedIn gcixform:Functional .
+  gcixform:usedIn gcixform:Rescue .
   
  
   OPTIONAL  {

@@ -17,12 +17,15 @@ where {
   gci:experimental_scored ?gciEvidence .
 
   ?gciEvidence gci:label ?evidenceLabel ;
-  gci:evidenceType ?gciType ;  
+  gci:functionalAlteration ?functionalAlteration ;
   gci:uuid ?evidenceUUID .
+
+  ?functionalAlteration gci:functionalAlterationType ?gciType ;
+  gci:evidenceForNormalFunction ?evidenceDescription .
 
   ?evidenceLineType gcixform:hasGCIType ?gciType ;
   gcixform:hasEvidenceItemType ?evidenceItemType ;
-  gcixform:usedIn gcixform:Functional .
+  gcixform:usedIn gcixform:FunctionalAlteration .
   
  
   OPTIONAL  {

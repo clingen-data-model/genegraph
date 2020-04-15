@@ -30,6 +30,9 @@
                construct-evidence-level-assertion
                construct-proband-score
                construct-model-systems-evidence
+               construct-functional-alteration-evidence
+               construct-functional-evidence
+               construct-rescue-evidence
                five-genes)
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -57,6 +60,8 @@
             "autoClassification" {"@type" "@vocab"}
             "modelSystemsType" {"@type" "@vocab"}
             "evidenceType" {"@type" "@vocab"}
+            "functionalAlterationType" {"@type" "@vocab"}
+            "rescueType" {"@type" "@vocab"}
 
             ;; Category names
             "Model Systems" "gcixform:ModelSystems"
@@ -103,6 +108,9 @@
     (q/union 
      ;; (construct-proposition params)
      ;; (construct-evidence-level-assertion params)
-     (construct-model-systems-evidence params)
-     ;;(construct-proband-score params)
+     ;; (construct-model-systems-evidence params)
+     ;; (construct-functional-alteration-evidence params)
+     ;; (construct-functional-evidence params)
+     ;; (construct-proband-score params)
+     (construct-rescue-evidence params)
      )))
