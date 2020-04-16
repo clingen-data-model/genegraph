@@ -1,0 +1,34 @@
+prefix gci: <http://gci.clinicalgenome.org/> 
+prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+construct {
+  ?evidenceLine  a ?evidenceLineType ;
+  :dc/description ?scoreDescription ;
+  :sepio/evidence-line-strength-score ?score .
+
+  ?evidenceItem  a ?evidenceItemType ;
+  :dc/description ?evidenceDescription ;
+  :rdfs/label ?evidenceLabel .
+}
+where {
+  ?gciScore a gci:evidenceScore ;
+  # TODO no calculatedScore/adjustedScore--validate that this is correct
+  gci:score ?score ;
+  # see gci:comments below
+  # gci:scoreExplanation ?scoreDescription ;
+  gci:uuid ?scoreUUID ;
+  gci:caseControl_scored ?gciEvidence .
+
+  ?gciEvidence gci:label ?evidenceLabel ;
+  # # TODO, comments attached to the evidence item are really an explanation for the score
+  # # in this case--be sure to validate this
+  gci:comments ?scoreDescription ;
+  gci:studyType ?gciType ;
+  gci:uuid ?evidenceUUID .
+
+  ?evidenceLineType gcixform:hasGCIType ?gciType ;
+  gcixform:hasEvidenceItemType ?evidenceItemType .
+ 
+  BIND(IRI(CONCAT(?gcibase, "evidence_line/", ?scoreUUID)) AS ?evidenceLine) .
+
+  BIND(IRI(CONCAT(?gcibase, "evidence_item/", ?evidenceUUID)) AS ?evidenceItem) .
+}

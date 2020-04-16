@@ -8,7 +8,7 @@ construct {
 
   ?evidenceItem a ?evidenceItemType ;
   :sepio/is-about-allele ?allele ;
-  # :dc/source ?article ;
+  :dc/source ?article ;
   :rdfs/label ?individualLabel .
 
 }

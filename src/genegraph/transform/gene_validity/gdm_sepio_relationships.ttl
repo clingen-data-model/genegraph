@@ -79,4 +79,45 @@ sepio:0004031 :hasEvidenceItemType sepio:0004050 ;
 sepio:0004032 :hasEvidenceItemType sepio:0004051 ;
     :hasGCIType :PatientCells ;
     :usedIn :Rescue .
+
+#### Case Control
+sepio:0004020 :hasEvidenceItemType sepio:0004039 ;
+    :hasGCIType :SingleVariantAnalysis .
+    
+sepio:0004021 :hasEvidenceItemType sepio:0004040 ;
+    :hasGCIType :AggregateVariantAnalysis .    
+    
+#### Connections to leaf-node evidence lines
+
+# :sepio/AutosomalDominantOtherVariantCriterionAssessment
+sepio:0004058 :hasEvidenceLineType sepio:0004080 .
+
+# :sepio/AutosomalDominantNullVariantCriterionAssessment
+sepio:0004057 :hasEvidenceLineType sepio:0004079 .
+
+# :sepio/AutosomalDominantDeNovoVariantCriterionAssessment
+sepio:0004056 :hasEvidenceLineType sepio:0004078 .
+
+# :sepio/AutosomalRecessiveVariantCriterionAssessment
+sepio:0004055 :hasEvidenceLineType sepio:0004019 , sepio:0004018 .
+
+# # :sepio/CaseControlEvidenceCriterionAssessment
+sepio:0004054 :hasEvidenceLineType sepio:0004020, sepio:0004021 .
+
+# # :sepio/SegregationCriterionAssessment
+# sepio:0004059 :hasEvidenceLineType 
+
+# :sepio/FunctionalCriterionAssessment
+sepio:0004060 :hasEvidenceLineType sepio:0004022 , sepio:0004023 , sepio:0004024 .
+
+# :sepio/FunctionalAlterationCriterionAssessment
+sepio:0004061 :hasEvidenceLineType sepio:0004025 , sepio:0004026 .
+
+# :sepio/ModelAndRescueCriterionAssessment
+sepio:0004062 :hasEvidenceLineType sepio:0004027 ,
+        sepio:0004028 , 
+        sepio:0004029 , 
+        sepio:0004030 , 
+        sepio:0004031 , 
+        sepio:0004032 .
     

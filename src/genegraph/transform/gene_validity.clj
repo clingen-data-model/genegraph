@@ -15,10 +15,6 @@
                   "sepio" "http://purl.obolibrary.org/obo/SEPIO_"
                   "dc" "http://purl.org/dc/terms/"
                   "rdfs" "http://www.w3.org/2000/01/rdf-schema#"
-                  ;; "evidence_item" "http://dataexchange.clinicalgenome.org/gci/evidence_item/"
-                  ;; "evidence_line" "http://dataexchange.clinicalgenome.org/gci/evidence_line/"
-                  ;; "proposition" "http://dataexchange.clinicalgenome.org/gci/proposition/"
-                  ;; "assertion" "http://dataexchange.clinicalgenome.org/gci/assertion/"
                   "dxgci" "http://dataexchange.clinicalgenome.org/gci/"
                   "ro" "http://purl.obolibrary.org/obo/RO_"
                   "mondo" "http://purl.obolibrary.org/obo/MONDO_"
@@ -33,7 +29,8 @@
                construct-functional-alteration-evidence
                construct-functional-evidence
                construct-rescue-evidence
-               five-genes)
+               construct-case-control-evidence
+               construct-evidence-connections)
 
 ;; Trim trailing }, intended to be appended to gci json
 (def context
@@ -57,15 +54,24 @@
             "diseaseId" {"@type" "@id"}
             "caseInfoType" {"@type" "@id"}
             "experimental_scored" {"@type" "@id"}
+            "caseControl_scored" {"@type" "@id"}
             "autoClassification" {"@type" "@vocab"}
             "modelSystemsType" {"@type" "@vocab"}
             "evidenceType" {"@type" "@vocab"}
             "functionalAlterationType" {"@type" "@vocab"}
             "rescueType" {"@type" "@vocab"}
+            "studyType" {"@type" "@vocab"}
+
 
             ;; Category names
             "Model Systems" "gcixform:ModelSystems"
             "Functional Alteration" "gcixform:FunctionalAlteration"
+            "Case control" "gcixform:CaseControl"
+
+            ;; Case control
+            "Aggregate variant analysis" "gcixform:AggregateVariantAnalysis"
+            "Single variant analysis" "gcixform:SingleVariantAnalysis"
+
 
             ;; Experimental evidence types
             "Expression" "gcixform:Expression"
@@ -88,7 +94,7 @@
             ;; evidence strength
             "Moderate" "SEPIO:0004506"
             "Definitive" "SEPIO:0004504"
-            }}))))
+            "No Classification" "SEPIO:0004508"}}))))
 
 (defn parse-gdm [gdm-json]
   (let [gdm-with-fixed-curies (s/replace gdm-json #"MONDO_" "MONDO:")
@@ -104,13 +110,19 @@
                 :gcibase base
                 :arbase "http://reg.genome.network/allele/"
                 :cvbase "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
-                :pmbase "https://pubmed.ncbi.nlm.nih.gov/"}]
-    (q/union 
-     ;; (construct-proposition params)
-     ;; (construct-evidence-level-assertion params)
-     ;; (construct-model-systems-evidence params)
-     ;; (construct-functional-alteration-evidence params)
-     ;; (construct-functional-evidence params)
-     ;; (construct-proband-score params)
-     (construct-rescue-evidence params)
-     )))
+                :pmbase "https://pubmed.ncbi.nlm.nih.gov/"}
+        unlinked-model (q/union 
+                        (construct-proposition params)
+                        (construct-evidence-level-assertion params)
+                        (construct-model-systems-evidence params)
+                        (construct-functional-alteration-evidence params)
+                        (construct-functional-evidence params)
+                        (construct-proband-score params)
+                        (construct-rescue-evidence params)
+                        (construct-case-control-evidence params))]
+;;    unlinked-model
+    (q/union unlinked-model
+             (construct-evidence-connections {::q/model
+                                              (q/union unlinked-model
+                                                       gdm-sepio-relationships)}))
+    ))
