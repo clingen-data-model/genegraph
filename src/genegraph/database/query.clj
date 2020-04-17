@@ -74,6 +74,26 @@
 
 (declare to-clj)
 
+(def query-sort-order 
+  {:asc Query/ORDER_ASCENDING
+   :desc Query/ORDER_DESCENDING})
+
+(defn construct-query-with-params [query query-params]
+  (if-let [params (::params query-params)]
+    (let [modified-query (.clone query)]
+      (when (:distinct params)
+        (.setDistinct modified-query true))
+      (when (:limit params)
+        (.setLimit modified-query (:limit params)))
+      (when (:offset params)
+        (.setOffset modified-query (:offset params)))
+      (when (:order-by params)
+        (let [[field direction] (:order-by params)]
+          (.addResultVar modified-query field)
+          (.addOrderBy modified-query field (query-sort-order direction))))
+      modified-query)
+    query))
+
 (deftype RDFResource [resource model]
 
   AsJenaResource
@@ -268,9 +288,10 @@
                 :msg "Executing select query"
                 :query query-def
                 :params params)
-     (let [qs-map (construct-query-solution-map (dissoc params :-model))]
+     (let [query (construct-query-with-params query-def params)
+           qs-map (construct-query-solution-map (dissoc params ::model ::params))]
        (tx
-        (with-open [qexec (QueryExecutionFactory/create query-def db-or-model qs-map)]
+        (with-open [qexec (QueryExecutionFactory/create query db-or-model qs-map)]
           (when-let [result (-> qexec .execSelect)]
             (let [result-var (-> result .getResultVars first)
                   result-seq (iterator-seq result)
