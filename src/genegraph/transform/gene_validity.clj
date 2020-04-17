@@ -30,6 +30,7 @@
                construct-functional-evidence
                construct-rescue-evidence
                construct-case-control-evidence
+               construct-segregation-evidence
                construct-evidence-connections)
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -55,12 +56,14 @@
             "caseInfoType" {"@type" "@id"}
             "experimental_scored" {"@type" "@id"}
             "caseControl_scored" {"@type" "@id"}
+            "variants" {"@type" "@id"}
             "autoClassification" {"@type" "@vocab"}
             "modelSystemsType" {"@type" "@vocab"}
             "evidenceType" {"@type" "@vocab"}
             "functionalAlterationType" {"@type" "@vocab"}
             "rescueType" {"@type" "@vocab"}
             "studyType" {"@type" "@vocab"}
+            "sequencingMethod" {"@type" "@vocab"}
 
 
             ;; Category names
@@ -72,6 +75,9 @@
             "Aggregate variant analysis" "gcixform:AggregateVariantAnalysis"
             "Single variant analysis" "gcixform:SingleVariantAnalysis"
 
+            ;; segregation
+            "Candidate gene sequencing" "gcixform:CandidateGeneSequencing"
+            "Exome/genome or all genes sequenced in linkage region" "gcixform:ExomeSequencing"
 
             ;; Experimental evidence types
             "Expression" "gcixform:Expression"
@@ -119,10 +125,10 @@
                         (construct-functional-evidence params)
                         (construct-proband-score params)
                         (construct-rescue-evidence params)
-                        (construct-case-control-evidence params))]
-;;    unlinked-model
+                        (construct-case-control-evidence params)
+                        (construct-segregation-evidence params))]
     (q/union unlinked-model
-             (construct-evidence-connections {::q/model
-                                              (q/union unlinked-model
-                                                       gdm-sepio-relationships)}))
-    ))
+             (construct-evidence-connections 
+              {::q/model
+               (q/union unlinked-model
+                        gdm-sepio-relationships)}))))

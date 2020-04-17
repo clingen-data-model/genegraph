@@ -85,7 +85,17 @@ sepio:0004020 :hasEvidenceItemType sepio:0004039 ;
     :hasGCIType :SingleVariantAnalysis .
     
 sepio:0004021 :hasEvidenceItemType sepio:0004040 ;
-    :hasGCIType :AggregateVariantAnalysis .    
+    :hasGCIType :AggregateVariantAnalysis .
+
+#### Segregation
+
+# single gene
+sepio:0004090 :hasEvidenceItemType sepio:0004085 ;
+    :hasGCIType :CandidateGeneSequencing .
+
+# multi-locus
+sepio:0004091 :hasEvidenceItemType sepio:0004086 ;
+    :hasGCIType :ExomeSequencing .
     
 #### Connections to leaf-node evidence lines
 
@@ -105,7 +115,7 @@ sepio:0004055 :hasEvidenceLineType sepio:0004019 , sepio:0004018 .
 sepio:0004054 :hasEvidenceLineType sepio:0004020, sepio:0004021 .
 
 # # :sepio/SegregationCriterionAssessment
-# sepio:0004059 :hasEvidenceLineType 
+sepio:0004059 :hasEvidenceLineType sepio:0004090, sepio:0004091 .
 
 # :sepio/FunctionalCriterionAssessment
 sepio:0004060 :hasEvidenceLineType sepio:0004022 , sepio:0004023 , sepio:0004024 .

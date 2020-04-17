@@ -7,6 +7,7 @@ construct {
 
   ?evidenceItem  a ?evidenceItemType ;
   :dc/description ?evidenceDescription ;
+  :dc/source ?article ;
   :rdfs/label ?evidenceLabel .
 }
 where {
@@ -24,6 +25,11 @@ where {
   gci:comments ?scoreDescription ;
   gci:studyType ?gciType ;
   gci:uuid ?evidenceUUID .
+
+  ?annotation gci:caseControlStudies ?gciEvidence ;
+  gci:article ?publication .
+  ?publication gci:pmid ?pmid .
+  BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
 
   ?evidenceLineType gcixform:hasGCIType ?gciType ;
   gcixform:hasEvidenceItemType ?evidenceItemType .

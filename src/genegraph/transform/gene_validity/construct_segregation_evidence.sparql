@@ -1,0 +1,42 @@
+prefix gci: <http://gci.clinicalgenome.org/> 
+prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+construct {
+  ?evidenceLine  a ?evidenceLineType ;
+  :dc/description ?scoreDescription ;
+  :sepio/evidence-line-strength-score ?lodScore .
+
+  ?evidenceItem  a ?evidenceItemType ;
+  :dc/description ?evidenceDescription ;
+  :dc/source ?article ;
+  :rdfs/label ?evidenceLabel .
+}
+where {
+  ?family a gci:family ;
+  gci:segregation ?segregation ;
+  gci:label ?evidenceLabel ;
+  gci:uuid ?familyUUID .
+
+  ?segregation gci:includeLodScoreInAggregateCalculation true ;
+  gci:sequencingMethod ?gciType .
+
+  ?evidenceLineType gcixform:hasGCIType ?gciType ;
+  gcixform:hasEvidenceItemType ?evidenceItemType .
+
+  ?annotation gci:families ?gciEvidence ;
+  gci:article ?publication .
+  ?publication gci:pmid ?pmid .
+  BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
+
+  optional {
+    ?segregation gci:publishedLodScore ?publishedLodScore .
+  }
+
+  optional {
+    ?segregation gci:estimatedLodScore ?estimatedLodScore .
+  }
+
+  BIND(COALESCE(?estimatedLodScore, ?publishedLodScore) AS ?lodScore) .
+  BIND(IRI(CONCAT(?gcibase, "evidence_line_", ?familyUUID)) AS ?evidenceLine) .
+
+  BIND(IRI(CONCAT(?gcibase, "evidence_item_", ?familyUUID)) AS ?evidenceItem) .
+}
