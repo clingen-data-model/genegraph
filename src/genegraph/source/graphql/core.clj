@@ -20,7 +20,12 @@
             [com.walmartlabs.lacinia.util :as util]))
 
 (def base-schema 
-  {:interfaces
+  {:enums
+   {:curation_activity
+    {:description "The curation activities within ClinGen. Each curation is associated with a curation activity."
+     :values [:ALL :NONE :ACTIONABILITY :GENE_VALIDITY :GENE_DOSAGE]}}
+
+   :interfaces
    {:resource
     {:description "An RDF Resource; generic type suitable for return when a variety of resources may be returned as the result of a function all"
      :fields {:iri {:type 'String}
@@ -358,6 +363,14 @@
    {:gene {:type '(non-null :gene)
            :args {:iri {:type 'String}}
            :resolve gene/gene-query}
+    :gene_list {:type '(list :gene)
+                :args {:limit {:type 'Int
+                               :default-value 10
+                               :description "Number of records to return"}
+                       :offset {:type 'Int
+                                :default-value 0
+                                :description "Index to begin returning records from"}}
+                :resolve gene/gene-list}
     :condition {:type '(non-null :condition)
                 :args {:iri {:type 'String}}
                 :resolve condition/condition-query}

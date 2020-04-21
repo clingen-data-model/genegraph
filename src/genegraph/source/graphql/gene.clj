@@ -8,6 +8,11 @@
        gene
        (first (filter #(q/is-rdf-type? % :so/ProteinCodingGene) (get gene [:owl/same-as :<]))))))
 
+(defn gene-list [context args value]
+  (let [params (select-keys args [:limit :offset])]
+    (q/select "select ?x where { ?x a :so/ProteinCodingGene }"
+              {::q/params params})))
+
 (defn chromosome-band [context args value]
   (first (:so/chromosome-band value)))
 
