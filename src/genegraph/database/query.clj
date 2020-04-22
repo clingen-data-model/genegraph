@@ -367,9 +367,10 @@
           result-seq (iterator-seq result)]
       (mapv #(->RDFResource (.getResource % result-var) model) result-seq))))
 
-(defn- exec [query params]
-  (let [qs-map (construct-query-solution-map (dissoc params ::model))
-        model (or (::model params) (.getUnionModel db))]
+(defn- exec [query-def params]
+  (let [qs-map (construct-query-solution-map (dissoc params ::model ::params))
+        model (or (::model params) (.getUnionModel db))
+        query (construct-query-with-params query-def params)]
     (tx
      (with-open [qexec (QueryExecutionFactory/create query model qs-map)]
        (cond 
