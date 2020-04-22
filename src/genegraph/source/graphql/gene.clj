@@ -1,6 +1,8 @@
 (ns genegraph.source.graphql.gene
-  (:require [genegraph.database.query :as q]
+  (:require [genegraph.database.query :as q :refer [declare-query]]
             [com.walmartlabs.lacinia.schema :refer [tag-with-type]]))
+
+(declare-query select-gene-list)
 
 (defn gene-query [context args value]
   (let [gene (q/resource (:iri args))]
