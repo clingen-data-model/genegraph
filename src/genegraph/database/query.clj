@@ -288,13 +288,14 @@
   Query
   (select
     ([query-def] (select query-def {}))
-    ([query-def params] (select query-def params db))
+    ([query-def params] (select query-def params))
     ([query-def params db-or-model]
      (log/info :fn :select-query
                 :msg "Executing select query"
                 :query query-def
                 :params params)
      (let [query (construct-query-with-params query-def params)
+           model-from-params (::model params)
            qs-map (construct-query-solution-map (dissoc params ::model ::params))]
        (tx
         (with-open [qexec (QueryExecutionFactory/create query db-or-model qs-map)]
@@ -310,7 +311,7 @@
   java.lang.String
   (select 
     ([query-def] (select query-def {}))
-    ([query-def params] (select query-def params db))
+    ([query-def params] (select query-def params (or (::model params) db)))
     ([query-def params db-or-model]
      (select (QueryFactory/create (expand-query-str query-def)) params db-or-model)))
   
@@ -492,7 +493,7 @@
   "Return parsed query object. If query is not a string, assume object that can
 use io/slurp"
   [query-source]
-  (if  (seqable? query-source)
+  (if  (vector? query-source)
     (->StoredQuery (OpAsQuery/asQuery (op query-source)))
     (let [query-str (if (string? query-source) query-source (slurp query-source))]
       (->StoredQuery (QueryFactory/create (expand-query-str query-str))))))
