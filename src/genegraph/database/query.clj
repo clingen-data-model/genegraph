@@ -367,41 +367,7 @@
     (.write model os "TURTLE")
     (.toString os)))
 
-(defn- compose-select-result [qexec model]
-  (when-let [result (-> qexec .execSelect)]
-    (let [result-var (-> result .getResultVars first)
-          result-seq (iterator-seq result)]
-      (mapv #(->RDFResource (.getResource % result-var) model) result-seq))))
 
-(defn- exec [query-def params]
-  (let [qs-map (construct-query-solution-map (dissoc params ::model ::params))
-        model (or (::model params) (.getUnionModel db))
-        query (construct-query-with-params query-def params)]
-    (tx
-     (with-open [qexec (QueryExecutionFactory/create query model qs-map)]
-       (cond 
-         (.isConstructType query) (.execConstruct qexec)
-         (.isSelectType query) (compose-select-result qexec model))))))
-
-(deftype StoredQuery [query]
-  clojure.lang.IFn
-  (invoke [this] (this {}))
-  (invoke [this params] (exec query params)))
-
-(defn create-query 
-  "Return parsed query object. If query is not a string, assume object that can
-use io/slurp"
-  [query-source]
-  (let [query-str (if (string? query-source) 
-                    query-source
-                    (slurp query-source))]
-    (->StoredQuery (QueryFactory/create (expand-query-str query-str)))))
-
-(defmacro declare-query [& queries]
-  (let [root# (-> *ns* str (s/replace #"\." "/") (s/replace #"-" "_") (str "/"))]
-    `(do ~@(map #(let [filename# (str root# (s/replace % #"-" "_" ) ".sparql")]
-                   `(def ~% (-> ~filename# io/resource slurp create-query)))
-                queries))))
 
 (defn union [& models]
   (let [union-model (ModelFactory/createDefaultModel)]
@@ -411,7 +377,7 @@ use io/slurp"
 
 ;;;; Query builder
 
-(defn- triple
+(defn triple
   "Construct triple for use in BGP. Part of query algebra."
   [stmt]
   (let [[s p o] stmt
@@ -501,3 +467,38 @@ use io/slurp"
                                                         :args args}))))
 
 
+(defn- compose-select-result [qexec model]
+  (when-let [result (-> qexec .execSelect)]
+    (let [result-var (-> result .getResultVars first)
+          result-seq (iterator-seq result)]
+      (mapv #(->RDFResource (.getResource % result-var) model) result-seq))))
+
+(defn- exec [query-def params]
+  (let [qs-map (construct-query-solution-map (dissoc params ::model ::params))
+        model (or (::model params) (.getUnionModel db))
+        query (construct-query-with-params query-def params)]
+    (tx
+     (with-open [qexec (QueryExecutionFactory/create query model qs-map)]
+       (cond 
+         (.isConstructType query) (.execConstruct qexec)
+         (.isSelectType query) (compose-select-result qexec model))))))
+
+(deftype StoredQuery [query]
+  clojure.lang.IFn
+  (invoke [this] (this {}))
+  (invoke [this params] (exec query params)))
+
+(defn create-query 
+  "Return parsed query object. If query is not a string, assume object that can
+use io/slurp"
+  [query-source]
+  (if  (seqable? query-source)
+    (->StoredQuery (OpAsQuery/asQuery (op query-source)))
+    (let [query-str (if (string? query-source) query-source (slurp query-source))]
+      (->StoredQuery (QueryFactory/create (expand-query-str query-str))))))
+
+(defmacro declare-query [& queries]
+  (let [root# (-> *ns* str (s/replace #"\." "/") (s/replace #"-" "_") (str "/"))]
+    `(do ~@(map #(let [filename# (str root# (s/replace % #"-" "_" ) ".sparql")]
+                   `(def ~% (-> ~filename# io/resource slurp create-query)))
+                queries))))
