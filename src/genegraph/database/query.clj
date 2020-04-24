@@ -15,6 +15,12 @@
   (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList SimpleSelector ModelFactory]
            [org.apache.jena.query Dataset QueryFactory Query QueryExecution
             QueryExecutionFactory QuerySolutionMap]
+
+           [org.apache.jena.sparql.algebra AlgebraGenerator Algebra OpAsQuery Op]
+           [org.apache.jena.graph Node NodeFactory Triple Node_Variable Node_Blank]
+[org.apache.jena.sparql.algebra.op OpDistinct OpProject OpFilter OpBGP OpConditional OpDatasetNames OpDiff OpDisjunction OpDistinctReduced OpExtend OpGraph OpGroup OpJoin OpLabel OpLeftJoin OpList OpMinus OpNull OpOrder OpQuad OpQuadBlock OpQuadPattern OpReduced OpSequence OpSlice OpTopN OpUnion OpTable ]
+[org.apache.jena.sparql.core BasicPattern Var VarExprList QuadPattern Quad]
+
            org.apache.jena.riot.writer.JsonLDWriter
            org.apache.jena.sparql.core.Prologue
            org.apache.jena.riot.RDFFormat$JSONLDVariant
@@ -361,6 +367,106 @@
     (.write model os "TURTLE")
     (.toString os)))
 
+
+
+(defn union [& models]
+  (let [union-model (ModelFactory/createDefaultModel)]
+    (doseq [model models] (.add union-model model))
+    union-model))
+
+
+;;;; Query builder
+
+(defn triple
+  "Construct triple for use in BGP. Part of query algebra."
+  [stmt]
+  (let [[s p o] stmt
+        subject (cond
+                  (symbol? s) (Var/alloc (str s))
+                  (keyword? s) (.asNode (local-class-names s))
+                  (string? s) (NodeFactory/createURI s)
+                  (satisfies? AsJenaResource s) (.asNode (as-jena-resource s))
+                  :else (NodeFactory/createURI (str s)))
+        predicate (if (keyword? p)
+                    (.asNode (local-property-names p))
+                    (NodeFactory/createURI (str p)))
+        object (cond 
+                 (symbol? o) (Var/alloc (str o))
+                 (keyword? o) (.asNode (local-class-names o))
+                 (or (string? o)
+                     (int? o)
+                     (float? o)) (.asNode (ResourceFactory/createTypedLiteral o))
+                 (satisfies? AsJenaResource o) (.asNode (as-jena-resource o))
+                 :else o)]
+    (Triple. subject predicate object)))
+
+;; (defn expr
+;;   "Convert a Clojure data structure to an Arq Expr"
+;;   [expr]
+;;   (if (instance? java.util.List expr)
+;;     (composite-expr expr)
+;;     (let [node (graph/node expr)]
+;;       (if (instance? Node_Variable node)
+;;         (ExprVar. (Var/alloc ^Node_Variable node))
+;;         (NodeValue/makeNode node)))))
+
+;; (defn- var-expr-list
+;;   "Given a vector of var/expr bindings (reminiscient of Clojure's `let`), return a Jena VarExprList with vars and exprs."
+;;   [bindings]
+;;   (let [vel (VarExprList.)]
+;;     (doseq [[v e] (partition 2 bindings)]
+;;       (.add vel (Var/alloc (graph/node v))
+;;         (expr e)))
+;;     vel))
+
+;; (defn- var-aggr-list
+;;   "Given a vector of var/aggregate bindings return a Jena VarExprList with
+;;    vars and aggregates"
+;;   [bindings]
+;;   (vec (for [[v e] (partition 2 bindings)]
+;;          (ExprAggregator. (Var/alloc (graph/node v)) (aggregator e)))))
+
+;; (defn- sort-conditions
+;;   "Given a seq of expressions and the keyword :asc or :desc, return a list of
+;;    sort conditions."
+;;   [conditions]
+;;   (for [[e dir] (partition 2 conditions)]
+;;     (SortCondition. ^Expr (expr e) (if (= :asc dir) 1 -1))))
+
+(defn- var-seq [vars]
+  (map #(Var/alloc (str %)) vars))
+
+(defn- op
+  "Convert a Clojure data structure to an Arq Op"
+  [[op-name & [a1 a2 & amore :as args]]]
+  (case op-name
+    :distinct (OpDistinct/create (op a1))
+    :project (OpProject. (op a2) (var-seq a1))
+    ;; :filter (OpFilter/filterBy (ExprList. ^List (map expr (butlast args))) (op (last args)))
+    :bgp (OpBGP. (BasicPattern/wrap (map triple args)))
+    :conditional (OpConditional. (op a1) (op a2))
+    :diff (OpDiff/create (op a1) (op a2))
+    :disjunction (OpDisjunction/create (op a1) (op a2))
+    ;; :extend (OpExtend/create (op a2) (var-expr-list a1))
+    ;; :group (OpGroup/create (op (first amore))
+    ;;                        (VarExprList. ^List (var-seq a1))
+    ;;                        (var-aggr-list a2))
+    :join (OpJoin/create (op a1) (op a2))
+    :label (OpLabel/create a1 (op a2))
+    ;; :left-join (OpLeftJoin/create (op a1) (op a2) (ExprList. ^List (map expr amore)))
+    :list (OpList. (op a1))
+    :minus (OpMinus/create (op a1) (op a2))
+    :null (OpNull/create)
+    ;; :order (OpOrder. (op a2) (sort-conditions a1))
+    :reduced (OpReduced/create (op a1))
+    :sequence (OpSequence/create (op a1) (op a2))
+    :slice (OpSlice. (op a1) (long a1) (long (first amore)))
+    ;; :top-n (OpTopN. (op (first amore)) (long a1) (sort-conditions a2))
+    :union (OpUnion. (op a1) (op a2))
+    (throw (ex-info (str "Unknown operation " op-name) {:op-name op-name
+                                                        :args args}))))
+
+
 (defn- compose-select-result [qexec model]
   (when-let [result (-> qexec .execSelect)]
     (let [result-var (-> result .getResultVars first)
@@ -386,18 +492,13 @@
   "Return parsed query object. If query is not a string, assume object that can
 use io/slurp"
   [query-source]
-  (let [query-str (if (string? query-source) 
-                    query-source
-                    (slurp query-source))]
-    (->StoredQuery (QueryFactory/create (expand-query-str query-str)))))
+  (if  (seqable? query-source)
+    (->StoredQuery (OpAsQuery/asQuery (op query-source)))
+    (let [query-str (if (string? query-source) query-source (slurp query-source))]
+      (->StoredQuery (QueryFactory/create (expand-query-str query-str))))))
 
 (defmacro declare-query [& queries]
   (let [root# (-> *ns* str (s/replace #"\." "/") (s/replace #"-" "_") (str "/"))]
     `(do ~@(map #(let [filename# (str root# (s/replace % #"-" "_" ) ".sparql")]
                    `(def ~% (-> ~filename# io/resource slurp create-query)))
                 queries))))
-
-(defn union [& models]
-  (let [union-model (ModelFactory/createDefaultModel)]
-    (doseq [model models] (.add union-model model))
-    union-model))
