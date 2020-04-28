@@ -437,6 +437,15 @@
 (defn- var-seq [vars]
   (map #(Var/alloc (str %)) vars))
 
+(declare op)
+
+(defn- op-union [a1 a2 & amore]
+  (OpUnion. 
+   (op a1)
+   (if amore
+     (apply op-union a2 amore)
+     (op a2))))
+
 (defn- op
   "Convert a Clojure data structure to an Arq Op"
   [[op-name & [a1 a2 & amore :as args]]]
@@ -463,7 +472,7 @@
     :sequence (OpSequence/create (op a1) (op a2))
     :slice (OpSlice. (op a1) (long a1) (long (first amore)))
     ;; :top-n (OpTopN. (op (first amore)) (long a1) (sort-conditions a2))
-    :union (OpUnion. (op a1) (op a2))
+    :union (apply op-union args)
     (throw (ex-info (str "Unknown operation " op-name) {:op-name op-name
                                                         :args args}))))
 
@@ -487,7 +496,10 @@
 (deftype StoredQuery [query]
   clojure.lang.IFn
   (invoke [this] (this {}))
-  (invoke [this params] (exec query params)))
+  (invoke [this params] (exec query params))
+  
+  Object
+  (toString [_] (str query)))
 
 (defn create-query 
   "Return parsed query object. If query is not a string, assume object that can
