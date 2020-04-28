@@ -37,7 +37,7 @@
   :target "skos.rdf",
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/so.owl"
-  :source "https://github.com/The-Sequence-Ontology/SO-Ontologies/raw/master/so.owl",
+  :source "https://raw.githubusercontent.com/The-Sequence-Ontology/SO-Ontologies/master/Ontology_Files/so.owl",
   :target "so.owl",
   :format :rdf}
  {:name "http://purl.obolibrary.org/obo/iao/ontology-metadata.owl"
