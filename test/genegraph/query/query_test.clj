@@ -16,3 +16,17 @@
 (deftest test-string-query
   (let [result (select "select ?x where { ?x a :owl/Class } " {::q/model sample-data})]
     (is (= 1 (count result)))))
+
+
+(def union-sample (statements-to-model [["http://test/report1" :rdf/type :sepio/GeneDosageReport]
+                                        ["http://test/report2" :rdf/type :sepio/GeneValidityReport]
+                                        ["http://test/report3" :rdf/type :sepio/ActionabilityReport]
+                                        ]))
+
+(deftest test-algebra-union
+  (let [q (create-query '[:project [x]
+                          [:union
+                           [:bgp [x :rdf/type :sepio/GeneDosageReport]]
+                           [:bgp [x :rdf/type :sepio/GeneValidityReport]]
+                           [:bgp [x :rdf/type :sepio/ActionabilityReport]]]])]
+    (is (= 3 (count (q {::q/model union-sample}))))))
