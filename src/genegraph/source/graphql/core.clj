@@ -23,7 +23,7 @@
   {:enums
    {:curation_activity
     {:description "The curation activities within ClinGen. Each curation is associated with a curation activity."
-     :values [:ALL :NONE :ACTIONABILITY :GENE_VALIDITY :GENE_DOSAGE]}}
+     :values [:ALL :ACTIONABILITY :GENE_VALIDITY :GENE_DOSAGE]}}
 
    :interfaces
    {:resource
@@ -369,7 +369,11 @@
                                :description "Number of records to return"}
                        :offset {:type 'Int
                                 :default-value 0
-                                :description "Index to begin returning records from"}}
+                                :description "Index to begin returning records from"}
+                       :curation_type {:type :curation_activity
+                                       :description 
+                                       (str "Limit genes returned to those that have a curation, "
+                                            "or a curation of a specific type.")}}
                 :resolve gene/gene-list}
     :condition {:type '(non-null :condition)
                 :args {:iri {:type 'String}}
