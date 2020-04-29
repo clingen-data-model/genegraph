@@ -17,6 +17,10 @@
   (let [result (select "select ?x where { ?x a :owl/Class } " {::q/model sample-data})]
     (is (= 1 (count result)))))
 
+(deftest test-ask-query 
+  (let [q (create-query "ask { ?x a :owl/Class }")]
+    (is (= true (q)))))
+
 
 (def union-sample (statements-to-model [["http://test/report1" :rdf/type :sepio/GeneDosageReport]
                                         ["http://test/report2" :rdf/type :sepio/GeneValidityReport]
