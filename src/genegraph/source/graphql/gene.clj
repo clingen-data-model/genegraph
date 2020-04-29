@@ -1,5 +1,5 @@
 (ns genegraph.source.graphql.gene
-  (:require [genegraph.database.query :as q :refer [declare-query create-query]]
+  (:require [genegraph.database.query :as q :refer [declare-query create-query ld-> ld1->]]
             [com.walmartlabs.lacinia.schema :refer [tag-with-type]]))
 
 (declare-query select-gene-list)
@@ -41,6 +41,9 @@
                              bgp])]
     
     (query {::q/params params})))
+
+;; (defn curation-activities [context args value]
+;;   (let [query (create-query )]))
 
 (defn chromosome-band [context args value]
   (first (:so/chromosome-band value)))
