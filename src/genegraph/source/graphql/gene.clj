@@ -29,10 +29,13 @@
                                      :GENE_DOSAGE has-dosage-bgp
                                      [])
         bgp (if (= :ALL (:curation_type args))
+              [:union 
+               (cons :bgp (concat base-bgp has-validity-bgp))
+               (cons :bgp (concat base-bgp has-actionability-bgp))
+               (cons :bgp (concat base-bgp has-dosage-bgp))]
               (cons :bgp
                     (concat base-bgp
                             selected-curation-type-bgp)))
-        
         query (create-query [:project 
                              ['gene]
                              bgp])]
