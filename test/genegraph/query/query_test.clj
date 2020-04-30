@@ -21,6 +21,9 @@
   (let [q (create-query "ask { ?x a :owl/Class }")]
     (is (= true (q)))))
 
+(deftest test-ask-with-algebra
+  (let [q (create-query '[:bgp [x :rdf/type :owl/Class]] {::q/type :ask})]
+    (is (= true (q)))))
 
 (def union-sample (statements-to-model [["http://test/report1" :rdf/type :sepio/GeneDosageReport]
                                         ["http://test/report2" :rdf/type :sepio/GeneValidityReport]
