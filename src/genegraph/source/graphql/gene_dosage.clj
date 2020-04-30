@@ -219,8 +219,8 @@
 (defn genomic-feature [context args value]
   (let [feature (q/ld1-> value [:iao/is-about])]
     (if (gene? value)
-      (tag-with-type feature :gene_feature)
-      (tag-with-type feature :region_feature))))
+      (tag-with-type feature :GeneFeature)
+      (tag-with-type feature :RegionFeature))))
 
 (defn gene-count [context args value]
   (count (all-gene-dosage-reports)))
