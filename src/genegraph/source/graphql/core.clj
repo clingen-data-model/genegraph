@@ -23,18 +23,34 @@
   {:enums
    {:CurationActivity
     {:description "The curation activities within ClinGen. Each curation is associated with a curation activity."
-     :values [:ALL :ACTIONABILITY :GENE_VALIDITY :GENE_DOSAGE]}}
-
+     :values [:ALL :ACTIONABILITY :GENE_VALIDITY :GENE_DOSAGE]
+     }
+    :Direction
+    {
+     :values [:ASC :DESC]
+     }
+    :SortField
+    {
+     :values [:GENE_REGION :LOCATION :MORBID :OMIM :HAPLO_EVIDENCE :TRIPLO_EVIDENCE :HI_PCT :PLI :REVIEWED_DATE]
+     }
+    :Build
+    {
+     :values [:GRCH37 :GRCH38]
+     }
+    :Chromosome
+    {:values [:CHR1 :CHR2 :CHR3 :CHR4 :CHR5 :CHR6 :CHR7 :CHR8 :CHR9 :CHR10 :CHR11 :CHR12 :CHR13 :CHR14 :CHR15
+              :CHR16 :CHR17 :CHR18 :CHR19 :CHR20 :CHR21 :CHR22 :CHRX :CHRY]
+     }}
+   
    :interfaces
-  {:interfaces
    {:Resource
-    {:description "An RDF Resource; generic type suitable for return when a variety of resources may be returned as the result of a function all"
+     {:description "An RDF Resource; generic type suitable for return when a variety of resources may be returned as the result of a function all"
      :fields {:iri {:type 'String}
               :label {:type 'String}}}
 
-    :GenomicCoordinate
-    {:description "Genomic coordinate of a Gene or Region"
-     :fields {:build {:type 'String
+     :GenomicCoordinate
+     {:description "Genomic coordinate of a Gene or Region"
+      :fields {:build {:type 'String
                       :description "The build name"}
               :assembly {:type 'String
                       :description "The assembly name"}
@@ -56,48 +72,6 @@
               :classification_description {:type 'String}
               :report_date {:type 'String}}}}
 
-   :enums
-   {:Direction {
-                :values [:ASC
-                         :DESC]}
-    :SortField {
-               :values [:GENE_REGION
-                        :LOCATION
-                        :MORBID
-                        :OMIM
-                        :HAPLO_EVIDENCE
-                        :TRIPLO_EVIDENCE
-                        :HI_PCT
-                        :PLI
-                        :REVIEWED_DATE]}
-    :Build {:values [:GRCH37
-                     :GRCH38]}
-    :Chromosome {:values [:CHR1
-                          :CHR2
-                          :CHR3
-                          :CHR4
-                          :CHR5
-                          :CHR6
-                          :CHR7
-                          :CHR8
-                          :CHR9
-                          :CHR10
-                          :CHR11
-                          :CHR12
-                          :CHR13
-                          :CHR14
-                          :CHR15
-                          :CHR16
-                          :CHR17
-                          :CHR18
-                          :CHR19
-                          :CHR20
-                          :CHR21
-                          :CHR22
-                          :CHRX
-                          :CHRY
-                          ]}}
-   
    :objects
    {:Gene
     {:description "A genomic feature (a gene or a region). Along with conditions, one of the basic units of curation."
@@ -411,8 +385,8 @@
       :reviewed_range {:type :date_range}}}
     :paging
     {:fields
-     {:num_rows {:type 'Int}
-      :page_num {:type 'Int}}}
+     {:limit {:type 'Int}
+      :offset {:type 'Int}}}
     :sorting
     {:fields
      {:sort_fields {:type '(list :sort_spec)}}}}   
@@ -421,7 +395,7 @@
    {:gene {:type '(non-null :Gene)
            :args {:iri {:type 'String}}
            :resolve gene/gene-query}
-    :gene_list {:type '(list :gene)
+    :gene_list {:type '(list :Gene)
                 :args {:limit {:type 'Int
                                :default-value 10
                                :description "Number of records to return"}
