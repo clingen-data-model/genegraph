@@ -75,7 +75,8 @@
                         :resolve gene/hgnc-id
                         :description "HGNC ID of gene"}
               :curation_activities {:type '(list :CurationActivity)
-                                    :description "The curation activities that have published reports on the gene"}
+                                    :description "The curation activities that have published reports on the gene"
+                                    :resolve gene/curation-activities}
               :curations {:type '(list :curation)
                           :resolve gene/curations}
               :conditions {:type '(list :condition)

@@ -42,8 +42,17 @@
     
     (query {::q/params params})))
 
-;; (defn curation-activities [context args value]
-;;   (let [query (create-query )]))
+(defn curation-activities [context args value]
+  (reduce (fn [acc tuple] 
+            (if ((create-query (into [] (cons :bgp (first tuple))) {::q/type :ask}) {:gene value})
+              (conj acc (second tuple))
+              acc))
+          []
+          [[has-validity-bgp :GENE_VALIDITY]
+           [has-actionability-bgp :ACTIONABILITY]
+           [has-dosage-bgp :GENE_DOSAGE]]))
+
+;; TODO last curated date
 
 (defn chromosome-band [context args value]
   (first (:so/chromosome-band value)))
