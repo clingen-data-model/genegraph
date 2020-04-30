@@ -20,6 +20,12 @@
             [com.walmartlabs.lacinia.util :as util]))
 
 (def base-schema 
+  {:enums
+   {:CurationActivity
+    {:description "The curation activities within ClinGen. Each curation is associated with a curation activity."
+     :values [:ALL :ACTIONABILITY :GENE_VALIDITY :GENE_DOSAGE]}}
+
+   :interfaces
   {:interfaces
    {:Resource
     {:description "An RDF Resource; generic type suitable for return when a variety of resources may be returned as the result of a function all"
@@ -102,12 +108,18 @@
               :label {:type 'String
                       :resolve resource/label
                       :description "Gene symbol"}
+              :alternative_label {:type 'String
+                                  :resolve resource/alternative-label
+                                  :description "Full name of gene"}
               :chromosome_band {:type 'String
                                 :resolve gene/chromosome-band
                                 :description "Cytogenetic band of gene."}
               :hgnc_id {:type 'String  
                         :resolve gene/hgnc-id
                         :description "HGNC ID of gene"}
+              :curation_activities {:type '(list :CurationActivity)
+                                    :description "The curation activities that have published reports on the gene"
+                                    :resolve gene/curation-activities}
               :curations {:type '(list :Curation)
                           :resolve gene/curations}
               :conditions {:type '(list :Condition)
@@ -409,6 +421,18 @@
    {:gene {:type '(non-null :Gene)
            :args {:iri {:type 'String}}
            :resolve gene/gene-query}
+    :gene_list {:type '(list :gene)
+                :args {:limit {:type 'Int
+                               :default-value 10
+                               :description "Number of records to return"}
+                       :offset {:type 'Int
+                                :default-value 0
+                                :description "Index to begin returning records from"}
+                       :curation_type {:type :CurationActivity
+                                       :description 
+                                       (str "Limit genes returned to those that have a curation, "
+                                            "or a curation of a specific type.")}}
+                :resolve gene/gene-list}
     :condition {:type '(non-null :Condition)
                 :args {:iri {:type 'String}}
                 :resolve condition/condition-query}
