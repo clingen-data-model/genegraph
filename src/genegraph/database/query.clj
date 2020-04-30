@@ -505,11 +505,17 @@
 (defn create-query 
   "Return parsed query object. If query is not a string, assume object that can
 use io/slurp"
-  [query-source]
-  (if  (vector? query-source)
-    (->StoredQuery (OpAsQuery/asQuery (op query-source)))
-    (let [query-str (if (string? query-source) query-source (slurp query-source))]
-      (->StoredQuery (QueryFactory/create (expand-query-str query-str))))))
+  ([query-source] (create-query query-source {}))
+  ([query-source params]
+   (let [query (if  (vector? query-source)
+                  (OpAsQuery/asQuery (op query-source))
+                  (QueryFactory/create (expand-query-str
+                                        (if (string? query-source)
+                                          query-source
+                                          (slurp query-source)))))]
+     (when (= :ask (::type params))
+       (.setQueryAskType query))
+     (->StoredQuery query))))
 
 (defmacro declare-query [& queries]
   (let [root# (-> *ns* str (s/replace #"\." "/") (s/replace #"-" "_") (str "/"))]
