@@ -26,12 +26,13 @@
      :values [:ALL :ACTIONABILITY :GENE_VALIDITY :GENE_DOSAGE]}}
 
    :interfaces
-   {:resource
+  {:interfaces
+   {:Resource
     {:description "An RDF Resource; generic type suitable for return when a variety of resources may be returned as the result of a function all"
      :fields {:iri {:type 'String}
               :label {:type 'String}}}
 
-    :genomic_coordinate
+    :GenomicCoordinate
     {:description "Genomic coordinate of a Gene or Region"
      :fields {:build {:type 'String
                       :description "The build name"}
@@ -46,19 +47,61 @@
               :strand {:type 'String
                        :description "Strand the feature appears on."}}}
     
-    :genomic_feature
+    :GenomicFeature
     {:description "Genomic feature represented by a Gene or Region"
-     :fields {:coordinates {:type '(list genomic_coordinate)}}}
+     :fields {:coordinates {:type '(list :GenomicCoordinate)}}}
 
-    :curation 
+    :Curation 
     {:fields {:wg_label {:type 'String}
               :classification_description {:type 'String}
               :report_date {:type 'String}}}}
 
+   :enums
+   {:Direction {
+                :values [:ASC
+                         :DESC]}
+    :SortField {
+               :values [:GENE_REGION
+                        :LOCATION
+                        :MORBID
+                        :OMIM
+                        :HAPLO_EVIDENCE
+                        :TRIPLO_EVIDENCE
+                        :HI_PCT
+                        :PLI
+                        :REVIEWED_DATE]}
+    :Build {:values [:GRCH37
+                     :GRCH38]}
+    :Chromosome {:values [:CHR1
+                          :CHR2
+                          :CHR3
+                          :CHR4
+                          :CHR5
+                          :CHR6
+                          :CHR7
+                          :CHR8
+                          :CHR9
+                          :CHR10
+                          :CHR11
+                          :CHR12
+                          :CHR13
+                          :CHR14
+                          :CHR15
+                          :CHR16
+                          :CHR17
+                          :CHR18
+                          :CHR19
+                          :CHR20
+                          :CHR21
+                          :CHR22
+                          :CHRX
+                          :CHRY
+                          ]}}
+   
    :objects
-   {:gene
+   {:Gene
     {:description "A genomic feature (a gene or a region). Along with conditions, one of the basic units of curation."
-     :implements [:resource]
+     :implements [:Resource]
      :fields {:iri {:type 'String
                    :resolve resource/iri
                     :description "IRI representing the gene. Uses NCBI gene identifiers"}
@@ -77,21 +120,21 @@
               :curation_activities {:type '(list :CurationActivity)
                                     :description "The curation activities that have published reports on the gene"
                                     :resolve gene/curation-activities}
-              :curations {:type '(list :curation)
+              :curations {:type '(list :Curation)
                           :resolve gene/curations}
-              :conditions {:type '(list :condition)
+              :conditions {:type '(list :Condition)
                            :resolve gene/conditions
                            :description "Genetic conditions associated with gene. This field is most frequently used for accessing actionability curations linked to a gene."}
-              :actionability_curations {:type '(list :actionability_curation)
+              :actionability_curations {:type '(list :ActionabilityCuration)
                                         :resolve gene/actionability-curations
                                         :description "Actionability curations linked to a gene. Prefer using conditions.actionability_curations for most use cases, as this makes visible the gene-disease pairing used in the context of the curation."}
-              :dosage_curations {:type '(list :gene_dosage_curation)
+              :dosage_curations {:type '(list :GeneDosageCuration)
                         :resolve gene/dosage-curations
                         :description "Gene Dosage curations associated with the gene or region."}}}
 
-    :coordinate
+    :Coordinate
     {:description "a genomic coordinate"
-     :implements [:genomic_coordinate]
+     :implements [:GenomicCoordinate]
      :fields {:build {:type 'String
                       :resolve coordinate/build}
               :assembly {:type 'String
@@ -105,9 +148,9 @@
               :end_pos {:type 'Int
                         :resolve coordinate/end-pos}}}
     
-    :gene_feature
+    :GeneFeature
     {:description "A gene feature"
-     :implements [:resource :genomic_feature]
+     :implements [:Resource :GenomicFeature]
      :fields {:iri {:type 'String
                     :resolve resource/iri
                     :description "IRI representing the gene. Uses NCBI gene identifiers"}
@@ -135,13 +178,13 @@
               :function {:type 'String
                          :resolve gene-feature/function
                          :description "A description of the genes function"}
-              :coordinates {:type '(list :coordinate)
+              :coordinates {:type '(list :Coordinate)
                             :resolve gene-feature/coordinates
                             :description "Coordinates of the feature"}}}
     
-    :region_feature
+    :RegionFeature
     {:description "A region feature"
-     :implements [:resource :genomic_feature]
+     :implements [:Resource :GenomicFeature]
      :fields {:iri {:type 'String
                     :resolve resource/iri
                     :description "IRI representing the region"}
@@ -151,30 +194,30 @@
               :chromosomal_band {:type 'String
                                 :resolve region-feature/chromosomal-band
                                 :description "The chromosomal location"}
-              :coordinates {:type '(list :coordinate)
+              :coordinates {:type '(list :Coordinate)
                             :resolve region-feature/coordinates
                             :description "Coordinates of the feature"}}}
 
-    :condition
+    :Condition
     {:description "A disease or condition. May be a genetic condition, linked to a specific disease or mode of inheritance. Along with gene, one of the basic units of curation."
-     :implements [:resource]
+     :implements [:Resource]
      :fields {:iri {:type 'String
                     :resolve condition/iri
                     :description "IRI for the condition. Currently MONDO ids are supported."}
               :label {:type 'String
                       :resolve condition/label
                       :description "Label for the condition."}
-              :gene {:type :gene
+              :gene {:type :Gene
                      :resolve condition/gene
                      :description "If the condiiton is a genetic condition, the gene associated with the condition."}
-              :actionability_curations {:type '(list :actionability_curation)
+              :actionability_curations {:type '(list :ActionabilityCuration)
                                         :resolve condition/actionability-curations
                                         :description "Actionability curations associated with the condition"}
-              :genetic_conditions {:type '(list :condition)
+              :genetic_conditions {:type '(list :Condition)
                                    :resolve condition/genetic-conditions
                                    :description "Genetic conditions that are direct subclasses of this condition."}}}
 
-    :evidence
+    :Evidence
     {:description "An evidence item, typically used in support of an assertion made as a part of a curation"
      :fields {:source {:type 'String
                        :resolve evidence/source
@@ -184,9 +227,9 @@
                             :description "Description of the evidence being cited."}}}
 
 
-    :gene_dosage_curation
+    :GeneDosageCuration
     {:description "A complete gene dosage curation containing one or more dosage propositions"
-     :implements [:resource]
+     :implements [:Resource]
      :fields {:iri {:type 'String
                     :resolve resource/iri}
               :label {:type 'String
@@ -195,12 +238,12 @@
                          :resolve gene-dosage/wg-label}
               :report_date {:type 'String
                             :resolve gene-dosage/report-date}
-              :genomic_feature {:type :genomic_feature
+              :genomic_feature {:type :GenomicFeature
                                 :resolve gene-dosage/genomic-feature}
-              :haplo {:type :dosage_proposition
+              :haplo {:type :DosageProposition
                       :resolve gene-dosage/haplo
                       :description "Haploinsufficiency"}
-              :triplo {:type :dosage_proposition
+              :triplo {:type :DosageProposition
                        :resolve gene-dosage/triplo
                        :description "Triplosensitivity"}
               :haplo_index {:type 'String
@@ -221,9 +264,9 @@
                                       :resolve gene-dosage/location-relationship
                                       :description "Location relationship"}}}
 
-    :dosage_proposition
+    :DosageProposition
     {:description "An individual dosage proposition, either a Haplo Insufficiency proposition or a Triplo Sensitivity proposition"
-     :implements [:resource :curation]
+     :implements [:Resource :Curation]
      :fields {:iri {:type 'String
                     :resolve resource/iri
                     :description "Identifier for the curation"}
@@ -239,7 +282,7 @@
               :report_date {:type 'String
                             :resolve dosage-proposition/report-date
                             :description "Date the report was last issued by the working group."}
-              :evidence {:type '(list :evidence)
+              :evidence {:type '(list :Evidence)
                          :resolve dosage-proposition/evidence
                          :description "Evidence relating to the gene dosage curation."}
               :score {:type 'Int
@@ -252,8 +295,8 @@
                          :resolve dosage-proposition/comments
                          :description "Comments related to this curation"}}}
 
-    :actionability_curation
-    {:implements [:resource :curation]
+    :ActionabilityCuration
+    {:implements [:Resource :Curation]
      :fields 
      {:iri {:type 'String
             :resolve resource/iri}
@@ -262,12 +305,12 @@
       :wg_label {:type 'String :resolve actionability/wg-label}
       :report_id {:type 'String :resolve actionability/report-id}
       :classification_description {:type 'String :resolve actionability/classification-description}
-      :conditions {:type '(list :condition)
+      :conditions {:type '(list :Condition)
                    :resolve actionability/conditions}
       :source {:type 'String :resolve actionability/source}}}
 
-    :gene_validity_curation
-    {:implements [:resource :curation]
+    :GeneValidityCuration
+    {:implements [:Resource :Curation]
      :fields
      {:iri {:type 'String
             :resolve resource/iri}
@@ -277,21 +320,20 @@
       :classification_description {:type 'String 
                                    :resolve gene-validity/classification-description}}}
 
-    :server_status
+    :ServerStatus
     {:fields
      {:migration_version {:type 'String
                           :resolve server-status/migration-version}}}
 
-    :concept
-    {:implements [:resource]
+    :Concept
+    {:implements [:Resource]
      :fields
      {:iri {:type 'String :resolve resource/iri}
       :label {:type 'String :resolve resource/label}
       :definition {:type 'String :resolve rdf-class/definition}}}
 
-
-    :property
-    {:implements [:resource]
+    :Property
+    {:implements [:Resource]
      :fields
      {:iri {:type 'String :resolve property/iri}
       :label {:type 'String :resolve property/label}
@@ -300,25 +342,25 @@
       :max {:type 'Int :resolve property/max-count}
       :display_arity {:type 'String :resolve property/display-arity}}}
 
-    :class
-    {:implements [:resource]
+    :Class
+    {:implements [:Resource]
      :fields
      {:iri {:type 'String :resolve resource/iri}
       :label {:type 'String :resolve resource/label}
       :definition {:type 'String :resolve rdf-class/definition}
-      :properties {:type '(list :property) :resolve rdf-class/properties}
-      :subclasses {:type '(list :class) :resolve rdf-class/subclasses}
-      :superclasses {:type '(list :class) :resolve rdf-class/superclasses}}}
+      :properties {:type '(list :Property) :resolve rdf-class/properties}
+      :subclasses {:type '(list :Class) :resolve rdf-class/subclasses}
+      :superclasses {:type '(list :Class) :resolve rdf-class/superclasses}}}
 
-    :value_set
-    {:implements [:resource]
+    :ValueSet
+    {:implements [:Resource]
      :fields
      {:iri {:type 'String :resolve resource/iri}
       :label {:type 'String :resolve resource/label}
       :definition {:type 'String :resolve rdf-class/definition}
-      :concepts {:type '(list :concept) :resolve value-set/concepts}}}
+      :concepts {:type '(list :Concept) :resolve value-set/concepts}}}
 
-    :totals
+    :Totals
     {:fields
      {:total {:type 'Int :resolve gene-dosage/total-count}
       :genes  {:type 'Int :resolve gene-dosage/gene-count}
@@ -335,14 +377,18 @@
       :end {:type 'String}}} ;; see https://lacinia.readthedocs.io/en/latest/custom-scalars.html
     :genomic_locus
     {:fields
-     {:build {:type 'String}
-      :chr {:type 'String}
-      :start {:type 'Int}
+     {:build {:type :Build}
+      :chr {:type :Chromosome}
+      :start {:type 'Int} 
       :end {:type 'Int}}}
     :chromo_locus
     {:fields
-     {:build {:type 'String}
-      :cyto_locus {:type 'String}}}
+     {:build {:type :Build}
+      :genomic_feature_location {:type 'String}}}
+    :sort_spec
+    {:fields
+     {:sort_field {:type :SortField}
+      :direction {:type :Direction :default-value :ASC}}}
     :filters
     {:fields
      {:genes {:type '(list String)}
@@ -362,11 +408,17 @@
       :clinical_actionability {:type 'Boolean}
       :hi_range {:type :range}
       :pli_range {:type :range}
-      :reviewed_range {:type :date_range}
-      }}}   
+      :reviewed_range {:type :date_range}}}
+    :paging
+    {:fields
+     {:num_rows {:type 'Int}
+      :page_num {:type 'Int}}}
+    :sorting
+    {:fields
+     {:sort_fields {:type '(list :sort_spec)}}}}   
 
    :queries
-   {:gene {:type '(non-null :gene)
+   {:gene {:type '(non-null :Gene)
            :args {:iri {:type 'String}}
            :resolve gene/gene-query}
     :gene_list {:type '(list :gene)
@@ -381,26 +433,27 @@
                                        (str "Limit genes returned to those that have a curation, "
                                             "or a curation of a specific type.")}}
                 :resolve gene/gene-list}
-    :condition {:type '(non-null :condition)
+    :condition {:type '(non-null :Condition)
                 :args {:iri {:type 'String}}
                 :resolve condition/condition-query}
-    :actionability {:type '(non-null :actionability_curation)
+    :actionability {:type '(non-null :ActionabilityCuration)
                     :args {:iri {:type 'String}}
                     :resolve actionability/actionability-query}
-    :value_sets {:type '(list :value_set)
+    :value_sets {:type '(list :ValueSet)
                  :resolve value-set/value-sets-query}
-    :model_classes {:type '(list :class)
+    :model_classes {:type '(list :Class)
                     :resolve rdf-class/model-classes-query}
-    :server_status {:type '(non-null :server_status)
+    :server_status {:type '(non-null :ServerStatus)
                     :resolve server-status/server-version-query}
-    :dosage_list{:type '(list :gene_dosage_curation)
-                 ;; :args {:filters {:type '(list String)}}
-                 :args {:filters {:type :filters}}
+    :dosage_list{:type '(list :GeneDosageCuration)
+                 :args {:filters {:type :filters}
+                        :paging {:type :paging}
+                        :sorting {:type :sorting}}
                  :resolve gene-dosage/dosage-list-query}
-    :dosage_query{:type '(non-null :gene_dosage_curation)
+    :dosage_query{:type '(non-null :GeneDosageCuration)
                   :args {:iri {:type 'String}}
                   :resolve gene-dosage/gene-dosage-query}
-    :totals {:type :totals
+    :totals {:type :Totals
              :resolve gene-dosage/totals-query}}})
 
 (defn schema []
