@@ -52,7 +52,19 @@
            [has-actionability-bgp :ACTIONABILITY]
            [has-dosage-bgp :GENE_DOSAGE]]))
 
-;; TODO last curated date
+(defn last-curated-date [context args value]
+  (let [curation-dates (concat (ld-> value [[:sepio/has-subject :<]
+                                            [:sepio/has-subject :<]
+                                            :sepio/qualified-contribution
+                                            :sepio/activity-date])
+                               (ld-> value [[:sepio/is-about-gene :<]
+                                            [:sepio/is-about-condition :<]
+                                            :sepio/qualified-contribution
+                                            :sepio/activity-date])
+                               (ld-> value [[:iao/is-about :<]
+                                            :sepio/qualified-contribution
+                                            :sepio/activity-date]))]
+    (->> curation-dates sort last)))
 
 (defn chromosome-band [context args value]
   (first (:so/chromosome-band value)))

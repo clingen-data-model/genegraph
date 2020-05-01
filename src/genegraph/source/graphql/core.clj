@@ -85,6 +85,9 @@
               :alternative_label {:type 'String
                                   :resolve resource/alternative-label
                                   :description "Full name of gene"}
+              :last_curated_date {:type 'String
+                                  :resolve gene/last-curated-date
+                                  :description "Most recent date a curation (of any kind) has been performed on this gene."}
               :chromosome_band {:type 'String
                                 :resolve gene/chromosome-band
                                 :description "Cytogenetic band of gene."}
