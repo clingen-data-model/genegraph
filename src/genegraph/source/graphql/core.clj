@@ -35,18 +35,22 @@
               :DOSAGE_SENSITIVITY_UNLIKELY]}
     :Direction
     {
+     :description "Sort direction."
      :values [:ASC :DESC]
      }
-    :SortField
+    :GeneDosageSortField
     {
+     :description "Gene dosage sort fields."
      :values [:GENE_REGION :LOCATION :MORBID :OMIM :HAPLO_EVIDENCE :TRIPLO_EVIDENCE :HI_PCT :PLI :REVIEWED_DATE]
      }
     :Build
     {
+     :description "Genomic build identifier."
      :values [:GRCH37 :GRCH38]
      }
     :Chromosome
-    {:values [:CHR1 :CHR2 :CHR3 :CHR4 :CHR5 :CHR6 :CHR7 :CHR8 :CHR9 :CHR10 :CHR11 :CHR12 :CHR13 :CHR14 :CHR15
+    {:description "Chromosomes."
+     :values [:CHR1 :CHR2 :CHR3 :CHR4 :CHR5 :CHR6 :CHR7 :CHR8 :CHR9 :CHR10 :CHR11 :CHR12 :CHR13 :CHR14 :CHR15
               :CHR16 :CHR17 :CHR18 :CHR19 :CHR20 :CHR21 :CHR22 :CHRX :CHRY]
      }}
    
@@ -91,7 +95,7 @@
                       :resolve resource/label
                       :description "Gene symbol"}
               :alternative_label {:type 'String
-                                  :resolve resource/alternative-label
+                                  :resolve gene/alternative-label
                                   :description "Full name of gene"}
               :last_curated_date {:type 'String
                                   :resolve gene/last-curated-date
@@ -121,17 +125,23 @@
     {:description "a genomic coordinate"
      :implements [:GenomicCoordinate]
      :fields {:build {:type 'String
-                      :resolve coordinate/build}
+                      :resolve coordinate/build
+                      :description "The genomic build designation."}
               :assembly {:type 'String
-                      :resolve coordinate/assembly}
+                         :resolve coordinate/assembly
+                         :description "The NC reference assembly."}
               :chromosome {:type 'String
-                           :resolve coordinate/chromosome}
+                           :resolve coordinate/chromosome
+                           :description "The chromosome."}
               :strand {:type 'String
-                       :resolve coordinate/strand}
+                       :resolve coordinate/strand
+                       :description "The strand."}
               :start_pos {:type 'Int
-                          :resolve coordinate/start-pos}
+                          :resolve coordinate/start-pos
+                          :description "The coordinate starting position."}
               :end_pos {:type 'Int
-                        :resolve coordinate/end-pos}}}
+                        :resolve coordinate/end-pos
+                        :description "The coordinate end position."}}}
     
     :GeneFeature
     {:description "A gene feature"
@@ -216,15 +226,20 @@
     {:description "A complete gene dosage curation containing one or more dosage propositions"
      :implements [:Resource]
      :fields {:iri {:type 'String
-                    :resolve resource/iri}
+                    :resolve resource/iri
+                    :description "IRI for the Dosage curation."}
               :label {:type 'String
-                      :resolve gene-dosage/label}
+                      :resolve gene-dosage/label
+                      :description "Label of the Gene or Region curation."}
               :wg_label {:type 'String
-                         :resolve gene-dosage/wg-label}
+                         :resolve gene-dosage/wg-label
+                         :description "Working Group label."}
               :report_date {:type 'String
-                            :resolve gene-dosage/report-date}
+                            :resolve gene-dosage/report-date
+                            :description "The date of the report."}
               :genomic_feature {:type :GenomicFeature
-                                :resolve gene-dosage/genomic-feature}
+                                :resolve gene-dosage/genomic-feature
+                                :description "The list of genomic features."}
               :haploinsufficiency_assertion {:type :DosageAssertion
                                              :resolve gene-dosage/haplo
                                              :description "Haploinsufficiency"}
@@ -241,7 +256,8 @@
                                   :resolve gene-dosage/morbid-phenotypes
                                   :description "Gene morbidity phenotypes"}
               :omim {:type 'Boolean
-                     :resolve gene-dosage/omim}
+                     :resolve gene-dosage/omim
+                     :description "The OMIM curie for thsi gene or region."}
               :pli_score {:type 'String
                           :resolve gene-dosage/pli-score
                           :description "Loss intolerence (pLI)"}
@@ -372,7 +388,7 @@
       :genomic_feature_location {:type 'String}}}
     :sort_spec
     {:fields
-     {:sort_field {:type :SortField}
+     {:sort_field {:type :GeneDosageSortField}
       :direction {:type :Direction :default-value :ASC}}}
     :filters
     {:fields

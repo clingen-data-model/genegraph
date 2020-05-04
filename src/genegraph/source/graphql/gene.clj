@@ -1,6 +1,7 @@
 (ns genegraph.source.graphql.gene
   (:require [genegraph.database.query :as q :refer [declare-query create-query ld-> ld1->]]
-            [com.walmartlabs.lacinia.schema :refer [tag-with-type]]))
+            [com.walmartlabs.lacinia.schema :refer [tag-with-type]]
+            [clojure.string :as str]))
 
 (declare-query select-gene-list)
 
@@ -72,12 +73,12 @@
 
 (defn hgnc-id [context args value]
   (->> (q/ld-> value [:owl/same-as])
-       (filter #(= (str (q/ld1-> % [:dc/source])) "https://www.genenames.org"))
+       (filter #(= (str (ld1-> % [:dc/source])) "https://www.genenames.org"))
        first
        str))
 
 (defn curations [context args value]
-  (let [actionability (q/ld-> value [[:sepio/is-about-gene :<] [:sepio/is-about-condition :<]])]
+  (let [actionability (ld-> value [[:sepio/is-about-gene :<] [:sepio/is-about-condition :<]])]
     (map #(tag-with-type % :actionability_curation)) actionability))
 
 (defn conditions [context args value]
@@ -85,46 +86,17 @@
 
 ;; TODO check for type (hopefully before structurally necessary)
 (defn actionability-curations [context args value]
-  (q/ld-> value [[:sepio/is-about-gene :<] [:sepio/is-about-condition :<]]))
-
+  (ld-> value [[:sepio/is-about-gene :<] [:sepio/is-about-condition :<]]))
 
 (defn dosage-curation [context args value]
   (let [query (create-query [:project ['dosage_report] (cons :bgp has-dosage-bgp)])]
     (first (query {::q/params {:limit 1} :gene value}))))
 
-(defn hgnc-symbol [context args value]
-  (q/ld-> value []))
-
-(defn gene-type [context args value]
-  (q/ld-> value []))
-
-(defn locus-type [context args value]
-  (q/ld-> value []))
-
 (defn previous-symbols [context args value]
-  (q/ld-> value []))
+  (str/join ", " (ld-> value [:skos/hidden-label])))
 
-(defn alias-symbols [context args value]
-  (q/ld-> value []))
+(defn alternative-label [context args value]
+  (str/join ", " (ld-> value [:skos/alternate-label])))
 
-(defn chromo-loc [context args value]
- (q/ld-> value []))
-
-(defn function [context args value]
-  (q/ld-> value []))
-
-(defn coordinates [context args value]
-  (q/ld-> value []))
-
-(defn build [context args value]
-  (q/ld-> value []))
-
-(defn chromosome [context args value]
-  (q/ld-> value []))
-
-(defn start-pos [context args value]
-  (q/ld-> value []))
-
-(defn end-pos [context args value]
-  (q/ld-> value []))
-
+(defn chromosome-band [context args value]
+ (ld1-> value [:so/chromosome-band]))
