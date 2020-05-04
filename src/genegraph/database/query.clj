@@ -132,6 +132,11 @@
 
   Object
   (toString [_] (.getURI resource))
+  (equals [this other]
+    (and (satisfies? AsJenaResource other)
+         (= resource (as-jena-resource other))))
+  (hashCode [_] (.hashCode resource))
+  
 
   AsReference
   (to-ref [_] (class-uri->keyword resource))

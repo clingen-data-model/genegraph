@@ -21,6 +21,10 @@
                             :format :actionability-v1
                             :root-type :sepio/ActionabilityReport
                             :cluster :dx-prod}
+            :actionability-dev {:name "actionability_dev"
+                                :format :actionability-v1
+                                :root-type :sepio/ActionabilityReport
+                                :cluster :dx-prod}
             :gene-dosage-stage {:name "gene_dosage_sepio_in"
                                 :format :rdf
                                 :reader-opts {:format :json-ld}
