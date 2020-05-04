@@ -25,6 +25,14 @@
     {:description "The curation activities within ClinGen. Each curation is associated with a curation activity."
      :values [:ALL :ACTIONABILITY :GENE_VALIDITY :GENE_DOSAGE]
      }
+    :GeneDosageScore
+    {:description "The score assigned to a Gene Dosage curation."
+     :values [:ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE
+              :MINIMAL_EVIDENCE
+              :MODERATE_EVIDENCE
+              :NO_EVIDENCE
+              :SUFFICIENT_EVIDENCE
+              :DOSAGE_SENSITIVITY_UNLIKELY]}
     :Direction
     {
      :values [:ASC :DESC]
@@ -105,9 +113,9 @@
               :actionability_curations {:type '(list :ActionabilityCuration)
                                         :resolve gene/actionability-curations
                                         :description "Actionability curations linked to a gene. Prefer using conditions.actionability_curations for most use cases, as this makes visible the gene-disease pairing used in the context of the curation."}
-              :dosage_curations {:type '(list :GeneDosageCuration)
-                        :resolve gene/dosage-curations
-                        :description "Gene Dosage curations associated with the gene or region."}}}
+              :dosage_curation {:type :GeneDosageCuration
+                                :resolve gene/dosage-curation
+                                :description "Gene Dosage curation associated with the gene or region."}}}
 
     :Coordinate
     {:description "a genomic coordinate"

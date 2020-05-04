@@ -66,6 +66,7 @@
                                             :sepio/activity-date]))]
     (->> curation-dates sort last)))
 
+
 (defn chromosome-band [context args value]
   (first (:so/chromosome-band value)))
 
@@ -86,11 +87,10 @@
 (defn actionability-curations [context args value]
   (q/ld-> value [[:sepio/is-about-gene :<] [:sepio/is-about-condition :<]]))
 
-;; TODO check for type (hopefully before structurally necessary)
-(defn dosage-curations [context args value]
-  (q/ld-> value [[:geno/is-feature-affected-by :<]
-                 [:sepio/has-subject :<]
-                 [:sepio/has-subject :<]]))
+
+(defn dosage-curation [context args value]
+  (let [query (create-query [:project ['dosage_report] (cons :bgp has-dosage-bgp)])]
+    (first (query {::q/params {:limit 1} :gene value}))))
 
 (defn hgnc-symbol [context args value]
   (q/ld-> value []))
