@@ -225,12 +225,12 @@
                             :resolve gene-dosage/report-date}
               :genomic_feature {:type :GenomicFeature
                                 :resolve gene-dosage/genomic-feature}
-              :haplo {:type :DosageProposition
-                      :resolve gene-dosage/haplo
-                      :description "Haploinsufficiency"}
-              :triplo {:type :DosageProposition
-                       :resolve gene-dosage/triplo
-                       :description "Triplosensitivity"}
+              :haploinsufficiency_assertion {:type :DosageAssertion
+                                             :resolve gene-dosage/haplo
+                                             :description "Haploinsufficiency"}
+              :triplosensitivity_assertion {:type :DosageAssertion
+                                            :resolve gene-dosage/triplo
+                                            :description "Triplosensitivity"}
               :haplo_index {:type 'String
                             :resolve gene-dosage/haplo-index
                             :description "Haploinsufficiency index percent"}
@@ -249,7 +249,7 @@
                                       :resolve gene-dosage/location-relationship
                                       :description "Location relationship"}}}
 
-    :DosageProposition
+    :DosageAssertion
     {:description "An individual dosage proposition, either a Haplo Insufficiency proposition or a Triplo Sensitivity proposition"
      :implements [:Resource :Curation]
      :fields {:iri {:type 'String
