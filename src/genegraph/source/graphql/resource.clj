@@ -4,16 +4,27 @@
 (defn iri [context args value]
   (str value))
 
+(def label-memo 
+  (memoize (fn [resource] (first (concat (:skos/preferred-label resource)
+                                         (:rdfs/label resource))))))
+
 (defn label 
   "Presumption is that the first preferred label is the appropriate one to return."
-  [context args value]
-  (first (concat (:skos/preferred-label value) (:rdfs/label value))))
+  [context args resource]
+  (label-memo resource)
+  ;;(first (concat (:skos/preferred-label resource) (:rdfs/label resource)))
+  )
+
+(def alternative-label-memo
+  (memoize (fn [resource] (first (:skos/alternative-label resource)))))
 
 (defn alternative-label
   "Return the first :skos/alternative-label that exists. Does not map to any other 
   label definition"
-  [context args value]
-  (first (:skos/alternative-label value)))
+  [context args resource]
+  (alternative-label-memo resource)
+  ;;(first (:skos/alternative-label resource))
+  )
 
 (defn description [context args value]
   (first (:dc/description value)))
