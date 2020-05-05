@@ -18,13 +18,12 @@
 (defn score [context args value]
   (when-let [classification (classification-description context args value)]
     (case (str/lower-case classification)
-      "no evidence" 0
-      "minimal evidence" 1
-      "moderate evidence" 2
-      "sufficient evidence" 3
-      "gene associated with autosomal recessive phenotype" 30
-      "dosage sensitivity unlikely" 40
-      -1)))
+      "no evidence" :NO_EVIDENCE
+      "minimal evidence" :MINIMAL_EVIDENCE
+      "moderate evidence" :MODERATE_EVIDENCE
+      "sufficient evidence" :SUFFICIENT_EVIDENCE
+      "gene associated with autosomal recessive phenotype" :ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE
+      "dosage sensitivity unlikely" :DOSAGE_SENSITIVITY_UNLIKELY)))
 
 (defn comments [context args value]
   (q/ld1-> value [:dc/description]))

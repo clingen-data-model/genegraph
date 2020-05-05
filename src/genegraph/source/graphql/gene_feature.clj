@@ -15,10 +15,10 @@
   )
 
 (defn previous-symbols [context args value]
-  )
+  (str/join ", " (q/ld-> value [:skos/hidden-label])))
 
 (defn alias-symbols [context args value]
-  (str/join ", " (q/ld-> value [:skos/hidden-label])))
+  (str/join ", " (q/ld-> value [:skos/alternate-label])))
 
 (defn chromosomal-band [context args value]
   (q/ld1-> value [:so/chromosome-band]))
