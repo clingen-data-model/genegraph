@@ -1,5 +1,5 @@
 (ns genegraph.database.query
-  (:require [genegraph.database.instance :refer [db]]
+  (:require [genegraph.database.instance :refer [db union-model]]
             [genegraph.database.util :refer [tx]]
             [genegraph.database.names :as names :refer
              [local-class-names local-property-names
@@ -309,7 +309,7 @@
                   result-seq (iterator-seq result)
                   ;; TODO - needs to be refactored to not use type
                   model (if (instance? org.apache.jena.query.Dataset db-or-model)
-                          (.getUnionModel db-or-model)
+                          union-model
                           db-or-model)]
               (mapv #(->RDFResource (.getResource % result-var) model) result-seq))))))))
   
@@ -333,14 +333,14 @@
   
   java.lang.String
   (resource 
-    ([r] (->RDFResource (ResourceFactory/createResource r) (.getUnionModel db)))
+    ([r] (->RDFResource (ResourceFactory/createResource r) union-model))
     ([ns-prefix r] (when-let [prefix (prefix-ns-map ns-prefix)]
                      (->RDFResource (ResourceFactory/createResource (str prefix r))
-                                    (.getUnionModel db)))))
+                                    union-model))))
   
   clojure.lang.Keyword
   (resource [r] (when-let [res (local-names r)]
-                  (->RDFResource res (.getUnionModel db)))))
+                  (->RDFResource res union-model))))
 
 (extend-protocol AsClojureType
 
@@ -354,7 +354,7 @@
 
 (defn construct 
   ([query-string] (construct query-string {}))
-  ([query-string params] (construct query-string {} (.getUnionModel db)))
+  ([query-string params] (construct query-string {} union-model))
   ([query-string params model]
    (let [query (QueryFactory/create (expand-query-str query-string))
          qs-map (construct-query-solution-map (dissoc params :-model))]
@@ -366,7 +366,7 @@
   (.getNamedModel db name))
 
 (defn get-all-graphs []
-  (.getUnionModel db))
+  union-model)
 
 (defn to-turtle [model]
   (let [os (ByteArrayOutputStream.)]
@@ -490,7 +490,7 @@
 
 (defn- exec [query-def params]
   (let [qs-map (construct-query-solution-map (dissoc params ::model ::params))
-        model (or (::model params) (.getUnionModel db))
+        model (or (::model params) union-model)
         query (construct-query-with-params query-def params)]
     (tx
      (with-open [qexec (QueryExecutionFactory/create query model qs-map)]

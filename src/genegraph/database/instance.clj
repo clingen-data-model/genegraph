@@ -29,3 +29,6 @@
 (defstate db
   :start (TextDatasetFactory/create (get-expanded-assembly-file))
   :stop (.close db))
+
+(defstate union-model
+  :start (.getUnionModel db))
