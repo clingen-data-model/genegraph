@@ -95,7 +95,7 @@
                       :resolve resource/label
                       :description "Gene symbol"}
               :alternative_label {:type 'String
-                                  :resolve gene/alternative-label
+                                  :resolve resource/alternative-label
                                   :description "Full name of gene"}
               :last_curated_date {:type 'String
                                   :resolve gene/last-curated-date

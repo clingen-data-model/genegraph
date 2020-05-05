@@ -95,8 +95,5 @@
 (defn previous-symbols [context args value]
   (str/join ", " (ld-> value [:skos/hidden-label])))
 
-(defn alternative-label [context args value]
-  (str/join ", " (ld-> value [:skos/alternate-label])))
-
 (defn chromosome-band [context args value]
  (ld1-> value [:so/chromosome-band]))
