@@ -69,7 +69,6 @@
    [iri :cnt/chars (json/encode report)]])
 
 (defn gci-legacy-report-to-triples [report]
-  ;;(clojure.pprint/pprint report)
   (let [root-version (str gci-root (-> report :iri))
         iri (str root-version "-" (report-date report))
         content-id (l/blank-node)

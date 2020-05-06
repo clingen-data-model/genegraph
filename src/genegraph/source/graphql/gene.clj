@@ -4,8 +4,6 @@
             [genegraph.source.graphql.common.curation :as curation]
             [clojure.string :as str]))
 
-(declare-query select-gene-list)
-
 (defn gene-query [context args value]
   (let [gene (q/resource (:iri args))]
     (if (q/is-rdf-type? gene :so/ProteinCodingGene)

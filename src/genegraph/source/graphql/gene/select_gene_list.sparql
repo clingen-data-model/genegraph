@@ -1,4 +1,0 @@
-select ?gene
-where {
-  ?gene a :so/ProteinCodingGene .
-}
