@@ -31,6 +31,7 @@
    "Limited" :sepio/LimitedEvidence
    "Moderate" :sepio/ModerateEvidence
    "No Reported Evidence" :sepio/NoEvidence
+   "No Known Disease Relationship" :sepio/NoEvidence
    "Strong*" :sepio/StrongEvidence
    "Contradictory (disputed)" :sepio/DisputingEvidence
    "Strong" :sepio/StrongEvidence
@@ -68,6 +69,7 @@
    [iri :cnt/chars (json/encode report)]])
 
 (defn gci-legacy-report-to-triples [report]
+  ;;(clojure.pprint/pprint report)
   (let [root-version (str gci-root (-> report :iri))
         iri (str root-version "-" (report-date report))
         content-id (l/blank-node)

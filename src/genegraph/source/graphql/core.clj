@@ -25,6 +25,9 @@
     {:description "The curation activities within ClinGen. Each curation is associated with a curation activity."
      :values [:ALL :ACTIONABILITY :GENE_VALIDITY :GENE_DOSAGE]
      }
+    :ModeOfInheritance
+    {:description "Mode of inheritance for a genetic condition."
+     :values [:AUTOSOMAL_DOMINANT :AUTOSOMAL_RECESSIVE :X_LINKED :SEMIDOMINANT]}
     :GeneDosageScore
     {:description "The score assigned to a Gene Dosage curation."
      :values [:ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE
@@ -111,7 +114,7 @@
                                     :resolve gene/curation-activities}
               :curations {:type '(list :Curation)
                           :resolve gene/curations}
-              :conditions {:type '(list :Condition)
+              :conditions {:type '(list :GeneticCondition)
                            :resolve gene/conditions
                            :description "Genetic conditions associated with gene. This field is most frequently used for accessing actionability curations linked to a gene."}
               :actionability_curations {:type '(list :ActionabilityCuration)
@@ -120,6 +123,15 @@
               :dosage_curation {:type :GeneDosageCuration
                                 :resolve gene/dosage-curation
                                 :description "Gene Dosage curation associated with the gene or region."}}}
+
+    :GeneticCondition
+    {:description "A condition described by some combination of gene, disease, and mode of inheritance (usually at least gene and disease)."
+     :fields {:gene {:type :Gene}
+              :disease {:type :Disease}
+              :mode_of_inheritance {:type :ModeOfInheritance}
+              :actionability_curations {:type '(list :ActionabilityCuration)}
+              :gene_validity_curations {:type '(list :GeneValidityCuration)}
+              :gene_dosage_curations {:type '(list :GeneDosageCuration)}}}
 
     :Coordinate
     {:description "a genomic coordinate"
@@ -193,7 +205,7 @@
                             :resolve region-feature/coordinates
                             :description "Coordinates of the feature"}}}
 
-    :Condition
+    :Disease
     {:description "A disease or condition. May be a genetic condition, linked to a specific disease or mode of inheritance. Along with gene, one of the basic units of curation."
      :implements [:Resource]
      :fields {:iri {:type 'String
@@ -208,7 +220,7 @@
               :actionability_curations {:type '(list :ActionabilityCuration)
                                         :resolve condition/actionability-curations
                                         :description "Actionability curations associated with the condition"}
-              :genetic_conditions {:type '(list :Condition)
+              :genetic_conditions {:type '(list :Disease)
                                    :resolve condition/genetic-conditions
                                    :description "Genetic conditions that are direct subclasses of this condition."}}}
 
@@ -306,7 +318,7 @@
       :wg_label {:type 'String :resolve actionability/wg-label}
       :report_id {:type 'String :resolve actionability/report-id}
       :classification_description {:type 'String :resolve actionability/classification-description}
-      :conditions {:type '(list :Condition)
+      :conditions {:type '(list :Disease)
                    :resolve actionability/conditions}
       :source {:type 'String :resolve actionability/source}}}
 
@@ -434,7 +446,7 @@
                                        (str "Limit genes returned to those that have a curation, "
                                             "or a curation of a specific type.")}}
                 :resolve gene/gene-list}
-    :condition {:type '(non-null :Condition)
+    :condition {:type '(non-null :Disease)
                 :args {:iri {:type 'String}}
                 :resolve condition/condition-query}
     :actionability {:type '(non-null :ActionabilityCuration)

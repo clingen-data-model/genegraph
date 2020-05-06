@@ -10,6 +10,7 @@
  [:sepio/GeneticCondition "http://purl.obolibrary.org/obo/SEPIO_0000219"]
  [:sepio/EvidenceRole "http://purl.obolibrary.org/obo/SEPIO_0000148"]
  [:cg/DomainModel "http://dataexchange.clinicalgenome.org/terms/DomainModel"]
+ [:cg/ActionabilityGeneticCondition "http://dataexchange.clinicalgenome.org/terms/ActionabilityGeneticCondition"]
  [:so/ProteinCodingGene "http://purl.obolibrary.org/obo/SO_0001217"]
  [:so/SequenceFeature "http://purl.obolibrary.org/obo/SO_0000110"]
  [:sepio/GeneDosageReport "http://purl.obolibrary.org/obo/SEPIO_0002015"]

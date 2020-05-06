@@ -1,6 +1,7 @@
 (ns genegraph.source.graphql.gene
   (:require [genegraph.database.query :as q :refer [declare-query create-query ld-> ld1->]]
             [com.walmartlabs.lacinia.schema :refer [tag-with-type]]
+            [genegraph.source.graphql.common.curation :as curation]
             [clojure.string :as str]))
 
 (declare-query select-gene-list)
@@ -14,12 +15,24 @@
 (def has-validity-bgp '[[validity_prop :sepio/has-subject gene]
                         [validity_prop :rdf/type :sepio/GeneValidityProposition]])
 
-(def has-actionability-bgp '[[genetic_condition :sepio/is-about-gene gene]
-                             [ac_prop :sepio/is-about-condition genetic_condition]
+(def has-actionability-bgp '[[actionability_genetic_condition :sepio/is-about-gene gene]
+                             [ac_prop :sepio/is-about-condition actionability_genetic_condition]
                              [ac_prop :rdf/type :sepio/ActionabilityReport]])
 
 (def has-dosage-bgp '[[dosage_report :iao/is-about gene]
                       [dosage_report :rdf/type :sepio/GeneDosageReport]])
+
+
+;; Internal actionability bnodes do not carry type :owl/Class
+(def actionability-disease-gc-bgp
+  '[[genetic_condition :sepio/is-about-gene gene]
+    [ac_prop :sepio/is-about-condition disease]
+    [disease :rdf/type :owl/Class]
+    [ac_prop :rdf/type :sepio/ActionabilityReport]])
+
+;; Probably need to add a little more structure to 
+;; actionability curation import for this.
+(def actionability-disease-bgp has-actionability-bgp)
 
 (defn gene-list [context args value]
   (let [params (-> args (select-keys [:limit :offset]) (assoc :distinct true))
