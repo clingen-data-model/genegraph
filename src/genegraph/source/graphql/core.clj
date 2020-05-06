@@ -37,6 +37,9 @@
               :NO_EVIDENCE
               :SUFFICIENT_EVIDENCE
               :DOSAGE_SENSITIVITY_UNLIKELY]}
+    :GeneDosageAssertionType
+    {:description "The type of gene dosage assertion, either haploinsufficiency or triplosensitivity"
+     :values [:HAPLOINSUFFICIENCY_ASSERTION :TRIPLOSENSITIVITY_ASSERTION]}
     :Direction
     {
      :description "Sort direction."
@@ -113,14 +116,9 @@
               :curation_activities {:type '(list :CurationActivity)
                                     :description "The curation activities that have published reports on the gene"
                                     :resolve gene/curation-activities}
-              :curations {:type '(list :Curation)
-                          :resolve gene/curations}
-              :conditions {:type '(list :GeneticCondition)
-                           :resolve gene/conditions
-                           :description "Genetic conditions associated with gene. This field is most frequently used for accessing actionability curations linked to a gene."}
-              :actionability_curations {:type '(list :ActionabilityCuration)
-                                        :resolve gene/actionability-curations
-                                        :description "Actionability curations linked to a gene. Prefer using conditions.actionability_curations for most use cases, as this makes visible the gene-disease pairing used in the context of the curation."}
+              :genetic_conditions {:type '(list :GeneticCondition)
+                                   :resolve gene/conditions
+                                   :description "Genetic conditions associated with gene. These represent gene-disease pairs for which a curation exists associated with the given gene."}
               :dosage_curation {:type :GeneDosageCuration
                                 :resolve gene/dosage-curation
                                 :description "Gene Dosage curation associated with the gene or region."}}}
@@ -136,13 +134,13 @@
               :mode_of_inheritance {:type :ModeOfInheritance
                                     :resolve genetic-condition/mode-of-inheritance
                                     :description "The mode of inheritance associated with this genetic condition."}
-              :actionability_curation {:type :ActionabilityCuration
-                                       :resolve genetic-condition/actionability-curation
-                                       :description "Actionability curation associated with this genetic condition."}
+              :actionability_curations {:type '(list :ActionabilityCuration)
+                                       :resolve genetic-condition/actionability-curations
+                                       :description "Actionability curations associated with this genetic condition. Unlike gene_validity and dosage, there may be more than one per genetic condition, as the condition may be curated in both pediatric and adult contexts."}
               :gene_validity_curation {:type :GeneValidityCuration
                                        :resolve genetic-condition/gene-validity-curation
                                        :description "Gene Validity curation associated with this genetic condition."}
-              :gene_dosage_curation {:type :DosageAssertion
+              :gene_dosage_assertion {:type :DosageAssertion
                                      :resolve genetic-condition/gene-dosage-curation
                                      :description "Dosage sensitivity curation associated with this genetic condition."}}}
 
@@ -305,6 +303,9 @@
               :classification_description {:type 'String
                                            :resolve dosage-proposition/classification-description
                                            :description "Summary of the classification and the rationale behind it"}
+              :assertion_type {:type :GeneDosageAssertionType
+                               :resolve dosage-proposition/assertion-type
+                               :description "Type of assertion (haploinsufficiency/triplosensitivity"}
               :report_date {:type 'String
                             :resolve dosage-proposition/report-date
                             :description "Date the report was last issued by the working group."}
