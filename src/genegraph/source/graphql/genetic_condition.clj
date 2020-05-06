@@ -10,8 +10,8 @@
 (defn mode-of-inheritance [context args value]
   (:mode-of-inheritance value))
 
-(defn actionability-curation [context args value]
-  (first (curation/actionability-curations-for-genetic-condition value)))
+(defn actionability-curations [context args value]
+  (curation/actionability-curations-for-genetic-condition value))
 
 (defn gene-validity-curation [context args value]
   (first (curation/gene-validity-curations-for-genetic-condition value)))

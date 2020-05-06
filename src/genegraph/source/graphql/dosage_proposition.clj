@@ -25,6 +25,11 @@
       "gene associated with autosomal recessive phenotype" :ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE
       "dosage sensitivity unlikely" :DOSAGE_SENSITIVITY_UNLIKELY)))
 
+(defn assertion-type [context args value]
+  (if (= 1 (q/ld1-> value [:sepio/has-subject :sepio/has-subject :geno/has-member-count]))
+    :HAPLOINSUFFICIENCY_ASSERTION
+    :TRIPLOSENSITIVITY_ASSERTION))
+
 (defn comments [context args value]
   (q/ld1-> value [:dc/description]))
 

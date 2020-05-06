@@ -66,10 +66,6 @@
 (defn conditions [context args value]
   (curation/curated-genetic-conditions-for-gene {:gene value}))
 
-;; TODO check for type (hopefully before structurally necessary)
-(defn actionability-curations [context args value]
-  (ld-> value [[:sepio/is-about-gene :<] [:sepio/is-about-condition :<]]))
-
 (defn dosage-curation [context args value]
   (let [query (create-query [:project ['dosage_report] (cons :bgp curation/gene-dosage-bgp)])]
     (first (query {::q/params {:limit 1} :gene value}))))
