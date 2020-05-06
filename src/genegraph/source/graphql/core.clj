@@ -15,6 +15,7 @@
             [genegraph.source.graphql.value-set :as value-set]
             [genegraph.source.graphql.class :as rdf-class]
             [genegraph.source.graphql.property :as property]
+            [genegraph.source.graphql.genetic-condition :as genetic-condition]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]))
@@ -126,12 +127,24 @@
 
     :GeneticCondition
     {:description "A condition described by some combination of gene, disease, and mode of inheritance (usually at least gene and disease)."
-     :fields {:gene {:type :Gene}
-              :disease {:type :Disease}
-              :mode_of_inheritance {:type :ModeOfInheritance}
-              :actionability_curations {:type '(list :ActionabilityCuration)}
-              :gene_validity_curations {:type '(list :GeneValidityCuration)}
-              :gene_dosage_curations {:type '(list :GeneDosageCuration)}}}
+     :fields {:gene {:type :Gene
+                     :resolve genetic-condition/gene
+                     :description "The gene associated with this genetic condition."}
+              :disease {:type :Disease
+                        :resolve genetic-condition/disease
+                        :description "The disease associated with this genetic condition."}
+              :mode_of_inheritance {:type :ModeOfInheritance
+                                    :resolve genetic-condition/mode-of-inheritance
+                                    :description "The mode of inheritance associated with this genetic condition."}
+              :actionability_curation {:type :ActionabilityCuration
+                                       :resolve genetic-condition/actionability-curation
+                                       :description "Actionability curation associated with this genetic condition."}
+              :gene_validity_curation {:type :GeneValidityCuration
+                                       :resolve genetic-condition/gene-validity-curation
+                                       :description "Gene Validity curation associated with this genetic condition."}
+              :gene_dosage_curation {:type :DosageAssertion
+                                     :resolve genetic-condition/gene-dosage-curation
+                                     :description "Dosage sensitivity curation associated with this genetic condition."}}}
 
     :Coordinate
     {:description "a genomic coordinate"
@@ -298,7 +311,7 @@
               :evidence {:type '(list :Evidence)
                          :resolve dosage-proposition/evidence
                          :description "Evidence relating to the gene dosage curation."}
-              :score {:type 'Int
+              :score {:type :GeneDosageScore
                       :resolve dosage-proposition/score
                       :description "Sufficiency score"}
               :phenotypes {:type 'String

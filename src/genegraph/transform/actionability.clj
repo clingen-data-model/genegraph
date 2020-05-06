@@ -37,10 +37,11 @@
   (str (q/ld1-> parent-condition [:rdfs/label]) ", " (q/ld1-> gene [:skos/preferred-label])))
 
 (defn genetic-condition [curation-iri condition]
-  (when-let [condition-resource (if (re-find #"MONDO" curation-iri)
+  (when-let [condition-resource (if (re-find #"MONDO" (:iri condition))
                                   (q/resource (:iri condition))
-                                  (q/ld1-> (q/resource (:iri condition))
-                                           [[:owl/equivalent-class :<]]))]
+                                  (first (filter #(re-find #"MONDO" (str %))
+                                                 (q/ld-> (q/resource (:iri condition))
+                                                         [[:owl/equivalent-class :-]]))))]
     (let [gc-node (l/blank-node)
           gene (q/ld1-> (q/resource (:gene condition)) [[:owl/same-as :<]])]
       [[curation-iri :sepio/is-about-condition gc-node]
