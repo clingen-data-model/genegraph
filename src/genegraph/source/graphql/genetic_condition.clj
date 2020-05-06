@@ -1,0 +1,20 @@
+(ns genegraph.source.graphql.genetic-condition
+  (:require [genegraph.source.graphql.common.curation :as curation]))
+
+(defn gene [context args value]
+  (:gene value))
+
+(defn disease [context args value]
+  (:disease value))
+
+(defn mode-of-inheritance [context args value]
+  (:mode-of-inheritance value))
+
+(defn actionability-curation [context args value]
+  (first (curation/actionability-curations-for-genetic-condition value)))
+
+(defn gene-validity-curation [context args value]
+  (first (curation/gene-validity-curations-for-genetic-condition value)))
+
+(defn gene-dosage-curation [context args value]
+  (first (curation/dosage-sensitivity-curations-for-genetic-condition value)))

@@ -512,14 +512,15 @@
 use io/slurp"
   ([query-source] (create-query query-source {}))
   ([query-source params]
-   (let [query (if  (vector? query-source)
+   (let [query (if  (coll? query-source)
                   (OpAsQuery/asQuery (op query-source))
                   (QueryFactory/create (expand-query-str
                                         (if (string? query-source)
                                           query-source
                                           (slurp query-source)))))]
-     (when (= :ask (::type params))
-       (.setQueryAskType query))
+     (case (::type params)
+       :ask (.setQueryAskType query)
+       (.setDistinct query true))
      (->StoredQuery query))))
 
 (defmacro declare-query [& queries]

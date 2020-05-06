@@ -1,6 +1,7 @@
 (ns genegraph.source.graphql.gene
   (:require [genegraph.database.query :as q :refer [declare-query create-query ld-> ld1->]]
             [com.walmartlabs.lacinia.schema :refer [tag-with-type]]
+            [genegraph.source.graphql.common.curation :as curation]
             [clojure.string :as str]))
 
 (declare-query select-gene-list)
@@ -11,29 +12,19 @@
        gene
        (first (filter #(q/is-rdf-type? % :so/ProteinCodingGene) (get gene [:owl/same-as :<]))))))
 
-(def has-validity-bgp '[[validity_prop :sepio/has-subject gene]
-                        [validity_prop :rdf/type :sepio/GeneValidityProposition]])
-
-(def has-actionability-bgp '[[genetic_condition :sepio/is-about-gene gene]
-                             [ac_prop :sepio/is-about-condition genetic_condition]
-                             [ac_prop :rdf/type :sepio/ActionabilityReport]])
-
-(def has-dosage-bgp '[[dosage_report :iao/is-about gene]
-                      [dosage_report :rdf/type :sepio/GeneDosageReport]])
-
 (defn gene-list [context args value]
   (let [params (-> args (select-keys [:limit :offset]) (assoc :distinct true))
         base-bgp '[[gene :rdf/type :so/ProteinCodingGene]]
         selected-curation-type-bgp (case (:curation_type args)
-                                     :GENE_VALIDITY has-validity-bgp
-                                     :ACTIONABILITY has-actionability-bgp
-                                     :GENE_DOSAGE has-dosage-bgp
+                                     :GENE_VALIDITY curation/gene-validity-bgp
+                                     :ACTIONABILITY curation/actionability-bgp
+                                     :GENE_DOSAGE curation/gene-dosage-bgp
                                      [])
         bgp (if (= :ALL (:curation_type args))
               [:union 
-               (cons :bgp (concat base-bgp has-validity-bgp))
-               (cons :bgp (concat base-bgp has-actionability-bgp))
-               (cons :bgp (concat base-bgp has-dosage-bgp))]
+               (cons :bgp (concat base-bgp curation/gene-validity-bgp))
+               (cons :bgp (concat base-bgp curation/actionability-bgp))
+               (cons :bgp (concat base-bgp curation/gene-dosage-bgp))]
               (cons :bgp
                     (concat base-bgp
                             selected-curation-type-bgp)))
@@ -44,14 +35,7 @@
     (query {::q/params params})))
 
 (defn curation-activities [context args value]
-  (reduce (fn [acc tuple] 
-            (if ((create-query (into [] (cons :bgp (first tuple))) {::q/type :ask}) {:gene value})
-              (conj acc (second tuple))
-              acc))
-          []
-          [[has-validity-bgp :GENE_VALIDITY]
-           [has-actionability-bgp :ACTIONABILITY]
-           [has-dosage-bgp :GENE_DOSAGE]]))
+  (curation/activities {:gene value}))
 
 (defn last-curated-date [context args value]
   (let [curation-dates (concat (ld-> value [[:sepio/has-subject :<]
@@ -82,14 +66,14 @@
     (map #(tag-with-type % :actionability_curation)) actionability))
 
 (defn conditions [context args value]
-  (get value [:sepio/is-about-gene :<]))
+  (curation/curated-genetic-conditions-for-gene {:gene value}))
 
 ;; TODO check for type (hopefully before structurally necessary)
 (defn actionability-curations [context args value]
   (ld-> value [[:sepio/is-about-gene :<] [:sepio/is-about-condition :<]]))
 
 (defn dosage-curation [context args value]
-  (let [query (create-query [:project ['dosage_report] (cons :bgp has-dosage-bgp)])]
+  (let [query (create-query [:project ['dosage_report] (cons :bgp curation/gene-dosage-bgp)])]
     (first (query {::q/params {:limit 1} :gene value}))))
 
 (defn previous-symbols [context args value]

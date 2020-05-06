@@ -15,6 +15,7 @@
             [genegraph.source.graphql.value-set :as value-set]
             [genegraph.source.graphql.class :as rdf-class]
             [genegraph.source.graphql.property :as property]
+            [genegraph.source.graphql.genetic-condition :as genetic-condition]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]))
@@ -25,6 +26,9 @@
     {:description "The curation activities within ClinGen. Each curation is associated with a curation activity."
      :values [:ALL :ACTIONABILITY :GENE_VALIDITY :GENE_DOSAGE]
      }
+    :ModeOfInheritance
+    {:description "Mode of inheritance for a genetic condition."
+     :values [:AUTOSOMAL_DOMINANT :AUTOSOMAL_RECESSIVE :X_LINKED :SEMIDOMINANT]}
     :GeneDosageScore
     {:description "The score assigned to a Gene Dosage curation."
      :values [:ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE
@@ -111,7 +115,7 @@
                                     :resolve gene/curation-activities}
               :curations {:type '(list :Curation)
                           :resolve gene/curations}
-              :conditions {:type '(list :Condition)
+              :conditions {:type '(list :GeneticCondition)
                            :resolve gene/conditions
                            :description "Genetic conditions associated with gene. This field is most frequently used for accessing actionability curations linked to a gene."}
               :actionability_curations {:type '(list :ActionabilityCuration)
@@ -120,6 +124,27 @@
               :dosage_curation {:type :GeneDosageCuration
                                 :resolve gene/dosage-curation
                                 :description "Gene Dosage curation associated with the gene or region."}}}
+
+    :GeneticCondition
+    {:description "A condition described by some combination of gene, disease, and mode of inheritance (usually at least gene and disease)."
+     :fields {:gene {:type :Gene
+                     :resolve genetic-condition/gene
+                     :description "The gene associated with this genetic condition."}
+              :disease {:type :Disease
+                        :resolve genetic-condition/disease
+                        :description "The disease associated with this genetic condition."}
+              :mode_of_inheritance {:type :ModeOfInheritance
+                                    :resolve genetic-condition/mode-of-inheritance
+                                    :description "The mode of inheritance associated with this genetic condition."}
+              :actionability_curation {:type :ActionabilityCuration
+                                       :resolve genetic-condition/actionability-curation
+                                       :description "Actionability curation associated with this genetic condition."}
+              :gene_validity_curation {:type :GeneValidityCuration
+                                       :resolve genetic-condition/gene-validity-curation
+                                       :description "Gene Validity curation associated with this genetic condition."}
+              :gene_dosage_curation {:type :DosageAssertion
+                                     :resolve genetic-condition/gene-dosage-curation
+                                     :description "Dosage sensitivity curation associated with this genetic condition."}}}
 
     :Coordinate
     {:description "a genomic coordinate"
@@ -193,7 +218,7 @@
                             :resolve region-feature/coordinates
                             :description "Coordinates of the feature"}}}
 
-    :Condition
+    :Disease
     {:description "A disease or condition. May be a genetic condition, linked to a specific disease or mode of inheritance. Along with gene, one of the basic units of curation."
      :implements [:Resource]
      :fields {:iri {:type 'String
@@ -208,7 +233,7 @@
               :actionability_curations {:type '(list :ActionabilityCuration)
                                         :resolve condition/actionability-curations
                                         :description "Actionability curations associated with the condition"}
-              :genetic_conditions {:type '(list :Condition)
+              :genetic_conditions {:type '(list :Disease)
                                    :resolve condition/genetic-conditions
                                    :description "Genetic conditions that are direct subclasses of this condition."}}}
 
@@ -286,7 +311,7 @@
               :evidence {:type '(list :Evidence)
                          :resolve dosage-proposition/evidence
                          :description "Evidence relating to the gene dosage curation."}
-              :score {:type 'Int
+              :score {:type :GeneDosageScore
                       :resolve dosage-proposition/score
                       :description "Sufficiency score"}
               :phenotypes {:type 'String
@@ -306,7 +331,7 @@
       :wg_label {:type 'String :resolve actionability/wg-label}
       :report_id {:type 'String :resolve actionability/report-id}
       :classification_description {:type 'String :resolve actionability/classification-description}
-      :conditions {:type '(list :Condition)
+      :conditions {:type '(list :Disease)
                    :resolve actionability/conditions}
       :source {:type 'String :resolve actionability/source}}}
 
@@ -434,7 +459,7 @@
                                        (str "Limit genes returned to those that have a curation, "
                                             "or a curation of a specific type.")}}
                 :resolve gene/gene-list}
-    :condition {:type '(non-null :Condition)
+    :condition {:type '(non-null :Disease)
                 :args {:iri {:type 'String}}
                 :resolve condition/condition-query}
     :actionability {:type '(non-null :ActionabilityCuration)
