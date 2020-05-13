@@ -6,16 +6,16 @@
   (ld1-> value [:sepio/qualified-contribution :sepio/activity-date]))
 
 (def evidence-levels
-  {(resource :sepio/DefinitiveEvidence) :DEFINITIVE
-   (resource :sepio/LimitedEvidence) :LIMITED
-   (resource :sepio/ModerateEvidence) :MODERATE
-   (resource :sepio/NoEvidence) :NO_KNOWN_DISEASE_RELATIONSHIP
-   (resource :sepio/RefutingEvidence) :REFUTED
-   (resource :sepio/DisputingEvidence) :DISPUTED
-   (resource :sepio/StrongEvidence) :STRONG})
+  {:sepio/DefinitiveEvidence :DEFINITIVE
+   :sepio/LimitedEvidence :LIMITED
+   :sepio/ModerateEvidence :MODERATE
+   :sepio/NoEvidence :NO_KNOWN_DISEASE_RELATIONSHIP
+   :sepio/RefutingEvidence :REFUTED
+   :sepio/DisputingEvidence :DISPUTED
+   :sepio/StrongEvidence :STRONG})
 
 (defn classification [context args value]
-  (-> value :sepio/has-object first evidence-levels))
+  (-> value :sepio/has-object first q/to-ref evidence-levels))
 
 (defn gene [context args value]
   (ld1-> value [:sepio/has-subject :sepio/has-subject]))
@@ -24,6 +24,8 @@
   (ld1-> value [:sepio/has-subject :sepio/has-object]))
 
 (defn mode-of-inheritance [context args value]
-  (enum/mode-of-inheritance  (ld1-> value [:sepio/has-subject :sepio/has-qualifier])))
+  (-> (ld1-> value [:sepio/has-subject :sepio/has-qualifier])  
+      q/to-ref
+      enum/mode-of-inheritance))
 
 
