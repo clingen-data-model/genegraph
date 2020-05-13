@@ -78,8 +78,8 @@
 (defn service []
   (let [gql-schema (gql/schema)
         interceptors (-> (lacinia/default-interceptors gql-schema {})
-                         ;; (lacinia/inject open-tx-interceptor :before ::lacinia/query-executor)
-                         ;; (lacinia/inject close-tx-interceptor :after ::lacinia/query-executor)
+                         (lacinia/inject open-tx-interceptor :before ::lacinia/query-executor)
+                         (lacinia/inject close-tx-interceptor :after ::lacinia/query-executor)
 )]
     (merge-with into  
                 (lacinia/service-map gql-schema
