@@ -28,7 +28,7 @@
      }
     :ModeOfInheritance
     {:description "Mode of inheritance for a genetic condition."
-     :values [:AUTOSOMAL_DOMINANT :AUTOSOMAL_RECESSIVE :X_LINKED :SEMIDOMINANT]}
+     :values [:AUTOSOMAL_DOMINANT :AUTOSOMAL_RECESSIVE :X_LINKED :SEMIDOMINANT :MITOCHONDRIAL :UNDETERMINED]}
     :GeneDosageScore
     {:description "The score assigned to a Gene Dosage curation."
      :values [:ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE
@@ -37,6 +37,15 @@
               :NO_EVIDENCE
               :SUFFICIENT_EVIDENCE
               :DOSAGE_SENSITIVITY_UNLIKELY]}
+    :GeneValidityClassification
+    {:description "The final classification given to a Gene Validity assertion."
+     :values [:DEFINITIVE
+              :LIMITED
+              :MODERATE
+              :NO_KNOWN_DISEASE_RELATIONSHIP
+              :STRONG
+              :DISPUTED
+              :REFUTED]}
     :GeneDosageAssertionType
     {:description "The type of gene dosage assertion, either haploinsufficiency or triplosensitivity"
      :values [:HAPLOINSUFFICIENCY_ASSERTION :TRIPLOSENSITIVITY_ASSERTION]}
@@ -87,9 +96,7 @@
      :fields {:coordinates {:type '(list :GenomicCoordinate)}}}
 
     :Curation 
-    {:fields {:wg_label {:type 'String}
-              :classification_description {:type 'String}
-              :report_date {:type 'String}}}}
+    {:fields {:report_date {:type 'String}}}}
 
    :objects
    {:Gene
@@ -340,12 +347,41 @@
     {:implements [:Resource :Curation]
      :fields
      {:iri {:type 'String
-            :resolve resource/iri}
-      :label {:type 'String :resolve resource/label}
-      :report_date {:type 'String :resolve gene-validity/report-date}
-      :wg_label {:type 'String :resolve gene-validity/wg-label}
-      :classification_description {:type 'String 
-                                   :resolve gene-validity/classification-description}}}
+            :resolve resource/iri
+            :description "IRI identifying this gene validity curation."}
+      :curie {:type 'String
+              :description "CURIE of the IRI identifying this gene validity curation."}
+      :label {:type 'String
+              :resolve resource/label
+              :description "Label identifying this gene validity curation."}
+      :report_date {:type 'String
+                    :resolve gene-validity/report-date
+                    :description "Date gene validity report was issued."}
+      :classification {:type :GeneValidityClassification
+                       :description "Final classification of this gene validity curation."
+                       :resolve gene-validity/classification}
+      :gene {:type :Gene
+             :description "Gene associated with this curation"
+             :resolve gene-validity/gene}
+      :disease {:type :Disease
+                :description "Disease associated with this curation"
+                :resolve gene-validity/disease}
+      :mode_of_inheritance {:type :ModeOfInheritance
+                            :description "Mode of inheritance associated with this curation"
+                            :resolve gene-validity/mode-of-inheritance}}}
+
+    :Agent
+    {:implements [:Resource]
+     :description "A person or group. In this context, generally a ClinGen Domain Working Group responsible for producing one or more curations."
+     :fields
+     {:iri {:type 'String
+            :resolve resource/iri
+            :description "IRI identifying this gene validity curation."}
+      :curie {:type 'String
+              :description "CURIE of the IRI identifying this gene validity curation."}
+      :label {:type 'String
+              :resolve resource/label
+              :description "Label identifying this gene validity curation."}}}
 
     :ServerStatus
     {:fields

@@ -61,7 +61,7 @@
 (def gene-validity-curations-for-genetic-condition
   (create-query [:project ['validity_assertion]
                  (cons :bgp (conj gene-validity-bgp
-                                  ['validity_assertion :sepio/has-object 'validity_proposition]))]))
+                                  ['validity_assertion :sepio/has-subject 'validity_proposition]))]))
 
 (def dosage-sensitivity-curations-for-genetic-condition
   (create-query [:project ['dosage_assertion]

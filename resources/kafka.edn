@@ -36,6 +36,12 @@
                              :name "gene_validity"
                              :root-type :sepio/GeneValidityReport
                              :cluster :dx-prod}
+            :gene-validity-raw {:format :gene-validity-v1
+                                :name "gene_validity_raw"
+                                :cluster :dx-prod}
+            :gene-validity-raw-dev {:format :gene-validity-v1
+                                    :name "gene_validity_raw_dev"
+                                    :cluster :dx-prod}
             :gci-legacy  {:format :gci-legacy
                              :name "gene_validity"
                              :root-type :sepio/GeneValidityReport
