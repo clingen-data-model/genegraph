@@ -18,7 +18,8 @@
   [& body]
   `(if *in-tx*
      (do ~@body)
-     (binding [*in-tx* true]
+     (binding [*in-tx* true
+               *current-union-model* (.getUnionModel db)]
        (.begin db ReadWrite/READ)
        (try
          (let [result# (do ~@body)]
@@ -31,7 +32,8 @@
   [& body]
   `(if *in-tx*
      (do ~@body)
-     (binding [*in-tx* true]
+     (binding [*in-tx* true
+               *current-union-model* (.getUnionModel db)]
        (.begin db ReadWrite/WRITE)
        (try
          (let [result# (do ~@body)]
@@ -41,9 +43,16 @@
 
 (defn begin-read-tx
   "Open a read transaction on the persistent database and leave it open within the context of the current thread. When possible, the macro form is preferred, however this fn is available when one does not have access to the block of code to be called in the context of a transaction (i.e. in a Pedestal interceptor"
+  []
   (.begin db ReadWrite/READ)
-  
-  ())
+  (set! *in-tx* true)
+  (set! *current-union-model* (.getUnionModel db)))
+
+(defn close-read-tx
+  "Close a transaction opened with begin-read-tx"
+  []
+  (.end db)
+  (set! *in-tx* false))
 
 (defmacro with-test-database 
   "Uses with-redefs to replace reference to production database with temporary,
