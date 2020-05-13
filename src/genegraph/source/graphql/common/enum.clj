@@ -2,9 +2,9 @@
   (:require [genegraph.database.query :refer [resource]]))
 
 (def mode-of-inheritance
-  {(resource :hpo/AutosomalDominantInheritance) :AUTOSOMAL_DOMINANT
-   (resource :hpo/AutosomalRecessiveInheritance) :AUTOSOMAL_RECESSIVE
-   (resource :hpo/XLinkedInheritance) :X_LINKED
-   (resource :hpo/SemidominantModeOfInheritance) :SEMIDOMINANT
-   (resource :hpo/MitochondrialInheritance) :MITOCHONDRIAL
-   (resource :hpo/ModeOfInheritance) :UNDETERMINED})
+  {:hpo/AutosomalDominantInheritance :AUTOSOMAL_DOMINANT
+   :hpo/AutosomalRecessiveInheritance :AUTOSOMAL_RECESSIVE
+   :hpo/XLinkedInheritance :X_LINKED
+   :hpo/SemidominantModeOfInheritance :SEMIDOMINANT
+   :hpo/MitochondrialInheritance :MITOCHONDRIAL
+   :hpo/ModeOfInheritance :UNDETERMINED})
