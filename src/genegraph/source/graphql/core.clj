@@ -28,7 +28,7 @@
      }
     :ModeOfInheritance
     {:description "Mode of inheritance for a genetic condition."
-     :values [:AUTOSOMAL_DOMINANT :AUTOSOMAL_RECESSIVE :X_LINKED :SEMIDOMINANT]}
+     :values [:AUTOSOMAL_DOMINANT :AUTOSOMAL_RECESSIVE :X_LINKED :SEMIDOMINANT :MITOCHONDRIAL :UNDETERMINED]}
     :GeneDosageScore
     {:description "The score assigned to a Gene Dosage curation."
      :values [:ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE
@@ -358,13 +358,17 @@
                     :resolve gene-validity/report-date
                     :description "Date gene validity report was issued."}
       :classification {:type :GeneValidityClassification
-                       :description "Final classification of this gene validity curation."}
+                       :description "Final classification of this gene validity curation."
+                       :resolve gene-validity/classification}
       :gene {:type :Gene
-             :description "Gene associated with this curation"}
+             :description "Gene associated with this curation"
+             :resolve gene-validity/gene}
       :disease {:type :Disease
-                :description "Disease associated with this curation"}
+                :description "Disease associated with this curation"
+                :resolve gene-validity/disease}
       :mode_of_inheritance {:type :ModeOfInheritance
-                            :description "Mode of inheritance associated with this curation"}}}
+                            :description "Mode of inheritance associated with this curation"
+                            :resolve gene-validity/mode-of-inheritance}}}
 
     :Agent
     {:implements [:Resource]
