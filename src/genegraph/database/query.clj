@@ -1,6 +1,6 @@
 (ns genegraph.database.query
   (:require [genegraph.database.instance :refer [db]]
-            [genegraph.database.util :refer [tx]]
+            [genegraph.database.util :as util :refer [tx]]
             [genegraph.database.names :as names :refer
              [local-class-names local-property-names
               class-uri->keyword local-names ns-prefix-map
@@ -62,6 +62,9 @@
   (as-jena-resource [this]))
 
 (declare datafy-resource)
+
+(defn get-all-graphs []
+  (or @util/current-union-model (.getUnionModel db)))
 
 (defn curie
   "Return a curie string for resource. Return the IRI of the resource if no prefix has been defined"
@@ -333,14 +336,14 @@
   
   java.lang.String
   (resource 
-    ([r] (->RDFResource (ResourceFactory/createResource r) (.getUnionModel db)))
+    ([r] (->RDFResource (ResourceFactory/createResource r) (get-all-graphs)))
     ([ns-prefix r] (when-let [prefix (prefix-ns-map ns-prefix)]
                      (->RDFResource (ResourceFactory/createResource (str prefix r))
-                                    (.getUnionModel db)))))
+                                    (get-all-graphs)))))
   
   clojure.lang.Keyword
   (resource [r] (when-let [res (local-names r)]
-                  (->RDFResource res (.getUnionModel db)))))
+                  (->RDFResource res (get-all-graphs)))))
 
 (extend-protocol AsClojureType
 
@@ -354,7 +357,7 @@
 
 (defn construct 
   ([query-string] (construct query-string {}))
-  ([query-string params] (construct query-string {} (.getUnionModel db)))
+  ([query-string params] (construct query-string {} (get-all-graphs)))
   ([query-string params model]
    (let [query (QueryFactory/create (expand-query-str query-string))
          qs-map (construct-query-solution-map (dissoc params :-model))]
@@ -365,8 +368,7 @@
 (defn get-named-graph [name]
   (.getNamedModel db name))
 
-(defn get-all-graphs []
-  (.getUnionModel db))
+
 
 (defn to-turtle [model]
   (let [os (ByteArrayOutputStream.)]
@@ -490,7 +492,7 @@
 
 (defn- exec [query-def params]
   (let [qs-map (construct-query-solution-map (dissoc params ::model ::params))
-        model (or (::model params) (.getUnionModel db))
+        model (or (::model params) (get-all-graphs))
         query (construct-query-with-params query-def params)]
     (tx
      (with-open [qexec (QueryExecutionFactory/create query model qs-map)]
