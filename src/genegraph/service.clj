@@ -12,7 +12,8 @@
             [genegraph.source.graphql.gene :as gql-gene]
             [mount.core :refer [defstate]]
             [clojure.java.io :as io]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            [genegraph.database.util :refer [begin-read-tx close-read-tx]]))
 
 (defn about-page
   [request]
@@ -65,14 +66,27 @@
 ;      ["/about" {:get about-page}]]]])
 
 
+(def open-tx-interceptor
+  {:name ::open-tx
+   :enter (fn [context] (begin-read-tx) context)})
 
+(def close-tx-interceptor
+  {:name ::close-tx
+   :enter (fn [context] (close-read-tx) context)})
 
 ;;(def service (lacinia/service-map (graphql-schema) {:graphiql true}))
 (defn service []
-  (merge-with into  
-              (lacinia/service-map (gql/schema) {:graphiql true})
-              model-pages
-              {::http/host "0.0.0.0"}))
+  (let [gql-schema (gql/schema)
+        interceptors (-> (lacinia/default-interceptors gql-schema {})
+                         (lacinia/inject open-tx-interceptor :before ::lacinia/query-executor)
+                         (lacinia/inject close-tx-interceptor :after ::lacinia/query-executor)
+)]
+    (merge-with into  
+                (lacinia/service-map gql-schema
+                                     {:graphiql true
+                                      :interceptors interceptors})
+                model-pages
+                {::http/host "0.0.0.0"})))
 
 ;; Consumed by genegraph.server/create-server
 ;; See http/default-interceptors for additional options you can configure
