@@ -333,7 +333,11 @@
   
   java.lang.String
   (resource 
-    ([r] (->RDFResource (ResourceFactory/createResource r) (.getUnionModel db)))
+    ([r] (let [[_ curie-prefix rest] (re-find #"^([a-zA-Z]+)[:_](.*)$" r)
+               iri (if-let [iri-prefix (-> curie-prefix s/lower-case prefix-ns-map)]
+                     (str iri-prefix rest)
+                     r)]
+           (->RDFResource (ResourceFactory/createResource iri) (.getUnionModel db))))
     ([ns-prefix r] (when-let [prefix (prefix-ns-map ns-prefix)]
                      (->RDFResource (ResourceFactory/createResource (str prefix r))
                                     (.getUnionModel db)))))
