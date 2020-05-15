@@ -1,19 +1,7 @@
 (ns genegraph.source.graphql.condition
-  (:require [genegraph.database.query :as q]))
-
-;; TODO, this needs to be defined in terms of a consistent data model in future,
-;; but for the time being it is too complicated to allow blank nodes to be represented
-;; for conditions, using parent IRI in case of blank node
-;; TODO, but also in a different area of the code, should define test for blank node in query.clj
-(defn iri [context args value]
-  (if (str value)
-    (str value)
-    (str (q/ld1-> value [:rdfs/sub-class-of]))))
-
-(defn label [context args value]
-  (if (str value)
-    (q/ld1-> value [:rdfs/label])
-    (q/ld1-> value [:rdfs/sub-class-of :rdfs/label])))
+  (:require [genegraph.database.query :as q :refer [declare-query create-query ld-> ld1->]]
+            [genegraph.source.graphql.common.curation :as curation]
+            [clojure.string :as str]))
 
 (defn gene [context args value]
   (q/ld1-> value [:sepio/is-about-gene]))
@@ -32,3 +20,57 @@
               (q/ld-> value [[:rdfs/sub-class-of :<]])))
     (->> (q/ld-> value [[:rdfs/sub-class-of :<]])
          (filter #(q/is-rdf-type? % :sepio/GeneticCondition)))))
+
+(defn description [context args value]
+  (q/ld1-> value [:iao/definition]))
+
+(defn previous-names [context args value]
+  )
+
+(defn aliases [context args value]
+  )
+
+(defn equivalent-conditions [context args value]
+  )
+
+(defn last-curated-date [context args value]
+  (let [curation-dates (concat (ld-> value [[:sepio/has-object :<] ;;GENE_VALIDITY
+                                            [:sepio/has-subject :<]
+                                            :sepio/qualified-contribution
+                                            :sepio/activity-date])
+                               (ld-> value [[:rdfs/sub-class-of :<] ;; ACTIONABILITY
+                                            [:sepio/is-about-condition :<]
+                                            :sepio/qualified-contribution
+                                            :sepio/activity-date])
+                               (ld-> value [:owl/equivalent-class ;; DOSAGE
+                                            [:sepio/has-object :<]
+                                            [:sepio/has-subject :<]
+                                            :sepio/qualified-contribution
+                                            :sepio/activity-date]))]
+    (->> curation-dates sort last)))
+
+(defn curation-activities [context args value]
+  (curation/activities {:gene value}))
+
+(defn disease-list [context args value]
+  (let [params (-> args (select-keys [:limit :offset]) (assoc :distinct true))
+        selected-curation-type-bgp (case (:curation_type args)
+                                     :GENE_VALIDITY curation/gene-validity-bgp
+                                     :ACTIONABILITY curation/actionability-bgp
+                                     :GENE_DOSAGE curation/gene-dosage-bgp
+                                     nil)
+        bgp (if (= :ALL (:curation_type args))
+              [:union 
+               (cons :bgp curation/gene-validity-bgp)
+               (cons :bgp curation/actionability-bgp)
+               (cons :bgp curation/gene-dosage-bgp)]
+              (when (some? selected-curation-type-bgp)
+                (cons :bgp selected-curation-type-bgp)))
+        query (if (some? bgp)
+                (create-query [:project 
+                             ['disease]
+                               bgp])
+                (create-query (str "select ?s WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+                                   "<http://purl.obolibrary.org/obo/MONDO_0000001> ."
+                                   "FILTER (!isBlank(?s)) }")))]
+    (query {::q/params params})))
