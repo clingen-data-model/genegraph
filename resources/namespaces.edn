@@ -17,14 +17,14 @@
  "hp" "http://purl.obolibrary.org/obo/HP_",
  "iao" "http://purl.obolibrary.org/obo/IAO_",
  "sepio" "http://purl.obolibrary.org/obo/SEPIO_",
- "cg-t" "http://dataexchange.clinicalgenome.org/terms/"
+ "cgterms" "http://dataexchange.clinicalgenome.org/terms/"
  "cg" "https://search.clinicalgenome.org/r/cg_"
  "eco" "http://purl.obolibrary.org/obo/eco/",
  "rdfs" "http://www.w3.org/2000/01/rdf-schema#",
- "oboInOwl" "http://www.geneontology.org/formats/oboInOwl#",
+ "oboinowl" "http://www.geneontology.org/formats/oboInOwl#",
  "hsapdv" "http://purl.obolibrary.org/obo/hsapdv#",
  "mondo" "http://purl.obolibrary.org/obo/MONDO_",
- "ace-lexicon" "http://attempto.ifi.uzh.ch/ace_lexicon#",
+ "acelexicon" "http://attempto.ifi.uzh.ch/ace_lexicon#",
  "skos" "http://www.w3.org/2004/02/skos/core#",
  "xsd" "http://www.w3.org/2001/XMLSchema#",
  "ncbitaxon" "http://purl.obolibrary.org/obo/ncbitaxon#"
@@ -34,14 +34,14 @@
  "ero" "http://purl.obolibrary.org/obo/ERO_"
  "faldo" "http://biohackathon.org/resource/faldo#"
  "stato" "http://purl.obolibrary.org/obo/STATO_"
- "mondo-p" "http://purl.obolibrary.org/obo/mondo#"
+ "mondop" "http://purl.obolibrary.org/obo/mondo#"
  "oban" "http://purl.org/oban/"
  "bfo" "http://purl.obolibrary.org/obo/BFO_"
- "hp-ld" "http://purl.obolibrary.org/obo/hp/hp-logical-definitions-subq#"
- "hp-p" "http://purl.obolibrary.org/obo/hp.owl#"
+ "hpld" "http://purl.obolibrary.org/obo/hp/hp-logical-definitions-subq#"
+ "hpp" "http://purl.obolibrary.org/obo/hp.owl#"
  "obi" "http://purl.obolibrary.org/obo/OBI_"
  "bibo" "http://purl.org/ontology/bibo/"
- "ncbi-gene" "https://www.ncbi.nlm.nih.gov/gene/"
+ "ncbigene" "https://www.ncbi.nlm.nih.gov/gene/"
  "sparql" "http://www.w3.org/ns/sparql-service-description#"
  "shacl" "http://www.w3.org/ns/shacl#"
  "omim" "http://purl.obolibrary.org/obo/OMIM_"
