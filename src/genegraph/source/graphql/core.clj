@@ -459,7 +459,7 @@
       :genomic_feature_location {:type 'String}}}
     :Sort
     {:fields
-     {:field {:type :SortField}
+     {:field {:type :SortField :default-value :GENE_LABEL}
       :direction {:type :Direction :default-value :ASC}}}
     :sort_spec
     {:fields
@@ -508,10 +508,9 @@
                                        :description 
                                        (str "Limit genes returned to those that have a curation, "
                                             "or a curation of a specific type.")}
-                       :sort {:type :SortField
+                       :sort {:type :Sort
                               :description (str "Order in which to sort genes. Supported fields: "
-                                                "GENE_LABEL")
-                              :default-value {:field :GENE_LABEL :direction :ASC}}}
+                                                "GENE_LABEL")}}
                 :resolve gene/gene-list}
     :condition {:type '(non-null :Disease)
                 :args {:iri {:type 'String}}
