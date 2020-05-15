@@ -534,3 +534,11 @@ use io/slurp"
     `(do ~@(map #(let [filename# (str root# (s/replace % #"-" "_" ) ".sparql")]
                    `(def ~% (-> ~filename# io/resource slurp create-query)))
                 queries))))
+
+(defn to-algebra [query]
+  (-> query
+      create-query
+      str
+      QueryFactory/create
+      Algebra/compile
+      println))
