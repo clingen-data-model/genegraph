@@ -4,6 +4,9 @@
 (defn iri [context args value]
   (str value))
 
+(defn curie [context args value]
+  (q/curie value))
+
 (def label-memo 
   (memoize (fn [resource] (first (concat (:skos/preferred-label resource)
                                          (:rdfs/label resource))))))

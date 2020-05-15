@@ -105,6 +105,9 @@
      :fields {:iri {:type 'String
                    :resolve resource/iri
                     :description "IRI representing the gene. Uses NCBI gene identifiers"}
+              :curie {:type 'String
+                      :resolve resource/curie
+                      :description "CURIE of the IRI representing this resource."}
               :label {:type 'String
                       :resolve resource/label
                       :description "Gene symbol"}
@@ -229,6 +232,9 @@
      :fields {:iri {:type 'String
                     :resolve condition/iri
                     :description "IRI for the condition. Currently MONDO ids are supported."}
+              :curie {:type 'String
+                      :resolve resource/iri
+                      :description "CURIE of the IRI representing this resource."}
               :label {:type 'String
                       :resolve condition/label
                       :description "Label for the condition."}
