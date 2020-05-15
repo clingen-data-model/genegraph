@@ -11,8 +11,9 @@
        (first (filter #(q/is-rdf-type? % :so/ProteinCodingGene) (get gene [:owl/same-as :<]))))))
 
 (defn gene-list [context args value]
-  (let [params (-> args (select-keys [:limit :offset]) (assoc :distinct true))
-        base-bgp '[[gene :rdf/type :so/ProteinCodingGene]]
+  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
+        base-bgp '[[gene :rdf/type :so/ProteinCodingGene]
+                   [gene :skos/preferred-label gene_label]]
         selected-curation-type-bgp (case (:curation_type args)
                                      :GENE_VALIDITY curation/gene-validity-bgp
                                      :ACTIONABILITY curation/actionability-bgp
@@ -29,7 +30,6 @@
         query (create-query [:project 
                              ['gene]
                              bgp])]
-    
     (query {::q/params params})))
 
 (defn curation-activities [context args value]
