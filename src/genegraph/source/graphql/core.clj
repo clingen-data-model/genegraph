@@ -54,6 +54,9 @@
      :description "Sort direction."
      :values [:ASC :DESC]
      }
+    :SortField
+    {:description "Sort fields for gene, disease lists and search results."
+     :values [:GENE_LABEL]}
     :GeneDosageSortField
     {
      :description "Gene dosage sort fields."
@@ -454,6 +457,10 @@
     {:fields
      {:build {:type :Build}
       :genomic_feature_location {:type 'String}}}
+    :Sort
+    {:fields
+     {:field {:type :SortField}
+      :direction {:type :Direction :default-value :ASC}}}
     :sort_spec
     {:fields
      {:sort_field {:type :GeneDosageSortField}
@@ -500,7 +507,11 @@
                        :curation_type {:type :CurationActivity
                                        :description 
                                        (str "Limit genes returned to those that have a curation, "
-                                            "or a curation of a specific type.")}}
+                                            "or a curation of a specific type.")}
+                       :sort {:type :SortField
+                              :description (str "Order in which to sort genes. Supported fields: "
+                                                "GENE_LABEL")
+                              :default-value {:field :GENE_LABEL :direction :ASC}}}
                 :resolve gene/gene-list}
     :condition {:type '(non-null :Disease)
                 :args {:iri {:type 'String}}

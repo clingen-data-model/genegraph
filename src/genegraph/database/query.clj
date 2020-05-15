@@ -84,7 +84,9 @@
 (declare to-clj)
 
 (def query-sort-order 
-  {:asc Query/ORDER_ASCENDING
+  {:ASC Query/ORDER_ASCENDING
+   :asc Query/ORDER_ASCENDING
+   :DESC Query/ORDER_DESCENDING
    :desc Query/ORDER_DESCENDING})
 
 (defn construct-query-with-params [query query-params]
@@ -96,10 +98,10 @@
         (.setLimit modified-query (:limit params)))
       (when (:offset params)
         (.setOffset modified-query (:offset params)))
-      (when (:order-by params)
-        (let [[field direction] (:order-by params)]
-          (.addResultVar modified-query field)
-          (.addOrderBy modified-query field (query-sort-order direction))))
+      (when (:sort params)
+        (let [{:keys [field direction]} (:sort params)]
+          (.addResultVar modified-query (s/lower-case (name field)))
+          (.addOrderBy modified-query (s/lower-case (name field)) (query-sort-order direction))))
       modified-query)
     query))
 
