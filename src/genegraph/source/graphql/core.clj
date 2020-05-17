@@ -233,14 +233,29 @@
     {:description "A disease or condition. May be a genetic condition, linked to a specific disease or mode of inheritance. Along with gene, one of the basic units of curation."
      :implements [:Resource]
      :fields {:iri {:type 'String
-                    :resolve condition/iri
+                    :resolve resource/iri
                     :description "IRI for the condition. Currently MONDO ids are supported."}
               :curie {:type 'String
-                      :resolve resource/iri
+                      :resolve resource/curie
                       :description "CURIE of the IRI representing this resource."}
               :label {:type 'String
-                      :resolve condition/label
+                      :resolve resource/label
                       :description "Label for the condition."}
+              :description {:type 'String
+                            :resolve condition/description
+                            :description "Disease description name."}
+              :previous_names {:type '(list String)
+                            :resolve condition/previous-names
+                               :description "Previous condition names."}
+              :aliases {:type '(list String)
+                        :resolve condition/aliases
+                        :description "Alias condition names."}
+              :equivalent_conditions {:type '(list String)
+                                      :resolve condition/equivalent-conditions
+                                      :description "Equivalent condition names."}
+              :last_curated_date {:type 'String
+                                  :resolve condition/last-curated-date
+                                  :description "Most recent date a curation (of any kind) has been performed on this condition."}
               :gene {:type :Gene
                      :resolve condition/gene
                      :description "If the condiiton is a genetic condition, the gene associated with the condition."}
@@ -512,9 +527,22 @@
                               :description (str "Order in which to sort genes. Supported fields: "
                                                 "GENE_LABEL")}}
                 :resolve gene/gene-list}
-    :condition {:type '(non-null :Disease)
+    :disease {:type '(non-null :Disease)
                 :args {:iri {:type 'String}}
                 :resolve condition/condition-query}
+    :disease_list {:type '(list :Disease)
+                :args {:limit {:type 'Int
+                               :default-value 10
+                               :description "Number of records to return"}
+                       :offset {:type 'Int
+                                :default-value 0
+                                :description "Index to begin returning records from"}
+                       :curation_type {:type :CurationActivity
+                                       :description 
+                                       (str "Limit genes returned to those that have a curation, "
+                                            "or a curation of a specific type.")}}
+                :resolve condition/disease-list}
+
     :actionability {:type '(non-null :ActionabilityCuration)
                     :args {:iri {:type 'String}}
                     :resolve actionability/actionability-query}
