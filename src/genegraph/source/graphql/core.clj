@@ -56,7 +56,7 @@
      }
     :SortField
     {:description "Sort fields for gene, disease lists and search results."
-     :values [:GENE_LABEL]}
+     :values [:GENE_LABEL :DISEASE_LABEL :REPORT_DATE]}
     :GeneDosageSortField
     {
      :description "Gene dosage sort fields."
@@ -543,6 +543,7 @@
                                                "or a curation of a specific type.")}}
                    :resolve condition/disease-list}
     :gene_validity_list {:type '(list :GeneValidityCuration)
+                         :resolve gene-validity/gene-validity-list
                          :args {:limit {:type 'Int
                                         :default-value 10
                                         :description "Number of records to return"}
