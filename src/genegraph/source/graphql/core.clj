@@ -531,18 +531,27 @@
                 :args {:iri {:type 'String}}
                 :resolve condition/condition-query}
     :disease_list {:type '(list :Disease)
-                :args {:limit {:type 'Int
-                               :default-value 10
-                               :description "Number of records to return"}
-                       :offset {:type 'Int
-                                :default-value 0
-                                :description "Index to begin returning records from"}
-                       :curation_type {:type :CurationActivity
-                                       :description 
-                                       (str "Limit genes returned to those that have a curation, "
-                                            "or a curation of a specific type.")}}
-                :resolve condition/disease-list}
-
+                   :args {:limit {:type 'Int
+                                  :default-value 10
+                                  :description "Number of records to return"}
+                          :offset {:type 'Int
+                                   :default-value 0
+                                   :description "Index to begin returning records from"}
+                          :curation_type {:type :CurationActivity
+                                          :description 
+                                          (str "Limit genes returned to those that have a curation, "
+                                               "or a curation of a specific type.")}}
+                   :resolve condition/disease-list}
+    :gene_validity_list {:type '(list :GeneValidityCuration)
+                         :args {:limit {:type 'Int
+                                        :default-value 10
+                                        :description "Number of records to return"}
+                                :offset {:type 'Int
+                                         :default-value 0
+                                         :description "Index to begin returning records from"}
+                                :sort {:type :Sort
+                                       :description (str "Order in which to sort genes. "
+                                                         "Supported fields: GENE_LABEL")}}}
     :actionability {:type '(non-null :ActionabilityCuration)
                     :args {:iri {:type 'String}}
                     :resolve actionability/actionability-query}
