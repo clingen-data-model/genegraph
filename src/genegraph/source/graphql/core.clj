@@ -256,6 +256,9 @@
               :last_curated_date {:type 'String
                                   :resolve condition/last-curated-date
                                   :description "Most recent date a curation (of any kind) has been performed on this condition."}
+               :curation_activities {:type '(list :CurationActivity)
+                                    :description "The curation activities that have published reports on the disease"
+                                    :resolve condition/curation-activities}
               :gene {:type :Gene
                      :resolve condition/gene
                      :description "If the condiiton is a genetic condition, the gene associated with the condition."}

@@ -50,7 +50,7 @@
     (->> curation-dates sort last)))
 
 (defn curation-activities [context args value]
-  (curation/activities {:gene value}))
+  (curation/activities {:disease value}))
 
 (defn disease-list [context args value]
   (let [params (-> args (select-keys [:limit :offset]) (assoc :distinct true))
