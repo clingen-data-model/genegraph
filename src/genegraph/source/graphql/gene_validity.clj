@@ -1,9 +1,15 @@
 (ns genegraph.source.graphql.gene-validity
   (:require [genegraph.database.query :as q :refer [ld-> ld1-> create-query resource]]
-            [genegraph.source.graphql.common.enum :as enum]))
+            [genegraph.source.graphql.common.enum :as enum]
+            [genegraph.source.graphql.common.curation :as curation]))
 
 (defn report-date [context args value]
   (ld1-> value [:sepio/qualified-contribution :sepio/activity-date]))
+
+(defn gene-validity-list [context args value]
+  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))]
+    (curation/gene-validity-curations {::q/params params})))
+
 
 (def evidence-levels
   {:sepio/DefinitiveEvidence :DEFINITIVE

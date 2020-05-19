@@ -58,10 +58,18 @@
   (create-query [:project ['ac_report]
                  (cons :bgp actionability-bgp)]))
 
-(def gene-validity-curations-for-genetic-condition
+(def gene-validity-curations
   (create-query [:project ['validity_assertion]
-                 (cons :bgp (conj gene-validity-bgp
-                                  ['validity_assertion :sepio/has-subject 'validity_proposition]))]))
+                 ;; Adding the reference to the assertion, plus any fields likely
+                 ;; to be used as sort values
+                 (cons :bgp 
+                       (conj gene-validity-bgp
+                             ['validity_assertion :sepio/has-subject 'validity_proposition]
+                             ['gene :skos/preferred-label 'gene_label]
+                             ['disease :rdfs/label 'disease_label]
+                             ['validity_assertion :sepio/qualified-contribution 'gv_contrib]
+                             ['gv_contrib :sepio/activity-date 'report_date]
+                             ))]))
 
 (def dosage-sensitivity-curations-for-genetic-condition
   (create-query [:project ['dosage_assertion]
