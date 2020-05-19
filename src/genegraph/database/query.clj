@@ -504,7 +504,9 @@
      (with-open [qexec (QueryExecutionFactory/create query model qs-map)]
        (cond 
          (.isConstructType query) (.execConstruct qexec)
-         (.isSelectType query) (compose-select-result qexec model)
+         (.isSelectType query) (if (= :count (get-in params [::params :type]))
+                                 (-> qexec .execSelect iterator-seq count)
+                                 (compose-select-result qexec model))
          (.isAskType query) (.execAsk qexec))))))
 
 (deftype StoredQuery [query]

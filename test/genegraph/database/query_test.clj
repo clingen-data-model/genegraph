@@ -13,6 +13,11 @@
                           [:bgp [x :rdf/type :owl/Class]]])]
     (is (= 1 (count (q {::q/model sample-data}))))))
 
+(deftest test-count-query
+  (let [q (create-query '[:project [x]
+                          [:bgp [x :rdf/type :owl/Class]]])]
+    (is (= 1 (q {::q/model sample-data ::q/params {:type :count}})))))
+
 (deftest test-string-query
   (let [result (select "select ?x where { ?x a :owl/Class } " {::q/model sample-data})]
     (is (= 1 (count result)))))
