@@ -415,41 +415,6 @@
      {:migration_version {:type 'String
                           :resolve server-status/migration-version}}}
 
-    :Concept
-    {:implements [:Resource]
-     :fields
-     {:iri {:type 'String :resolve resource/iri}
-      :label {:type 'String :resolve resource/label}
-      :definition {:type 'String :resolve rdf-class/definition}}}
-
-    :Property
-    {:implements [:Resource]
-     :fields
-     {:iri {:type 'String :resolve property/iri}
-      :label {:type 'String :resolve property/label}
-      :definition {:type 'String :resolve property/definition}
-      :min {:type 'Int :resolve property/min-count}
-      :max {:type 'Int :resolve property/max-count}
-      :display_arity {:type 'String :resolve property/display-arity}}}
-
-    :Class
-    {:implements [:Resource]
-     :fields
-     {:iri {:type 'String :resolve resource/iri}
-      :label {:type 'String :resolve resource/label}
-      :definition {:type 'String :resolve rdf-class/definition}
-      :properties {:type '(list :Property) :resolve rdf-class/properties}
-      :subclasses {:type '(list :Class) :resolve rdf-class/subclasses}
-      :superclasses {:type '(list :Class) :resolve rdf-class/superclasses}}}
-
-    :ValueSet
-    {:implements [:Resource]
-     :fields
-     {:iri {:type 'String :resolve resource/iri}
-      :label {:type 'String :resolve resource/label}
-      :definition {:type 'String :resolve rdf-class/definition}
-      :concepts {:type '(list :Concept) :resolve value-set/concepts}}}
-
     :Totals
     {:fields
      {:total {:type 'Int :resolve gene-dosage/total-count}
@@ -559,10 +524,6 @@
     :actionability {:type '(non-null :ActionabilityCuration)
                     :args {:iri {:type 'String}}
                     :resolve actionability/actionability-query}
-    :value_sets {:type '(list :ValueSet)
-                 :resolve value-set/value-sets-query}
-    :model_classes {:type '(list :Class)
-                    :resolve rdf-class/model-classes-query}
     :server_status {:type '(non-null :ServerStatus)
                     :resolve server-status/server-version-query}
     :dosage_list{:type '(list :GeneDosageCuration)
