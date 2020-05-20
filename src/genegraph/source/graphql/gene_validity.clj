@@ -10,6 +10,11 @@
   (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))]
     (curation/gene-validity-curations {::q/params params})))
 
+(defn gene-validity-curations [context args value]
+  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))]
+    {:curation_list (curation/gene-validity-curations {::q/params params})
+     :count (curation/gene-validity-curations {::q/params {:type :count}})}))
+
 
 (def evidence-levels
   {:sepio/DefinitiveEvidence :DEFINITIVE

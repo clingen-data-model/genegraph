@@ -1,5 +1,6 @@
 (ns genegraph.source.graphql.core
   (:require [genegraph.database.query :as q]
+            [genegraph.database.util :refer [tx]]
             [genegraph.source.graphql.gene :as gene]
             [genegraph.source.graphql.resource :as resource]
             [genegraph.source.graphql.actionability :as actionability]
@@ -136,6 +137,11 @@
                                 :resolve gene/dosage-curation
                                 :description "Gene Dosage curation associated with the gene or region."}}}
 
+    :Genes
+    {:description "A collection of genes."
+     :fields {:gene_list {:type '(list :Gene)}
+              :count {:type 'Int}}}
+
     :GeneticCondition
     {:description "A condition described by some combination of gene, disease, and mode of inheritance (usually at least gene and disease)."
      :fields {:gene {:type :Gene
@@ -269,6 +275,11 @@
                                    :resolve condition/genetic-conditions
                                    :description "Genetic conditions that are direct subclasses of this condition."}}}
 
+    :Diseases
+    {:description "A collection of diseases."
+     :fields {:disease_list {:type '(list :Disease)}
+              :count {:type 'Int}}}
+
     :Evidence
     {:description "An evidence item, typically used in support of an assertion made as a part of a curation"
      :fields {:source {:type 'String
@@ -397,6 +408,11 @@
                             :description "Mode of inheritance associated with this curation"
                             :resolve gene-validity/mode-of-inheritance}}}
 
+    :GeneValidityCurations
+    {:description "A collection of gene validity curations."
+     :fields {:curation_list {:type '(list :GeneValidityCuration)}
+              :count {:type 'Int}}}
+
     :Agent
     {:implements [:Resource]
      :description "A person or group. In this context, generally a ClinGen Domain Working Group responsible for producing one or more curations."
@@ -480,7 +496,23 @@
    {:gene {:type '(non-null :Gene)
            :args {:iri {:type 'String}}
            :resolve gene/gene-query}
+    :genes {:type :Genes
+            :resolve gene/genes
+            :args {:limit {:type 'Int
+                           :default-value 10
+                           :description "Number of records to return"}
+                   :offset {:type 'Int
+                            :default-value 0
+                            :description "Index to begin returning records from"}
+                   :curation_activity {:type :CurationActivity
+                                       :description 
+                                       (str "Limit genes returned to those that have a curation, "
+                                            "or a curation of a specific type.")}
+                   :sort {:type :Sort
+                          :description (str "Order in which to sort genes. Supported fields: "
+                                            "GENE_LABEL")}}}
     :gene_list {:type '(list :Gene)
+                :deprecated "use Genes field instead"
                 :args {:limit {:type 'Int
                                :default-value 10
                                :description "Number of records to return"}
@@ -498,7 +530,23 @@
     :disease {:type '(non-null :Disease)
                 :args {:iri {:type 'String}}
                 :resolve condition/condition-query}
+    :diseases {:type :Diseases
+               :args {:limit {:type 'Int
+                              :default-value 10
+                              :description "Number of records to return"}
+                      :offset {:type 'Int
+                               :default-value 0
+                               :description "Index to begin returning records from"}
+                      :curation_activity {:type :CurationActivity
+                                          :description 
+                                          (str "Limit genes returned to those that have a"
+                                               " curation, or a curation of a specific type.")}
+                      :sort {:type :Sort
+                             :description (str "Order in which to sort genes. Supported fields: "
+                                               "GENE_LABEL")}}
+               :resolve condition/diseases}
     :disease_list {:type '(list :Disease)
+                   :deprecated "Use diseases instead."
                    :args {:limit {:type 'Int
                                   :default-value 10
                                   :description "Number of records to return"}
@@ -510,7 +558,19 @@
                                           (str "Limit genes returned to those that have a curation, "
                                                "or a curation of a specific type.")}}
                    :resolve condition/disease-list}
+    :gene_validity_curations {:type :GeneValidityCurations
+                              :resolve gene-validity/gene-validity-curations
+                              :args {:limit {:type 'Int
+                                             :default-value 10
+                                             :description "Number of records to return"}
+                                     :offset {:type 'Int
+                                              :default-value 0
+                                              :description "Index to begin returning records from"}
+                                     :sort {:type :Sort
+                                            :description (str "Order in which to sort genes. "
+                                                              "Supported fields: GENE_LABEL")}}}
     :gene_validity_list {:type '(list :GeneValidityCuration)
+                         :deprecated "Use gene_validity_curations instead"
                          :resolve gene-validity/gene-validity-list
                          :args {:limit {:type 'Int
                                         :default-value 10
@@ -544,4 +604,4 @@
   "Function not used except for evaluating queries in the REPL
   may consider moving into test namespace in future"
   [query-str]
-  (lacinia/execute (schema) query-str nil nil))
+  (tx (lacinia/execute (schema) query-str nil nil)))

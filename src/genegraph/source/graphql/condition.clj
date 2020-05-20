@@ -74,3 +74,33 @@
                                    "<http://purl.obolibrary.org/obo/MONDO_0000001> ."
                                    "FILTER (!isBlank(?s)) }")))]
     (query {::q/params params})))
+
+(defn diseases [context args value]
+  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
+        selected-curation-type-bgp (case (:curation_activity args)
+                                     :GENE_VALIDITY curation/gene-validity-bgp
+                                     :ACTIONABILITY curation/actionability-bgp
+                                     :GENE_DOSAGE curation/gene-dosage-disease-bgp
+                                     nil)
+        bgp (if (= :ALL (:curation_activity args))
+              [:union 
+               (cons :bgp (conj curation/gene-validity-bgp 
+                                '[disease :rdfs/label disease_label]))
+               (cons :bgp (conj curation/actionability-bgp
+                                '[disease :rdfs/label disease_label]))
+               (cons :bgp (conj curation/gene-dosage-disease-bgp
+                                '[disease :rdfs/label disease_label]))]
+              (when (some? selected-curation-type-bgp)
+                (cons :bgp (conj selected-curation-type-bgp
+                                 '[disease :rdfs/label disease_label]))))
+        query (if (some? bgp)
+                (create-query [:project 
+                             ['disease]
+                               bgp])
+                (create-query 
+                 (str "select ?s WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+                      "<http://purl.obolibrary.org/obo/MONDO_0000001> . "
+                      "?s :rdfs/label ?disease_label . "
+                      "FILTER (!isBlank(?s)) }")))]
+    {:disease_list (query {::q/params params})
+     :count (query {::q/params {:type :count}})}))
