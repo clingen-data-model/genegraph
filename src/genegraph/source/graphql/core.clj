@@ -1,5 +1,6 @@
 (ns genegraph.source.graphql.core
   (:require [genegraph.database.query :as q]
+            [genegraph.database.util :refer [tx]]
             [genegraph.source.graphql.gene :as gene]
             [genegraph.source.graphql.resource :as resource]
             [genegraph.source.graphql.actionability :as actionability]
@@ -503,10 +504,10 @@
                    :offset {:type 'Int
                             :default-value 0
                             :description "Index to begin returning records from"}
-                   :curation_type {:type :CurationActivity
-                                   :description 
-                                   (str "Limit genes returned to those that have a curation, "
-                                        "or a curation of a specific type.")}
+                   :curation_activity {:type :CurationActivity
+                                       :description 
+                                       (str "Limit genes returned to those that have a curation, "
+                                            "or a curation of a specific type.")}
                    :sort {:type :Sort
                           :description (str "Order in which to sort genes. Supported fields: "
                                             "GENE_LABEL")}}}
@@ -529,7 +530,23 @@
     :disease {:type '(non-null :Disease)
                 :args {:iri {:type 'String}}
                 :resolve condition/condition-query}
+    :diseases {:type :Diseases
+               :args {:limit {:type 'Int
+                              :default-value 10
+                              :description "Number of records to return"}
+                      :offset {:type 'Int
+                               :default-value 0
+                               :description "Index to begin returning records from"}
+                      :curation_activity {:type :CurationActivity
+                                          :description 
+                                          (str "Limit genes returned to those that have a"
+                                               " curation, or a curation of a specific type.")}
+                      :sort {:type :Sort
+                             :description (str "Order in which to sort genes. Supported fields: "
+                                               "GENE_LABEL")}}
+               :resolve condition/diseases}
     :disease_list {:type '(list :Disease)
+                   :deprecated "Use diseases instead."
                    :args {:limit {:type 'Int
                                   :default-value 10
                                   :description "Number of records to return"}
@@ -541,7 +558,19 @@
                                           (str "Limit genes returned to those that have a curation, "
                                                "or a curation of a specific type.")}}
                    :resolve condition/disease-list}
+    :gene_validity_curations {:type :GeneValidityCurations
+                              :resolve gene-validity/gene-validity-curations
+                              :args {:limit {:type 'Int
+                                             :default-value 10
+                                             :description "Number of records to return"}
+                                     :offset {:type 'Int
+                                              :default-value 0
+                                              :description "Index to begin returning records from"}
+                                     :sort {:type :Sort
+                                            :description (str "Order in which to sort genes. "
+                                                              "Supported fields: GENE_LABEL")}}}
     :gene_validity_list {:type '(list :GeneValidityCuration)
+                         :deprecated "Use gene_validity_curations instead"
                          :resolve gene-validity/gene-validity-list
                          :args {:limit {:type 'Int
                                         :default-value 10
@@ -575,4 +604,4 @@
   "Function not used except for evaluating queries in the REPL
   may consider moving into test namespace in future"
   [query-str]
-  (lacinia/execute (schema) query-str nil nil))
+  (tx (lacinia/execute (schema) query-str nil nil)))

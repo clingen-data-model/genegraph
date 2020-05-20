@@ -36,12 +36,12 @@
   (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
         base-bgp '[[gene :rdf/type :so/ProteinCodingGene]
                    [gene :skos/preferred-label gene_label]]
-        selected-curation-type-bgp (case (:curation_type args)
+        selected-curation-type-bgp (case (:curation_activity args)
                                      :GENE_VALIDITY curation/gene-validity-bgp
                                      :ACTIONABILITY curation/actionability-bgp
                                      :GENE_DOSAGE curation/gene-dosage-bgp
                                      [])
-        bgp (if (= :ALL (:curation_type args))
+        bgp (if (= :ALL (:curation_activity args))
               [:union 
                (cons :bgp (concat base-bgp curation/gene-validity-bgp))
                (cons :bgp (concat base-bgp curation/actionability-bgp))
@@ -53,9 +53,7 @@
                              ['gene]
                              bgp])]
     {:gene_list (query {::q/params params})
-     :count (query {::q/params {:type :count}})
-     ;;     :count 42
-     }))
+     :count (query {::q/params {:type :count}})}))
 
 (defn curation-activities [context args value]
   (curation/activities {:gene value}))
