@@ -391,11 +391,14 @@
 
 ;;;; Query builder
 
+(defn text-index [var ])
+
 (defn triple
   "Construct triple for use in BGP. Part of query algebra."
   [stmt]
   (let [[s p o] stmt
         subject (cond
+                  (= '_ s) Var/ANON
                   (symbol? s) (Var/alloc (str s))
                   (keyword? s) (.asNode (local-class-names s))
                   (string? s) (NodeFactory/createURI s)
