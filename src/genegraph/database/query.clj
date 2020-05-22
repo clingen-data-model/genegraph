@@ -398,18 +398,21 @@
   [stmt]
   (let [[s p o] stmt
         subject (cond
+                  (instance? Node s) s
                   (= '_ s) Var/ANON
                   (symbol? s) (Var/alloc (str s))
                   (keyword? s) (.asNode (local-class-names s))
                   (string? s) (NodeFactory/createURI s)
                   (satisfies? AsJenaResource s) (.asNode (as-jena-resource s))
                   :else (NodeFactory/createURI (str s)))
-        predicate (if (keyword? p)
-                    (.asNode (local-property-names p))
-                    (NodeFactory/createURI (str p)))
+        predicate (cond
+                    (instance? Node p) p
+                    (keyword? p) (.asNode (local-property-names p))
+                    :else (NodeFactory/createURI (str p)))
         object (cond 
+                 (instance? Node o) o
                  (symbol? o) (Var/alloc (str o))
-                 (keyword? o) (.asNode (local-class-names o))
+                 (keyword? o) (.asNode (or (local-class-names o) (local-property-names o)))
                  (or (string? o)
                      (int? o)
                      (float? o)) (.asNode (ResourceFactory/createTypedLiteral o))
@@ -501,7 +504,7 @@
 
 (defn- exec [query-def params]
   (let [qs-map (construct-query-solution-map (dissoc params ::model ::params))
-        model (or (::model params) (get-all-graphs))
+        model (or (::model params) db)
         query (construct-query-with-params query-def params)]
     (tx
      (with-open [qexec (QueryExecutionFactory/create query model qs-map)]
@@ -549,3 +552,25 @@ use io/slurp"
       QueryFactory/create
       Algebra/compile
       println))
+
+(defn text-search-bgp
+  "Produce a BGP fragment for performing a text search based on a resource.
+  Will produce a list of properties matching 'text', which may be either a
+  property or a variable.
+
+  A complete query using this function could be composed like this:
+  (create-query [:project ['x] (cons :bgp (text-search-bgp 'x :cg/resource 'text))])
+
+  where x is a resource to return, and text is a variable expected to be bound to the
+  text to search for"
+  [resource property text]
+  (let [node0 (symbol "text0")
+        node1 (symbol "text1")
+        rdf-first (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#first")
+        rdf-rest (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest")]
+    [[resource (NodeFactory/createURI "http://jena.apache.org/text#query") node0]
+     [node0 rdf-first property]
+     [node0 rdf-rest node1]
+     [node1 rdf-first text]
+     [node1 rdf-rest
+      (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")]]))
