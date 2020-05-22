@@ -509,8 +509,7 @@
                                        (str "Limit genes returned to those that have a curation, "
                                             "or a curation of a specific type.")}
                    :sort {:type :Sort
-                          :description (str "Order in which to sort genes. Supported fields: "
-                                            "GENE_LABEL")}}}
+                          :description (str "Order in which to sort genes.")}}}
     :gene_list {:type '(list :Gene)
                 :deprecated "use Genes field instead"
                 :args {:limit {:type 'Int
@@ -541,9 +540,11 @@
                                           :description 
                                           (str "Limit genes returned to those that have a"
                                                " curation, or a curation of a specific type.")}
+                      :text {:type 'String
+                             :description (str "Filter list for genes including text in name"
+                                            "and synonyms.")}
                       :sort {:type :Sort
-                             :description (str "Order in which to sort genes. Supported fields: "
-                                               "GENE_LABEL")}}
+                             :description (str "Order in which to sort diseases")}}
                :resolve condition/diseases}
     :disease_list {:type '(list :Disease)
                    :deprecated "Use diseases instead."

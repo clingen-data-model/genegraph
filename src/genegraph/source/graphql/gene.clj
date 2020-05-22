@@ -36,7 +36,7 @@
     (query {::q/params params})))
 
 (defn genes [context args value]
-  (let [params (-> args (select-keys [:limit :offset :sort :text]) (assoc :distinct true))
+  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
         query-params (if (:text args)
                        {:text (-> args :text str/lower-case) ::q/params params}
                        {::q/params params})
