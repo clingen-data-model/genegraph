@@ -12,8 +12,11 @@
 
 (defn gene-list [context args value]
   (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
-        base-bgp '[[gene :rdf/type :so/ProteinCodingGene]
+        gene-bgp '[[gene :rdf/type :so/ProteinCodingGene]
                    [gene :skos/preferred-label gene_label]]
+        base-bgp (if (:text args)
+                   (concat (q/text-search-bgp 'gene :cg/resource 'text) gene-bgp)
+                   gene-bgp)
         selected-curation-type-bgp (case (:curation_type args)
                                      :GENE_VALIDITY curation/gene-validity-bgp
                                      :ACTIONABILITY curation/actionability-bgp
@@ -33,9 +36,15 @@
     (query {::q/params params})))
 
 (defn genes [context args value]
-  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
-        base-bgp '[[gene :rdf/type :so/ProteinCodingGene]
+  (let [params (-> args (select-keys [:limit :offset :sort :text]) (assoc :distinct true))
+        query-params (if (:text args)
+                       {:text (-> args :text str/lower-case) ::q/params params}
+                       {::q/params params})
+        gene-bgp '[[gene :rdf/type :so/ProteinCodingGene]
                    [gene :skos/preferred-label gene_label]]
+        base-bgp (if (:text args)
+                   (concat (q/text-search-bgp 'gene :cg/resource 'text) gene-bgp)
+                   gene-bgp)
         selected-curation-type-bgp (case (:curation_activity args)
                                      :GENE_VALIDITY curation/gene-validity-bgp
                                      :ACTIONABILITY curation/actionability-bgp
@@ -52,8 +61,8 @@
         query (create-query [:project 
                              ['gene]
                              bgp])]
-    {:gene_list (query {::q/params params})
-     :count (query {::q/params {:type :count}})}))
+    {:gene_list (query query-params)
+     :count (query (assoc-in query-params [::q/params :type] :count))}))
 
 (defn curation-activities [context args value]
   (curation/activities {:gene value}))

@@ -499,8 +499,11 @@
 (defn- compose-select-result [qexec model]
   (when-let [result (-> qexec .execSelect)]
     (let [result-var (-> result .getResultVars first)
-          result-seq (iterator-seq result)]
-      (mapv #(->RDFResource (.getResource % result-var) model) result-seq))))
+          result-seq (iterator-seq result)
+          node-model (if (instance? Dataset model)
+                       (get-all-graphs)
+                       model)]
+      (mapv #(->RDFResource (.getResource % result-var) node-model) result-seq))))
 
 (defn- exec [query-def params]
   (let [qs-map (construct-query-solution-map (dissoc params ::model ::params))

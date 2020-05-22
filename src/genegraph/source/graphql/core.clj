@@ -501,6 +501,9 @@
                    :offset {:type 'Int
                             :default-value 0
                             :description "Index to begin returning records from"}
+                   :text {:type 'String
+                          :description (str "Filter list for genes including text in symbol"
+                                            "previous symbols, names, or previous names.")}
                    :curation_activity {:type :CurationActivity
                                        :description 
                                        (str "Limit genes returned to those that have a curation, "
