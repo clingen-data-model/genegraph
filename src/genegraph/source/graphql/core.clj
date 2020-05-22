@@ -567,6 +567,10 @@
                                      :offset {:type 'Int
                                               :default-value 0
                                               :description "Index to begin returning records from"}
+                                     :text {:type 'String
+                                            :description (str "Filter list including"
+                                                              "text in gene, disease and "
+                                                              "synonyms.")}
                                      :sort {:type :Sort
                                             :description (str "Order in which to sort genes. "
                                                               "Supported fields: GENE_LABEL")}}}
