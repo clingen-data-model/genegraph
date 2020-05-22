@@ -568,7 +568,7 @@
                                               :default-value 0
                                               :description "Index to begin returning records from"}
                                      :text {:type 'String
-                                            :description (str "Filter list including"
+                                            :description (str "Filter list including "
                                                               "text in gene, disease and "
                                                               "synonyms.")}
                                      :sort {:type :Sort
