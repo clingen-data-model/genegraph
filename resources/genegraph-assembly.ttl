@@ -14,7 +14,7 @@ PREFIX cg: 	 <http://dataexchange.clinicalgenome.org/terms/>
 PREFIX sepio: 	 <http://purl.obolibrary.org/obo/SEPIO_>
 PREFIX geno: 	 <http://purl.obolibrary.org/obo/GENO_>
 PREFIX iao: 	 <http://purl.obolibrary.org/obo/IAO_>
-PREFIX dc: 	 <http://purl.org/dc/elements/1.1/>
+# PREFIX dc: 	 <http://purl.org/dc/elements/1.1/>
 PREFIX faldo: 	 <http://biohackathon.org/resource/faldo#>
 PREFIX so: 	 <http://purl.obolibrary.org/obo/SO_>
 PREFIX mondo: 	 <http://purl.obolibrary.org/obo/MONDO_>
@@ -22,7 +22,7 @@ PREFIX owl: 	 <http://www.w3.org/2002/07/owl#>
 PREFIX omim: 	 <http://purl.obolibrary.org/obo/OMIM_>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX bfo: 	 <http://purl.obolibrary.org/obo/BFO_>
-PREFIX dct:	 <http://purl.org/dc/terms/>
+PREFIX dc:	 <http://purl.org/dc/terms/>
 PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
 
 # Text
@@ -65,16 +65,25 @@ text:TextIndexLucene  rdfs:subClassOf   text:TextIndex .
     text:analyzer [ a text:StandardAnalyzer ] ;
     text:queryAnalyzer [ a text:KeywordAnalyzer ] ;
     ### text:queryParser text:AnalyzingQueryParser ;
-    text:propLists ( [ text:propListProp cg:genes ;
-      		       text:props ( skos:prefLabel
-		       		    skos:altLabel
-				    skos:hiddenLabel ) ; ]
-		     [ text:propListProp cg:diseases ;
-      		       text:props ( rdfs:label
-		       		    oboInOwl:hasExactSynonym
-				    iao:0000115 ) ; ]
-   		   ) ;
-    #    text:defineAnalyzers ( [ . . . ] . . . ) ;
+    text:propLists (
+        [ text:propListProp cg:resourceProps ;
+      	    text:props ( skos:prefLabel
+                rdfs:label
+		skos:altLabel
+		skos:hiddenLabel
+                oboInOwl:hasExactSynonym
+		iao:0000115 
+                dc:description ) ; ]
+        [ text:propListProp cg:genes ;
+      	    text:props ( skos:prefLabel
+		skos:altLabel
+		skos:hiddenLabel ) ; ]
+	[ text:propListProp cg:diseases ;
+      	    text:props ( rdfs:label
+		oboInOwl:hasExactSynonym
+		iao:0000115 ) ; ]
+   	) ;
+#    text:defineAnalyzers ( [ . . . ] . . . ) ;
     text:multilingualSupport false ; # optional
 .
 
