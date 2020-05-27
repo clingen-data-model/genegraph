@@ -505,6 +505,7 @@
 (defn- exec [query-def params]
   (let [qs-map (construct-query-solution-map (dissoc params ::model ::params))
         model (or (::model params) db)
+        result-model (or (::model params) (get-all-graphs))
         query (construct-query-with-params query-def params)]
     (tx
      (with-open [qexec (QueryExecutionFactory/create query model qs-map)]
@@ -512,7 +513,7 @@
          (.isConstructType query) (.execConstruct qexec)
          (.isSelectType query) (if (= :count (get-in params [::params :type]))
                                  (-> qexec .execSelect iterator-seq count)
-                                 (compose-select-result qexec model))
+                                 (compose-select-result qexec result-model))
          (.isAskType query) (.execAsk qexec))))))
 
 (deftype StoredQuery [query]
