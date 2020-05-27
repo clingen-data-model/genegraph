@@ -58,18 +58,32 @@
   (create-query [:project ['ac_report]
                  (cons :bgp actionability-bgp)]))
 
+(def gene-validity-with-sort-bgp
+  (conj gene-validity-bgp
+        ['validity_assertion :sepio/has-subject 'validity_proposition]
+        ['gene :skos/preferred-label 'gene_label]
+        ['disease :rdfs/label 'disease_label]
+        ['validity_assertion :sepio/qualified-contribution 'gv_contrib]
+        ['gv_contrib :sepio/activity-date 'report_date]))
+
+(def gene-validity-text-search-bgp
+  (cons :union (map #(cons :bgp (concat (q/text-search-bgp % :cg/resource 'text)
+                                        gene-validity-with-sort-bgp))
+                    ['gene 'disease 'validity_assertion])))
+
+(def gene-validity-curations-text-search
+  (create-query [:project ['validity_assertion]
+                 gene-validity-text-search-bgp]))
+
+(def gene-validity-curations
+  (create-query [:project ['validity_assertion]
+                 (cons :bgp gene-validity-with-sort-bgp)]))
+
 (def gene-validity-curations
   (create-query [:project ['validity_assertion]
                  ;; Adding the reference to the assertion, plus any fields likely
                  ;; to be used as sort values
-                 (cons :bgp 
-                       (conj gene-validity-bgp
-                             ['validity_assertion :sepio/has-subject 'validity_proposition]
-                             ['gene :skos/preferred-label 'gene_label]
-                             ['disease :rdfs/label 'disease_label]
-                             ['validity_assertion :sepio/qualified-contribution 'gv_contrib]
-                             ['gv_contrib :sepio/activity-date 'report_date]
-                             ))]))
+                 (cons :bgp gene-validity-with-sort-bgp)]))
 
 (def dosage-sensitivity-curations-for-genetic-condition
   (create-query [:project ['dosage_assertion]
