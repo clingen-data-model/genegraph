@@ -208,7 +208,7 @@
   "http://purl.org/ontology/bibo/doi"]
  [:cg/is-in-model
   "http://dataexchange.clinicalgenome.org/terms/is_in_model"]
- [:cg/resource "http://dataexchange.clinicalgenome.org/terms/resource"]
+ [:cg/resource "http://dataexchange.clinicalgenome.org/terms/resourceProps"]
  [:cg/genes "http://dataexchange.clinicalgenome.org/terms/genes"]
  [:cg/diseases "http://dataexchange.clinicalgenome.org/terms/diseases"]
  [:cnt/chars "http://www.w3.org/2011/content#chars"]

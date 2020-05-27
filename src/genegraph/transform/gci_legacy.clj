@@ -1,6 +1,6 @@
 (ns genegraph.transform.gci-legacy
   (:require [genegraph.database.load :as l]
-            [genegraph.database.query :as q]
+            [genegraph.database.query :as q :refer [resource]]
             [genegraph.transform.core :refer [transform-doc src-path]]
             [clojure.string :as s]
             [cheshire.core :as json]))
@@ -47,12 +47,12 @@
 
 (defn contribution [report iri]
   [[iri :bfo/realizes :sepio/ApproverRole]
-   [iri :sepio/has-agent (str affiliation-root
-                              (-> report :affiliation :id))]
+   [iri :sepio/has-agent  (resource (str affiliation-root
+                                         (-> report :affiliation :id)))]
    [iri :sepio/activity-date (report-date report)]])
 
 (defn evidence-level-assertion [report iri id]
-  (let [prop-iri (str gci-root "proposition_" id)
+  (let [prop-iri (resource (str gci-root "proposition_" id))
         contribution-iri (l/blank-node)]
     (concat [[iri :rdf/type :sepio/GeneValidityEvidenceLevelAssertion]
              [iri :sepio/has-subject prop-iri]
@@ -72,9 +72,9 @@
 (defn gci-legacy-report-to-triples [report]
   (let [root-version (str gci-root (-> report :iri))
         id (str (-> report :iri) "-" (s/replace (report-date report) #":" ""))
-        iri (str gci-root "report_" id)
+        iri (resource (str gci-root "report_" id))
         content-id (l/blank-node)
-        assertion-id (str gci-root "assertion_" id)]
+        assertion-id (resource (str gci-root "assertion_" id))]
     (println iri)
     (concat [[iri :rdf/type :sepio/GeneValidityReport] 
              [iri :rdfs/label (:title report)]
