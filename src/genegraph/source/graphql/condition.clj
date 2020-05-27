@@ -105,10 +105,20 @@
                 (create-query [:project 
                              ['disease]
                                query-bgp])
-                (create-query 
-                 (str "select ?s WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
-                      "<http://purl.obolibrary.org/obo/MONDO_0000001> . "
-                      "?s :rdfs/label ?disease_label . "
-                      "FILTER (!isBlank(?s)) }")))]
+                ;; Consider restructuring this around a BGP when variable length
+                ;; predicates are supported in the algebra, is messy as written.
+                (if (:text args)
+                  (create-query 
+                   (str "select ?s WHERE { "
+                        "?s :jena/query ( :cg/resource ?text ) . "
+                        "?s <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+                        "<http://purl.obolibrary.org/obo/MONDO_0000001> . "
+                        "?s :rdfs/label ?disease_label . "
+                        "FILTER (!isBlank(?s)) }"))
+                  (create-query 
+                   (str "select ?s WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+                        "<http://purl.obolibrary.org/obo/MONDO_0000001> . "
+                        "?s :rdfs/label ?disease_label . "
+                        "FILTER (!isBlank(?s)) }"))))]
     {:disease_list (query query-params)
      :count (query (assoc-in query-params [::q/params :type] :count))}))
