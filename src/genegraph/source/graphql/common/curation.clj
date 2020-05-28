@@ -97,3 +97,10 @@
   (map #(array-map :gene (:gene query-params) :disease %) 
        (curated-diseases-for-gene query-params)))
 
+(def curated-genes-for-disease
+  (create-query [:project ['gene]
+                 union-of-all-curations]))
+
+(defn curated-genetic-conditions-for-disease [query-params]
+  (map #(array-map :disease (:disease query-params) :gene %)
+       (curated-genes-for-disease query-params)))
