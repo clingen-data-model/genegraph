@@ -21,6 +21,9 @@
       {:curation_list (curation/gene-validity-curations {::q/params params})
        :count (curation/gene-validity-curations {::q/params {:type :count :distinct true}})})))
 
+(defn criteria [context args value]
+  nil)
+
 
 (def evidence-levels
   {:sepio/DefinitiveEvidence :DEFINITIVE
