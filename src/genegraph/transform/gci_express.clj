@@ -1,6 +1,6 @@
 (ns genegraph.transform.gci-express
   (:require [genegraph.database.load :as l]
-            [genegraph.database.query :as q]
+            [genegraph.database.query :as q :refer [resource]]
             [genegraph.transform.core :refer [transform-doc src-path]]
             [cheshire.core :as json]))
 
@@ -57,8 +57,8 @@
     :sepio/ClinGenGeneValidityEvaluationCriteriaSOP4
     :sepio/ClinGenGeneValidityEvaluationCriteriaSOP5))
 
-(defn evidence-level-assertion [report iri]
-  (let [prop-iri (l/blank-node)
+(defn evidence-level-assertion [report iri id]
+  (let [prop-iri (resource (str gci-express-root "proposition_" id))
         contribution-iri (l/blank-node)]
     (concat [[iri :rdf/type :sepio/GeneValidityEvidenceLevelAssertion]
              [iri :sepio/has-subject prop-iri]
@@ -72,16 +72,16 @@
 
 (defn gci-express-report-to-triples [report]
   (let [content (second report)
-        root-version (str gci-express-root (-> report first name))
-        iri (str root-version "-" (:dateISO8601 content))
+        id (-> report first name)
+        iri (str gci-express-root "report_" id)
         content-id (l/blank-node)
-        assertion-id (l/blank-node)]
+        assertion-id (resource (str gci-express-root "assertion_" id))]
     (println iri)
     (concat [[iri :rdf/type :sepio/GeneValidityReport] 
              [iri :rdfs/label (:title content)]
              [iri :bfo/has-part content-id]
              [iri :bfo/has-part assertion-id]]
-            (evidence-level-assertion content assertion-id)
+            (evidence-level-assertion content assertion-id id)
             (json-content-node content content-id))))
 
 (defmethod transform-doc :gci-express [doc-def]

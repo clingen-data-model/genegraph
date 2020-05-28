@@ -61,8 +61,10 @@
         query (create-query [:project 
                              ['gene]
                              bgp])]
+    (println query-params)
     {:gene_list (query query-params)
-     :count (query (assoc-in query-params [::q/params :type] :count))}))
+     :count (query (assoc query-params ::q/params {:type :count :distinct true}))
+     }))
 
 (defn curation-activities [context args value]
   (curation/activities {:gene value}))
