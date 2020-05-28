@@ -262,15 +262,9 @@
                :curation_activities {:type '(list :CurationActivity)
                                     :description "The curation activities that have published reports on the disease"
                                     :resolve condition/curation-activities}
-              :gene {:type :Gene
-                     :resolve condition/gene
-                     :description "If the condiiton is a genetic condition, the gene associated with the condition."}
-              :actionability_curations {:type '(list :ActionabilityCuration)
-                                        :resolve condition/actionability-curations
-                                        :description "Actionability curations associated with the condition"}
-              :genetic_conditions {:type '(list :Disease)
+              :genetic_conditions {:type '(list :GeneticCondition)
                                    :resolve condition/genetic-conditions
-                                   :description "Genetic conditions that are direct subclasses of this condition."}}}
+                                   :description "Curated genetic conditions associated with the disease"}}}
 
     :Diseases
     {:description "A collection of diseases."
