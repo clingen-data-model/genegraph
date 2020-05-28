@@ -153,12 +153,12 @@
               :actionability_curations {:type '(list :ActionabilityCuration)
                                        :resolve genetic-condition/actionability-curations
                                        :description "Actionability curations associated with this genetic condition. Unlike gene_validity and dosage, there may be more than one per genetic condition, as the condition may be curated in both pediatric and adult contexts."}
-              :gene_validity_curation {:type :GeneValidityCuration
-                                       :resolve genetic-condition/gene-validity-curation
-                                       :description "Gene Validity curation associated with this genetic condition."}
-              :gene_dosage_assertion {:type :DosageAssertion
-                                     :resolve genetic-condition/gene-dosage-curation
-                                     :description "Dosage sensitivity curation associated with this genetic condition."}}}
+              :gene_validity_assertions {:type '(list :GeneValidityAssertion)
+                                        :resolve genetic-condition/gene-validity-curation
+                                        :description "Gene Validity curation associated with this genetic condition."}
+              :gene_dosage_assertions {:type '(list :DosageAssertion)
+                                       :resolve genetic-condition/gene-dosage-curation
+                                       :description "Dosage sensitivity curation associated with this genetic condition."}}}
 
     :Coordinate
     {:description "a genomic coordinate"
@@ -293,6 +293,9 @@
      :fields {:iri {:type 'String
                     :resolve resource/iri
                     :description "IRI for the Dosage curation."}
+              :curie {:type 'String
+                      :resolve resource/curie
+                      :description "Local identifier for the Dosage curation."}
               :label {:type 'String
                       :resolve gene-dosage/label
                       :description "Label of the Gene or Region curation."}
@@ -336,6 +339,9 @@
      :fields {:iri {:type 'String
                     :resolve resource/iri
                     :description "Identifier for the curation"}
+              :curie {:type 'String
+                      :resolve resource/curie
+                      :description "Local identifier for the curation"}
               :label {:type 'String
                       :resolve resource/label
                       :description "Curation label"}
@@ -369,6 +375,8 @@
      :fields 
      {:iri {:type 'String
             :resolve resource/iri}
+      :curie {:type 'String
+              :resolve resource/curie}
       :label {:type 'String :resolve resource/label}
       :report_date {:type 'String :resolve actionability/report-date}
       :wg_label {:type 'String :resolve actionability/wg-label}
@@ -378,13 +386,14 @@
                    :resolve actionability/conditions}
       :source {:type 'String :resolve actionability/source}}}
 
-    :GeneValidityCuration
+    :GeneValidityAssertion
     {:implements [:Resource :Curation]
      :fields
      {:iri {:type 'String
             :resolve resource/iri
             :description "IRI identifying this gene validity curation."}
       :curie {:type 'String
+              :resolve resource/curie
               :description "CURIE of the IRI identifying this gene validity curation."}
       :label {:type 'String
               :resolve resource/label
@@ -405,9 +414,9 @@
                             :description "Mode of inheritance associated with this curation"
                             :resolve gene-validity/mode-of-inheritance}}}
 
-    :GeneValidityCurations
+    :GeneValidityAssertions
     {:description "A collection of gene validity curations."
-     :fields {:curation_list {:type '(list :GeneValidityCuration)}
+     :fields {:curation_list {:type '(list :GeneValidityAssertion)}
               :count {:type 'Int}}}
 
     :Agent
@@ -559,7 +568,7 @@
                                           (str "Limit genes returned to those that have a curation, "
                                                "or a curation of a specific type.")}}
                    :resolve condition/disease-list}
-    :gene_validity_curations {:type :GeneValidityCurations
+    :gene_validity_curations {:type :GeneValidityAssertions
                               :resolve gene-validity/gene-validity-curations
                               :args {:limit {:type 'Int
                                              :default-value 10
@@ -574,7 +583,7 @@
                                      :sort {:type :Sort
                                             :description (str "Order in which to sort genes. "
                                                               "Supported fields: GENE_LABEL")}}}
-    :gene_validity_list {:type '(list :GeneValidityCuration)
+    :gene_validity_list {:type '(list :GeneValidityAssertion)
                          :deprecated "Use gene_validity_curations instead"
                          :resolve gene-validity/gene-validity-list
                          :args {:limit {:type 'Int

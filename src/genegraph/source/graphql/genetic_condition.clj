@@ -14,7 +14,7 @@
   (curation/actionability-curations-for-genetic-condition value))
 
 (defn gene-validity-curation [context args value]
-  (first (curation/gene-validity-curations value)))
+  (curation/gene-validity-curations value))
 
 (defn gene-dosage-curation [context args value]
-  (first (curation/dosage-sensitivity-curations-for-genetic-condition value)))
+  (curation/dosage-sensitivity-curations-for-genetic-condition value))
