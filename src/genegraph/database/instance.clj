@@ -18,12 +18,11 @@
   the $CG_SEARCH_DATA_VOL environment variable and will use that file as the
   assembly."
   []
-  (when (not (.exists (io/as-file assembly-file-expanded)))
-    (with-open [r (clojure.java.io/reader (io/resource assembly-file))]
-      (with-open [w (clojure.java.io/writer assembly-file-expanded)]
-        (doseq [line (line-seq r)]
-          (.write w (string/replace line #"\$CG_SEARCH_DATA_VOL" env/data-vol))
-          (.newLine w)))))
+  (with-open [r (clojure.java.io/reader (io/resource assembly-file))]
+    (with-open [w (clojure.java.io/writer assembly-file-expanded)]
+      (doseq [line (line-seq r)]
+        (.write w (string/replace line #"\$CG_SEARCH_DATA_VOL" env/data-vol))
+        (.newLine w))))
   assembly-file-expanded)
 
 (defstate db

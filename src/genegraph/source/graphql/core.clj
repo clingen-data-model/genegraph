@@ -562,7 +562,7 @@
                                           (str "Limit genes returned to those that have a curation, "
                                                "or a curation of a specific type.")}}
                    :resolve condition/disease-list}
-    :gene_validity_curations {:type :GeneValidityAssertions
+    :gene_validity_assertions {:type :GeneValidityAssertions
                               :resolve gene-validity/gene-validity-curations
                               :args {:limit {:type 'Int
                                              :default-value 10
@@ -578,7 +578,7 @@
                                             :description (str "Order in which to sort genes. "
                                                               "Supported fields: GENE_LABEL")}}}
     :gene_validity_list {:type '(list :GeneValidityAssertion)
-                         :deprecated "Use gene_validity_curations instead"
+                         :deprecated "Use gene_validity_assertions instead"
                          :resolve gene-validity/gene-validity-list
                          :args {:limit {:type 'Int
                                         :default-value 10
