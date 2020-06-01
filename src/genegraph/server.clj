@@ -6,7 +6,7 @@
             [mount.core :as mount :refer [defstate]]
             [genegraph.sink.base :as base]
             [genegraph.sink.stream :as stream]
-            [genegraph.migration :refer [migrate!]]
+            ;;[genegraph.migration :refer [migrate!]]
             [genegraph.env :as env]
             [io.pedestal.log :as log]))
 
@@ -44,7 +44,7 @@
   (log/info :fn :-main :message "Starting Genegraph")
   (mount.core/start #'server)
   (env/log-environment)
-  (migrate!)
+  ;; (migrate!)
   ;; It's not possible to consume messages before the base state has been loaded
   ;; Make sure this happens first (synchronously)
   (mount.core/start-without #'genegraph.sink.stream/consumer-thread)

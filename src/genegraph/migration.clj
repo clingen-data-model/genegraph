@@ -2,39 +2,31 @@
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [genegraph.env :as env]
-            [me.raynes.fs :as fs])
-  (:import java.time.Instant))
+            [me.raynes.fs :as fs]
+            [genegraph.database.instance :as db])
+  (:import [java.time ZonedDateTime ZoneOffset]
+           java.time.format.DateTimeFormatter))
 
-(def version-file (str env/data-vol "/version.edn"))
-
-(defn desired-version []  
-  (-> "version.edn"
-      io/resource
-      slurp
-      edn/read-string
-      :migration))
-
-(defn current-version 
-  "If version.edn does not exist in data, return -1 for migration index (always build data)"
+(defn- new-version-identifier
+  "Generate a new identifier for a migration"
   []
-  (if (.exists (io/as-file version-file))
-    (-> version-file
-        slurp
-        edn/read-string
-        :migration)
-    -1))
+  (.format (ZonedDateTime/now ZoneOffset/UTC) 
+           (DateTimeFormatter/ofPattern "yyyy-MM-dd'T'HHmm")))
 
-(defn needs-migration? []
-  (< (current-version) (desired-version)))
-
-(defn migrate! 
-  "If a migration is needed, clear the current application state and rely on the app init
-  code to rebuild the database appropriately."
+(defn build-database
+  "Build the Jena database and associated indexes from scratch."
   []
-  (when (needs-migration?)
-    (fs/delete-dir (str env/data-vol "/tdb"))
-    (fs/delete-dir (str env/data-vol "/base"))
-    (fs/delete-dir (str env/data-vol "/lucene_index"))
-    (fs/delete (str env/data-vol "base_state.edn"))
-    (fs/delete (str env/data-vol "partition_offsets.edn"))
-    (spit version-file (pr-str {:migration (desired-version)}))))
+  (let [version-id (new-version-identifier)
+        path (str env/base-dir "/" version-id)]
+    (with-redefs [env/data-vol path]
+      (println env/data-vol)
+      (fs/mkdirs env/data-vol)
+      (mount.core/start #'db/db)
+      (mount.core/stop #'db/db))))
+
+
+;; create directory
+;; build database
+;; unmount database
+;; create tarball
+;; send to GCS
