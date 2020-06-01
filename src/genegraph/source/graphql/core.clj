@@ -362,7 +362,13 @@
                            :description "The phenotypes to which the evidence applies"}
               :comments {:type 'String
                          :resolve dosage-proposition/comments
-                         :description "Comments related to this curation"}}}
+                         :description "Comments related to this curation"}
+              :gene {:type :Gene
+                     :resolve dosage-proposition/gene
+                     :description "Gene associated with this assertion"}
+              :disease {:type :Disease
+                     :resolve dosage-proposition/disease
+                     :description "Disease associated with this assertion"}}}
 
     :ActionabilityCuration
     {:implements [:Resource :Curation]
