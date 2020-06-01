@@ -35,3 +35,9 @@
 
 (defn phenotypes [context args value]
   (str/join ", " (q/ld-> value [[:sepio/has-object :>] [:owl/equivalent-class :<] :rdfs/label])))
+
+(defn gene [context args value]
+  (q/ld1-> value [:sepio/has-subject :sepio/has-subject :geno/has-location]))
+
+(defn disease [context args value]
+  (q/ld1-> value [:sepio/has-subject :sepio/has-object [:owl/equivalent-class :<]]))
