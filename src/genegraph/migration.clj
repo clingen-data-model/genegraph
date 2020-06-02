@@ -3,7 +3,10 @@
             [clojure.java.io :as io]
             [genegraph.env :as env]
             [me.raynes.fs :as fs]
-            [genegraph.database.instance :as db])
+            [genegraph.sink.base :as base]
+            [genegraph.database.instance :as db]
+            [genegraph.sink.stream :as stream]
+            [mount.core :refer [start stop]])
   (:import [java.time ZonedDateTime ZoneOffset]
            java.time.format.DateTimeFormatter))
 
@@ -21,8 +24,15 @@
     (with-redefs [env/data-vol path]
       (println env/data-vol)
       (fs/mkdirs env/data-vol)
-      (mount.core/start #'db/db)
-      (mount.core/stop #'db/db))))
+      (start #'db/db)
+      (base/initialize-db!)
+      (start #'stream/consumer-thread)
+      (while (not (stream/up-to-date?))
+        (Thread/sleep (* 1000 10)))
+      (stop #'stream/consumer-thread)
+      (while (not (stream/consumers-closed?))
+        (Thread/sleep 1000))
+      (stop #'db/db))))
 
 
 ;; create directory
