@@ -22,13 +22,15 @@
            java.time.Instant))
 
 ;; TODO ensure target directory exists
-(def target-base (str env/data-vol "/base/"))
+(defn target-base []
+  (str env/data-vol "/base/"))
 (def base-resources-edn "base.edn")
-(def state-file (str env/data-vol "/base_state.edn"))
+(defn state-file []
+  (str env/data-vol "/base_state.edn"))
 
 (defstate current-state
-  :start (if (.exists (io/as-file state-file))
-           (atom (-> state-file slurp edn/read-string))
+  :start (if (.exists (io/as-file (state-file)))
+           (atom (-> (state-file) slurp edn/read-string))
            (atom {})))
 
 (defn read-edn [resource]
@@ -42,11 +44,11 @@
 
 (defn- update-state! [resource-name k v]
   (swap! current-state assoc-in [resource-name k] v)
-  (spit state-file (prn-str @current-state)))
+  (spit (state-file) (prn-str @current-state)))
 
 (defn retrieve-base-data! [resources]
   (doseq [{uri-str :source, target-file :target, opts :fetch-opts, name :name} resources]
-    (let [path (str target-base target-file)]
+    (let [path (str (target-base) target-file)]
       (io/make-parents path)
       (fetch/fetch-data uri-str path opts))
     (update-state! name :retrieved (str (Instant/now)))))
@@ -85,7 +87,7 @@
    (fn [event]
      (let [changed-documents (filter #(= (-> event :file .getName) (:target %)) base-resources)]
        (import-documents! changed-documents)))
-   (io/file target-base)))
+   (io/file (target-base))))
 
 (defn read-actionability-curations [path]
   (let [files (filter #(.isFile %) (-> path io/file file-seq))]

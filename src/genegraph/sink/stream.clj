@@ -22,7 +22,8 @@
 
 (def config (->> "kafka.edn" io/resource slurp edn/read-string (postwalk #(if (symbol? %) (-> % resolve var-get) %))))
 
-(def offset-file (str env/data-vol "/partition_offsets.edn"))
+(defn offset-file []
+  (str env/data-vol "/partition_offsets.edn"))
 
 (def current-offsets (atom {}))
 
@@ -102,13 +103,13 @@
 (defn update-offsets! [consumer tps]
   (doseq [tp tps]
     (swap! current-offsets assoc [(.topic tp) (.partition tp)] (.position consumer tp)))
-  (spit offset-file (pr-str @current-offsets)))
+  (spit (offset-file) (pr-str @current-offsets)))
 
 (def run-consumer (atom true))
 
 (defn read-offsets! [] 
-  (if (.exists (io/as-file offset-file))
-    (reset! current-offsets (-> offset-file slurp edn/read-string))
+  (if (.exists (io/as-file (offset-file)))
+    (reset! current-offsets (-> (offset-file) slurp edn/read-string))
     (reset! current-offsets {})))
 
 
