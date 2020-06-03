@@ -10,6 +10,7 @@
 (def dx-key-pass (System/getenv "SERVEUR_KEY_PASS"))
 (def dx-topics (System/getenv "CG_SEARCH_TOPICS"))
 (def dx-stage-jaas (System/getenv "DX_STAGE_JAAS"))
+(def genegraph-bucket (System/getenv "GENEGRAPH_BUCKET"))
 
 (defn log-environment []
   (log/info :fn :log-environment
