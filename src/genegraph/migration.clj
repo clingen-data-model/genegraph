@@ -30,6 +30,7 @@
 (defn build-database
   "Build the Jena database and associated indexes from scratch."
   [path]
+  (println "Building database at " path)
   (with-redefs [env/data-vol path]
     (fs/mkdirs env/data-vol)
     (start #'db/db)
@@ -47,10 +48,12 @@
 (defn compress-database
   "Construct a tarball out of the given database"
   [source-dir target-archive]
+  (println "Compressing database at " source-dir " to " target-archive)
   (sh "tar" "-czf" (str target-archive ".tar.gz") "-C" source-dir "."))
 
 (defn send-database
   [target-bucket database-archive database-version]
+  (println "Sending " database-archive " to " target-bucket " with version " database-version)
   (let [gc-storage (.getService (StorageOptions/getDefaultInstance))
         blob-id (BlobId/of target-bucket (str database-version ".tar.gz"))
         blob-info (-> blob-id BlobInfo/newBuilder (.setContentType "application/gzip") .build)
@@ -66,11 +69,4 @@
         archive-path (str database-path ".tar.gz")]
     (build-database database-path)
     (compress-database database-path archive-path)
-    (send-database env/genegraph-bucket archive-path version-id))
-
-  ;; create directory
-  ;; build database
-  ;; unmount database
-  ;; create tarball
-  ;; send to GCS
-  )
+    (send-database env/genegraph-bucket archive-path version-id)))
