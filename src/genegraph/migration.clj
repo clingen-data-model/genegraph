@@ -29,25 +29,20 @@
 
 (defn build-database
   "Build the Jena database and associated indexes from scratch."
-  []
-  (let [version-id (new-version-identifier)
-        path (str env/base-dir "/" version-id)]
-    (with-redefs [env/data-vol path]
-      (println env/data-vol)
-      (fs/mkdirs env/data-vol)
-      (start #'db/db)
-      (base/initialize-db!)
-      (start #'stream/consumer-thread)
-      ;; There seems to be a race condition here
-      ;; the threads shut down almost as soon as they start.
-      ;; Sleep for a couple minutes to let them warm up
-      (Thread/sleep (* 1000 60 2))
-      (while (not (stream/up-to-date?))
-        (Thread/sleep (* 1000 10)))
-      (stop #'stream/consumer-thread)
-      (while (not (stream/consumers-closed?))
-        (Thread/sleep 1000))
-      (stop #'db/db))))
+  [path]
+  (with-redefs [env/data-vol path]
+    (fs/mkdirs env/data-vol)
+    (start #'db/db)
+    (base/initialize-db!)
+    (start #'stream/consumer-thread)
+    ;; Address race where all threads are "up to date", needs better fix
+    (Thread/sleep (* 1000 60 2))
+    (while (not (stream/up-to-date?))
+      (Thread/sleep (* 1000 10)))
+    (stop #'stream/consumer-thread)
+    (while (not (stream/consumers-closed?))
+      (Thread/sleep 1000))
+    (stop #'db/db)))
 
 (defn compress-database
   "Construct a tarball out of the given database"
@@ -63,8 +58,19 @@
     (with-open [to (.writer gc-storage blob-info (make-array Storage$BlobWriteOption 0))]
       (ByteStreams/copy from to))))
 
-;; create directory
-;; build database
-;; unmount database
-;; create tarball
-;; send to GCS
+(defn create-migration
+  "Populate a new database, package and upload to Google Cloud"
+  []
+  (let [version-id (new-version-identifier)
+        database-path (str env/base-dir "/" version-id)
+        archive-path (str database-path ".tar.gz")]
+    (build-database database-path)
+    (compress-database database-path archive-path)
+    (send-database env/genegraph-bucket archive-path version-id))
+
+  ;; create directory
+  ;; build database
+  ;; unmount database
+  ;; create tarball
+  ;; send to GCS
+  )
