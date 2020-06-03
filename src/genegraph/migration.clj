@@ -27,6 +27,10 @@
       (start #'db/db)
       (base/initialize-db!)
       (start #'stream/consumer-thread)
+      ;; TODO There seems to be a race condition here
+      ;; the threads shut down almost as soon as they start.
+      ;; Sleep for a couple minutes to let them warm up
+      (Thread/sleep (* 1000 60 2))
       (while (not (stream/up-to-date?))
         (Thread/sleep (* 1000 10)))
       (stop #'stream/consumer-thread)
