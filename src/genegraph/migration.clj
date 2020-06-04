@@ -49,7 +49,7 @@
   "Construct a tarball out of the given database"
   [source-dir target-archive]
   (println "Compressing database at " source-dir " to " target-archive)
-  (let [result (sh "tar" "-czf" (str target-archive ".tar.gz") "-C" source-dir ".")]
+  (let [result (sh "tar" "-czf" target-archive "-C" source-dir ".")]
     (if (= 0 (:exit result))
       true
       false)))
