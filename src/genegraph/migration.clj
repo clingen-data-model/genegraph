@@ -49,7 +49,10 @@
   "Construct a tarball out of the given database"
   [source-dir target-archive]
   (println "Compressing database at " source-dir " to " target-archive)
-  (sh "tar" "-czf" (str target-archive ".tar.gz") "-C" source-dir "."))
+  (let [result (sh "tar" "-czf" (str target-archive ".tar.gz") "-C" source-dir ".")]
+    (if (= 0 (:exit result))
+      true
+      false)))
 
 (defn send-database
   [target-bucket database-archive database-version]
@@ -69,4 +72,5 @@
         archive-path (str database-path ".tar.gz")]
     (build-database database-path)
     (compress-database database-path archive-path)
+    (Thread/sleep 1000) ;; seems to be a race condition here to avoid
     (send-database env/genegraph-bucket archive-path version-id)))
