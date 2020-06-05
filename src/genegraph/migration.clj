@@ -11,6 +11,7 @@
   (:import [java.time ZonedDateTime ZoneOffset]
            java.time.format.DateTimeFormatter
            [java.nio ByteBuffer]
+           [java.nio.file Path Paths]
            [java.io InputStream OutputStream FileInputStream File]
            [com.google.common.io ByteStreams]
            [org.apache.kafka.clients.producer Producer KafkaProducer ProducerRecord]
@@ -74,3 +75,33 @@
     (compress-database database-path archive-path)
     (Thread/sleep 1000) ;; seems to be a race condition here to avoid
     (send-database env/genegraph-bucket archive-path version-id)))
+
+(defn retrieve-migration
+  "Pull the specified migration from cloud storage."
+  [bucket blob-name target-dir]
+  (let [target-path (Paths/get (str target-dir "/" blob-name)
+                               (make-array java.lang.String 0))
+        blob (.get (.getService (StorageOptions/getDefaultInstance))
+                   (BlobId/of bucket blob-name))]
+    (fs/mkdirs target-dir)
+    (.downloadTo blob target-path)))
+
+(defn decompress-database
+  "After database has been downloaded, extract the tarball"
+  [target-dir archive-path]
+  (let [result (sh "tar" "-xzf" archive-path "-C" target-dir)]
+    (if (= 0 (:exit result))
+      true
+      false)))
+
+(defn populate-data-vol-if-needed
+  "Check to see if a copy of the data already exists, if not, download and decompress the
+  database."
+  []
+  (when-not (.exists (io/file env/data-vol "tdb"))
+    (let [archive-file (str env/data-version ".tar.gz")]
+      (fs/mkdirs env/data-vol)
+      (println "retrieving " archive-file)
+      (retrieve-migration env/genegraph-bucket archive-file env/data-vol)
+      (println "decompressing " archive-file)
+      (decompress-database env/data-vol "/" archive-file))))
