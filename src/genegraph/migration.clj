@@ -104,4 +104,4 @@
       (println "retrieving " archive-file)
       (retrieve-migration env/genegraph-bucket archive-file env/data-vol)
       (println "decompressing " archive-file)
-      (decompress-database env/data-vol "/" archive-file))))
+      (decompress-database env/data-vol archive-file))))
