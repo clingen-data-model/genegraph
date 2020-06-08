@@ -90,6 +90,7 @@
   "After database has been downloaded, extract the tarball"
   [target-dir archive-path]
   (let [result (sh "tar" "-xzf" archive-path "-C" target-dir)]
+    (println result)
     (if (= 0 (:exit result))
       true
       false)))
@@ -99,9 +100,11 @@
   database."
   []
   (when-not (.exists (io/file env/data-vol "tdb"))
-    (let [archive-file (str env/data-version ".tar.gz")]
+    (let [archive-file (str env/data-vol "/" env/data-version ".tar.gz")]
       (fs/mkdirs env/data-vol)
       (println "retrieving " archive-file)
       (retrieve-migration env/genegraph-bucket archive-file env/data-vol)
       (println "decompressing " archive-file)
       (decompress-database env/data-vol archive-file))))
+
+
