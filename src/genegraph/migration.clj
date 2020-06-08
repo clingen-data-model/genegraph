@@ -100,11 +100,12 @@
   database."
   []
   (when-not (.exists (io/file env/data-vol "tdb"))
-    (let [archive-file (str env/data-vol "/" env/data-version ".tar.gz")]
+    (let [archive-file (str env/data-version ".tar.gz")
+          archive-path (str env/data-vol "/" archive-file)]
       (fs/mkdirs env/data-vol)
       (println "retrieving " archive-file)
       (retrieve-migration env/genegraph-bucket archive-file env/data-vol)
-      (println "decompressing " archive-file)
-      (decompress-database env/data-vol archive-file))))
+      (println "decompressing " archive-path)
+      (decompress-database env/data-vol archive-path))))
 
 
