@@ -8,7 +8,7 @@
   (:import [org.apache.jena.query.text TextDatasetFactory]))
 
 (def assembly-file "genegraph-assembly.ttl")
-(def assembly-file-expanded (str env/data-vol "/" assembly-file))
+
 
 (defn get-expanded-assembly-file
   "The jena assembly file (resource/genegraph-assembly.ttl) defines where the
@@ -18,12 +18,13 @@
   the $CG_SEARCH_DATA_VOL environment variable and will use that file as the
   assembly."
   []
-  (with-open [r (clojure.java.io/reader (io/resource assembly-file))]
-    (with-open [w (clojure.java.io/writer assembly-file-expanded)]
+  (let [path (str env/data-vol "/" assembly-file)]
+    (with-open [r (clojure.java.io/reader (io/resource assembly-file))
+                w (clojure.java.io/writer path)]
       (doseq [line (line-seq r)]
         (.write w (string/replace line #"\$CG_SEARCH_DATA_VOL" env/data-vol))
-        (.newLine w))))
-  assembly-file-expanded)
+        (.newLine w)))
+    path))
 
 (defstate db
   :start (TextDatasetFactory/create (get-expanded-assembly-file))

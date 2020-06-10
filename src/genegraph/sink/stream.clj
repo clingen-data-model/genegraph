@@ -4,7 +4,7 @@
             [genegraph.env :as env]
             [clojure.java.io :as io]
             [cheshire.core :as json]
-            [mount.core :refer [defstate]]
+            [mount.core :refer [defstate start stop]]
             [clojure.edn :as edn]
             [io.pedestal.log :as log]
             [genegraph.transform.actionability]
@@ -22,11 +22,14 @@
 
 (def config (->> "kafka.edn" io/resource slurp edn/read-string (postwalk #(if (symbol? %) (-> % resolve var-get) %))))
 
-(def offset-file (str env/data-vol "/partition_offsets.edn"))
+(defn offset-file []
+  (str env/data-vol "/partition_offsets.edn"))
 
 (def current-offsets (atom {}))
 
 (def end-offsets (atom {}))
+
+(def topic-state (atom {}))
 
 (defn document-name [doc-def model]
   (-> (q/select "select ?x where {?x a ?type}"
@@ -70,7 +73,7 @@
         end-offset-map (reduce (fn [acc [k v]]
                                  (assoc acc [(.topic k) (.partition k)] v))
                                {} kafka-end-offsets)]
-    (reset! end-offsets end-offset-map)))
+    (swap! end-offsets merge end-offset-map)))
 
 (defn import-record! [record doc-def]
   (try
@@ -100,13 +103,13 @@
 (defn update-offsets! [consumer tps]
   (doseq [tp tps]
     (swap! current-offsets assoc [(.topic tp) (.partition tp)] (.position consumer tp)))
-  (spit offset-file (pr-str @current-offsets)))
+  (spit (offset-file) (pr-str @current-offsets)))
 
 (def run-consumer (atom true))
 
 (defn read-offsets! [] 
-  (if (.exists (io/as-file offset-file))
-    (reset! current-offsets (-> offset-file slurp edn/read-string))
+  (if (.exists (io/as-file (offset-file)))
+    (reset! current-offsets (-> (offset-file) slurp edn/read-string))
     (reset! current-offsets {})))
 
 
@@ -117,19 +120,20 @@
   up-to-date while they are read. Terminates when the run-consumer atom returns false"
   [topic]
   (fn []
-    (let [consumer (consumer-for-topic topic)
-          tp (topic-partitions consumer topic)
-          topic-name (-> config :topics topic :name)]
-      (.assign consumer tp)
-      (doseq [part tp]
-        (if-let [offset (get @current-offsets [topic-name (.partition part)])]
-          (.seek consumer part offset)
-          (.seekToBeginning consumer [part])))
-      (read-end-offsets! consumer tp)
-      (while @run-consumer
-        (doseq [record (poll-once consumer)]
-          (import-record! record (-> config :topics topic)))
-        (update-offsets! consumer tp)))))
+    (with-open [consumer (consumer-for-topic topic)]
+      (let [tp (topic-partitions consumer topic)
+            topic-name (-> config :topics topic :name)]
+        (.assign consumer tp)
+        (doseq [part tp]
+          (if-let [offset (get @current-offsets [topic-name (.partition part)])]
+            (.seek consumer part offset)
+            (.seekToBeginning consumer [part])))
+        (read-end-offsets! consumer tp)
+        (while @run-consumer
+          (doseq [record (poll-once consumer)]
+            (import-record! record (-> config :topics topic)))
+          (update-offsets! consumer tp))
+        (swap! topic-state assoc topic :stopped)))))
 
 (defn up-to-date? 
   "Returns true if all partitions of all topics subscribed to have had messages
@@ -141,6 +145,11 @@
         false
         true))))
 
+(defn consumers-closed?  []
+  (if (some #(= :running %) (vals @topic-state))
+    false
+    true))
+
 (defn subscribe!
   "Start a Kafka consumer listening to topics in topic-list
   Messages are transformed to RDF, if needed, and imported into triplestore"
@@ -150,7 +159,8 @@
     (let [thread (-> topic assign-topic! Thread.)]
       (log/info :fn :subscribe!
                 :msg (str "assigning " topic))
-      (.start thread))))
+      (.start thread)
+      (swap! topic-state assoc topic :running))))
 
 (defstate consumer-thread
   :start (let [topics (map keyword (s/split env/dx-topics #";"))]
@@ -209,3 +219,13 @@
 
 
 
+(defn update-db-from-stream
+  "Read the stream into the database to current offets. Returns when all topics have completed."
+  []
+  ;; open streams
+  (start topic-partitions)
+  ;; sync on all streams read to current offset
+  ;; close consumers
+  ;; sync on all consumers complete
+  ;; return
+  )
