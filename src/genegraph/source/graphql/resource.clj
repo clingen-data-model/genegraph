@@ -1,5 +1,5 @@
 (ns genegraph.source.graphql.resource
-  (:require [genegraph.database.query :as q]))
+  (:require [genegraph.database.query :as q :refer [create-query]]))
 
 (defn iri [context args value]
   (str value))
@@ -31,3 +31,27 @@
 
 (defn description [context args value]
   (first (:dc/description value)))
+
+(def all-superclasses-query (create-query 
+                             (str "select ?superclass where "
+                                  " { ?class"
+                                  " <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+                                  " ?superclass } ")))
+
+(defn all-superclasses [context args value]
+  (all-superclasses-query {:class value}))
+
+(defn direct-superclasses [context args value]
+  (:rdfs/sub-class-of value))
+
+(def all-subclasses-query (create-query 
+                           (str "select ?subclass where "
+                                " { ?subclass"
+                                " <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+                                " ?class } ")))
+
+(defn all-subclasses [context args value]
+  (all-subclasses-query {:class value}))
+
+(defn direct-subclasses [context args value]
+  (get value [:rdfs/sub-class-of :<]))

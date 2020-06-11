@@ -247,6 +247,18 @@
               :description {:type 'String
                             :resolve condition/description
                             :description "Disease description name."}
+              :superclasses {:type '(list :Disease)
+                             :resolve resource/all-superclasses
+                             :description "All superclasses of the disease"}
+              :direct_superclasses {:type '(list :Disease)
+                                    :resolve resource/direct-superclasses
+                                    :description "Direct superclasses of the disease"}
+              :subclasses {:type '(list :Disease)
+                           :resolve resource/all-subclasses
+                           :description "All subclasses of the disease"}
+              :direct_subclasses {:type '(list :Disease)
+                                  :resolve resource/direct-subclasses
+                                  :description "Direct subclasses of the disease"}
               :previous_names {:type '(list String)
                             :resolve condition/previous-names
                                :description "Previous condition names."}

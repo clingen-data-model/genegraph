@@ -125,3 +125,6 @@
                         "FILTER (!isBlank(?s)) }"))))]
     {:disease_list (query query-params)
      :count (query (assoc query-params ::q/params {:type :count :distinct true}))}))
+
+
+
