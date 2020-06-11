@@ -12,7 +12,7 @@
                  [org.slf4j/jul-to-slf4j "1.7.26"]
                  [org.slf4j/jcl-over-slf4j "1.7.26"]
                  [org.slf4j/log4j-over-slf4j "1.7.26"]
-                 [org.apache.kafka/kafka-clients "2.3.0"]
+                 [org.apache.kafka/kafka-clients "2.5.0"]
                  [cheshire "5.8.1"]
                  [org.clojure/data.csv "0.1.4"]
                  [camel-snake-kebab "0.4.0"]
@@ -24,10 +24,10 @@
 [org.apache.jena/jena-iri "3.14.0" :exclusions [org.slf4j/slf4j-api]]
 [org.apache.kafka/kafka-clients "2.3.0" :exclusions [org.slf4j/slf4j-api]]
                  [org.topbraid/shacl "1.1.0"]
-                 [mount "0.1.14"]
+                 [mount "0.1.16"]
                  [com.velisco/clj-ftp "0.3.9"] ;; For downloading ftp docs
                  [clj-http "3.9.1"] ;; For downloading 
-                 [com.walmartlabs/lacinia-pedestal "0.12.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
+                 [com.walmartlabs/lacinia-pedestal "0.13.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
                  [clj-commons/fs "1.5.2"]
                  ;; Dirwatch for updating base files in development
                  [juxt/dirwatch "0.2.5"]
