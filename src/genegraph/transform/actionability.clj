@@ -1,7 +1,7 @@
 (ns genegraph.transform.actionability
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q]
-            [genegraph.transform.core :refer [transform-doc src-path]]
+            [genegraph.transform.core :refer [transform-doc src-path add-model]]
             [cheshire.core :as json]
             [clojure.java.io :as io]
             [clojure.spec.alpha :as spec]))
@@ -81,4 +81,9 @@
   (let [doc (or (:document doc-def) (slurp (src-path doc-def)))]
     (transform (json/parse-string doc true))))
 
+
+(defmethod add-model :actionability-v1 [event]
+  (assoc event
+         :genegraph.sink.event/model
+         (transform (json/parse-string (:genegraph.sink.event/value event) true))))
 
