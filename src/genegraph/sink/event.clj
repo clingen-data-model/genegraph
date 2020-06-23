@@ -3,7 +3,10 @@
             [genegraph.database.query :as q]
             [genegraph.database.load :refer [load-model]]
             [clojure.edn :as edn]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [genegraph.transform.core :refer [add-model]]
+            [genegraph.transform.gci-legacy :as gci-legacy]
+            [genegraph.transform.actionability :as aci]))
 
 (def formats (-> "formats.edn" io/resource slurp edn/read-string))
 
