@@ -12,8 +12,8 @@
         fn-args (into [] (cons (gensym) args))]
     `(defn ~resolver-name ~fn-args
        (swap! resolver-cache #(if (cache/has? % ~key)
-                                (do (println "cache hit!") (cache/hit % ~key))
-                                (do (println "cache miss!") (cache/miss % ~key (do ~@body)))))
+                                (cache/hit % ~key)
+                                (cache/miss % ~key (do ~@body))))
        (cache/lookup @resolver-cache ~key))))
 
 (defn reset-cache! 
