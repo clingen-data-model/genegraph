@@ -1,22 +1,23 @@
 (ns genegraph.source.graphql.dosage-proposition
   (:require [genegraph.database.query :as q]
+            [genegraph.source.graphql.common.cache :refer [defresolver]]
             [clojure.string :as str]))
 
-(defn wg-label [context args value]
+(defresolver wg-label [args value]
   (println "DosageCuration - in WG-LABEL Value=" value)
   "Gene Dosage Working Group")
 
-(defn classification-description [context args value]
+(defresolver classification-description [args value]
   (q/ld1-> value [:sepio/has-object :rdfs/label]))
 
-(defn report-date [context args value]
+(defresolver report-date [args value]
   (q/ld1-> value [:sepio/qualified-contribution :sepio/activity-date]))
 
-(defn evidence [context args value]
+(defresolver evidence [args value]
   (q/ld-> value [:sepio/has-evidence-line-with-item]))
 
-(defn score [context args value]
-  (when-let [classification (classification-description context args value)]
+(defresolver score [args value]
+  (when-let [classification (classification-description args value)]
     (case (str/lower-case classification)
       "no evidence" :NO_EVIDENCE
       "minimal evidence" :MINIMAL_EVIDENCE
@@ -25,19 +26,19 @@
       "gene associated with autosomal recessive phenotype" :ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE
       "dosage sensitivity unlikely" :DOSAGE_SENSITIVITY_UNLIKELY)))
 
-(defn assertion-type [context args value]
+(defresolver assertion-type [args value]
   (if (= 1 (q/ld1-> value [:sepio/has-subject :sepio/has-subject :geno/has-member-count]))
     :HAPLOINSUFFICIENCY_ASSERTION
     :TRIPLOSENSITIVITY_ASSERTION))
 
-(defn comments [context args value]
+(defresolver comments [args value]
   (q/ld1-> value [:dc/description]))
 
-(defn phenotypes [context args value]
+(defresolver phenotypes [args value]
   (str/join ", " (q/ld-> value [[:sepio/has-object :>] [:owl/equivalent-class :<] :rdfs/label])))
 
-(defn gene [context args value]
+(defresolver gene [args value]
   (q/ld1-> value [:sepio/has-subject :sepio/has-subject :geno/has-location]))
 
-(defn disease [context args value]
+(defresolver disease [args value]
   (q/ld1-> value [:sepio/has-subject :sepio/has-object [:owl/equivalent-class :<]]))

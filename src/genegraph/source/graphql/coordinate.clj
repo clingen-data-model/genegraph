@@ -1,21 +1,22 @@
 (ns genegraph.source.graphql.coordinate
   (:require [genegraph.database.query :as q]
+            [genegraph.source.graphql.common.cache :refer [defresolver]]
             [clojure.string :as str]))
 
-(defn build [context args value]
+(defresolver build [args value]
   (q/ld1-> value [:so/assembly :data/genome-build-identifier]))
 
-(defn assembly [context args value]
+(defresolver assembly [args value]
   (q/ld1-> value [:so/assembly]))
 
-(defn chromosome [context args value]
+(defresolver chromosome [args value]
   (q/ld1-> value [:so/assembly :so/chromosome]))
 
-(defn strand [context args value]
+(defresolver strand [args value]
   (q/ld1-> value [:geno/on-strand]))
 
-(defn start-pos [context args value]
+(defresolver start-pos [args value]
   (q/ld1-> value [:geno/has-interval :geno/start-position]))
 
-(defn end-pos [context args value]
+(defresolver end-pos [args value]
   (q/ld1-> value [:geno/has-interval :geno/end-position]))

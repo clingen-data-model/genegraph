@@ -1,20 +1,21 @@
 (ns genegraph.source.graphql.genetic-condition
-  (:require [genegraph.source.graphql.common.curation :as curation]))
+  (:require [genegraph.source.graphql.common.curation :as curation]
+            [genegraph.source.graphql.common.cache :refer [defresolver]]))
 
-(defn gene [context args value]
+(defresolver gene [args value]
   (:gene value))
 
-(defn disease [context args value]
+(defresolver disease [args value]
   (:disease value))
 
-(defn mode-of-inheritance [context args value]
+(defresolver mode-of-inheritance [args value]
   (:mode-of-inheritance value))
 
-(defn actionability-curations [context args value]
+(defresolver actionability-curations [args value]
   (curation/actionability-curations-for-genetic-condition value))
 
-(defn gene-validity-curation [context args value]
+(defresolver gene-validity-curation [args value]
   (curation/gene-validity-curations value))
 
-(defn gene-dosage-curation [context args value]
+(defresolver gene-dosage-curation [args value]
   (curation/dosage-sensitivity-curations-for-genetic-condition value))

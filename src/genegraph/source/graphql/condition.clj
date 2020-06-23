@@ -1,18 +1,19 @@
 (ns genegraph.source.graphql.condition
   (:require [genegraph.database.query :as q :refer [declare-query create-query ld-> ld1->]]
+            [genegraph.source.graphql.common.cache :refer [defresolver]]
             [genegraph.source.graphql.common.curation :as curation]
             [clojure.string :as str]))
 
-(defn gene [context args value]
+(defresolver gene [args value]
   (q/ld1-> value [:sepio/is-about-gene]))
 
-(defn condition-query [context args value]
+(defresolver condition-query [args value]
   (q/resource (:iri args)))
 
-(defn actionability-curations [context args value]
+(defresolver actionability-curations [args value]
   (q/ld-> value [[:sepio/is-about-condition :<]]))
 
-;; (defn genetic-conditions [context args value]
+;; (defresolver genetic-conditions [args value]
 ;;   (if (q/is-rdf-type? value :sepio/GeneticCondition)
 ;;     (let [g (q/ld1-> value [:sepio/is-about-gene])]
 ;;       (filter #(and (q/is-rdf-type? % :sepio/GeneticCondition)
@@ -21,22 +22,22 @@
 ;;     (->> (q/ld-> value [[:rdfs/sub-class-of :<]])
 ;;          (filter #(q/is-rdf-type? % :sepio/GeneticCondition)))))
 
-(defn genetic-conditions [context args value]
+(defresolver genetic-conditions [args value]
   (curation/curated-genetic-conditions-for-disease {:disease value}))
 
-(defn description [context args value]
+(defresolver description [args value]
   (q/ld1-> value [:iao/definition]))
 
-(defn previous-names [context args value]
+(defresolver previous-names [args value]
   )
 
-(defn aliases [context args value]
+(defresolver aliases [args value]
   )
 
-(defn equivalent-conditions [context args value]
+(defresolver equivalent-conditions [args value]
   )
 
-(defn last-curated-date [context args value]
+(defresolver last-curated-date [args value]
   (let [curation-dates (concat (ld-> value [[:sepio/has-object :<] ;;GENE_VALIDITY
                                             [:sepio/has-subject :<]
                                             :sepio/qualified-contribution
@@ -52,12 +53,12 @@
                                             :sepio/activity-date]))]
     (->> curation-dates sort last)))
 
-(defn curation-activities [context args value]
+(defresolver curation-activities [args value]
   (curation/activities {:disease value}))
 
 
 ;; DEPRECATED
-(defn disease-list [context args value]
+(defresolver disease-list [args value]
   (let [params (-> args (select-keys [:limit :offset]) (assoc :distinct true))
         selected-curation-type-bgp (case (:curation_type args)
                                      :GENE_VALIDITY curation/gene-validity-bgp
@@ -80,7 +81,7 @@
                                    "FILTER (!isBlank(?s)) }")))]
     (query {::q/params params})))
 
-(defn diseases [context args value]
+(defresolver diseases [args value]
   (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
         query-params (if (:text args)
                        {:text (-> args :text str/lower-case) ::q/params params}

@@ -1,7 +1,11 @@
 (ns genegraph.source.graphql.common.cache
-  (:require [clojure.core.cache :as cache]))
+  (:require [clojure.core.cache :as cache]
+            [genegraph.env :as env]))
 
-(def resolver-cache (atom (cache/lru-cache-factory {})))
+(defn create-cache []
+  (cache/lru-cache-factory {} :threshold 100000))
+
+(def resolver-cache (atom (create-cache)))
 
 (defmacro defresolver
   "Define a Lacinia GraphQL resolver that uses the cache defined above. Resolver should be
@@ -11,20 +15,15 @@
   (let [key (conj args resolver-name)
         fn-args (into [] (cons (gensym) args))]
     `(defn ~resolver-name ~fn-args
-       (swap! resolver-cache #(if (cache/has? % ~key)
-                                (cache/hit % ~key)
-                                (cache/miss % ~key (do ~@body))))
-       (cache/lookup @resolver-cache ~key))))
+       (if env/use-gql-cache
+         (do (swap! resolver-cache #(if (cache/has? % ~key)
+                                    (cache/hit % ~key)
+                                    (cache/miss % ~key (do ~@body))))
+             (cache/lookup @resolver-cache ~key))
+         (do ~@body)))))
 
 (defn reset-cache! 
   "Blow away the entire cache."
   []
-  (reset! resolver-cache (atom (cache/lru-cache-factory {}))))
+  (reset! resolver-cache (atom (create-cache))))
 
-(defresolver test-resolver [args value]
-  (println "args: " args " value: " value)
-  42)
-
-(defresolver test-resolver2 [args value]
-  (println "args: " args " value: " value)
-  "llama")

@@ -11,6 +11,7 @@
 (def dx-topics (System/getenv "CG_SEARCH_TOPICS"))
 (def dx-stage-jaas (System/getenv "DX_STAGE_JAAS"))
 (def genegraph-bucket (System/getenv "GENEGRAPH_BUCKET"))
+(def use-gql-cache (System/getenv "GENEGRAPH_GQL_CACHE"))
 
 (defn log-environment []
   (log/info :fn :log-environment
