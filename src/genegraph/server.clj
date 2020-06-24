@@ -24,10 +24,16 @@
                     {:status 503 :body "server is not ready"}))
      :route-name ::readiness]]})
 
+(defn start-server! []
+  (let [service-map (case env/mode
+                      "production" (service/service)
+                      (service/dev-service))]
+    (server/start 
+     (server/create-server
+      (merge-with into service-map status-routes)))))
+
 (defstate server
-  :start (server/start 
-          (server/create-server
-           (merge-with into (service/service) status-routes)))
+  :start (start-server!)
   :stop (server/stop server))
 
 (defn run-dev
