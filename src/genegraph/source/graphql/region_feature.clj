@@ -1,11 +1,12 @@
 (ns genegraph.source.graphql.region-feature
-  (:require [genegraph.database.query :as q]))
+  (:require [genegraph.database.query :as q]
+            [genegraph.source.graphql.common.cache :refer [defresolver]]))
 
-(defn label [context args value]
+(defresolver label [args value]
   (q/ld1-> value [:rdfs/label]))
 
-(defn chromosomal-band [context args value]
+(defresolver chromosomal-band [args value]
   (q/ld1-> value [:so/chromosome-band]))
 
-(defn coordinates [context args value]
+(defresolver coordinates [args value]
   (q/ld-> value [:geno/has-location]))

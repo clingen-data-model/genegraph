@@ -2,6 +2,7 @@
   (:require [clojure.string :as string]
             [genegraph.database.names :as names]
             [genegraph.database.query :as q :refer [->RDFResource]]
+            [genegraph.source.graphql.common.cache :refer [defresolver]]
             [com.walmartlabs.lacinia.schema :refer [tag-with-type]]
             [genegraph.database.instance :refer [db]])
   (:import  [org.apache.jena.query ReadWrite QueryFactory QueryExecutionFactory]
@@ -118,80 +119,80 @@
           filters)
        flatten))
 
-(defn dosage-list-query [context args value]
+(defresolver dosage-list-query [args value]
   "Returns a list of labelled gene and region dosage reports combined and ordered by label"
   (if (:filters args)
     (filtered-dosage-reports (:filters args))
     (all-labelled-dosage-reports)))
 
-(defn gene-dosage-query [context args value]
+(defresolver gene-dosage-query [args value]
   (q/resource (:iri args)))
 
-(defn wg-label [context args value]
+(defresolver wg-label [args value]
   "Gene Dosage Working Group")
 
-(defn haplo [context args value]
+(defresolver haplo [args value]
   (->> (q/ld-> value [:bfo/has-part])
        (filter #(= 1 (q/ld1-> % [:sepio/has-subject :sepio/has-subject :geno/has-member-count])))
        (first)))
 
-(defn has-haplo? [context args value]
-  (not (nil? (haplo context args value))))
+(defresolver has-haplo? [args value]
+  (not (nil? (haplo args value))))
        
-(defn triplo [context args value]
+(defresolver triplo [args value]
   (->> (q/ld-> value [:bfo/has-part])
        (filter #(= 3 (q/ld1-> % [ :sepio/has-subject :sepio/has-subject :geno/has-member-count])))
        (first)))
   
-(defn has-triplo? [context args value]
-  (not (nil? (triplo context args value))))
+(defresolver has-triplo? [args value]
+  (not (nil? (triplo args value))))
 
-(defn label [context args value]
+(defresolver label [args value]
   (str (q/ld1-> value [:iao/is-about :rdfs/label])
        (q/ld1-> value [:iao/is-about :skos/preferred-label])))
        
 
-(defn classification-description [context args value]
+(defresolver classification-description [args value]
   (str (q/ld1-> value [:bfo/has-part :sepio/has-object :rdfs/label]) " for dosage pathogenicity"))
 
-(defn report-date [context args value]
+(defresolver report-date [args value]
   (q/ld1-> value [:sepio/qualified-contribution :sepio/activity-date]))
 
 (defn gene? [dosage-report-resource]
   (= (str (:so/ProteinCodingGene names/local-names))
      (str (q/ld1-> dosage-report-resource [:iao/is-about :rdf/type]))))
 
-(defn gene [context args value]
+(defresolver gene [args value]
   (if (gene? value)
     (first (:iao/is-about value))
     nil))
 
-(defn morbid [context args value]
-  (when-let [gene (gene context args value)] 
+(defresolver morbid [args value]
+  (when-let [gene (gene args value)] 
     (q/ld-> gene [[:sepio/is-about-gene :<]])))
 
-(defn morbid-phenotypes [context args value]
+(defresolver morbid-phenotypes [args value]
   "Returns the MONDO equivalent phenotype descriptions"
-  (->> (morbid context args value)
+  (->> (morbid args value)
        (map #(q/ld1-> % [[:owl/equivalent-class :<] :rdfs/label]))
        (remove nil?)))
 
-(defn omim [context args value]
+(defresolver omim [args value]
   (q/ld1-> value []))
 
-(defn pli-score [context args value]
+(defresolver pli-score [args value]
   (if-let [triplo (first (q/select "select ?s where { ?s :iao/is-about ?gene ; a :cg/TriplosensitivityScore }"
                 {:gene (first (:iao/is-about value))}))]
     (q/ld1-> triplo [:sepio/confidence-score])
     nil))
    
-(defn haplo-index [context args value]
+(defresolver haplo-index [args value]
   (if-let [haplo (first (q/select "select ?s where { ?s :iao/is-about ?gene ; a :cg/HaploinsufficiencyScore }"
                 {:gene (first (:iao/is-about value))}))]
     (q/ld1-> haplo [:sepio/confidence-score])
     nil))
 
-(defn location-relationship [context args value]
+(defresolver location-relationship [args value]
   (q/ld-> value []))
 
 (defn evidence-level [dosage]
@@ -200,38 +201,38 @@
 (defn description [dosage]
     (q/ld1-> dosage [[:sepio/has-subject :<] :dc/description]))
 
-(defn haplo-evidence-level [context args value]
-  (when-let [haplo (haplo context args value)]
+(defresolver haplo-evidence-level [args value]
+  (when-let [haplo (haplo args value)]
     (evidence-level haplo)))
 
-(defn haplo-description [context args value]
-  (when-let [haplo (first (haplo context args value))]
+(defresolver haplo-description [args value]
+  (when-let [haplo (first (haplo args value))]
     (description haplo)))
 
-(defn triplo-evidence-level [context args value]
-  (when-let [triplo (triplo context args value)]
+(defresolver triplo-evidence-level [args value]
+  (when-let [triplo (triplo args value)]
     (evidence-level triplo)))
 
-(defn triplo-description [context args value]
-  (if-let [triplo (first (triplo context args value))]
+(defresolver triplo-description [args value]
+  (if-let [triplo (first (triplo args value))]
     (description triplo)))
 
-(defn genomic-feature [context args value]
+(defresolver genomic-feature [args value]
   (let [feature (q/ld1-> value [:iao/is-about])]
     (if (gene? value)
       (tag-with-type feature :GeneFeature)
       (tag-with-type feature :RegionFeature))))
 
-(defn gene-count [context args value]
+(defresolver gene-count [args value]
   (count (all-gene-dosage-reports)))
 
-(defn region-count [context args value]
+(defresolver region-count [args value]
   (count (all-region-dosage-reports)))
 
-(defn total-count [context args value]
-  (+ (gene-count context args value) (region-count context args value)))
+(defresolver total-count [args value]
+  (+ (gene-count args value) (region-count args value)))
 
 ;; This is the resolver function for the totals graphql query.
 ;; It needs to return a non-null value"
-(defn totals-query [context args value]
+(defresolver totals-query [args value]
   true)

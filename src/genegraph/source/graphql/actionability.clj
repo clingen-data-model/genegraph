@@ -1,27 +1,28 @@
 (ns genegraph.source.graphql.actionability
-  (:require [genegraph.database.query :as q]))
+  (:require [genegraph.database.query :as q]
+            [genegraph.source.graphql.common.cache :refer [defresolver]]))
 
-(defn actionability-query [context args value]
+(defresolver actionability-query [args value]
   (q/resource (:iri args)))
 
-(defn report-date [context args value]
+(defresolver report-date [args value]
   (->
    (q/ld-> value 
            [:sepio/qualified-contribution :sepio/activity-date])
    sort
    last))
 
-(defn report-id [context args value]
+(defresolver report-id [args value]
   (->> value str (re-find #"\w+$")))
 
-(defn wg-label [context args value]
+(defresolver wg-label [args value]
   (q/ld1-> value [:sepio/qualified-contribution :sepio/has-agent :rdfs/label]))
 
-(defn classification-description [context args value]
+(defresolver classification-description [args value]
   "View report for scoring details")
 
-(defn conditions [context args value]
+(defresolver conditions [args value]
   (:sepio/is-about-condition value))
 
-(defn source [context args value]
+(defresolver source [args value]
   (q/ld1-> value [:dc/source]))

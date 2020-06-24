@@ -6,7 +6,8 @@
             [clojure.java.io :as io]
             [genegraph.transform.core :refer [add-model]]
             [genegraph.transform.gci-legacy :as gci-legacy]
-            [genegraph.transform.actionability :as aci]))
+            [genegraph.transform.actionability :as aci]
+            [genegraph.source.graphql.common.cache :as cache]))
 
 (def formats (-> "formats.edn" io/resource slurp edn/read-string))
 
@@ -26,8 +27,10 @@
   event)
 
 (defn process-event! [event]
-  (-> event
-      add-metadata
-      add-model
-      add-iri
-      add-to-db!))
+  (let [processed-event (-> event
+                            add-metadata
+                            add-model
+                            add-iri
+                            add-to-db!)]
+    (cache/reset-cache!)
+    processed-event))

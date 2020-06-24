@@ -1,8 +1,9 @@
 (ns genegraph.source.graphql.evidence
-  (:require [genegraph.database.query :as q]))
+  (:require [genegraph.database.query :as q]
+            [genegraph.source.graphql.common.cache :refer [defresolver]]))
 
-(defn source [context args value]
+(defresolver source [args value]
   (str (q/ld1-> value [:dcterms/source])))
 
-(defn description [context args value]
+(defresolver description [args value]
   (q/ld1-> value [:dc/description]))
