@@ -1,17 +1,11 @@
 (ns genegraph.sink.stream
-  (:require [genegraph.database.load :as db]
-            [genegraph.transform.core :refer [transform-doc]]
+  (:require [genegraph.sink.event :as event]
             [genegraph.env :as env]
             [clojure.java.io :as io]
-            [cheshire.core :as json]
-            [mount.core :refer [defstate start stop]]
+            [mount.core :refer [defstate]]
             [clojure.edn :as edn]
             [io.pedestal.log :as log]
-            [genegraph.transform.actionability]
-            [genegraph.transform.gci-legacy]
             [clojure.string :as s]
-            [clojure.data :as data]
-            [genegraph.database.query :as q]
             [clojure.walk :refer [postwalk]])
   (:import java.util.Properties
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
@@ -31,12 +25,14 @@
 
 (def topic-state (atom {}))
 
-(defn document-name [doc-def model]
-  (-> (q/select "select ?x where {?x a ?type}"
-                {:type (:root-type doc-def)}
-                model)
-      first
-      str))
+(defn consumer-record-to-clj [consumer-record spec]
+  {::event/format spec 
+   ::event/key (.key consumer-record)
+   ::event/value (.value consumer-record)
+   ::timestamp (.timestamp consumer-record)
+   ::topic (.topic consumer-record)
+   ::partition (.partition consumer-record)
+   ::offset (.offset consumer-record)})
 
 ;; Java Properties object defining configuration of Kafka client
 (defn- client-configuration 
@@ -75,31 +71,6 @@
                                {} kafka-end-offsets)]
     (swap! end-offsets merge end-offset-map)))
 
-(defn import-record! [record doc-def]
-  (try
-    (let [doc-model (transform-doc (assoc doc-def :document (.value record)))
-          iri (document-name doc-def doc-model)]
-      (log/info :fn :import-record!
-                :msg :importing
-                :iri iri
-                :topic (.topic record)
-                :partition (.partition record)
-                :offset (.offset record)
-                :validation-model (:validation-model doc-def)
-                :time (.format DateTimeFormatter/ISO_DATE_TIME
-                               (LocalDateTime/ofEpochSecond (/ (.timestamp record) 1000)
-                                                            0
-                                                            ZoneOffset/UTC)))
-      (db/load-model doc-model iri {:validate (:validation-model doc-def)}))
-    (catch Exception e 
-      (.printStackTrace e)
-      (log/warn :fn :import-record!
-                :topic (.topic record)
-                :partition (.partition record)
-                :offset (.offset record)
-                :record record
-                :msg (str e)))))
-
 (defn update-offsets! [consumer tps]
   (doseq [tp tps]
     (swap! current-offsets assoc [(.topic tp) (.partition tp)] (.position consumer tp)))
@@ -111,8 +82,6 @@
   (if (.exists (io/as-file (offset-file)))
     (reset! current-offsets (-> (offset-file) slurp edn/read-string))
     (reset! current-offsets {})))
-
-
 
 (defn- assign-topic!
   "Return a function that creates a consumer, sets it to listen to all partitions available
@@ -131,7 +100,7 @@
         (read-end-offsets! consumer tp)
         (while @run-consumer
           (doseq [record (poll-once consumer)]
-            (import-record! record (-> config :topics topic)))
+            (-> record (consumer-record-to-clj topic) event/process-event!))
           (update-offsets! consumer tp))
         (swap! topic-state assoc topic :stopped)))))
 
@@ -176,56 +145,23 @@
     (let [tp (topic-partitions c topic)]
       (.assign c tp)
       (.seekToBeginning c tp)
-      (loop [records (long-poll c)]
-        (let [addl-records (long-poll c)]
-          (if-not (seq addl-records)
-            records
-            (recur (concat records addl-records))))))))
+      (let [consumer-records (loop [records (long-poll c)]
+                               (let [addl-records (long-poll c)]
+                                 (if-not (seq addl-records)
+                                   records
+                                   (recur (concat records addl-records)))))]
+        (mapv #(consumer-record-to-clj % topic) consumer-records)))))
 
-(defn import-topic-from-beginning
-  "Open a consumer, read all messages on the topic from the start, and
-  import them into the RDF datastore.
-  Intended to be used from the REPL to (re)-populate datastore during development."
-  [topic]
+(defn topic-data-to-disk [topic dest]
   (doseq [record (topic-data topic)]
-    (import-record! record (-> config :topics topic))))
-
-(defn consumer-record-to-clj [consumer-record]
-  (try 
-    (-> consumer-record .value json/parse-string)
-    (catch Exception e (println "invalid JSON"))))
-
-(defn topic-to-disk [topic folder]
-  (let [records (topic-data topic)]
-    (println (count records))
-    (doseq [record-payload records]
-      (if-let [record (consumer-record-to-clj record-payload)]
-        
-        (let  [id (or (.key record-payload)
-                   (re-find #"[A-Za-z0-9-]+$" (or (str (get record "iri") ) (get-in record ["interpretation" "id"]))))
-               idx (.offset record-payload)
-               wg (get-in record ["affiliations" 0 "id"])]
-              (spit (str folder "/" idx "-" id ".json") (.value record-payload)))))))
-
-(defn load-local-data 
-  "Treat all files stored in dir as loadable data in json-ld form, load them
-  into base datastore"
-  [dir]
-  (let [files (filter #(.isFile %) (-> dir io/file file-seq))]
-    (doseq [file files]
-      (println "importing " (.getName file))
-      (with-open [is (io/input-stream file)]
-        (db/store-rdf is {:format :json-ld, :name (.getName file)})))))
+    (let [file-name (str (::topic record) "_" (::partition record) "_" (::offset record) ".edn")]
+      (println file-name)
+      (with-open [w (io/writer (str dest "/" file-name))]
+        (println (str dest "/" file-name))
+        (binding [*print-length* false
+                  *out* w]
+          (pr record))))))
 
 
 
-(defn update-db-from-stream
-  "Read the stream into the database to current offets. Returns when all topics have completed."
-  []
-  ;; open streams
-  (start topic-partitions)
-  ;; sync on all streams read to current offset
-  ;; close consumers
-  ;; sync on all consumers complete
-  ;; return
-  )
+

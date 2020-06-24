@@ -1,0 +1,12 @@
+{:actionability {:genegraph.transform.core/format :actionability-v1
+                 :genegraph.sink.event/root-type :sepio/ActionabilityReport}
+ :actionability-dev {:genegraph.transform.core/format :actionability-v1
+                     :genegraph.sink.event/root-type :sepio/ActionabilityReport}
+ :gene-dosage-stage {:genegraph.transform.core/format :json-ld
+                     :genegraph.sink.event/root-type :sepio/GeneDosageReport}
+ :gene-validity  {:genegraph.transform.core/format :gene-validity-v1
+                  :genegraph.sink.event/root-type :sepio/GeneValidityReport}
+ :gene-validity-raw {:genegraph.transform.core/format :gene-validity-v1}
+ :gene-validity-raw-dev {:genegraph.transform.core/format :gene-validity-v1}
+ :gci-legacy  {:genegraph.transform.core/format :gci-legacy
+               :genegraph.sink.event/root-type :sepio/GeneValidityReport}}

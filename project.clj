@@ -41,7 +41,8 @@
                  [org.openjfx/javafx-base "11.0.1"]
                  [org.openjfx/javafx-web "11.0.1"]
                  [expound "0.7.2"]
-                 [com.google.cloud/google-cloud-storage "1.108.0" :exclusions [org.apache.httpcomponents/httpclient org.apache.httpcomponents/httpcore com.fasterxml.jackson.core/jackson-core]]]
+                 [com.google.cloud/google-cloud-storage "1.108.0" :exclusions [org.apache.httpcomponents/httpclient org.apache.httpcomponents/httpcore com.fasterxml.jackson.core/jackson-core]]
+                 [com.fasterxml.jackson.core/jackson-core "2.11.0"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources", "jars/REBL-0.9.220.jar"]
   ;; If you use HTTP/2 or ALPN, use the java-agent to pull in the correct alpn-boot dependency

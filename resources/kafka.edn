@@ -26,7 +26,7 @@
                                 :root-type :sepio/ActionabilityReport
                                 :cluster :dx-prod}
             :gene-dosage-stage {:name "gene_dosage_sepio_in"
-                                :format :rdf
+                                :format :json-ld
                                 :reader-opts {:format :json-ld}
                                 :root-type :sepio/GeneDosageReport
                                 ;; validation for dosage is turned off due to shacl shape not validating region shapes
