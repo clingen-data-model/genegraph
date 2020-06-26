@@ -49,4 +49,8 @@
       q/to-ref
       enum/mode-of-inheritance))
 
+(defresolver attributed-to [args value]
+  (ld1-> value [:sepio/qualified-contribution :sepio/has-agent]))
 
+(defresolver criteria [args value]
+  (ld1-> value [:sepio/is-specified-by]))

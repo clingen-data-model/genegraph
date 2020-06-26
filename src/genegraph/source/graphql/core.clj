@@ -412,12 +412,31 @@
                 :resolve gene-validity/disease}
       :mode_of_inheritance {:type :ModeOfInheritance
                             :description "Mode of inheritance associated with this curation"
-                            :resolve gene-validity/mode-of-inheritance}}}
+                            :resolve gene-validity/mode-of-inheritance}
+      :attributed_to {:type :Agent
+                      :description "Primary affiliation responsible for this curation"
+                      :resolve gene-validity/attributed-to}
+      :criteria {:type :Criteria
+                 :description "Criteria used by the curators to create the gene validity assertion"
+                 :resolve gene-validity/criteria}}}
 
     :GeneValidityAssertions
     {:description "A collection of gene validity curations."
      :fields {:curation_list {:type '(list :GeneValidityAssertion)}
               :count {:type 'Int}}}
+
+    :Criteria
+    {:implements [:Resource]
+     :description "Criteria used to perform curation."
+     :fields
+     {:iri {:type 'String
+            :resolve resource/iri
+            :description "IRI identifying this resource"}
+      :curie {:type 'String
+              :description "CURIE of the IRI identifying this resource"}
+      :label {:type 'String
+              :resolve resource/label
+              :description "Label for this resourcce"}}}
 
     :Agent
     {:implements [:Resource]
@@ -425,12 +444,12 @@
      :fields
      {:iri {:type 'String
             :resolve resource/iri
-            :description "IRI identifying this gene validity curation."}
+            :description "IRI identifying this agent."}
       :curie {:type 'String
-              :description "CURIE of the IRI identifying this gene validity curation."}
+              :description "CURIE of the IRI identifying this agent."}
       :label {:type 'String
               :resolve resource/label
-              :description "Label identifying this gene validity curation."}}}
+              :description "Name of the agent"}}}
 
     :ServerStatus
     {:fields

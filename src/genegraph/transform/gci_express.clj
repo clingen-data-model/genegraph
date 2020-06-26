@@ -36,8 +36,8 @@
 
 (defn contribution [report iri]
   [[iri :bfo/realizes :sepio/ApproverRole]
-   [iri :sepio/has-agent (str affiliation-root
-                              (-> report :affiliation :id))]
+   [iri :sepio/has-agent (resource (str affiliation-root
+                                        (-> report :affiliation :id)))]
    [iri :sepio/activity-date (:dateISO8601 report)]])
 
 (def evidence-level-label-to-concept
