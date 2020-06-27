@@ -36,7 +36,7 @@
    :sepio/StrongEvidence :STRONG})
 
 (defresolver classification [args value]
-  (-> value :sepio/has-object first q/to-ref evidence-levels))
+  (-> value :sepio/has-object first))
 
 (defresolver gene [args value]
   (ld1-> value [:sepio/has-subject :sepio/has-subject]))

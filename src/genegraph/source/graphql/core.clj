@@ -271,6 +271,17 @@
      :fields {:disease_list {:type '(list :Disease)}
               :count {:type 'Int}}}
 
+    :Classification
+    {:description "The result of an assertion relative to a proposition"
+     :fields {:iri {:type 'String
+                    :resolve resource/iri
+                    :description "IRI identifying this classification"}
+              :curie {:type 'String
+                      :description "CURIE of the IRI identifying this resource"}
+              :label {:type 'String
+                      :resolve resource/label
+                      :description "Label for this resourcce"}}}
+
     :Evidence
     {:description "An evidence item, typically used in support of an assertion made as a part of a curation"
      :fields {:source {:type 'String
