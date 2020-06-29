@@ -74,6 +74,21 @@
   {:name ::close-tx
    :enter (fn [context] (close-read-tx) context)})
 
+(defn dev-service 
+  "Service map to be used for development mode."
+  []
+  (let [gql-schema (gql/schema)
+        interceptors (-> (lacinia/default-interceptors gql/schema {})
+                         (lacinia/inject open-tx-interceptor :before ::lacinia/query-executor)
+                         (lacinia/inject close-tx-interceptor :after ::lacinia/query-executor))]
+    (merge-with into  
+                (lacinia/service-map gql/schema
+                                     {:graphiql true
+                                      :interceptors interceptors
+                                      :subscriptions true})
+                model-pages
+                {::http/host "0.0.0.0"})))
+
 ;;(def service (lacinia/service-map (graphql-schema) {:graphiql true}))
 (defn service []
   (let [gql-schema (gql/schema)
