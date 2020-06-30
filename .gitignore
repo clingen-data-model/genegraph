@@ -51,6 +51,7 @@ genegraph-assembly.ttl
 
 # Lucene
 lucene_index/
+suggestions/
 
 # intellij
 doc/.idea/
