@@ -15,6 +15,7 @@
             [genegraph.transform.loss-intolerance]
             [genegraph.transform.hi-index]
             [genegraph.transform.gci-express]
+            [genegraph.transform.affiliations]
             [genegraph.env :as env]
             [io.pedestal.log :as log]
             [juxt.dirwatch :refer [watch-dir]])

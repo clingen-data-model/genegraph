@@ -24,9 +24,6 @@
     {:description "The curation activities within ClinGen. Each curation is associated with a curation activity."
      :values [:ALL :ACTIONABILITY :GENE_VALIDITY :GENE_DOSAGE]
      }
-    :ModeOfInheritance
-    {:description "Mode of inheritance for a genetic condition."
-     :values [:AUTOSOMAL_DOMINANT :AUTOSOMAL_RECESSIVE :X_LINKED :SEMIDOMINANT :MITOCHONDRIAL :UNDETERMINED]}
     :GeneDosageScore
     {:description "The score assigned to a Gene Dosage curation."
      :values [:ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE
@@ -232,6 +229,20 @@
                             :resolve region-feature/coordinates
                             :description "Coordinates of the feature"}}}
 
+    :ModeOfInheritance
+    {:description "Mode of inheritance for a genetic condition."
+     :implements [:Resource]
+     :fields {:iri {:type 'String
+                    :resolve resource/iri
+                    :description "IRI for the condition. Currently MONDO ids are supported."}
+              :curie {:type 'String
+                      :resolve resource/curie
+                      :description "CURIE of the IRI representing this resource."}
+              :label {:type 'String
+                      :resolve resource/label
+                      :description "Label for the condition."}}}
+
+
     :Disease
     {:description "A disease or condition. May be a genetic condition, linked to a specific disease or mode of inheritance. Along with gene, one of the basic units of curation."
      :implements [:Resource]
@@ -270,6 +281,18 @@
     {:description "A collection of diseases."
      :fields {:disease_list {:type '(list :Disease)}
               :count {:type 'Int}}}
+
+    :Classification
+    {:description "The result of an assertion relative to a proposition"
+     :fields {:iri {:type 'String
+                    :resolve resource/iri
+                    :description "IRI identifying this classification"}
+              :curie {:type 'String
+                      :resolve resource/curie
+                      :description "CURIE of the IRI identifying this resource"}
+              :label {:type 'String
+                      :resolve resource/label
+                      :description "Label for this resourcce"}}}
 
     :Evidence
     {:description "An evidence item, typically used in support of an assertion made as a part of a curation"
@@ -327,6 +350,17 @@
                                       :resolve gene-dosage/location-relationship
                                       :description "Location relationship"}}}
 
+    :DosageClassification
+    {:description (str "Classification for a gene dosage assertion that mirrors the scores "
+                       "in the gene dosage process. Reflects a reasoning on the SEPIO"
+                       " structure, and not the SEPIO assertion itself.")
+     :fields {:label {:type 'String
+                      :resolve (fn [_ _ v] (get v :label))}
+              :ordinal {:type 'Int
+                        :resolve (fn [_ _ v] (get v :ordinal))}
+              :enum_value {:type :GeneDosageScore
+                           :resolve (fn [_ _ v] (get v :enum_value))}}}
+
     :DosageAssertion
     {:description "An individual dosage proposition, either a Haplo Insufficiency proposition or a Triplo Sensitivity proposition"
      :implements [:Resource :Curation]
@@ -342,6 +376,11 @@
               :wg_label {:type 'String
                          :resolve dosage-proposition/wg-label
                          :description "Label for the working group responsible for the curation"}
+              :dosage_classification {:type :DosageClassification
+                                      :resolve dosage-proposition/dosage-classification
+                                      :description 
+                                      (str "Classification for a gene dosage assertion "
+                                           "that mirrors the scores in the gene dosage process.")}
               :classification_description {:type 'String
                                            :resolve dosage-proposition/classification-description
                                            :description "Summary of the classification and the rationale behind it"}
@@ -401,7 +440,7 @@
       :report_date {:type 'String
                     :resolve gene-validity/report-date
                     :description "Date gene validity report was issued."}
-      :classification {:type :GeneValidityClassification
+      :classification {:type :Classification
                        :description "Final classification of this gene validity curation."
                        :resolve gene-validity/classification}
       :gene {:type :Gene
@@ -412,25 +451,50 @@
                 :resolve gene-validity/disease}
       :mode_of_inheritance {:type :ModeOfInheritance
                             :description "Mode of inheritance associated with this curation"
-                            :resolve gene-validity/mode-of-inheritance}}}
+                            :resolve gene-validity/mode-of-inheritance}
+      :attributed_to {:type :Agent
+                      :description "Primary affiliation responsible for this curation"
+                      :resolve gene-validity/attributed-to}
+      :specified_by {:type :Criteria
+                     :description "Criteria used by the curators to create the gene validity assertion"
+                     :resolve gene-validity/specified-by}
+      :legacy_json {:type 'String
+                    :description "Legacy JSON from the GCI."
+                    :resolve gene-validity/legacy-json}}}
 
     :GeneValidityAssertions
     {:description "A collection of gene validity curations."
      :fields {:curation_list {:type '(list :GeneValidityAssertion)}
               :count {:type 'Int}}}
 
-    :Agent
+    :Criteria
     {:implements [:Resource]
-     :description "A person or group. In this context, generally a ClinGen Domain Working Group responsible for producing one or more curations."
+     :description "Criteria used to perform curation."
      :fields
      {:iri {:type 'String
             :resolve resource/iri
-            :description "IRI identifying this gene validity curation."}
+            :description "IRI identifying this resource"}
       :curie {:type 'String
-              :description "CURIE of the IRI identifying this gene validity curation."}
+              :resolve resource/curie
+              :description "CURIE of the IRI identifying this resource"}
       :label {:type 'String
               :resolve resource/label
-              :description "Label identifying this gene validity curation."}}}
+              :description "Label for this resourcce"}}}
+
+    :Agent
+    {:implements [:Resource]
+     :description (str  "A person or group. In this context, generally a ClinGen Domain Working"
+                        " Group responsible for producing one or more curations.")
+     :fields
+     {:iri {:type 'String
+            :resolve resource/iri
+            :description "IRI identifying this agent."}
+      :curie {:type 'String
+              :resolve resource/curie
+              :description "CURIE of the IRI identifying this agent."}
+      :label {:type 'String
+              :resolve resource/label
+              :description "Name of the agent"}}}
 
     :ServerStatus
     {:fields
@@ -583,6 +647,9 @@
                                      :sort {:type :Sort
                                             :description (str "Order in which to sort genes. "
                                                               "Supported fields: GENE_LABEL")}}}
+    :gene_validity_assertion {:type :GeneValidityAssertion
+                              :resolve gene-validity/gene-validity-assertion-query
+                              :args {:iri {:type 'String}}}
     :gene_validity_list {:type '(list :GeneValidityAssertion)
                          :deprecated "Use gene_validity_assertions instead"
                          :resolve gene-validity/gene-validity-list

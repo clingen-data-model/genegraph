@@ -53,6 +53,7 @@
  "cggv" "http://dataexchange.clinicalgenome.org/gci/"
  "cgacta" "https://actionability.clinicalgenome.org/ac/Adult/api/sepio/doc/"
  "cgactp" "https://actionability.clinicalgenome.org/ac/Pediatric/api/sepio/doc/"
- "cgdosage" "http://dx.clinicalgenome.org/entities/"}
+ "cgdosage" "http://dx.clinicalgenome.org/entities/"
+ "cgagent" "http://dataexchange.clinicalgenome.org/agent/"}
 
 

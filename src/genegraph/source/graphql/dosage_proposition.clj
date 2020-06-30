@@ -7,6 +7,33 @@
   (println "DosageCuration - in WG-LABEL Value=" value)
   "Gene Dosage Working Group")
 
+(def evidence-level-enum 
+{:sepio/DosageNoEvidence :NO_EVIDENCE
+ :sepio/DosageMinimalEvidence :MINIMAL_EVIDENCE
+ :sepio/DosageModerateEvidence :MODERATE_EVIDENCE
+ :sepio/DosageSufficientEvidence :SUFFICIENT_EVIDENCE})
+
+;; Reflects the classification from the dosage process and not the SEPIO-derived value
+;; and not the SEPIO structure of gene dosage curations generally, pending a discussion
+;; with stakeholders, hopefully can be reviewed and (perhaps) deprecated in future iterations
+(defresolver dosage-classification [args value]
+  (if (q/is-rdf-type? value :sepio/EvidenceLevelAssertion)
+    (case (q/to-ref (q/ld1-> value [:sepio/has-subject :sepio/has-predicate]))
+      :geno/PathogenicForCondition (let [score (q/ld1-> value [:sepio/has-object])]
+                                     {:label (q/ld1-> score [:rdfs/label])
+                                      :ordinal (q/ld1-> score [:sepio/has-ordinal-position])
+                                      :enum_value (-> score q/to-ref evidence-level-enum)})
+      ;; For the moment, there is only a benign assertion if the score is 
+      ;; 'dosage sensitivity unlikely
+      :geno/BenignForCondition {:label "dosage sensitivity unlikely"
+                                :ordinal 40
+                                :enum_value :DOSAGE_SENSITIVITY_UNLIKELY})
+    ;; If the assertion is of any other type, expect that its an assertion
+    ;; the curation of the variant is outside the scope of curation
+    {:label "gene associated with autosomal recessive phenotype"
+     :ordinal 30
+     :enum_value :ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE}))
+
 (defresolver classification-description [args value]
   (q/ld1-> value [:sepio/has-object :rdfs/label]))
 
@@ -17,7 +44,7 @@
   (q/ld-> value [:sepio/has-evidence-line-with-item]))
 
 (defresolver score [args value]
-  (when-let [classification (classification-description args value)]
+  (when-let [classification (classification-description nil args value)]
     (case (str/lower-case classification)
       "no evidence" :NO_EVIDENCE
       "minimal evidence" :MINIMAL_EVIDENCE

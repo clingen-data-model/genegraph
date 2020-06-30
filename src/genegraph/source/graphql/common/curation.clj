@@ -14,7 +14,8 @@
 
 (def gene-dosage-bgp
   '[[dosage_report :iao/is-about gene]
-    [dosage_report :rdf/type :sepio/GeneDosageReport]])
+    [dosage_report :rdf/type :sepio/GeneDosageReport]
+    [dosage_report :bfo/has-part dosage_assertion]])
 
 (def gene-dosage-disease-bgp
   (conj gene-dosage-bgp
