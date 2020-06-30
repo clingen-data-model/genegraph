@@ -5,6 +5,9 @@
             [genegraph.source.graphql.common.cache :refer [defresolver]]
             [clojure.string :as s]))
 
+(defresolver gene-validity-assertion-query [args value]
+  (q/resource (:iri args)))
+
 (defresolver report-date [args value]
   (ld1-> value [:sepio/qualified-contribution :sepio/activity-date]))
 
@@ -45,12 +48,13 @@
   (ld1-> value [:sepio/has-subject :sepio/has-object]))
 
 (defresolver mode-of-inheritance [args value]
-  (-> (ld1-> value [:sepio/has-subject :sepio/has-qualifier])  
-      q/to-ref
-      enum/mode-of-inheritance))
+  (ld1-> value [:sepio/has-subject :sepio/has-qualifier]))
 
 (defresolver attributed-to [args value]
   (ld1-> value [:sepio/qualified-contribution :sepio/has-agent]))
 
-(defresolver criteria [args value]
+(defresolver specified-by [args value]
   (ld1-> value [:sepio/is-specified-by]))
+
+(defn legacy-json [_ _ value]
+  (ld1-> value [[:bfo/has-part :<] :bfo/has-part :cnt/chars]))
