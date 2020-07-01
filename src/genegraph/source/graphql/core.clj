@@ -14,6 +14,8 @@
             [genegraph.source.graphql.server-status :as server-status]
             [genegraph.source.graphql.evidence :as evidence]
             [genegraph.source.graphql.genetic-condition :as genetic-condition]
+            [genegraph.source.graphql.suggest :as suggest]
+            [genegraph.source.graphql.drug :as drug]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]))
@@ -66,6 +68,10 @@
     {:description "Chromosomes."
      :values [:CHR1 :CHR2 :CHR3 :CHR4 :CHR5 :CHR6 :CHR7 :CHR8 :CHR9 :CHR10 :CHR11 :CHR12 :CHR13 :CHR14 :CHR15
               :CHR16 :CHR17 :CHR18 :CHR19 :CHR20 :CHR21 :CHR22 :CHRX :CHRY]
+     }
+    :Suggester
+    {:description "Suggesters."
+     :values [:GENE :DISEASE :DRUG]
      }}
    
    :interfaces
@@ -505,7 +511,38 @@
     {:fields
      {:total {:type 'Int :resolve gene-dosage/total-count}
       :genes  {:type 'Int :resolve gene-dosage/gene-count}
-      :regions  {:type 'Int :resolve gene-dosage/region-count}}}}
+      :regions  {:type 'Int :resolve gene-dosage/region-count}}}
+
+    :Suggestion
+    {:fields
+     {:type {:type 'String :resolve suggest/suggest-type}
+      :iri {:type 'String :resolve suggest/iri}
+      :curie {:type 'String :resolve suggest/curie}
+      :text {:type 'String :resolve suggest/text}
+      :highlighted {:type 'String :resolve suggest/highlighted-text}
+      :curations  {:type '(list :CurationActivity) :resolve suggest/curations}
+      :weight  {:type 'Int :resolve suggest/weight}}}
+
+    :Drug
+    {:description "RxNorm normalized names for clinical drugs."
+     :implements [:Resource]
+     :fields {:iri {:type 'String
+                    :resolve resource/iri
+                    :description "IRI for the drug. Currently RXNorm ids are supported."}
+              :curie {:type 'String
+                      :resolve resource/curie
+                      :description "CURIE of the IRI representing this resource."}
+              :label {:type 'String
+                      :resolve resource/label
+                      :description "Label for the condition."}
+              :aliases {:type '(list String)
+                        :resolve drug/aliases
+                        :description "Alias drug names."}}}
+    
+    :Drugs
+    {:description "A collection of drugs."
+     :fields {:drug_list {:type '(list :Drug)}
+              :count {:type 'Int}}}}
 
    :input-objects
    {:range
@@ -676,7 +713,36 @@
                   :args {:iri {:type 'String}}
                   :resolve gene-dosage/gene-dosage-query}
     :totals {:type :Totals
-             :resolve gene-dosage/totals-query}}})
+             :resolve gene-dosage/totals-query}
+    :suggest {:type '(list :Suggestion)
+              :args {:suggest {:type :Suggester
+                               :description "The suggester to submit request suggestions from."}
+                     :text {:type 'String
+                            :description "The text for which suggestions will be generated."}
+                     :count {:type 'Int
+                             :default-value 10
+                             :description "Number of suggestions to return."}
+                     :contexts {:type '(list :CurationActivity)
+                                :default-value '(list :ALL)
+                                :description "List of Curation Activities to filter suggestions with."}}
+              :resolve suggest/suggest}
+    :drug {:type '(non-null :Drug)
+                :args {:iri {:type 'String}}
+                :resolve drug/drug-query}
+    :drugs {:type :Drugs
+            :args {:limit {:type 'Int
+                           :default-value 10
+                           :description "Number of records to return"}
+                   :offset {:type 'Int
+                            :default-value 0
+                            :description "Index to begin returning records from"}
+                   :text {:type 'String
+                          :description (str "Filter list for drugs including text in name"
+                                            "and synonyms.")}
+                   :sort {:type :Sort
+                          :description (str "Order in which to sort drugs")}}
+               :resolve drug/drugs}
+}})
 
 (defn schema []
   (schema/compile base-schema))

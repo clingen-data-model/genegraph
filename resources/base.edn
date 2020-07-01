@@ -161,4 +161,10 @@
  {:name "http://dataexchange.clinicalgenome.org/affiliations"
   :source "https://docs.google.com/spreadsheets/d/1IF9GiP8iiFx1CndgqdWNGx4A_uM2GsWnV7GSiUO33bs/gviz/tq?tqx=out:csv&sheet=VCI%2FGCI%20Affiliations%20List"
   :target "affiliations.csv"
-  :format :affiliations}]
+  :format :affiliations}
+  {:name "http://data.bioontology.org/ontologies/RXNORM"
+  :source "http://data.bioontology.org/ontologies/RXNORM/submissions/18/download?apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb"
+  :target "RXNORM.ttl"
+  :format :rxnorm
+  :reader-opts {:format :turtle}}]
+

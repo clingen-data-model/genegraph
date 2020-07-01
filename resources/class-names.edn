@@ -275,5 +275,6 @@
  [:sepio/FamilyWithSingleGeneSegregationEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004090"]
  [:sepio/FamilyWithMultiLocusSegregationEvidenceLine
-  "http://purl.obolibrary.org/obo/SEPIO_0004091"]]
+  "http://purl.obolibrary.org/obo/SEPIO_0004091"]
+ [:chebi/Drug "http://purl.obolibrary.org/obo/CHEBI_23888"]]
 
