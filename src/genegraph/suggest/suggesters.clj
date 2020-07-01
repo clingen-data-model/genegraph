@@ -68,28 +68,31 @@
     (log/info :fn :drug-payload :msg "drug payload generated" :payload payload)
     payload))
 
-(def suggesters-map {:disease {:dirpath (str "file://" env/data-vol "/suggestions/diseases")
-                               :query disease-query
-                               :payload disease-payload
-                               }
-                     :gene {:dirpath (str "file://" env/data-vol "/suggestions/genes")
-                            :query gene-query
-                            :payload gene-payload
-                            }
-                     :drug {:dirpath (str "file://" env/data-vol "/suggestions/drugs")
-                            :query drug-query
-                            :payload drug-payload
-                            }
-                     })
+(defn suggesters-map []
+  "Function returning the suggester configuration."
+  ;; fn ensures proper value of env/data-vol which may have been redef'ed
+  {:disease {:dirpath (str "file://" env/data-vol "/suggestions/diseases")
+             :query disease-query
+             :payload disease-payload
+             }
+   :gene {:dirpath (str "file://" env/data-vol "/suggestions/genes")
+          :query gene-query
+          :payload gene-payload
+          }
+   :drug {:dirpath (str "file://" env/data-vol "/suggestions/drugs")
+          :query drug-query
+          :payload drug-payload
+          }
+   })
 
 (defn create-suggesters []
   "Create suggesters from configuration and store in an atom"
   (let [sugg-map (reduce (fn [coll key]
-                              (let [map (get suggesters-map key)
+                              (let [map (get (suggesters-map) key)
                                     suggester (suggest/create-suggester (:dirpath map))]
                                 (assoc coll key suggester)))
                             {}
-                            (keys suggesters-map))]
+                            (keys (suggesters-map)))]
   (reset! suggesters sugg-map)))
 
 (defn close-suggesters []
@@ -100,7 +103,7 @@
 (defn build-suggestions [key]
   "Run a database query from which to build a suggester index, and persist it"
   (log/info :fn :build-suggestions :suggester key :msg :start)
-  (let [map (get suggesters-map key)
+  (let [map (get (suggesters-map) key)
         suggester (get @suggesters key)
         query (:query map)
         payload-fn (:payload map)]

@@ -219,7 +219,7 @@
  [:dc/accrual-periodicity
   "http://purl.org/dc/terms/accrualPeriodicity"]
  [:dc/accrual-policy "http://purl.org/dc/terms/accrualPolicy"]
- [:dc/altLernative-title "http://purl.org/dc/terms/alternative"]
+ [:dc/alternative-title "http://purl.org/dc/terms/alternative"]
  [:dc/audience "http://purl.org/dc/terms/audience"]
  [:dc/audience-education-level
   "http://purl.org/dc/terms/educationLevel"]
