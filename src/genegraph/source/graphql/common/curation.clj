@@ -1,5 +1,6 @@
 (ns genegraph.source.graphql.common.curation
-  (:require [genegraph.database.query :as q :refer [create-query]]))
+  (:require [genegraph.database.query :as q :refer [create-query]]
+            [clojure.string :as s]))
 
 (def gene-validity-bgp
   '[[validity_proposition :sepio/has-subject gene]
@@ -65,7 +66,8 @@
         ['gene :skos/preferred-label 'gene_label]
         ['disease :rdfs/label 'disease_label]
         ['validity_assertion :sepio/qualified-contribution 'gv_contrib]
-        ['gv_contrib :sepio/activity-date 'report_date]))
+        ['gv_contrib :sepio/activity-date 'report_date]
+        ['gv_contrib :sepio/has-agent 'affiliation]))
 
 (def gene-validity-text-search-bgp
   (cons :union (map #(cons :bgp (concat (q/text-search-bgp % :cg/resource 'text)
@@ -105,3 +107,168 @@
 (defn curated-genetic-conditions-for-disease [query-params]
   (map #(array-map :disease (:disease query-params) :gene %)
        (curated-genes-for-disease query-params)))
+
+(defn gene-validity-curations-for-resolver
+  "Method to be called by resolvers desiring a list of gene validity curations
+  with limit, sort and offset, including a total count field. Value should be a map and
+  will be merged into the query parameters, limiting the result to curations that match
+  the given argument"
+  [args value]
+  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
+        query-params (-> args
+                         (select-keys [:text])
+                         (assoc ::q/params params)
+                         (merge value))
+        query (if (:text args)
+                gene-validity-curations-text-search
+                gene-validity-curations)
+        count (future (query (assoc query-params ::q/params {:type :count})))]
+    {:curation_list (query query-params)
+     :count @count}))
+
+(def validity-curated-genes
+  (create-query [:project ['gene]
+                 (cons :bgp gene-validity-with-sort-bgp)]))
+
+(def validity-curated-genes-text-search
+  (create-query [:project ['gene]
+                 (cons :bgp
+                       (concat (q/text-search-bgp 'gene :cg/resource 'text)
+                               gene-validity-with-sort-bgp))]))
+
+(defn validity-curated-genes-for-resolver
+  "Method to be called by resolvers desiring a list of genes with limit, sort and offset,
+  including a total count field. Value should be a map and will be merged into the query
+  parameters, limiting the result to curations that match
+  the given argument"
+  [args value]
+  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
+        query-params (-> args
+                         (select-keys [:text])
+                         (update :text s/lower-case)
+                         (assoc ::q/params params)
+                         (merge value))
+        query (if (:text args)
+                validity-curated-genes-text-search
+                validity-curated-genes)
+        count (future (query (assoc query-params ::q/params {:type :count})))]
+    {:gene_list (query query-params)
+     :count @count}))
+
+(def validity-curated-diseases
+  (create-query [:project ['disease]
+                 (cons :bgp gene-validity-with-sort-bgp)]))
+
+(def validity-curated-diseases-text-search
+  (create-query [:project ['disease]
+                 (cons :bgp
+                       (concat (q/text-search-bgp 'disease :cg/resource 'text)
+                               gene-validity-with-sort-bgp))]))
+
+(defn validity-curated-diseases-for-resolver
+  "Method to be called by resolvers desiring a list of diseases with limit, sort and offset,
+  including a total count field. Value should be a map and will be merged into the query
+  parameters, limiting the result to curations that match
+  the given argument"
+  [args value]
+  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
+        query-params (-> args
+                         (select-keys [:text])
+                         (update :text s/lower-case)
+                         (assoc ::q/params params)
+                         (merge value))
+        query (if (:text args)
+                validity-curated-diseases-text-search
+                validity-curated-diseases)
+        count (future (query (assoc query-params ::q/params {:type :count})))]
+    {:disease_list (query query-params)
+     :count @count}))
+
+(defn genes-for-resolver
+  "Method to be called by resolvers desiring a list of genes with limit, sort and offset,
+  including a total count field. Value should be a map and will be merged into the query
+  parameters, limiting the result to curations that match
+  the given argument"
+  [args value]
+  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
+        query-params (-> args
+                         (select-keys [:text])
+                         (update :text s/lower-case)
+                         (assoc ::q/params params)
+                         (merge value))
+        gene-bgp '[[gene :rdf/type :so/ProteinCodingGene]
+                   [gene :skos/preferred-label gene_label]]
+        base-bgp (if (:text args)
+                   (concat (q/text-search-bgp 'gene :cg/resource 'text) gene-bgp)
+                   gene-bgp)
+        selected-curation-type-bgp (case (:curation_activity args)
+                                     :GENE_VALIDITY gene-validity-bgp
+                                     :ACTIONABILITY actionability-bgp
+                                     :GENE_DOSAGE gene-dosage-bgp
+                                     [])
+        bgp (if (= :ALL (:curation_activity args))
+              [:union 
+               (cons :bgp (concat base-bgp gene-validity-bgp))
+               (cons :bgp (concat base-bgp actionability-bgp))
+               (cons :bgp (concat base-bgp gene-dosage-bgp))]
+              (cons :bgp
+                    (concat base-bgp
+                            selected-curation-type-bgp)))
+        query (create-query [:project 
+                             ['gene]
+                             bgp])
+        result-count (future (query (assoc query-params ::q/params {:type :count})))]
+    {:gene_list (query query-params)
+     :count @result-count}))
+
+(defn diseases-for-resolver 
+  "Method to be called by resolvers desiring a list of diseases with limit, sort and offset,
+  including a total count field. Value should be a map and will be merged into the query
+  parameters, limiting the result to curations that match
+  the given argument"
+  [args value]
+  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
+        query-params (if (:text args)
+                       {:text (-> args :text s/lower-case) ::q/params params}
+                       {::q/params params})
+        selected-curation-type-bgp (case (:curation_activity args)
+                                     :GENE_VALIDITY gene-validity-bgp
+                                     :ACTIONABILITY actionability-bgp
+                                     :GENE_DOSAGE gene-dosage-disease-bgp
+                                     nil)
+        bgp (if (= :ALL (:curation_activity args))
+              [:union 
+               (cons :bgp (conj gene-validity-bgp 
+                                '[disease :rdfs/label disease_label]))
+               (cons :bgp (conj actionability-bgp
+                                '[disease :rdfs/label disease_label]))
+               (cons :bgp (conj gene-dosage-disease-bgp
+                                '[disease :rdfs/label disease_label]))]
+              (when (some? selected-curation-type-bgp)
+                (cons :bgp (conj selected-curation-type-bgp
+                                 '[disease :rdfs/label disease_label]))))
+        query-bgp (if (:text args) 
+                    [:join (cons :bgp (q/text-search-bgp 'disease :cg/resource 'text)) bgp]
+                    bgp)
+        query (if (some? bgp)
+                (create-query [:project 
+                             ['disease]
+                               query-bgp])
+                ;; Consider restructuring this around a BGP when variable length
+                ;; predicates are supported in the algebra, is messy as written.
+                (if (:text args)
+                  (create-query 
+                   (str "select ?s WHERE { "
+                        "?s :jena/query ( :cg/resource ?text ) . "
+                        "?s <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+                        "<http://purl.obolibrary.org/obo/MONDO_0000001> . "
+                        "?s :rdfs/label ?disease_label . "
+                        "FILTER (!isBlank(?s)) }"))
+                  (create-query 
+                   (str "select ?s WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+                        "<http://purl.obolibrary.org/obo/MONDO_0000001> . "
+                        "?s :rdfs/label ?disease_label . "
+                        "FILTER (!isBlank(?s)) }"))))
+        result-count (future (query (assoc query-params ::q/params {:type :count})))]
+    {:disease_list (query query-params)
+     :count @result-count}))

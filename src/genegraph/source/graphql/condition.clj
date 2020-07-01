@@ -73,47 +73,4 @@
     (query {::q/params params})))
 
 (defresolver diseases [args value]
-  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
-        query-params (if (:text args)
-                       {:text (-> args :text str/lower-case) ::q/params params}
-                       {::q/params params})
-        selected-curation-type-bgp (case (:curation_activity args)
-                                     :GENE_VALIDITY curation/gene-validity-bgp
-                                     :ACTIONABILITY curation/actionability-bgp
-                                     :GENE_DOSAGE curation/gene-dosage-disease-bgp
-                                     nil)
-        bgp (if (= :ALL (:curation_activity args))
-              [:union 
-               (cons :bgp (conj curation/gene-validity-bgp 
-                                '[disease :rdfs/label disease_label]))
-               (cons :bgp (conj curation/actionability-bgp
-                                '[disease :rdfs/label disease_label]))
-               (cons :bgp (conj curation/gene-dosage-disease-bgp
-                                '[disease :rdfs/label disease_label]))]
-              (when (some? selected-curation-type-bgp)
-                (cons :bgp (conj selected-curation-type-bgp
-                                 '[disease :rdfs/label disease_label]))))
-        query-bgp (if (:text args) 
-                    [:join (cons :bgp (q/text-search-bgp 'disease :cg/resource 'text)) bgp]
-                    bgp)
-        query (if (some? bgp)
-                (create-query [:project 
-                             ['disease]
-                               query-bgp])
-                ;; Consider restructuring this around a BGP when variable length
-                ;; predicates are supported in the algebra, is messy as written.
-                (if (:text args)
-                  (create-query 
-                   (str "select ?s WHERE { "
-                        "?s :jena/query ( :cg/resource ?text ) . "
-                        "?s <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
-                        "<http://purl.obolibrary.org/obo/MONDO_0000001> . "
-                        "?s :rdfs/label ?disease_label . "
-                        "FILTER (!isBlank(?s)) }"))
-                  (create-query 
-                   (str "select ?s WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
-                        "<http://purl.obolibrary.org/obo/MONDO_0000001> . "
-                        "?s :rdfs/label ?disease_label . "
-                        "FILTER (!isBlank(?s)) }"))))]
-    {:disease_list (query query-params)
-     :count (query (assoc query-params ::q/params {:type :count :distinct true}))}))
+  (curation/diseases-for-resolver args value))

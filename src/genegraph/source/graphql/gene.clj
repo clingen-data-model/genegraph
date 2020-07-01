@@ -37,35 +37,7 @@
     (query {::q/params params})))
 
 (defresolver genes [args value]
-  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
-        query-params (if (:text args)
-                       {:text (-> args :text str/lower-case) ::q/params params}
-                       {::q/params params})
-        gene-bgp '[[gene :rdf/type :so/ProteinCodingGene]
-                   [gene :skos/preferred-label gene_label]]
-        base-bgp (if (:text args)
-                   (concat (q/text-search-bgp 'gene :cg/resource 'text) gene-bgp)
-                   gene-bgp)
-        selected-curation-type-bgp (case (:curation_activity args)
-                                     :GENE_VALIDITY curation/gene-validity-bgp
-                                     :ACTIONABILITY curation/actionability-bgp
-                                     :GENE_DOSAGE curation/gene-dosage-bgp
-                                     [])
-        bgp (if (= :ALL (:curation_activity args))
-              [:union 
-               (cons :bgp (concat base-bgp curation/gene-validity-bgp))
-               (cons :bgp (concat base-bgp curation/actionability-bgp))
-               (cons :bgp (concat base-bgp curation/gene-dosage-bgp))]
-              (cons :bgp
-                    (concat base-bgp
-                            selected-curation-type-bgp)))
-        query (create-query [:project 
-                             ['gene]
-                             bgp])]
-    (println query-params)
-    {:gene_list (query query-params)
-     :count (query (assoc query-params ::q/params {:type :count :distinct true}))
-     }))
+  (curation/genes-for-resolver args value))
 
 (defresolver curation-activities [args value]
   (curation/activities {:gene value}))

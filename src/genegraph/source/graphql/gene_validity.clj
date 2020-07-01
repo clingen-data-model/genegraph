@@ -16,14 +16,7 @@
     (curation/gene-validity-curations {::q/params params})))
 
 (defresolver gene-validity-curations [args value]
-  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))]
-    (if (:text args)
-      {:curation_list (curation/gene-validity-curations-text-search
-                       {:text (s/lower-case (:text args)) ::q/params params})
-       :count (curation/gene-validity-curations-text-search 
-               {:text (s/lower-case (:text args)) ::q/params {:type :count}})}
-      {:curation_list (curation/gene-validity-curations {::q/params params})
-       :count (curation/gene-validity-curations {::q/params {:type :count :distinct true}})})))
+  (curation/gene-validity-curations-for-resolver args value))
 
 (defresolver criteria [args value]
   nil)
