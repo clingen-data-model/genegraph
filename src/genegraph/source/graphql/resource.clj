@@ -17,3 +17,17 @@
 
 (defresolver description [args value]
   (first (:dc/description value)))
+
+
+
+(defresolver subclasses [args value]
+  )
+
+(defresolver superclasses [args value]
+  )
+
+(defresolver direct-superclasses [args value]
+  (q/ld-> value [:rdfs/sub-class-of]))
+
+(defresolver direct-subclasses [args value]
+  (q/ld-> value [[:rdfs/sub-class-of :<]]))

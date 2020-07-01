@@ -14,6 +14,7 @@
             [genegraph.source.graphql.server-status :as server-status]
             [genegraph.source.graphql.evidence :as evidence]
             [genegraph.source.graphql.genetic-condition :as genetic-condition]
+            [genegraph.source.graphql.affiliation :as affiliation]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]))
@@ -354,12 +355,9 @@
     {:description (str "Classification for a gene dosage assertion that mirrors the scores "
                        "in the gene dosage process. Reflects a reasoning on the SEPIO"
                        " structure, and not the SEPIO assertion itself.")
-     :fields {:label {:type 'String
-                      :resolve (fn [_ _ v] (get v :label))}
-              :ordinal {:type 'Int
-                        :resolve (fn [_ _ v] (get v :ordinal))}
-              :enum_value {:type :GeneDosageScore
-                           :resolve (fn [_ _ v] (get v :enum_value))}}}
+     :fields {:label {:type 'String}
+              :ordinal {:type 'Int}
+              :enum_value {:type :GeneDosageScore}}}
 
     :DosageAssertion
     {:description "An individual dosage proposition, either a Haplo Insufficiency proposition or a Triplo Sensitivity proposition"
@@ -481,6 +479,13 @@
               :resolve resource/label
               :description "Label for this resourcce"}}}
 
+    :Agents
+    {:description (str "A list of agents, with a possible limit, and a count of the total number"
+                       " matching the query")
+     :fields
+     {:agent_list {:type '(list :Agent)}
+      :count {:type 'Int}}}
+
     :Agent
     {:implements [:Resource]
      :description (str  "A person or group. In this context, generally a ClinGen Domain Working"
@@ -494,7 +499,54 @@
               :description "CURIE of the IRI identifying this agent."}
       :label {:type 'String
               :resolve resource/label
-              :description "Name of the agent"}}}
+              :description "Name of the agent"}
+
+      :gene_validity_assertions
+      {:type :GeneValidityAssertions
+       :resolve affiliation/gene-validity-assertions
+       :args {:limit {:type 'Int
+                      :default-value 10
+                      :description "Number of records to return"}
+              :offset {:type 'Int
+                       :default-value 0
+                       :description "Index to begin returning records from"}
+              :text {:type 'String
+                     :description (str "Filter list including "
+                                       "text in gene, disease and "
+                                       "synonyms.")}
+              :sort {:type :Sort
+                     :description (str "Order in which to sort genes. "
+                                       "Supported fields: GENE_LABEL")}}}
+      
+      :genes
+      {:type :Genes
+       :resolve affiliation/curated-genes
+       :args {:limit {:type 'Int
+                      :default-value 10
+                      :description "Number of records to return"}
+              :offset {:type 'Int
+                       :default-value 0
+                       :description "Index to begin returning records from"}
+              :text {:type 'String
+                     :description (str "Filter list for genes including text in symbol"
+                                       "previous symbols, names, or previous names.")}
+              :sort {:type :Sort
+                     :description (str "Order in which to sort genes.")}}}
+
+      :diseases
+      {:type :Diseases
+       :resolve affiliation/curated-diseases
+       :args {:limit {:type 'Int
+                      :default-value 10
+                      :description "Number of records to return"}
+              :offset {:type 'Int
+                       :default-value 0
+                       :description "Index to begin returning records from"}
+              :text {:type 'String
+                     :description (str "Filter list for genes including text in symbol"
+                                       "previous symbols, names, or previous names.")}
+              :sort {:type :Sort
+                     :description (str "Order in which to sort genes.")}}}}}
 
     :ServerStatus
     {:fields
@@ -619,6 +671,17 @@
                       :sort {:type :Sort
                              :description (str "Order in which to sort diseases")}}
                :resolve condition/diseases}
+    :affiliations {:type :Agents
+                   :args {:limit {:type 'Int
+                                  :default-value 10
+                                  :description "Number of records to return"}
+                          :offset {:type 'Int
+                                   :default-value 0
+                                   :description "Index to begin returning records from"}
+                          :text {:type 'String
+                                 :description (str "Filter list for genes including text in name"
+                                                   "and synonyms.")}}
+                   :resolve affiliation/affiliations}
     :disease_list {:type '(list :Disease)
                    :deprecated "Use diseases instead."
                    :args {:limit {:type 'Int
