@@ -6,7 +6,6 @@
             [clojure.pprint :refer [pprint]]
             [genegraph.database.query :as q]
             [genegraph.database.util :refer [tx]]
-            [genegraph.suggest.suggesters :refer [build-all-suggestions]]
             [genegraph.transform.core :refer [transform-doc]]
             [cheshire.core :as json]
             [mount.core :refer [defstate]]
@@ -47,16 +46,10 @@
     (log/info :fn :import-documents! :msg :importing :name (:name d))
     (db/load-model (transform-doc d) (:name d))))
 
-(defn build-suggesters! []
-  (log/info :fn :build-suggesters! :msg :building)
-  (build-all-suggestions)
-  (log/info :fn :build-suggesters! :msg :complete))
-
 (defn initialize-db! []
   (let [res (read-base-resources)]
     (retrieve-base-data! res)
     (import-documents! res)
-    (build-suggesters!)
     (log/info :fn :initialize-db! :msg :initialization-complete)))
 
 (defn import-document [name documents]

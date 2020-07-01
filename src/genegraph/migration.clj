@@ -6,6 +6,7 @@
             [genegraph.sink.base :as base]
             [genegraph.database.instance :as db]
             [genegraph.sink.stream :as stream]
+            [genegraph.suggest.suggesters :as suggest]
             [mount.core :refer [start stop]]
             [clojure.java.shell :refer [sh]])
   (:import [java.time ZonedDateTime ZoneOffset]
@@ -44,6 +45,7 @@
     (stop #'stream/consumer-thread)
     (while (not (stream/consumers-closed?))
       (Thread/sleep 1000))
+    (suggest/build-all-suggestions)
     (stop #'db/db)))
 
 (defn compress-database
