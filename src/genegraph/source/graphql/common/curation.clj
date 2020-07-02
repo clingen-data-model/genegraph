@@ -115,8 +115,9 @@
   the given argument"
   [args value]
   (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
-        query-params (-> args
-                         (select-keys [:text])
+        query-params (-> (if (string? (:text args))
+                           {:text (s/lower-case (:text args))}
+                           {})
                          (assoc ::q/params params)
                          (merge value))
         query (if (:text args)
@@ -143,9 +144,9 @@
   the given argument"
   [args value]
   (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
-        query-params (-> args
-                         (select-keys [:text])
-                         (update :text s/lower-case)
+        query-params (-> (if (string? (:text args))
+                           {:text (s/lower-case (:text args))}
+                           {})
                          (assoc ::q/params params)
                          (merge value))
         query (if (:text args)
@@ -172,9 +173,9 @@
   the given argument"
   [args value]
   (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
-        query-params (-> args
-                         (select-keys [:text])
-                         (update :text s/lower-case)
+        query-params (-> (if (string? (:text args))
+                           {:text (s/lower-case (:text args))}
+                           {})
                          (assoc ::q/params params)
                          (merge value))
         query (if (:text args)
@@ -191,9 +192,9 @@
   the given argument"
   [args value]
   (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
-        query-params (-> args
-                         (select-keys [:text])
-                         (update :text s/lower-case)
+        query-params (-> (if (string? (:text args))
+                           {:text (s/lower-case (:text args))}
+                           {})
                          (assoc ::q/params params)
                          (merge value))
         gene-bgp '[[gene :rdf/type :so/ProteinCodingGene]
