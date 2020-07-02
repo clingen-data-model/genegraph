@@ -35,3 +35,6 @@
 
 (defresolver curated-diseases [args value]
   (curation/validity-curated-diseases-for-resolver args {:affiliation value}))
+
+(defresolver affiliation-query [args value]
+  (q/resource (:iri args)))

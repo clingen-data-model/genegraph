@@ -719,6 +719,9 @@
                                  :description (str "Filter list for genes including text in name"
                                                    "and synonyms.")}}
                    :resolve affiliation/affiliations}
+    :affiliation {:type :Agent
+                  :args {:iri {:type 'String}}
+                  :resolve affiliation/affiliation-query}
     :disease_list {:type '(list :Disease)
                    :deprecated "Use diseases instead."
                    :args {:limit {:type 'Int
