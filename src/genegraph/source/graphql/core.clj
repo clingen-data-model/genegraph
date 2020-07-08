@@ -282,7 +282,19 @@
                                     :resolve condition/curation-activities}
               :genetic_conditions {:type '(list :GeneticCondition)
                                    :resolve condition/genetic-conditions
-                                   :description "Curated genetic conditions associated with the disease"}}}
+                                   :description "Curated genetic conditions associated with the disease"}
+              :subclasses {:type '(list :Disease)
+                           :resolve condition/subclasses
+                           :description "All subclasses of this disease, including all descendants"}
+              :superclasses {:type '(list :Disease)
+                             :resolve condition/superclasses
+                             :description "All superclasses of this disease, including all ancestors."}
+              :direct_subclasses {:type '(list :Disease)
+                                  :resolve condition/direct-subclasses
+                                  :description "direct subclasses of this disease only."}
+              :direct_superclasses {:type '(list :Disease)
+                                    :resolve condition/direct-superclasses
+                                    :description "direct superclasses of this disease only."}}}
 
     :Diseases
     {:description "A collection of diseases."
