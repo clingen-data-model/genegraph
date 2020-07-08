@@ -20,12 +20,6 @@
 
 
 
-(defresolver subclasses [args value]
-  )
-
-(defresolver superclasses [args value]
-  )
-
 (defresolver direct-superclasses [args value]
   (q/ld-> value [:rdfs/sub-class-of]))
 

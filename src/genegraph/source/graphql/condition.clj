@@ -74,3 +74,56 @@
 
 (defresolver diseases [args value]
   (curation/diseases-for-resolver args value))
+
+
+(def subclass-of-query 
+  (q/create-query 
+   (str "select ?s WHERE { ?class "
+        " <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+        " ?s . "
+        " ?s "
+        " <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+        "<http://purl.obolibrary.org/obo/MONDO_0000001> ."        
+        "FILTER (!isBlank(?s)) }")))
+
+(def superclass-of-query
+  (q/create-query 
+   (str "select ?s WHERE { ?s "
+        " <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+        " ?class . "
+        " ?s "
+        " <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+        "<http://purl.obolibrary.org/obo/MONDO_0000001> ."
+        "FILTER (!isBlank(?s)) }")))
+
+(def direct-subclass-of-query 
+  (q/create-query 
+   (str "select ?s WHERE { ?class "
+        " <http://www.w3.org/2000/01/rdf-schema#subClassOf> "
+        " ?s . "
+        " ?s "
+        " <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+        "<http://purl.obolibrary.org/obo/MONDO_0000001> ."        
+        "FILTER (!isBlank(?s)) }")))
+
+(def direct-superclass-of-query
+  (q/create-query 
+   (str "select ?s WHERE { ?s "
+        " <http://www.w3.org/2000/01/rdf-schema#subClassOf> "
+        " ?class . "
+        " ?s "
+        " <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+        "<http://purl.obolibrary.org/obo/MONDO_0000001> ."
+        "FILTER (!isBlank(?s)) }")))
+
+(defresolver subclasses [args value]
+  (superclass-of-query {:class value}))
+
+(defresolver superclasses [args value]
+  (subclass-of-query {:class value}))
+
+(defresolver direct-subclasses [args value]
+  (direct-superclass-of-query {:class value}))
+
+(defresolver direct-superclasses [args value]
+  (direct-subclass-of-query {:class value}))
