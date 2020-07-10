@@ -11,6 +11,7 @@
             [clojure.core.protocols :as protocols :refer [Datafiable]]
             [clojure.datafy :as datafy :refer [datafy nav]]
             [io.pedestal.log :as log]
+            [medley.core :as medley]
             [clojure.java.io :as io])
   (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList SimpleSelector ModelFactory]
            [org.apache.jena.query Dataset QueryFactory Query QueryExecution
@@ -506,7 +507,7 @@
       (mapv #(->RDFResource (.getResource % result-var) node-model) result-seq))))
 
 (defn- exec [query-def params]
-  (let [qs-map (construct-query-solution-map (dissoc params ::model ::params))
+  (let [qs-map (construct-query-solution-map (medley/filter-keys #(nil? (namespace %)) params))
         model (or (::model params) db)
         result-model (or (::model params) (get-all-graphs))
         query (construct-query-with-params query-def params)]

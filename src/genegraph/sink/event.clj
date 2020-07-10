@@ -1,29 +1,11 @@
 (ns genegraph.sink.event
-  (:require [genegraph.transform.core :refer [add-model]]
-            [genegraph.database.query :as q]
+  (:require [genegraph.database.query :as q]
             [genegraph.database.load :refer [load-model]]
-            [clojure.edn :as edn]
-            [clojure.java.io :as io]
-            [genegraph.transform.core :refer [add-model]]
-            [genegraph.transform.gci-legacy :as gci-legacy]
-            [genegraph.transform.actionability :as aci]
+            [genegraph.annotate :refer [add-model add-iri add-metadata]]
             [genegraph.source.graphql.common.cache :as cache]))
 
-(def formats (-> "formats.edn" io/resource slurp edn/read-string))
-
-(defn add-metadata [event]
-  (merge event (get formats (::format event))))
-
-(defn add-iri [event]
-  (let [iri (-> (q/select "select ?x where {?x a ?type}"
-                          {:type (::root-type event)}
-                          (::model event))
-                first
-                str)]
-    (assoc event ::iri iri)))
-
 (defn add-to-db! [event]
-  (load-model (::model event) (::iri event))
+  (load-model (::q/model event) (::annotate/iri event))
   event)
 
 (defn process-event! [event]

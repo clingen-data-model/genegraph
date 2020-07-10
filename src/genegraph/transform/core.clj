@@ -24,7 +24,7 @@
                    (-> event :genegraph.sink.event/value .getBytes java.io.ByteArrayInputStream.)
                    (:genegraph.sink.base/document event)
                    (io/input-stream (str (target-base) (:genegraph.sink.base/document event))))] 
-    (assoc event :genegraph.sink.event/model (l/read-rdf is {:format format}))))
+    (assoc event :genegraph.database.query/model (l/read-rdf is {:format format}))))
 
 (defmethod add-model :rdf-xml [event] 
   (add-model-with-format event :rdf-xml))
