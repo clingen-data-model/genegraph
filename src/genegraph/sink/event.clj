@@ -1,7 +1,7 @@
 (ns genegraph.sink.event
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :refer [load-model]]
-            [genegraph.annotate :refer [add-model add-iri add-metadata]]
+            [genegraph.annotate :as annotate :refer [add-model add-iri add-metadata]]
             [genegraph.source.graphql.common.cache :as cache]))
 
 (defn add-to-db! [event]
