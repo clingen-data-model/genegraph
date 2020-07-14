@@ -17,9 +17,9 @@
     `(defn ~resolver-name ~fn-args
        (if env/use-gql-cache
          (do (swap! resolver-cache #(if (cache/has? % ~key)
-                                    (cache/hit % ~key)
-                                    (cache/miss % ~key (do ~@body))))
-             (cache/lookup @resolver-cache ~key))
+                                      (cache/hit % ~key)
+                                      (cache/miss % ~key (do ~@body))))
+             (cache/lookup (deref resolver-cache) ~key))
          (do ~@body)))))
 
 (defn reset-cache! 
