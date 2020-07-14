@@ -10,4 +10,5 @@
   ?proposition :sepio/has-subject ?gene }"))
 
 (defmethod add-genes :sepio/GeneValidityReport [event]
-  (let [genes (validity-genes-query event)]))
+  (let [genes (validity-genes-query event)]
+    (map #(get % [:owl/equivalent-class :<]))))
