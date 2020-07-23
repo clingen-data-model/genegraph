@@ -1,5 +1,6 @@
 (ns genegraph.source.graphql.common.cache
   (:require [clojure.core.cache :as cache]
+            [io.pedestal.log :as log]
             [genegraph.env :as env]))
 
 (defn create-cache []
@@ -25,5 +26,6 @@
 (defn reset-cache! 
   "Blow away the entire cache."
   []
-  (reset! resolver-cache (atom (create-cache))))
+  (log/info :fn reset-cache! :msg "Resetting resolver cache")
+  (reset! resolver-cache (create-cache)))
 
