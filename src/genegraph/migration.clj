@@ -45,7 +45,9 @@
     (stop #'stream/consumer-thread)
     (while (not (stream/consumers-closed?))
       (Thread/sleep 1000))
+    (start #'suggest/suggestions)
     (suggest/build-all-suggestions)
+    (stop #'suggest/suggestions)
     (stop #'db/db)))
 
 (defn compress-database
