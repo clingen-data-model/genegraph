@@ -84,6 +84,6 @@
 
 (defmethod add-model :actionability-v1 [event]
   (assoc event
-         :genegraph.sink.event/model
+         ::q/model
          (transform (json/parse-string (:genegraph.sink.event/value event) true))))
 

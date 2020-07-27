@@ -1,5 +1,6 @@
 (ns genegraph.sink.stream
   (:require [genegraph.sink.event :as event]
+            [genegraph.annotate :as annotate]
             [genegraph.env :as env]
             [clojure.java.io :as io]
             [mount.core :refer [defstate]]
@@ -26,7 +27,7 @@
 (def topic-state (atom {}))
 
 (defn consumer-record-to-clj [consumer-record spec]
-  {::event/format spec 
+  {::annotate/format spec 
    ::event/key (.key consumer-record)
    ::event/value (.value consumer-record)
    ::timestamp (.timestamp consumer-record)

@@ -40,6 +40,7 @@
                  [org.openjfx/javafx-base "11.0.1"]
                  [org.openjfx/javafx-web "11.0.1"]
                  [expound "0.7.2"]
+                 [medley "1.3.0"]
                  [com.fasterxml.jackson.core/jackson-core "2.11.0"]
                  [com.fasterxml.jackson.core/jackson-databind "2.11.0"]
                  [com.google.cloud/google-cloud-storage "1.108.0"]]

@@ -92,5 +92,5 @@
 (defmethod add-model :gci-legacy [event]
   (let [report-json (json/parse-string (:genegraph.sink.event/value event) true)]
     (assoc event
-           :genegraph.sink.event/model
+           ::q/model
            (l/statements-to-model  (gci-legacy-report-to-triples report-json)))))

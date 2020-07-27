@@ -1,10 +1,10 @@
 (ns genegraph.transform.gene-validity
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q :refer [select construct ld-> ld1-> declare-query]]
-            [genegraph.transform.core :refer [transform-doc src-path]]
+            [genegraph.transform.core :refer [transform-doc src-path add-model]]
             [cheshire.core :as json]
             [clojure.string :as s]
-            [clojure.java.io :refer [resource]])
+            [clojure.java.io :as io :refer [resource]])
   (:import java.io.ByteArrayInputStream ))
 
 (def base "http://dataexchange.clinicalgenome.org/gci/")
@@ -132,3 +132,30 @@
               {::q/model
                (q/union unlinked-model
                         gdm-sepio-relationships)}))))
+
+
+(defn partition-snapshot 
+  "Utility function to split GCM snapshot into separate files"
+  [src dest]
+  (with-open [rdr (io/reader src)]
+    (doseq [snapshot (json/parse-stream rdr)]
+      (with-open [wtr (io/writer (str dest (get snapshot "uuid") ".json"))]
+        (json/generate-stream snapshot wtr {:pretty true})))))
+
+(defn chunk-snapshot-to-events
+  "Utility function to split GCM snapshot into streamable events"
+  [src dest]
+  (with-open [rdr (io/reader src)]
+    (doseq [snapshot (json/parse-stream rdr)]
+      (with-open [wtr (io/writer (str dest (get snapshot "uuid") ".edn"))]
+        (binding [*out* wtr
+                  *print-length* nil]
+          (pr
+           {:genegraph.sink.event/format :gci-snapshot
+            :genegraph.sink.event/key (get snapshot "uuid")
+            :genegraph.sink.event/value (json/generate-string snapshot)}))))))
+
+
+(defmethod add-model :gci-snapshot
+  [event]
+  )
