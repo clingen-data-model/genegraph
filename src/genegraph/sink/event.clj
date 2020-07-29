@@ -25,7 +25,8 @@
   "Read and integrate a directory full of event records"
   [path]
   (let  [dir (File. path)
-         files (file-seq dir)]
+         files (filter #(re-find #".*\.edn$" (.getName %)) (file-seq dir))]
     (doseq [f files]
-      (with-open [evt (-> f io/reader PushbackReader. edn/read)]
-        (process-event! evt)))))
+      (with-open [rdr (io/reader f)
+                  pushback-rdr (PushbackReader. rdr)]
+        (process-event! (edn/read pushback-rdr))))))

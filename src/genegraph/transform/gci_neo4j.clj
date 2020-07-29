@@ -7,24 +7,12 @@
 (def gci-root "http://dataexchange.clinicalgenome.org/gci/")
 (def affiliation-root "http://dataexchange.clinicalgenome.org/agent/")
 
-(defn report-date [report]
-  (get-in report [:scoreJson :summary :FinalClassificationDate]))
-
 (defn validity-proposition [report iri]
-  (let [gene-hgnc-id (-> report :genes first :curie)
-        gene (when gene-hgnc-id
-               (q/ld1-> (q/resource gene-hgnc-id) [[:owl/same-as :<]]))
-        moi-string (-> report :scoreJson :ModeOfInheritance)
-        moi (->> moi-string
-                 (re-find #"\(HP:(\d+)\)")
-                 second
-                 (str "http://purl.obolibrary.org/obo/HP_")
-                 q/resource)]
-    [[iri :rdf/type :sepio/GeneValidityProposition]
-     [iri :sepio/has-subject gene]
-     [iri :sepio/has-predicate :ro/IsCausalGermlineMutationIn]
-     [iri :sepio/has-object (q/resource (-> report :conditions first :iri))]
-     [iri :sepio/has-qualifier moi]]))
+  [[iri :rdf/type :sepio/GeneValidityProposition]
+   [iri :sepio/has-subject (q/resource (:gene report))]
+   [iri :sepio/has-predicate :ro/IsCausalGermlineMutationIn]
+   [iri :sepio/has-object (q/resource (:disease report))]
+   [iri :sepio/has-qualifier (q/resource (:moi report))]])
 
 (def evidence-level-label-to-concept
   {"Definitive" :sepio/DefinitiveEvidence
@@ -40,15 +28,27 @@
    "Disputed" :sepio/DisputingEvidence
    "No Classification" :sepio/NoEvidence})
 
+(def old-score-to-new
+  {"http://datamodel.clinicalgenome.org/terms/CG_000084" :sepio/DisputingEvidence
+   "http://datamodel.clinicalgenome.org/terms/CG_000064" :sepio/StrongEvidence
+   "http://datamodel.clinicalgenome.org/terms/CG_000066" :sepio/LimitedEvidence
+   "http://datamodel.clinicalgenome.org/terms/CG_000067" :sepio/NoEvidence
+   "http://datamodel.clinicalgenome.org/terms/CG_000063" :sepio/DefinitiveEvidence
+   "http://datamodel.clinicalgenome.org/terms/CG_000085" :sepio/RefutingEvidence
+   "http://datamodel.clinicalgenome.org/terms/CG_000065" :sepio/ModerateEvidence})
+
 (def gci-sop-version 
-  {"6" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP6
+  {"5" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP5
+   "6" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP6
    "7" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP7})
 
 (defn contribution [report iri]
   [[iri :bfo/realizes :sepio/ApproverRole]
-   [iri :sepio/has-agent  (q/resource (str affiliation-root
-                                         (-> report :affiliation :id)))]
-   [iri :sepio/activity-date (report-date report)]])
+   [iri :sepio/has-agent  (q/resource 
+                           (s/replace (:gcep report)
+                                      "https://search.clinicalgenome.org/kb/agents/"
+                                      affiliation-root))]
+   [iri :sepio/activity-date (:date report)]])
 
 (defn evidence-level-assertion [report iri id]
   (let [prop-iri (q/resource (str gci-root "proposition_" id))
@@ -56,10 +56,9 @@
     (concat [[iri :rdf/type :sepio/GeneValidityEvidenceLevelAssertion]
              [iri :sepio/has-subject prop-iri]
              [iri :sepio/has-predicate :sepio/HasEvidenceLevel]
-             [iri :sepio/has-object (evidence-level-label-to-concept
-                                     (-> report :scoreJson :summary :FinalClassification))]
+             [iri :sepio/has-object (old-score-to-new (:score report))]
              [iri :sepio/qualified-contribution contribution-iri]
-             [iri :sepio/is-specified-by (gci-sop-version (:sopVersion report))]]
+             [iri :sepio/is-specified-by (gci-sop-version (:sop-version report))]]
             (validity-proposition report prop-iri)
              (contribution report contribution-iri))))
 
@@ -69,7 +68,7 @@
 
 (defn gci-neo4j-export-to-triples [report]
   (let [root-version (str gci-root (:id report))
-        id (str (:id report) "-" (s/replace (report-date report) #":" ""))
+        id (str (:id report) "-" (s/replace (:date report) #":" ""))
         iri (q/resource (str gci-root "report_" id))
         content-id (l/blank-node)
         assertion-id (q/resource (str gci-root "assertion_" id))]
@@ -80,8 +79,9 @@
             (evidence-level-assertion report assertion-id id)
             (json-content-node report content-id)))) 
 
-(defmethod add-model :gci-legacy [event]
-  (let [report (:genegraph.sink.event/value event)]
+(defmethod add-model :gene-validity-neo4j-export [event]
+  (let [report (:genegraph.sink.event/value event)
+        triples (gci-neo4j-export-to-triples report)]
     (assoc event
            ::q/model
-           (l/statements-to-model  (gci-neo4j-export-to-triples report)))))
+           (l/statements-to-model triples))))

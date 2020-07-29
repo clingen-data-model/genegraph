@@ -9,4 +9,6 @@
  :gene-validity-raw {:genegraph.transform.core/format :gene-validity-v1}
  :gene-validity-raw-dev {:genegraph.transform.core/format :gene-validity-v1}
  :gci-legacy  {:genegraph.transform.core/format :gci-legacy
-               :genegraph.annotate/root-type :sepio/GeneValidityReport}}
+               :genegraph.annotate/root-type :sepio/GeneValidityReport}
+ :gene-validity-neo4j-export {:genegraph.transform.core/format :gene-validity-neo4j-export
+                              :genegraph.annotate/root-type :sepio/GeneValidityReport}}
