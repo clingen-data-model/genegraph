@@ -17,6 +17,6 @@
 
 (defn did-validate?
   [report]
-  (= 1 (count (q/select "select ?x where { ?x :shacl/conforms true }" {} report))))
+  (= 1 (count (tx (q/select "select ?x where { ?x :shacl/conforms true }" {} report)))))
 
 

@@ -76,28 +76,19 @@
    (try
      (write-tx
       (.replaceNamedModel db name model)
-      (if-let [shape-def (:validate opts)]
-        (let [shape (q/get-named-graph shape-def)
-              validation-result (v/validate model shape)]
-          (if (v/did-validate? validation-result)
-            (do (.commit db)
-                {:succeeded true})
-            (do (.abort db)
-                (log/warn :fn :load-model :name name :msg (q/to-turtle validation-result))
-                {:succeeded false
-                 :reason :validation-failure
-                 :validation-report validation-result})))
-        (do (.commit db)
-            {:succeeded true})))
-     (catch Exception e# (log/error :fn :tx :msg e#)))))
+      (.commit db)
+      {:succeeded true})
+     (catch Exception e# (log/error :fn :load-model :msg e#)))))
 
 (defn remove-model
   "Remove a named model from the database."
   [name]
-  (write-tx
-   (.removeNamedModel db name)
-   (.commit db)
-   {:succeded true}))
+  (try
+    (write-tx
+     (.removeNamedModel db name)
+     (.commit db)
+     {:succeded true})
+    (catch Exception e# (log/error :fn :remove-model :msg e#))))
 
 (defn load-statements
   "Statements are a three-item sequence. Will be imported as a named graph into TDB"

@@ -13,9 +13,15 @@
 (def genegraph-bucket (System/getenv "GENEGRAPH_BUCKET"))
 (def use-gql-cache (System/getenv "GENEGRAPH_GQL_CACHE"))
 (def mode (System/getenv "GENEGRAPH_MODE"))
+(def validate-events (System/getenv "GENEGRAPH_VALIDATE_EVENTS"))
 
 (defn log-environment []
   (log/info :fn :log-environment
             :data-vol data-vol
             :dx-key-pass (true? dx-key-pass)
-            :dx-topics dx-topics))
+            :dx-topics dx-topics
+            :genegraph-data-version data-version
+            :genegraph-bucket genegraph-bucket
+            :gengraph-cache use-gql-cache
+            :genegraph-mode mode
+            :genegraph-validate-events validate-events))

@@ -16,12 +16,10 @@
   (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList SimpleSelector ModelFactory]
            [org.apache.jena.query Dataset QueryFactory Query QueryExecution
             QueryExecutionFactory QuerySolutionMap]
-
            [org.apache.jena.sparql.algebra AlgebraGenerator Algebra OpAsQuery Op]
            [org.apache.jena.graph Node NodeFactory Triple Node_Variable Node_Blank]
 [org.apache.jena.sparql.algebra.op OpDistinct OpProject OpFilter OpBGP OpConditional OpDatasetNames OpDiff OpDisjunction OpDistinctReduced OpExtend OpGraph OpGroup OpJoin OpLabel OpLeftJoin OpList OpMinus OpNull OpOrder OpQuad OpQuadBlock OpQuadPattern OpReduced OpSequence OpSlice OpTopN OpUnion OpTable ]
 [org.apache.jena.sparql.core BasicPattern Var VarExprList QuadPattern Quad]
-
            org.apache.jena.riot.writer.JsonLDWriter
            org.apache.jena.sparql.core.Prologue
            org.apache.jena.riot.RDFFormat$JSONLDVariant
@@ -375,14 +373,13 @@
 (defn get-named-graph [name]
   (.getNamedModel db name))
 
-
+(defn list-named-graphs []
+  (into [] (iterator-seq (.listNames db))))
 
 (defn to-turtle [model]
   (let [os (ByteArrayOutputStream.)]
     (.write model os "TURTLE")
     (.toString os)))
-
-
 
 (defn union [& models]
   (let [union-model (ModelFactory/createDefaultModel)]

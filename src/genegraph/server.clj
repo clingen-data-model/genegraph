@@ -46,12 +46,18 @@
 (defn -main
   "The entry-point for 'lein run'"
   [& args]
-  ;; Start server first to support health check
-  (log/info :fn :-main :message "Starting Genegraph")
-  (mount.core/start #'server)
-  (env/log-environment)
-  (migration/populate-data-vol-if-needed)
-  (mount.core/start)
-  (reset! initialized? true))
+  (if (= 0 (count args))
+    (do
+      (log/info :fn :-main :message "Starting Genegraph")
+      (mount.core/start #'server)
+      (env/log-environment)
+      (migration/populate-data-vol-if-needed)
+      (mount.core/start)
+      (reset! initialized? true))
+    (do
+      (log/info :fn :-main :message "Creating migration")
+      (env/log-environment)
+      (migration/create-migration))))
+
 
 
