@@ -1,0 +1,12 @@
+{
+  genes(sort: {field: REPORT_DATE, direction: DESC}, text: "smad3", limit: 25, offset: 0) {
+    gene_list {
+      label
+      alternative_label
+      hgnc_id
+      curation_activities
+      last_curated_date
+    }
+    count
+  }
+}
