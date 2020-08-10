@@ -1,0 +1,52 @@
+{
+  gene(iri: "HGNC:6769") {
+    label
+    alternative_label
+    hgnc_id
+    chromosome_band
+    curation_activities
+    dosage_curation {
+      curie
+      report_date
+      haploinsufficiency_assertion {
+        dosage_classification {
+          label
+          ordinal
+          enum_value
+        }
+      }
+      triplosensitivity_assertion {
+        dosage_classification {
+          label
+          ordinal
+          enum_value
+        }
+      }
+    }
+    genetic_conditions {
+      disease {
+        label
+      }
+      gene_validity_assertions {
+        mode_of_inheritance {
+          label
+          curie
+        }
+        report_date
+        classification {
+          label
+          curie
+        }
+        curie
+      }
+      actionability_curations {
+        report_date
+        source
+      }
+      gene_dosage_assertions {
+        report_date
+        curie
+      }
+    }
+  }
+}

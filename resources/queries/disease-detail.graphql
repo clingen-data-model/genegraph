@@ -1,0 +1,34 @@
+{
+  disease(iri: "MONDO:0013426") {
+    label
+    curation_activities
+    genetic_conditions {
+      gene {
+        label
+        hgnc_id
+      }
+      gene_validity_assertions {
+        mode_of_inheritance {
+          label
+          curie
+        }
+        report_date
+        classification {
+          label
+          curie
+        }
+        curie
+      }
+      actionability_curations {
+        report_date
+        source
+      }
+      gene_dosage_assertions {
+        report_date
+        score
+        curie
+      }
+    }
+  }
+}
+

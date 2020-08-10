@@ -1,0 +1,16 @@
+{
+  genes(curation_activity: GENE_DOSAGE, limit: null) {
+    gene_list {
+      dosage_curation {
+        triplosensitivity_assertion {
+          score
+        }
+        haploinsufficiency_assertion {
+          score
+        }
+        report_date
+      }
+    }
+    count
+  }
+}

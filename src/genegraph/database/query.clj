@@ -12,7 +12,8 @@
             [clojure.datafy :as datafy :refer [datafy nav]]
             [io.pedestal.log :as log]
             [medley.core :as medley]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [taoensso.nippy :as nippy])
   (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList SimpleSelector ModelFactory]
            [org.apache.jena.query Dataset QueryFactory Query QueryExecution
             QueryExecutionFactory QuerySolutionMap]
@@ -184,6 +185,17 @@
                   full-ns (prefix-ns-map short-ns)
                   id (subs uri (count full-ns))]
               (str "/r/" short-ns "_" id))))
+
+(nippy/extend-freeze 
+ RDFResource ::rdf-resource
+ [x data-output]
+ (.writeUTF data-output (str x)))
+
+(nippy/extend-thaw 
+ ::rdf-resource
+ [data-input]
+ (when-let [resource-iri (.readUTF data-input)]
+   (resource resource-iri)))
 
 (defn- navize [model]
   (fn [coll k v]

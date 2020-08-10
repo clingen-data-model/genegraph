@@ -1,0 +1,26 @@
+{
+  gene_validity_assertions(limit: null) {
+    curation_list {
+      disease {
+        label
+        curie
+      }
+      gene {
+        label
+      }
+      mode_of_inheritance {
+        label
+        curie
+      }
+      classification {
+        label
+        curie
+      }
+      specified_by {
+        label
+        curie
+      }
+    }
+    count
+  }
+}

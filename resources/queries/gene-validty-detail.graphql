@@ -1,0 +1,31 @@
+{
+  gene_validity_assertion(iri: "CGGCIEX:assertion_3210") {
+    curie
+    report_date
+    gene {
+      label
+      curie
+    }
+    disease {
+      label
+      curie
+    }
+    mode_of_inheritance {
+      label
+      curie
+    }
+    attributed_to {
+      label
+      curie
+    }
+    classification {
+      label
+      curie
+    }
+    specified_by {
+      label
+      curie
+    }
+    legacy_json
+  }
+}

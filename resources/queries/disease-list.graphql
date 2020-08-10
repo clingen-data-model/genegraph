@@ -1,0 +1,12 @@
+{
+  diseases(limit: 10, offset: 0, curation_activity: ALL) {
+    disease_list {
+      iri
+      curie
+      label
+      last_curated_date
+      curation_activities
+    }
+    count
+  }
+}
