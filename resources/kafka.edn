@@ -29,8 +29,6 @@
                                 :format :json-ld
                                 :reader-opts {:format :json-ld}
                                 :root-type :sepio/GeneDosageReport
-                                ;; validation for dosage is turned off due to shacl shape not validating region shapes
-                                ;; :validation-model "http://dataexchange.clinicalgenome.org/models/sepio-clingen-dosage-shapes.ttl"
                                 :cluster :dx-stage}
             :gene-validity  {:format :gene-validity-v1
                              :name "gene_validity"

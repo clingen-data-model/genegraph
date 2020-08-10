@@ -1,5 +1,8 @@
-[{:name "https://dataexchange.clinicalgenome.org/shapes/GeneDosage"
-  :source "https://raw.githubusercontent.com/clingen-data-model/clingen-schemas/master/dosage.ttl"
-  :target "dosage.ttl"
-  :format :rdf
-  :reader-opts {:format :turtle}}]
+;; Shacl Shape Validation specification file.
+;; Entries in this map cause stream entity events to be validated via shacl.
+;; The map key directly relates to a :genegraph.transform.core/root-type value from formats.edn.
+;; The map value is itself a map, containing a :graph-name key which directly relates to
+;; a :name key in base.edn - that is, a shacl model that has been previously loaded into the db.
+;; To turn off validations, define an empty map here.
+{:sepio/GeneDosageReport {:graph-name "http://dataexchange.clinicalgenome.org/models/sepio-clingen-dosage-shapes.ttl"}}
+
