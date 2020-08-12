@@ -22,19 +22,19 @@
   second representing value. Context is not used, or useable."
   [resolver-name args & body]
   (let [fn-args (into [] (cons (gensym) args))]
-    (if env/use-gql-cache
-      `(defn ~resolver-name ~fn-args
-         (log/debug :fn :defresolver :msg (str "in resolver " ~resolver-name))
-         (let [cache-key# (conj ~args ~(str *ns* "." resolver-name))]
-           (log/debug :fn :defresolver :msg (str "using cache, looking up " cache-key#))
-           (if-let [result# (get-from-cache cache-key#)]
-             (do (log/debug :fn :defresolver :msg (str "cache hit: " result#))
-                 result#)
-             (let [calculated-result# (do ~@body)]
-               (log/debug :fn :defresolver :msg "cache miss")
-               (store-in-cache! cache-key# calculated-result#)
-               calculated-result#))))
-      `(defn ~resolver-name ~fn-args
+
+    `(defn ~resolver-name ~fn-args
+       (if env/use-gql-cache
+         (do (log/debug :fn :defresolver :msg (str "in resolver " ~resolver-name))
+             (let [cache-key# (conj ~args ~(str *ns* "." resolver-name))]
+               (log/debug :fn :defresolver :msg (str "using cache, looking up " cache-key#))
+               (if-let [result# (get-from-cache cache-key#)]
+                 (do (log/debug :fn :defresolver :msg (str "cache hit: " result#))
+                     result#)
+                 (let [calculated-result# (do ~@body)]
+                   (log/debug :fn :defresolver :msg "cache miss")
+                   (store-in-cache! cache-key# calculated-result#)
+                   calculated-result#))))
          (do ~@body)))))
 
 ;; (defmacro defresolver
