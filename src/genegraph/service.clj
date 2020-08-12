@@ -10,6 +10,8 @@
             [com.walmartlabs.lacinia.util :as util]
             [genegraph.source.graphql.core :as gql]
             [genegraph.source.graphql.gene :as gql-gene]
+            [genegraph.response-cache :refer [response-cache-interceptor]]
+            [genegraph.env :as env]
             [mount.core :refer [defstate]]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
@@ -68,19 +70,16 @@
 
 (def open-tx-interceptor
   {:name ::open-tx
-   :enter (fn [context] (begin-read-tx) context)})
-
-(def close-tx-interceptor
-  {:name ::close-tx
-   :enter (fn [context] (close-read-tx) context)})
+   :enter (fn [context] (begin-read-tx) context)
+   :leave (fn [context] (close-read-tx) context)})
 
 (defn dev-service 
   "Service map to be used for development mode."
   []
   (let [gql-schema (gql/schema)
-        interceptors (-> (lacinia/default-interceptors gql/schema {})
-                         (lacinia/inject open-tx-interceptor :before ::lacinia/query-executor)
-                         (lacinia/inject close-tx-interceptor :after ::lacinia/query-executor))]
+        interceptors (cond-> (lacinia/default-interceptors gql/schema {})
+                       true (lacinia/inject open-tx-interceptor :before ::lacinia/query-executor)
+                       env/use-response-cache (lacinia/inject (response-cache-interceptor) :before ::lacinia/json-response))]
     (merge-with into  
                 (lacinia/service-map gql/schema
                                      {:graphiql true
@@ -92,9 +91,9 @@
 ;;(def service (lacinia/service-map (graphql-schema) {:graphiql true}))
 (defn service []
   (let [gql-schema (gql/schema)
-        interceptors (-> (lacinia/default-interceptors gql-schema {})
-                         (lacinia/inject open-tx-interceptor :before ::lacinia/query-executor)
-                         (lacinia/inject close-tx-interceptor :after ::lacinia/query-executor))]
+        interceptors (cond-> (lacinia/default-interceptors gql-schema {})
+                       true (lacinia/inject open-tx-interceptor :before ::lacinia/query-executor)
+                       env/use-response-cache (lacinia/inject (response-cache-interceptor) :before ::lacinia/json-response))]
     (merge-with into  
                 (lacinia/service-map gql-schema
                                      {:graphiql true
