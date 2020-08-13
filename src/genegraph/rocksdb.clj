@@ -22,8 +22,9 @@
   (.delete db (key-digest k)))
 
 (defn rocks-get [db k]
-  (when-let [result (.get db (key-digest k))]
-    (thaw result)))
+  (if-let [result (.get db (key-digest k))]
+    (thaw result)
+    ::miss))
 
 (defn close [db]
   (.close db))
