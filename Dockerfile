@@ -22,4 +22,4 @@ COPY keys/serveur.truststore.jks /keys/serveur.truststore.jks
 
 EXPOSE 8888
 
-CMD ["java", "-jar", "/app/app.jar"]
+CMD ["java", "-XX:MaxRAMPercentage=50", "-jar", "/app/app.jar"]
