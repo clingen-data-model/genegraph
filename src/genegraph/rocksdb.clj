@@ -1,6 +1,7 @@
 (ns genegraph.rocksdb
   (:require [genegraph.env :as env]
-            [taoensso.nippy :as nippy :refer [freeze thaw]])
+            [taoensso.nippy :as nippy :refer [freeze thaw]]
+            [digest])
   (:import (org.rocksdb RocksDB Options)))
 
 
@@ -11,14 +12,17 @@
     ;; todo add logging...
     (RocksDB/open opts full-path)))
 
+(defn key-digest [k]
+  (-> k freeze digest/md5 .getBytes))
+
 (defn rocks-put! [db k v]
-  (.put db (freeze k) (freeze v)))
+  (.put db (key-digest k) (freeze v)))
 
 (defn rocks-delete! [db k]
-  (.delete db (freeze k)))
+  (.delete db (key-digest k)))
 
 (defn rocks-get [db k]
-  (when-let [result (.get db (freeze k))]
+  (when-let [result (.get db (key-digest k))]
     (thaw result)))
 
 (defn close [db]

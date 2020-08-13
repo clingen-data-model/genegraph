@@ -14,6 +14,7 @@
 (def use-gql-cache (System/getenv "GENEGRAPH_GQL_CACHE"))
 (def mode (System/getenv "GENEGRAPH_MODE"))
 (def validate-events (System/getenv "GENEGRAPH_VALIDATE_EVENTS"))
+(def use-response-cache (System/getenv "GENEGRAPH_RESPONSE_CACHE"))
 
 (defn log-environment []
   (log/info :fn :log-environment
