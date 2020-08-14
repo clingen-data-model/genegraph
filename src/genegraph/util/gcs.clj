@@ -17,7 +17,7 @@
 
 (defn put-file-in-bucket!
   ([source-file blob-name]
-   (put-in-bucket! source-file blob-name {:content-type "application/gzip"}))
+   (put-file-in-bucket! source-file blob-name {:content-type "application/gzip"}))
   ([source-file blob-name options]
    (let [gc-storage (.getService (StorageOptions/getDefaultInstance))
          blob-id (BlobId/of env/genegraph-bucket blob-name)
