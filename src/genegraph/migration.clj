@@ -7,6 +7,7 @@
             [genegraph.database.instance :as db]
             [genegraph.sink.stream :as stream]
             [genegraph.suggest.suggesters :as suggest]
+            [genegraph.sink.batch :as batch]
             [mount.core :refer [start stop]]
             [clojure.java.shell :refer [sh]])
   (:import [java.time ZonedDateTime ZoneOffset]
@@ -37,6 +38,7 @@
     (fs/mkdirs env/data-vol)
     (start #'db/db)
     (base/initialize-db!)
+    (batch/proccess-batched-events!)
     (start #'stream/consumer-thread)
     ;; Address race where all threads are "up to date", needs better fix
     (Thread/sleep (* 1000 60 2))

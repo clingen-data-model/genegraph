@@ -4,10 +4,7 @@
             [genegraph.source.graphql.common.cache :as cache]
             [genegraph.annotate :as annotate :refer [add-model add-iri add-metadata add-validation]]
             [genegraph.database.validation :as v]
-            [io.pedestal.log :as log]
-            [clojure.edn :as edn]
-            [clojure.java.io :as io])
-  (:import (java.io PushbackReader File))
+            [io.pedestal.log :as log]))
 
 (defn add-to-db!
   "Adds model data to the db. As validation is configurable, this is done 
@@ -37,13 +34,3 @@
                             add-to-db!)]
     (cache/reset-cache!)
     processed-event))
-
-(defn process-directory! 
-  "Read and integrate a directory full of event records"
-  [path]
-  (let  [dir (File. path)
-         files (filter #(re-find #".*\.edn$" (.getName %)) (file-seq dir))]
-    (doseq [f files]
-      (with-open [rdr (io/reader f)
-                  pushback-rdr (PushbackReader. rdr)]
-        (process-event! (edn/read pushback-rdr))))))
