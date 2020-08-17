@@ -6,6 +6,7 @@
             [genegraph.transform.core :as transform]
             [genegraph.transform.gci-legacy :as gci-legacy]
             [genegraph.transform.actionability :as aci]
+            [genegraph.transform.gci-neo4j :as gci-neo4j]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [io.pedestal.log :as log]))

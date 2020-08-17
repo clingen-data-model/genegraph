@@ -1,9 +1,9 @@
 (ns genegraph.sink.event
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :refer [load-model]]
-            [genegraph.database.validation :as v]
-            [genegraph.annotate :as annotate :refer [add-model add-iri add-metadata add-validation]]
             [genegraph.source.graphql.common.cache :as cache]
+            [genegraph.annotate :as annotate :refer [add-model add-iri add-metadata add-validation]]
+            [genegraph.database.validation :as v]
             [io.pedestal.log :as log]))
 
 (defn add-to-db!
