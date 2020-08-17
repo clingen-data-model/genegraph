@@ -7,7 +7,6 @@
             [genegraph.source.html.elements.genes]
             [genegraph.source.html.elements.genetic-dosage]
             [genegraph.source.html.elements.node-shape]
-            [genegraph.source.html.elements.predicate]
             [genegraph.source.html.elements.value-set]
             [genegraph.source.html.elements.functional-copy-number-complement]))
 

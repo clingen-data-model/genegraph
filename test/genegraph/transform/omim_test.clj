@@ -126,15 +126,6 @@ chr1	16043781	16057325	1p36	1p36.13	602023	CLCNKB	Chloride channel, kidney, B	CL
   chr1	16043781	16057325	1p36	1p36.13	602023	CLCNKB	Chloride channel, kidney, B	CLCNKB	1188	ENSG00000184908	unequal crossingover with CLCNKA	Bartter syndrome, type 4b, digenic, 613090 (3), Digenic recessive	Clcnka (MGI:1329026)")
 
 
-(deftest transform-genemap2-test
-  (with-test-database
-    (s/import-record! gene-dosage-record)
-    (l/load-statements base-triples "https://omim.org/genemap2")
-    (l/load-statements (concat (omim/transform-genemap2 genemap2-rows) base-triples) "https://omim.org/genemap2")
-    ;; validate that OMIM_613090 :sepio/is-about-gene GENE_1188
-    (is (= 1 (count (q/select "select ?s where { ?s :sepio/is-about-gene <https://www.ncbi.nlm.nih.gov/gene/1188> }"))))
-      ;; validate that MONDO_0000909 :rdf/type :sepio/GeneticCondition
-    (is (= 1 (count (q/select "select ?s where { ?s a :sepio/GeneticCondition }"))))))
 
 
 

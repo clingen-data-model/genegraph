@@ -1,6 +1,5 @@
-(ns genegraph.database.query
-  (:require [genegraph.database.query.resource :as resource]
-            [genegraph.database.instance :refer [db]]
+(ns genegraph.database.query.resource
+  (:require [genegraph.database.instance :refer [db]]
             [genegraph.database.util :as util :refer [tx]]
             [genegraph.database.names :as names :refer
              [local-class-names local-property-names
@@ -91,7 +90,7 @@
    :desc Query/ORDER_DESCENDING})
 
 (defn construct-query-with-params [query query-params]
-  (if-let [params (::params query-params)]
+  (if-let [params (:genegraph.database.query/params query-params)]
     (let [modified-query (.clone query)]
       (when (:distinct params)
         (.setDistinct modified-query true))
@@ -157,11 +156,11 @@
          (into [] (concat
                    (mapv #(with-meta [[(-> % .getPredicate property-uri->keyword) :>]
                                       (-> % .getObject compose-object-for-datafy)]
-                            {::value  (.getObject %)})
+                            {:genegraph.database.query/value  (.getObject %)})
                          out-attributes)
                    (mapv #(with-meta [[(-> % .getPredicate property-uri->keyword) :<]
                                       (-> % .getSubject compose-object-for-datafy)]
-                            {::value (.getSubject %)})
+                            {:genegraph.database.query/value (.getSubject %)})
                          in-attributes)))
          {`protocols/nav (navize model)}))))
 
@@ -198,7 +197,7 @@
 
 (defn- navize [model]
   (fn [coll k v]
-    (let [target (::value (meta v))]
+    (let [target (:genegraph.database.query/value (meta v))]
       (if (instance? Resource target)
         (->RDFResource target model)
         target))))
@@ -317,8 +316,8 @@
                 :query query-def
                 :params params)
      (let [query (construct-query-with-params query-def params)
-           model-from-params (::model params)
-           qs-map (construct-query-solution-map (dissoc params ::model ::params))]
+           model-from-params (:genegraph.database.query/model params)
+           qs-map (construct-query-solution-map (dissoc params :genegraph.database.query/model :genegraph.database.query/params))]
        (tx
         (with-open [qexec (QueryExecutionFactory/create query db-or-model qs-map)]
           (when-let [result (-> qexec .execSelect)]
@@ -333,7 +332,7 @@
   java.lang.String
   (select 
     ([query-def] (select query-def {}))
-    ([query-def params] (select query-def params (or (::model params) db)))
+    ([query-def params] (select query-def params (or (:genegraph.database.query/model params) db)))
     ([query-def params db-or-model]
      (select (QueryFactory/create (expand-query-str query-def)) params db-or-model)))
   
@@ -400,72 +399,193 @@
     union-model))
 
 
-;; (defn triple
-;;   "Construct triple for use in BGP. Part of query algebra."
-;;   [stmt]
-;;   (let [[s p o] stmt
-;;         subject (cond
-;;                   (instance? Node s) s
-;;                   (= '_ s) Var/ANON
-;;                   (symbol? s) (Var/alloc (str s))
-;;                   (keyword? s) (.asNode (local-class-names s))
-;;                   (string? s) (NodeFactory/createURI s)
-;;                   (satisfies? AsJenaResource s) (.asNode (as-jena-resource s))
-;;                   :else (NodeFactory/createURI (str s)))
-;;         predicate (cond
-;;                     (instance? Node p) p
-;;                     (keyword? p) (.asNode (local-property-names p))
-;;                     :else (NodeFactory/createURI (str p)))
-;;         object (cond 
-;;                  (instance? Node o) o
-;;                  (symbol? o) (Var/alloc (str o))
-;;                  (keyword? o) (.asNode (or (local-class-names o) (local-property-names o)))
-;;                  (or (string? o)
-;;                      (int? o)
-;;                      (float? o)) (.asNode (ResourceFactory/createTypedLiteral o))
-;;                  (satisfies? AsJenaResource o) (.asNode (as-jena-resource o))
-;;                  :else o)]
-;;     (Triple. subject predicate object)))
+;;;; Query builder
+
+(defn text-index [var ])
+
+(defn triple
+  "Construct triple for use in BGP. Part of query algebra."
+  [stmt]
+  (let [[s p o] stmt
+        subject (cond
+                  (instance? Node s) s
+                  (= '_ s) Var/ANON
+                  (symbol? s) (Var/alloc (str s))
+                  (keyword? s) (.asNode (local-class-names s))
+                  (string? s) (NodeFactory/createURI s)
+                  (satisfies? AsJenaResource s) (.asNode (as-jena-resource s))
+                  :else (NodeFactory/createURI (str s)))
+        predicate (cond
+                    (instance? Node p) p
+                    (keyword? p) (.asNode (local-property-names p))
+                    :else (NodeFactory/createURI (str p)))
+        object (cond 
+                 (instance? Node o) o
+                 (symbol? o) (Var/alloc (str o))
+                 (keyword? o) (.asNode (or (local-class-names o) (local-property-names o)))
+                 (or (string? o)
+                     (int? o)
+                     (float? o)) (.asNode (ResourceFactory/createTypedLiteral o))
+                 (satisfies? AsJenaResource o) (.asNode (as-jena-resource o))
+                 :else o)]
+    (Triple. subject predicate object)))
+
+;; (defn expr
+;;   "Convert a Clojure data structure to an Arq Expr"
+;;   [expr]
+;;   (if (instance? java.util.List expr)
+;;     (composite-expr expr)
+;;     (let [node (graph/node expr)]
+;;       (if (instance? Node_Variable node)
+;;         (ExprVar. (Var/alloc ^Node_Variable node))
+;;         (NodeValue/makeNode node)))))
+
+;; (defn- var-expr-list
+;;   "Given a vector of var/expr bindings (reminiscient of Clojure's `let`), return a Jena VarExprList with vars and exprs."
+;;   [bindings]
+;;   (let [vel (VarExprList.)]
+;;     (doseq [[v e] (partition 2 bindings)]
+;;       (.add vel (Var/alloc (graph/node v))
+;;         (expr e)))
+;;     vel))
+
+;; (defn- var-aggr-list
+;;   "Given a vector of var/aggregate bindings return a Jena VarExprList with
+;;    vars and aggregates"
+;;   [bindings]
+;;   (vec (for [[v e] (partition 2 bindings)]
+;;          (ExprAggregator. (Var/alloc (graph/node v)) (aggregator e)))))
+
+;; (defn- sort-conditions
+;;   "Given a seq of expressions and the keyword :asc or :desc, return a list of
+;;    sort conditions."
+;;   [conditions]
+;;   (for [[e dir] (partition 2 conditions)]
+;;     (SortCondition. ^Expr (expr e) (if (= :asc dir) 1 -1))))
+
+(defn- var-seq [vars]
+  (map #(Var/alloc (str %)) vars))
+
+(declare op)
+
+(defn- op-union [a1 a2 & amore]
+  (OpUnion. 
+   (op a1)
+   (if amore
+     (apply op-union a2 amore)
+     (op a2))))
+
+(defn op
+  "Convert a Clojure data structure to an Arq Op"
+  [[op-name & [a1 a2 & amore :as args]]]
+  (case op-name
+    :distinct (OpDistinct/create (op a1))
+    :project (OpProject. (op a2) (var-seq a1))
+    ;; :filter (OpFilter/filterBy (ExprList. ^List (map expr (butlast args))) (op (last args)))
+    :bgp (OpBGP. (BasicPattern/wrap (map triple args)))
+    :conditional (OpConditional. (op a1) (op a2))
+    :diff (OpDiff/create (op a1) (op a2))
+    :disjunction (OpDisjunction/create (op a1) (op a2))
+    ;; :extend (OpExtend/create (op a2) (var-expr-list a1))
+    ;; :group (OpGroup/create (op (first amore))
+    ;;                        (VarExprList. ^List (var-seq a1))
+    ;;                        (var-aggr-list a2))
+    :join (OpJoin/create (op a1) (op a2))
+    :label (OpLabel/create a1 (op a2))
+    ;; :left-join (OpLeftJoin/create (op a1) (op a2) (ExprList. ^List (map expr amore)))
+    :list (OpList. (op a1))
+    :minus (OpMinus/create (op a1) (op a2))
+    :null (OpNull/create)
+    ;; :order (OpOrder. (op a2) (sort-conditions a1))
+    :reduced (OpReduced/create (op a1))
+    :sequence (OpSequence/create (op a1) (op a2))
+    :slice (OpSlice. (op a1) (long a1) (long (first amore)))
+    ;; :top-n (OpTopN. (op (first amore)) (long a1) (sort-conditions a2))
+    :union (apply op-union args)
+    (throw (ex-info (str "Unknown operation " op-name) {:op-name op-name
+                                                        :args args}))))
+
+
+(defn- compose-select-result [qexec model]
+  (when-let [result (-> qexec .execSelect)]
+    (let [result-var (-> result .getResultVars first)
+          result-seq (iterator-seq result)
+          node-model (if (instance? Dataset model)
+                       (get-all-graphs)
+                       model)]
+      (mapv #(->RDFResource (.getResource % result-var) node-model) result-seq))))
+
+(defn- exec [query-def params]
+  (let [qs-map (construct-query-solution-map (medley/filter-keys #(nil? (namespace %)) params))
+        model (or (:genegraph.database.query/model params) db)
+        result-model (or (:genegraph.database.query/model params) (get-all-graphs))
+        query (construct-query-with-params query-def params)]
+    (tx
+     (with-open [qexec (QueryExecutionFactory/create query model qs-map)]
+       (cond 
+         (.isConstructType query) (.execConstruct qexec)
+         (.isSelectType query) (if (= :count (get-in params [:genegraph.database.query/params :type]))
+                                 (-> qexec .execSelect iterator-seq count)
+                                 (compose-select-result qexec result-model))
+         (.isAskType query) (.execAsk qexec))))))
+
+(deftype StoredQuery [query]
+  clojure.lang.IFn
+  (invoke [this] (this {}))
+  (invoke [this params] (exec query params))
+  
+  Object
+  (toString [_] (str query)))
 
 (defn create-query 
   "Return parsed query object. If query is not a string, assume object that can
 use io/slurp"
   ([query-source] (create-query query-source {}))
   ([query-source params]
-   (resource/create-query query-source params)))
+   (let [query (if  (coll? query-source)
+                  (OpAsQuery/asQuery (op query-source))
+                  (QueryFactory/create (expand-query-str
+                                        (if (string? query-source)
+                                          query-source
+                                          (slurp query-source)))))]
+     (case (:genegraph.database.query/type params)
+       :ask (.setQueryAskType query)
+       (.setDistinct query true))
+     (->StoredQuery query))))
 
-(defmacro declare-query [& queries]
-  (let [root# (-> *ns* str (s/replace #"\." "/") (s/replace #"-" "_") (str "/"))]
-    `(do ~@(map #(let [filename# (str root# (s/replace % #"-" "_" ) ".sparql")]
-                   `(def ~% (-> ~filename# io/resource slurp create-query)))
-                queries))))
+;; (defmacro declare-query [& queries]
+;;   (let [root# (-> *ns* str (s/replace #"\." "/") (s/replace #"-" "_") (str "/"))]
+;;     `(do ~@(map #(let [filename# (str root# (s/replace % #"-" "_" ) ".sparql")]
+;;                    `(def ~% (-> ~filename# io/resource slurp create-query)))
+;;                 queries))))
 
-(defn to-algebra [query]
-  (-> query
-      create-query
-      str
-      QueryFactory/create
-      Algebra/compile
-      println))
+;; (defn to-algebra [query]
+;;   (-> query
+;;       create-query
+;;       str
+;;       QueryFactory/create
+;;       Algebra/compile
+;;       println))
 
-(defn text-search-bgp
-  "Produce a BGP fragment for performing a text search based on a resource.
-  Will produce a list of properties matching 'text', which may be either a
-  property or a variable.
+;; (defn text-search-bgp
+;;   "Produce a BGP fragment for performing a text search based on a resource.
+;;   Will produce a list of properties matching 'text', which may be either a
+;;   property or a variable.
 
-  A complete query using this function could be composed like this:
-  (create-query [:project ['x] (cons :bgp (text-search-bgp 'x :cg/resource 'text))])
+;;   A complete query using this function could be composed like this:
+;;   (create-query [:project ['x] (cons :bgp (text-search-bgp 'x :cg/resource 'text))])
 
-  where x is a resource to return, and text is a variable expected to be bound to the
-  text to search for"
-  [resource property text]
-  (let [node0 (symbol "text0")
-        node1 (symbol "text1")
-        rdf-first (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#first")
-        rdf-rest (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest")]
-    [[resource (NodeFactory/createURI "http://jena.apache.org/text#query") node0]
-     [node0 rdf-first property]
-     [node0 rdf-rest node1]
-     [node1 rdf-first text]
-     [node1 rdf-rest
-      (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")]]))
+;;   where x is a resource to return, and text is a variable expected to be bound to the
+;;   text to search for"
+;;   [resource property text]
+;;   (let [node0 (symbol "text0")
+;;         node1 (symbol "text1")
+;;         rdf-first (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#first")
+;;         rdf-rest (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest")]
+;;     [[resource (NodeFactory/createURI "http://jena.apache.org/text#query") node0]
+;;      [node0 rdf-first property]
+;;      [node0 rdf-rest node1]
+;;      [node1 rdf-first text]
+;;      [node1 rdf-rest
+;;       (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")]]))
+
