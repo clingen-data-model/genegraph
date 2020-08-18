@@ -51,3 +51,40 @@
          (assoc event ::validation validation-result))))
     event))
 
+(defn add-subjects-to-event
+  "Perform the actual event annotation, returnng the event to th caller"
+  [event genes diseases]
+  (let [gene-iris (mapv #(str %) genes)
+         disease-iris (mapv #(str %) diseases)]
+    (assoc event ::subjects {:gene-iris gene-iris :disease-iris disease-iris})))
+
+(defmulti add-subjects ::root-type)
+
+(defmethod add-subjects :sepio/GeneDosageReport [event]
+  "Annotate a gene dosage event with the gene iri to which the event pertains"
+  (if-let [genes (q/select "select ?o where { ?s :iao/is-about ?o }" {} (::q/model event))]
+    (add-subjects-to-event event genes [])
+    event))
+
+(defmethod add-subjects :sepio/ActionabilityReport [event]
+  "Annotate an actionability report event with genes and diseases to which the event pertains"
+  (if-let [act-condition (first (q/select "select ?s where { ?s a :cg/ActionabilityGeneticCondition }" {}
+                                          (::q/model event)))]
+    (let [genes (q/ld-> act-condition [:sepio/is-about-gene])
+          diseases (q/ld-> act-condition [:rdfs/sub-class-of])]
+      (add-subjects-to-event event genes diseases))
+    event))
+
+(defmethod add-subjects :sepio/GeneValidityReport [event]
+  "Annotate a Gene Validity report event with the gene iri and the disease iri to which the event pertains"
+  (if-let [gv-prop (first (q/select "select ?s where { ?s a :sepio/GeneValidityProposition }" {}
+                                    (::q/model event)))]
+    (let [genes (q/ld-> gv-prop [:sepio/has-subject])
+          diseases (q/ld-> gv-prop [:sepio/has-object])]
+      (add-subjects-to-event event genes diseases))
+    event))
+
+(defmethod add-subjects :default [event] event)
+  
+
+
