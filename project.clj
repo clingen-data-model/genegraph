@@ -57,5 +57,6 @@
                        :uberjar-name "app.jar"}}
   :plugins [[lein-codox "0.10.7"]]
   :codox {:output-path "docs"}
+  :jvm-opts ["-XX:MaxRAMPercentage=50"] 
   :main ^{:skip-aot true} genegraph.server)
 

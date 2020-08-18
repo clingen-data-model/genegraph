@@ -45,4 +45,30 @@
                        edn/read-string)
         dosage-evt (-> invalid-dosage-data add-metadata add-model add-iri add-validation)]
     (is (false? (validate/did-validate? (::ann/validation dosage-evt))))))
-                
+
+(deftest dosage-event-subjects
+  (let [dosage-data  (-> "test_data/gene_dosage_sepio_in_0_201.edn"
+                       io/resource
+                       slurp
+                       edn/read-string)
+        dosage-evt (-> dosage-data add-metadata add-model add-iri add-subjects)
+        subjects (dosage-evt ::ann/subjects)]
+    (is (= 1 (count (:gene-iris subjects))))
+    (is (= "https://www.ncbi.nlm.nih.gov/gene/4088" (first (:gene-iris subjects))))))
+
+(deftest validity-event-subjects
+  (let [evt (-> "test_data/gene_validity_0_1094.edn" io/resource slurp edn/read-string)
+        subjects (-> evt add-metadata add-model add-iri add-subjects ::ann/subjects)]
+    (is (= 1 (count (:gene-iris subjects))))
+    (is (= "https://www.ncbi.nlm.nih.gov/gene/51776" (first (:gene-iris subjects))))
+        (is (= 1 (count (:disease-iris subjects))))
+    (is (= "http://purl.obolibrary.org/obo/MONDO_0054695" (first (:disease-iris subjects))))))
+    
+(deftest actionability-event-subjects
+  (let [evt (-> "test_data/actionability_0_1186.edn" io/resource slurp edn/read-string)
+        subjects (-> evt add-metadata add-model add-iri add-subjects ::ann/subjects)]
+    (is (= 1 (count (:gene-iris subjects))))
+    (is (= "https://www.ncbi.nlm.nih.gov/gene/55630" (first (:gene-iris subjects))))
+    (is (= 1 (count (:disease-iris subjects))))
+    (is (= "http://purl.obolibrary.org/obo/MONDO_0008713" (first (:disease-iris subjects))))))
+

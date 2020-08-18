@@ -2,8 +2,8 @@
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :refer [load-model]]
             [genegraph.source.graphql.common.cache :as cache]
-            [genegraph.annotate :as annotate :refer [add-model add-iri add-metadata add-validation]]
             [genegraph.database.validation :as v]
+            [genegraph.annotate :as annotate :refer [add-model add-iri add-metadata add-validation add-subjects]]
             [io.pedestal.log :as log]))
 
 (defn add-to-db!
@@ -31,6 +31,7 @@
                             add-model
                             add-iri
                             add-validation
+                            add-subjects
                             add-to-db!)]
     (cache/reset-cache!)
     processed-event))
