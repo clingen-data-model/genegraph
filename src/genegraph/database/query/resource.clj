@@ -27,28 +27,11 @@
            org.apache.jena.riot.RDFFormat$JSONLDVariant
            java.io.ByteArrayOutputStream))
 
-;; (defprotocol Steppable
-;;   (step [edge start model]))
-
-
-
-
-
-
-;; (defprotocol AsReference
-;;   (to-ref [resource]))
-
 (defn to-ref [r]
   (types/to-ref r))
 
-;; (defprotocol AsClojureType
-;;   (to-clj [x model]))
-
 (defn to-clj [r model]
   (types/to-clj r model))
-
-;; (defprotocol AsRDFNode
-;;   (to-rdf-node [x]))
 
 (defn to-rdf-node [v]
   (types/to-rdf-node v))
@@ -63,26 +46,14 @@
 (defn path [r]
   (types/path r))
 
-;; (defprotocol ThreadableData
-;;   "A data structure that can be accessed through the ld-> and ld1-> accessors
-;;   similar to Clojure XML zippers"
-;;   (ld-> [this ks])
-;;   (ld1-> [this ks]))
-
 (defn ld-> [r ks]
   (types/ld-> r ks))
 
 (defn ld1-> [r ks]
   (types/ld1-> r ks))
 
-;; (defprotocol RDFType
-;;   (is-rdf-type? [this rdf-type]))
-
 (defn is-rdf-type? [r rdf-type]
   (types/is-rdf-type? r rdf-type))
-
-;; (defprotocol AsJenaResource
-;;   (as-jena-resource [this]))
 
 (defn as-jena-resource [r]
   (types/as-jena-resource r))
