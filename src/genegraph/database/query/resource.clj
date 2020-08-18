@@ -174,15 +174,7 @@
                                  (filter seq) flatten))
                           [this] 
                           ks))
-  (ld1-> [this ks] (first (ld-> this ks)))
-  
-  ;; TODO Root path is hardcoded in--this should be configurable
-  Addressable
-  (path [_] (let [uri (.getURI resource)
-                  short-ns (names/curie uri)
-                  full-ns (prefix-ns-map short-ns)
-                  id (subs uri (count full-ns))]
-              (str "/r/" short-ns "_" id))))
+  (ld1-> [this ks] (first (ld-> this ks))))
 
 (nippy/extend-freeze 
  RDFResource ::rdf-resource
@@ -194,6 +186,13 @@
  [data-input]
  (when-let [resource-iri (.readUTF data-input)]
    (resource resource-iri)))
+
+(defn path [r]
+  (let [uri (str resource)
+        short-ns (names/curie uri)
+        full-ns (prefix-ns-map short-ns)
+        id (subs uri (count full-ns))]
+    (str "/r/" short-ns "_" id)))
 
 (defn- navize [model]
   (fn [coll k v]
