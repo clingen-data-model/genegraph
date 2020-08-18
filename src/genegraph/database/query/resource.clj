@@ -202,9 +202,6 @@
         (->RDFResource target model)
         target))))
 
-;; deprecated--to be removed
-(defonce query-register (atom {}))
-
 (defn- substitute-known-iri-short-name [k-ns k]
   (when-let [iri (some-> (keyword k-ns k) local-names .getURI)]
     (str "<" iri ">")))
@@ -222,14 +219,6 @@
 ;; TODO fix so that non-whitespace terminated expressions are treated appropriately
 (defn- expand-query-str [query-str]
   (s/replace query-str #":(\S+)/(\S+)" substitute-keyword))
-
-(defn register-query 
-  "DEPRECATED -- to be replaced with a different approach to stored queries"
-  [name query-str]
-  (let [q (QueryFactory/create (expand-query-str query-str))]
-    (swap! query-register assoc name q)
-    true))
-
 
 
 (def first-property (ResourceFactory/createProperty "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"))
@@ -334,16 +323,7 @@
     ([query-def] (select query-def {}))
     ([query-def params] (select query-def params (or (:genegraph.database.query/model params) db)))
     ([query-def params db-or-model]
-     (select (QueryFactory/create (expand-query-str query-def)) params db-or-model)))
-  
-  clojure.lang.Keyword
-  (select
-    ([query-def] (select query-def {}))
-    ([query-def params] (select query-def params db))
-    ([query-def params db-or-model]
-     (if-let [q (@query-register query-def)]
-       (select q params db-or-model)
-       #{}))))
+     (select (QueryFactory/create (expand-query-str query-def)) params db-or-model))))
 
 (extend-protocol AsResource
   
@@ -552,40 +532,3 @@ use io/slurp"
        :ask (.setQueryAskType query)
        (.setDistinct query true))
      (->StoredQuery query))))
-
-;; (defmacro declare-query [& queries]
-;;   (let [root# (-> *ns* str (s/replace #"\." "/") (s/replace #"-" "_") (str "/"))]
-;;     `(do ~@(map #(let [filename# (str root# (s/replace % #"-" "_" ) ".sparql")]
-;;                    `(def ~% (-> ~filename# io/resource slurp create-query)))
-;;                 queries))))
-
-;; (defn to-algebra [query]
-;;   (-> query
-;;       create-query
-;;       str
-;;       QueryFactory/create
-;;       Algebra/compile
-;;       println))
-
-;; (defn text-search-bgp
-;;   "Produce a BGP fragment for performing a text search based on a resource.
-;;   Will produce a list of properties matching 'text', which may be either a
-;;   property or a variable.
-
-;;   A complete query using this function could be composed like this:
-;;   (create-query [:project ['x] (cons :bgp (text-search-bgp 'x :cg/resource 'text))])
-
-;;   where x is a resource to return, and text is a variable expected to be bound to the
-;;   text to search for"
-;;   [resource property text]
-;;   (let [node0 (symbol "text0")
-;;         node1 (symbol "text1")
-;;         rdf-first (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#first")
-;;         rdf-rest (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest")]
-;;     [[resource (NodeFactory/createURI "http://jena.apache.org/text#query") node0]
-;;      [node0 rdf-first property]
-;;      [node0 rdf-rest node1]
-;;      [node1 rdf-first text]
-;;      [node1 rdf-rest
-;;       (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")]]))
-
