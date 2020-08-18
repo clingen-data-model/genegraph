@@ -1,5 +1,6 @@
 (ns genegraph.database.query
-  (:require [clojure.java.io :as io]
+  (:require [genegraph.database.query.types :as types]
+            [clojure.java.io :as io]
             [clojure.string :as s]
             [genegraph.database.instance :refer [db]]
             [genegraph.database.names :as names]
@@ -22,7 +23,7 @@
 (defn resource?
   "Return true if the object is an RDFResource"
   [r]
-  (satisfies? resource/AsJenaResource r))
+  (types/resource? r))
 
 (defn as-jena-resource
   "Return the underlying Jena Resource under the RDFResource"
