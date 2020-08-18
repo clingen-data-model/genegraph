@@ -27,43 +27,6 @@
            org.apache.jena.riot.RDFFormat$JSONLDVariant
            java.io.ByteArrayOutputStream))
 
-(defprotocol Steppable
-  (step [edge start model]))
-
-(defprotocol AsReference
-  (to-ref [resource]))
-
-(defprotocol AsClojureType
-  (to-clj [x model]))
-
-(defprotocol AsRDFNode
-  (to-rdf-node [x]))
-
-(defprotocol SelectQuery
-  (select [query-def] [query-def params] [query-def params model]))
-
-(defprotocol AsResource
-  "Create an RDFResource given a reference"
-  (resource [r] [ns-prefix r]))
-
-(defprotocol Addressable
-  "Retrieves the local path to a resource"
-  (path [this]))
-
-(defprotocol ThreadableData
-  "A data structure that can be accessed through the ld-> and ld1-> accessors
-  similar to Clojure XML zippers"
-  (ld-> [this ks])
-  (ld1-> [this ks]))
-
-(defprotocol RDFType
-  (is-rdf-type? [this rdf-type]))
-
-(defprotocol AsJenaResource
-  (as-jena-resource [this]))
-
-(declare datafy-resource)
-
 (defn get-all-graphs []
   (or @util/current-union-model (.getUnionModel db)))
 
@@ -72,316 +35,63 @@
   [resource]
   (names/curie (str resource)))
 
-(defn- compose-object-for-datafy [o]
-  (cond (instance? Literal o) (.toString o)
-        (instance? Resource o) 
-        (with-meta (-> o .toString symbol)
-          {::datafy/obj o
-           ::datafy/class (class o)
-           `protocols/datafy #(-> % meta ::datafy/obj datafy-resource)})))
+(defn resource?
+  "Return true if the object is an RDFResource"
+  [r]
+  (satisfies? resource/AsJenaResource r))
 
-(declare navize)
+(defn as-jena-resource
+  "Return the underlying Jena Resource under the RDFResource"
+  [r]
+  (resource/as-jena-resource r))
 
-(declare to-clj)
+(defn is-rdf-type?
+  "Return true if r is an instance of rdf-type"
+  [r rdf-type]
+  (resource/is-rdf-type? r rdf-type))
 
-(def query-sort-order 
-  {:ASC Query/ORDER_ASCENDING
-   :asc Query/ORDER_ASCENDING
-   :DESC Query/ORDER_DESCENDING
-   :desc Query/ORDER_DESCENDING})
+(defn to-ref
+  "Return the keyword associated with this resource (if any)"
+  [r]
+  (resource/to-ref r))
 
-(defn construct-query-with-params [query query-params]
-  (if-let [params (::params query-params)]
-    (let [modified-query (.clone query)]
-      (when (:distinct params)
-        (.setDistinct modified-query true))
-      (when (:limit params)
-        (.setLimit modified-query (:limit params)))
-      (when (:offset params)
-        (.setOffset modified-query (:offset params)))
-      (when (:sort params)
-        (let [{:keys [field direction]} (:sort params)]
-          (.addResultVar modified-query (s/lower-case (name field)))
-          (.addOrderBy modified-query (s/lower-case (name field)) (query-sort-order direction))))
-      modified-query)
-    query))
+(defn path 
+  "Return the URL by which this resource can be addressed in the system
 
-(deftype RDFResource [resource model]
+  DEPRECATED this responsibility should lie elsewhere"
+  [r]
+  (resource/path r))
 
-  AsJenaResource
-  (as-jena-resource [_] resource)
+(defn select
+  "Execute a SPARQL SELECT query (in string form). Will return a vector of results. Typical use is
+  to return a list of RDFResources, with downstream properties interrogated by other methods"
+  ([query-def] (resource/select query-def))
+  ([query-def params] (resource/select query-def params))
+  ([query-def params db-or-model] (resource/select query-def params db-or-model)))
 
-  RDFType
-  (is-rdf-type? [this rdf-type] 
-    (let [t (if (= (type rdf-type) clojure.lang.Keyword) 
-              (local-names rdf-type)
-              (ResourceFactory/createResource rdf-type))]
-      (tx (.contains model resource (local-names :rdf/type) t))))
+(defn resource 
+  "Create a resource reference defined by either a keyword (known to the system),
+  or a string containing the IRI of an RDF Resource"
+  [r]
+  (resource/resource r))
 
-  ;; TODO, returns all properties when k does not map to a known symbol,
-  ;; This seems to break the contract for ILookup
-  clojure.lang.ILookup
-  (valAt [this k] (step k this model))
-  (valAt [this k nf] nf)
+(defn ld->
+  "Return the non-nil targets of resouce following key sequence of properties"
+  [resource ks]
+  (resource/ld-> resource ks))
 
-
-  ;; Conforms to the expectations for a sequence representation of a map. Includes only
-  ;; properties where this resource is the subject. Sequence is fully realized
-  ;; in order to permit access outside transaction
-  clojure.lang.Seqable
-  (seq [this]
-    (tx
-     (let [out-attributes (-> model (.listStatements resource nil nil) iterator-seq)]
-       (doall (map #(vector 
-                     (-> % .getPredicate property-uri->keyword)
-                     (to-clj (.getObject %) model)) out-attributes)))))
-
-  Object
-  (toString [_] (.getURI resource))
-  (equals [this other]
-    (and (satisfies? AsJenaResource other)
-         (= resource (as-jena-resource other))))
-  (hashCode [_] (.hashCode resource))
-  
-
-  AsReference
-  (to-ref [_] (class-uri->keyword resource))
-
-  Datafiable
-  (datafy [_] 
-    (tx 
-     (let [out-attributes (-> model (.listStatements resource nil nil) iterator-seq)
-           in-attributes (-> model (.listStatements nil nil resource) iterator-seq)]
-
-       (with-meta
-         (into [] (concat
-                   (mapv #(with-meta [[(-> % .getPredicate property-uri->keyword) :>]
-                                      (-> % .getObject compose-object-for-datafy)]
-                            {::value  (.getObject %)})
-                         out-attributes)
-                   (mapv #(with-meta [[(-> % .getPredicate property-uri->keyword) :<]
-                                      (-> % .getSubject compose-object-for-datafy)]
-                            {::value (.getSubject %)})
-                         in-attributes)))
-         {`protocols/nav (navize model)}))))
-
-  ;; TODO Flattening the ld-> has potentially undesirable behavior with RDFList, consider
-  ;; how flatten is being used in this context
-  ThreadableData
-  (ld-> [this ks] (reduce (fn [nodes k]
-                            (->> nodes
-                                 (filter #(satisfies? ThreadableData %))
-                                 (map #(step k % model))
-                                 (filter seq) flatten))
-                          [this] 
-                          ks))
-  (ld1-> [this ks] (first (ld-> this ks)))
-  
-  ;; TODO Root path is hardcoded in--this should be configurable
-  Addressable
-  (path [_] (let [uri (.getURI resource)
-                  short-ns (names/curie uri)
-                  full-ns (prefix-ns-map short-ns)
-                  id (subs uri (count full-ns))]
-              (str "/r/" short-ns "_" id))))
-
-(nippy/extend-freeze 
- RDFResource ::rdf-resource
- [x data-output]
- (.writeUTF data-output (str x)))
-
-(nippy/extend-thaw 
- ::rdf-resource
- [data-input]
- (when-let [resource-iri (.readUTF data-input)]
-   (resource resource-iri)))
-
-(defn- navize [model]
-  (fn [coll k v]
-    (let [target (::value (meta v))]
-      (if (instance? Resource target)
-        (->RDFResource target model)
-        target))))
-
-;; deprecated--to be removed
-(defonce query-register (atom {}))
-
-(defn- substitute-known-iri-short-name [k-ns k]
-  (when-let [iri (some-> (keyword k-ns k) local-names .getURI)]
-    (str "<" iri ">")))
-
-(defn- substitute-known-ns [k-ns k]
-  (when-let [base (names/prefix-ns-map k-ns)]
-    (str "<" base k ">")))
-
-(defn- substitute-keyword [[_ k-ns k]]
-  (let [kw (keyword k-ns k)]
-    (cond (local-names kw) (str "<" (-> kw local-names .getURI) ">")
-          (prefix-ns-map k-ns) (str "<" (prefix-ns-map k-ns) k ">")
-          :else (str ":" k-ns "/" k))))
-
-;; TODO fix so that non-whitespace terminated expressions are treated appropriately
-(defn- expand-query-str [query-str]
-  (s/replace query-str #":(\S+)/(\S+)" substitute-keyword))
-
-(defn register-query 
-  "DEPRECATED -- to be replaced with a different approach to stored queries"
-  [name query-str]
-  (let [q (QueryFactory/create (expand-query-str query-str))]
-    (swap! query-register assoc name q)
-    true))
-
-
-
-(def first-property (ResourceFactory/createProperty "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"))
-
-(defn rdf-list-to-vector [rdf-list-node model]
-
-  (let [rdf-list (.as rdf-list-node RDFList)]
-    (->> rdf-list .iterator iterator-seq (mapv #(to-clj % model)))
-    ))
-
-
-(defn- kw-to-property [kw]
-  (if-let [prop (names/local-property-names kw)]
-    prop
-    (when-let [ns (-> kw namespace prefix-ns-map)]
-      (ResourceFactory/createProperty (str ns (name kw))))))
-
-(extend-protocol Steppable
-
-  ;; Single keyword, treat as [:ns/prop :>] (outward pointing edge)
-  clojure.lang.Keyword
-  (step [edge start model]
-    (step [edge :>] start model))
-  
-  ;; Expect edge to be a vector with form [:ns/prop <direction>], where direction is one
-  ;; of :> :< :-
-  ;; TODO fail more gracefully when starting point is a literal
-  clojure.lang.IPersistentVector
-  (step [edge start model]
-    (tx 
-     (let [property (kw-to-property (first edge))
-           out-fn (fn [n] (->> (.listObjectsOfProperty model (.resource n) property)
-                               iterator-seq))
-           in-fn (fn [n] (->> (.listResourcesWithProperty model property (.resource n))
-                              iterator-seq))
-           both-fn #(concat (out-fn %) (in-fn %))
-           step-fn (case (second edge)
-                     :> out-fn
-                     :< in-fn
-                     :- both-fn)
-           result (mapv #(to-clj % model) (step-fn start))]
-       (case (count result)
-         0 nil
-         ;; 1 (first result)
-         result)))))
-
-(extend-protocol AsRDFNode
-
-  java.lang.String
-  (to-rdf-node [x] (ResourceFactory/createPlainLiteral x))
-  
-  clojure.lang.Keyword
-  (to-rdf-node [x] (local-names x))
-  
-  RDFResource
-  (to-rdf-node [x] (as-jena-resource x)))
-
-(defn- construct-query-solution-map [params]
-  (let [qs-map (QuerySolutionMap.)]
-    (doseq [[k v] params]
-      (.add qs-map (name k) (to-rdf-node v)))
-    qs-map))
-
-(extend-protocol SelectQuery
-  
-  ;; TODO--consider removing this method into a function, do not want to expose
-  ;; interfaces against Jena types
-  ;;
-  ;; The whole db-or-model ugliness below is due to an issue where QueryExecutionFactory/create
-  ;; has the same method signature where the second param is either a Dataset or a Model.
-  ;; If it is a Dataset that supports text indexing, we need to use the Dataset form otherwise
-  ;; TextIndexPF complains about not finding a text index if we are doing a text search.
-  ;; Also, the Dataset form needs to call .getUnionModel when resolving to Resources.
-  ;; If we are querying (non-text) against a plain old Model then there is no .getUnionModel
-  ;; call supported.
-  ;;
-  Query
-  (select
-    ([query-def] (select query-def {}))
-    ([query-def params] (select query-def params db))
-    ([query-def params db-or-model]
-     (log/info :fn :select-query
-                :msg "Executing select query"
-                :query query-def
-                :params params)
-     (let [query (construct-query-with-params query-def params)
-           model-from-params (::model params)
-           qs-map (construct-query-solution-map (dissoc params ::model ::params))]
-       (tx
-        (with-open [qexec (QueryExecutionFactory/create query db-or-model qs-map)]
-          (when-let [result (-> qexec .execSelect)]
-            (let [result-var (-> result .getResultVars first)
-                  result-seq (iterator-seq result)
-                  ;; TODO - needs to be refactored to not use type
-                  model (if (instance? org.apache.jena.query.Dataset db-or-model)
-                          (.getUnionModel db-or-model)
-                          db-or-model)]
-              (mapv #(->RDFResource (.getResource % result-var) model) result-seq))))))))
-  
-  java.lang.String
-  (select 
-    ([query-def] (select query-def {}))
-    ([query-def params] (select query-def params (or (::model params) db)))
-    ([query-def params db-or-model]
-     (select (QueryFactory/create (expand-query-str query-def)) params db-or-model)))
-  
-  clojure.lang.Keyword
-  (select
-    ([query-def] (select query-def {}))
-    ([query-def params] (select query-def params db))
-    ([query-def params db-or-model]
-     (if-let [q (@query-register query-def)]
-       (select q params db-or-model)
-       #{}))))
-
-(extend-protocol AsResource
-  
-  java.lang.String
-  (resource 
-    ([r] (let [[_ curie-prefix rest] (re-find #"^([a-zA-Z]+)[:_](.*)$" r)
-               iri (if-let [iri-prefix (-> curie-prefix s/lower-case prefix-ns-map)]
-                     (str iri-prefix rest)
-                     r)]
-           (->RDFResource (ResourceFactory/createResource iri) (get-all-graphs))))
-    ([ns-prefix r] (when-let [prefix (prefix-ns-map ns-prefix)]
-                     (->RDFResource (ResourceFactory/createResource (str prefix r))
-                                    (get-all-graphs)))))
-  
-  clojure.lang.Keyword
-  (resource [r] (when-let [res (local-names r)]
-                  (->RDFResource res (get-all-graphs)))))
-
-(extend-protocol AsClojureType
-
-  Resource
-  (to-clj [x model] (if (.hasProperty x first-property)
-                      (rdf-list-to-vector x model)
-                      (->RDFResource x model)))
-  
-  Literal
-  (to-clj [x model] (.getValue x)))
+(defn ld1->
+  "Return the first non-nil target of resouce following key sequence of properties"
+  [resource ks]
+  (resource/ld1-> resource ks))
 
 (defn construct 
+  "Return a model built using a SPARQL CONSTRUCT query, accepts a SPARQL string,
+  optionally parameter bindings and an origin model."
   ([query-string] (construct query-string {}))
   ([query-string params] (construct query-string {} (get-all-graphs)))
   ([query-string params model]
-   (let [query (QueryFactory/create (expand-query-str query-string))
-         qs-map (construct-query-solution-map (dissoc params :-model))]
-     (tx
-      (with-open [qexec (QueryExecutionFactory/create query model qs-map)]
-        (.execConstruct qexec))))))
+   (resource/construct query-string params model)))
 
 (defn get-named-graph [name]
   (.getNamedModel db name))
@@ -398,34 +108,6 @@
   (let [union-model (ModelFactory/createDefaultModel)]
     (doseq [model models] (.add union-model model))
     union-model))
-
-
-;; (defn triple
-;;   "Construct triple for use in BGP. Part of query algebra."
-;;   [stmt]
-;;   (let [[s p o] stmt
-;;         subject (cond
-;;                   (instance? Node s) s
-;;                   (= '_ s) Var/ANON
-;;                   (symbol? s) (Var/alloc (str s))
-;;                   (keyword? s) (.asNode (local-class-names s))
-;;                   (string? s) (NodeFactory/createURI s)
-;;                   (satisfies? AsJenaResource s) (.asNode (as-jena-resource s))
-;;                   :else (NodeFactory/createURI (str s)))
-;;         predicate (cond
-;;                     (instance? Node p) p
-;;                     (keyword? p) (.asNode (local-property-names p))
-;;                     :else (NodeFactory/createURI (str p)))
-;;         object (cond 
-;;                  (instance? Node o) o
-;;                  (symbol? o) (Var/alloc (str o))
-;;                  (keyword? o) (.asNode (or (local-class-names o) (local-property-names o)))
-;;                  (or (string? o)
-;;                      (int? o)
-;;                      (float? o)) (.asNode (ResourceFactory/createTypedLiteral o))
-;;                  (satisfies? AsJenaResource o) (.asNode (as-jena-resource o))
-;;                  :else o)]
-;;     (Triple. subject predicate object)))
 
 (defn create-query 
   "Return parsed query object. If query is not a string, assume object that can
