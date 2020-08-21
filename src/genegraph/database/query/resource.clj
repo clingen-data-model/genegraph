@@ -1,32 +1,16 @@
 (ns genegraph.database.query.resource
-  (:require [genegraph.database.instance :refer [db]]
-            [genegraph.database.util :as util :refer [tx]]
-            [genegraph.database.query.types :as types]
+  (:require [clojure.string :as s]
+            [genegraph.database.instance :refer [db]]
+            [genegraph.database.names :as names :refer [local-names prefix-ns-map]]
             [genegraph.database.query.algebra :as algebra]
-            [genegraph.database.names :as names :refer
-             [local-class-names local-property-names
-              class-uri->keyword local-names ns-prefix-map
-              prefix-ns-map property-uri->keyword]]
-            [clojure.pprint :refer [pprint]]
-            [clojure.set :as set]
-            [clojure.string :as s]
-            [clojure.core.protocols :as protocols :refer [Datafiable]]
-            [clojure.datafy :as datafy :refer [datafy nav]]
+            [genegraph.database.query.types :as types]
+            [genegraph.database.util :as util :refer [tx]]
             [io.pedestal.log :as log]
-            [medley.core :as medley]
-            [clojure.java.io :as io]
-            [taoensso.nippy :as nippy])
-  (:import [org.apache.jena.rdf.model Model Statement ResourceFactory Resource Literal RDFList SimpleSelector ModelFactory]
-           [org.apache.jena.query Dataset QueryFactory Query QueryExecution
-            QueryExecutionFactory QuerySolutionMap]
-           [org.apache.jena.sparql.algebra AlgebraGenerator Algebra OpAsQuery Op]
-           [org.apache.jena.graph Node NodeFactory Triple Node_Variable Node_Blank]
-[org.apache.jena.sparql.algebra.op OpDistinct OpProject OpFilter OpBGP OpConditional OpDatasetNames OpDiff OpDisjunction OpDistinctReduced OpExtend OpGraph OpGroup OpJoin OpLabel OpLeftJoin OpList OpMinus OpNull OpOrder OpQuad OpQuadBlock OpQuadPattern OpReduced OpSequence OpSlice OpTopN OpUnion OpTable ]
-[org.apache.jena.sparql.core BasicPattern Var VarExprList QuadPattern Quad]
-           org.apache.jena.riot.writer.JsonLDWriter
-           org.apache.jena.sparql.core.Prologue
-           org.apache.jena.riot.RDFFormat$JSONLDVariant
-           java.io.ByteArrayOutputStream))
+            [medley.core :as medley])
+  (:import java.io.ByteArrayOutputStream
+           [org.apache.jena.query Dataset Query QueryExecutionFactory QueryFactory QuerySolutionMap]
+           [org.apache.jena.rdf.model ModelFactory Resource ResourceFactory]
+           org.apache.jena.sparql.algebra.OpAsQuery))
 
 (defn to-ref [r]
   (types/to-ref r))
