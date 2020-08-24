@@ -133,7 +133,14 @@
                                  (filter seq) flatten))
                           [this] 
                           ks))
-  (ld1-> [this ks] (first (ld-> this ks))))
+  (ld1-> [this ks] (first (ld-> this ks)))
+
+  Addressable
+  (path [_] (let [uri (.getURI resource)
+                  short-ns (names/curie uri)
+                  full-ns (prefix-ns-map short-ns)
+                  id (subs uri (count full-ns))]
+              (str "/r/" short-ns "_" id))))
 
 (defn- navize [model]
   (fn [coll k v]

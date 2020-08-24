@@ -28,24 +28,24 @@
 (defn as-jena-resource
   "Return the underlying Jena Resource under the RDFResource"
   [r]
-  (resource/as-jena-resource r))
+  (types/as-jena-resource r))
 
 (defn is-rdf-type?
   "Return true if r is an instance of rdf-type"
   [r rdf-type]
-  (resource/is-rdf-type? r rdf-type))
+  (types/is-rdf-type? r rdf-type))
 
 (defn to-ref
   "Return the keyword associated with this resource (if any)"
   [r]
-  (resource/to-ref r))
+  (types/to-ref r))
 
 (defn path 
   "Return the URL by which this resource can be addressed in the system
 
   DEPRECATED this responsibility should lie elsewhere"
   [r]
-  (resource/path r))
+  (types/path r))
 
 (defn select
   "Execute a SPARQL SELECT query (in string form). Will return a vector of results. Typical use is
