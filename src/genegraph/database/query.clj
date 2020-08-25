@@ -58,17 +58,17 @@
   "Create a resource reference defined by either a keyword (known to the system),
   or a string containing the IRI of an RDF Resource"
   [r]
-  (resource/resource r))
+  (types/resource r))
 
 (defn ld->
   "Return the non-nil targets of resouce following key sequence of properties"
   [resource ks]
-  (resource/ld-> resource ks))
+  (types/ld-> resource ks))
 
 (defn ld1->
   "Return the first non-nil target of resouce following key sequence of properties"
   [resource ks]
-  (resource/ld1-> resource ks))
+  (types/ld1-> resource ks))
 
 (defn construct 
   "Return a model built using a SPARQL CONSTRUCT query, accepts a SPARQL string,

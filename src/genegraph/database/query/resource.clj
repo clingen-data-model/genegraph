@@ -12,36 +12,12 @@
            [org.apache.jena.rdf.model ModelFactory Resource ResourceFactory]
            org.apache.jena.sparql.algebra.OpAsQuery))
 
-(defn to-ref [r]
-  (types/to-ref r))
-
-(defn to-clj [r model]
-  (types/to-clj r model))
-
-(defn to-rdf-node [v]
-  (types/to-rdf-node v))
-
 (defprotocol SelectQuery
   (select [query-def] [query-def params] [query-def params model]))
 
 (defprotocol AsResource
   "Create an RDFResource given a reference"
   (resource [r] [ns-prefix r]))
-
-(defn path [r]
-  (types/path r))
-
-(defn ld-> [r ks]
-  (types/ld-> r ks))
-
-(defn ld1-> [r ks]
-  (types/ld1-> r ks))
-
-(defn is-rdf-type? [r rdf-type]
-  (types/is-rdf-type? r rdf-type))
-
-(defn as-jena-resource [r]
-  (types/as-jena-resource r))
 
 (defn get-all-graphs []
   (or @util/current-union-model (.getUnionModel db)))
@@ -110,7 +86,7 @@
 (defn- construct-query-solution-map [params]
   (let [qs-map (QuerySolutionMap.)]
     (doseq [[k v] params]
-      (.add qs-map (name k) (to-rdf-node v)))
+      (.add qs-map (name k) (types/to-rdf-node v)))
     qs-map))
 
 (extend-protocol SelectQuery
