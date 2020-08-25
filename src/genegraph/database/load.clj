@@ -47,7 +47,7 @@
          subject (cond
                    (keyword? s) (local-class-names s)
                    (string? s) (ResourceFactory/createResource s)
-                   (satisfies? q/AsJenaResource s) (q/as-jena-resource s)
+                   (q/resource? s) (q/as-jena-resource s)
                    :else s)
          predicate (if (keyword? p)
                      (local-property-names p)
@@ -58,7 +58,7 @@
                   (or (string? o)
                       (int? o)
                       (float? o)) (ResourceFactory/createTypedLiteral o)
-                  (satisfies? q/AsJenaResource o) (q/as-jena-resource o)
+                  (q/resource? o) (q/as-jena-resource o)
                   :else o)]
      (ResourceFactory/createStatement subject predicate object))))
 

@@ -1,7 +1,7 @@
 (ns genegraph.source.graphql.gene-dosage
   (:require [clojure.string :as string]
             [genegraph.database.names :as names]
-            [genegraph.database.query :as q :refer [->RDFResource]]
+            [genegraph.database.query :as q]
             [genegraph.source.graphql.common.cache :refer [defresolver]]
             [com.walmartlabs.lacinia.schema :refer [tag-with-type]]
             [genegraph.database.instance :refer [db]])

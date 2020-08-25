@@ -65,7 +65,7 @@
         [:div.column.has-text-right [:code property]]
         [:div.column.has-text-left
          [:code
-          (if (satisfies? q/AsJenaResource value)
+          (if (q/resource? value)
             (e/link value))]]])]))
 
 (defmethod e/page :shacl/NodeShape [shape]
