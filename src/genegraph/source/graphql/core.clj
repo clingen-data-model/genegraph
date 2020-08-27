@@ -17,6 +17,7 @@
             [genegraph.source.graphql.affiliation :as affiliation]
             [genegraph.source.graphql.suggest :as suggest]
             [genegraph.source.graphql.drug :as drug]
+            [genegraph.source.graphql.mode-of-inheritance :as mode-of-inheritance]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]
@@ -925,6 +926,7 @@
    :genetic-condition/gene-dosage-curation genetic-condition/gene-dosage-curation
    :genetic-condition/gene-validity-curation genetic-condition/gene-validity-curation
    :genetic-condition/mode-of-inheritance genetic-condition/mode-of-inheritance
+   :mode-of-inheritance/modes-of-inheritance mode-of-inheritance/modes-of-inheritance
    :region-feature/chromosomal-band region-feature/chromosomal-band
    :region-feature/coordinates region-feature/coordinates
    :resource/alternative-label resource/alternative-label

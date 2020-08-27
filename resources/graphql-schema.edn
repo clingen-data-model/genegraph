@@ -730,6 +730,8 @@
                                          :description "Index to begin returning records from"}
                                 :sort {:type :Sort
                                        :description "Order in which to sort genes. Supported fields: GENE_LABEL"}}}
+    :modes_of_inheritance {:type (list :ModeOfInheritance)
+                           :resolve :mode-of-inheritance/modes-of-inheritance}
     :actionability {:type (non-null :ActionabilityCuration)
                     :args {:iri {:type String}}
                     :resolve :actionability/actionability-query}
