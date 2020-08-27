@@ -273,3 +273,17 @@
         result-count (future (query (assoc query-params ::q/params {:type :count})))]
     {:disease_list (query query-params)
      :count @result-count}))
+
+
+(def evaluation-criteria
+  (create-query 
+   "select distinct ?criteria where 
+{ ?criteria_type <http://www.w3.org/2000/01/rdf-schema#subClassOf>* <http://purl.obolibrary.org/obo/SEPIO_0000037> .
+  ?criteria a ?criteria_type . }"))
+
+(def classifications
+  (create-query
+   "select distinct ?classification where 
+{ ?assertion_type <http://www.w3.org/2000/01/rdf-schema#subClassOf>* <http://purl.obolibrary.org/obo/SEPIO_0000001> .
+  ?assertion a ?assertion_type .
+  ?assertion :sepio/has-object ?classification . }"))

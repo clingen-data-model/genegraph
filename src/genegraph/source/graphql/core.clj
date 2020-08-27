@@ -17,11 +17,15 @@
             [genegraph.source.graphql.affiliation :as affiliation]
             [genegraph.source.graphql.suggest :as suggest]
             [genegraph.source.graphql.drug :as drug]
+            [genegraph.source.graphql.mode-of-inheritance :as mode-of-inheritance]
+            [genegraph.source.graphql.criteria :as criteria]
+            [genegraph.source.graphql.classification :as classification]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]
             [clojure.edn :as edn]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [genegraph.source.graphql.common.curation :as curation]))
 
 (def base-schema 
   {:enums
@@ -837,6 +841,7 @@
    :affiliation/curated-diseases affiliation/curated-diseases
    :affiliation/curated-genes affiliation/curated-genes
    :affiliation/gene-validity-assertions affiliation/gene-validity-assertions
+   :classification/classifications classification/classifications
    :condition/aliases condition/aliases
    :condition/condition-query condition/condition-query
    :condition/curation-activities condition/curation-activities
@@ -857,6 +862,7 @@
    :coordinate/end-pos coordinate/end-pos
    :coordinate/start-pos coordinate/start-pos
    :coordinate/strand coordinate/strand
+   :criteria/criteria criteria/criteria
    :dosage-proposition/assertion-type dosage-proposition/assertion-type
    :dosage-proposition/classification-description dosage-proposition/classification-description
    :dosage-proposition/comments dosage-proposition/comments
@@ -925,6 +931,7 @@
    :genetic-condition/gene-dosage-curation genetic-condition/gene-dosage-curation
    :genetic-condition/gene-validity-curation genetic-condition/gene-validity-curation
    :genetic-condition/mode-of-inheritance genetic-condition/mode-of-inheritance
+   :mode-of-inheritance/modes-of-inheritance mode-of-inheritance/modes-of-inheritance
    :region-feature/chromosomal-band region-feature/chromosomal-band
    :region-feature/coordinates region-feature/coordinates
    :resource/alternative-label resource/alternative-label
