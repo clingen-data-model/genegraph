@@ -734,6 +734,8 @@
                            :resolve :mode-of-inheritance/modes-of-inheritance}
     :criteria {:type (list :Criteria)
                :resolve :criteria/criteria}
+    :classifications {:type (list :Classification)
+                      :resolve :classification/classifications}
     :actionability {:type (non-null :ActionabilityCuration)
                     :args {:iri {:type String}}
                     :resolve :actionability/actionability-query}

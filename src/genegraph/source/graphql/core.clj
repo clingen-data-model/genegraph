@@ -19,6 +19,7 @@
             [genegraph.source.graphql.drug :as drug]
             [genegraph.source.graphql.mode-of-inheritance :as mode-of-inheritance]
             [genegraph.source.graphql.criteria :as criteria]
+            [genegraph.source.graphql.classification :as classification]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]
@@ -840,6 +841,7 @@
    :affiliation/curated-diseases affiliation/curated-diseases
    :affiliation/curated-genes affiliation/curated-genes
    :affiliation/gene-validity-assertions affiliation/gene-validity-assertions
+   :classification/classifications classification/classifications
    :condition/aliases condition/aliases
    :condition/condition-query condition/condition-query
    :condition/curation-activities condition/curation-activities
