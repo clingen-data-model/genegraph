@@ -18,11 +18,13 @@
             [genegraph.source.graphql.suggest :as suggest]
             [genegraph.source.graphql.drug :as drug]
             [genegraph.source.graphql.mode-of-inheritance :as mode-of-inheritance]
+            [genegraph.source.graphql.criteria :as criteria]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]
             [clojure.edn :as edn]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [genegraph.source.graphql.common.curation :as curation]))
 
 (def base-schema 
   {:enums
@@ -858,6 +860,7 @@
    :coordinate/end-pos coordinate/end-pos
    :coordinate/start-pos coordinate/start-pos
    :coordinate/strand coordinate/strand
+   :criteria/criteria criteria/criteria
    :dosage-proposition/assertion-type dosage-proposition/assertion-type
    :dosage-proposition/classification-description dosage-proposition/classification-description
    :dosage-proposition/comments dosage-proposition/comments

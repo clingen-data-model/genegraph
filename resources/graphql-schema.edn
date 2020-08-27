@@ -732,6 +732,8 @@
                                        :description "Order in which to sort genes. Supported fields: GENE_LABEL"}}}
     :modes_of_inheritance {:type (list :ModeOfInheritance)
                            :resolve :mode-of-inheritance/modes-of-inheritance}
+    :criteria {:type (list :Criteria)
+               :resolve :criteria/criteria}
     :actionability {:type (non-null :ActionabilityCuration)
                     :args {:iri {:type String}}
                     :resolve :actionability/actionability-query}
