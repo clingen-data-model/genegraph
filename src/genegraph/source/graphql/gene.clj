@@ -36,10 +36,10 @@
                              bgp])]
     (query {::q/params params})))
 
-(defresolver genes [args value]
+(defresolver ^:expire-always genes [args value]
   (curation/genes-for-resolver args value))
 
-(defresolver curation-activities [args value]
+(defresolver ^:expire-by-value curation-activities [args value]
   (curation/activities {:gene value}))
 
 (defresolver last-curated-date [args value]
