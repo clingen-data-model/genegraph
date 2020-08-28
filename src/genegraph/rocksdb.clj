@@ -5,8 +5,11 @@
   (:import (org.rocksdb RocksDB Options)))
 
 
-(defn open [path]
-  (let [full-path (str env/data-vol "/" path )
+(defn create-db-path [db-name] 
+  (str env/data-vol "/" db-name))
+
+(defn open [db-name]
+  (let [full-path (create-db-path db-name)
         opts (-> (Options.)
                  (.setCreateIfMissing true))]
     ;; todo add logging...
@@ -20,6 +23,9 @@
 
 (defn rocks-delete! [db k]
   (.delete db (key-digest k)))
+
+(defn rocks-destroy! [db-name]
+  (RocksDB/destroyDB (create-db-path db-name) (Options.)))
 
 (defn rocks-get [db k]
   (if-let [result (.get db (key-digest k))]
