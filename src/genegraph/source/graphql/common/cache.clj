@@ -9,7 +9,6 @@
   :stop (rocksdb/close resolver-cache-db))
 
 (defn get-from-cache [[_ resolver-value :as k] opts]
-  (println "getting from cache: " k)
   (cond 
     (:expire-by-value opts) (rocksdb/rocks-get-multipart-key 
                              resolver-cache-db
@@ -20,7 +19,6 @@
     :else (rocks-get resolver-cache-db k)))
 
 (defn store-in-cache! [[_ resolver-value :as k] v opts]
-  (println "storing in cache: " k)
   (cond 
     (:expire-by-value opts) (rocksdb/rocks-put-multipart-key!
                              resolver-cache-db
@@ -32,6 +30,12 @@
                            v)
     :else (rocks-put! resolver-cache-db k v)))
 
+(defn expire-resolver-cache-on-event! [event]
+  (rocksdb/rocks-delete-with-prefix! resolver-cache-db ::expire-always)
+  (doseq [topic (-> event :genegraph.annotate/subjects vals flatten)]
+    (rocksdb/rocks-delete-with-prefix! resolver-cache-db topic))
+  event)
+
 (defmacro defresolver
   "Define a Lacinia GraphQL resolver that uses the resolver cache. Resolver should be
   a two-argument function, the first argument representing the args to the resolver, the
@@ -39,8 +43,7 @@
 
   Options that may be set via metadata include:
   :expire-by-value -- expire cache when an event arrives relating to the value object
-  :expire-always -- expire the cache whenever an event that updates the database arrives
-  :never-cache -- never cache the result of the resolver"
+  :expire-always -- expire the cache whenever an event that updates the database arrives"
   [resolver-name args & body]
   (let [fn-args (into [] (cons (gensym) args))
         opts (meta resolver-name)]

@@ -33,5 +33,4 @@
                             add-validation
                             add-subjects
                             add-to-db!)]
-    (cache/reset-cache!)
     processed-event))
