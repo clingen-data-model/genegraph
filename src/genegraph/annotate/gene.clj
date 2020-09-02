@@ -1,7 +1,7 @@
 (ns genegraph.annotate.gene
   (:require [genegraph.database.query :as q]))
 
-(defmulti add-genes :genegraph.sink.event/root-type)
+(defmulti add-genes :genegraph.annotate/root-type)
 
 (def validity-genes-query
   (q/create-query

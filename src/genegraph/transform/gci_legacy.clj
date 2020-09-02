@@ -3,7 +3,8 @@
             [genegraph.database.query :as q :refer [resource]]
             [genegraph.transform.core :as xform :refer [transform-doc src-path add-model]]
             [clojure.string :as s]
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [io.pedestal.log :as log]))
 
 (def gci-root "http://dataexchange.clinicalgenome.org/gci/")
 (def affiliation-root "http://dataexchange.clinicalgenome.org/agent/")
@@ -75,7 +76,6 @@
         iri (resource (str gci-root "report_" id))
         content-id (l/blank-node)
         assertion-id (resource (str gci-root "assertion_" id))]
-    (println iri)
     (concat [[iri :rdf/type :sepio/GeneValidityReport] 
              [iri :rdfs/label (:title report)]
              [iri :bfo/has-part content-id]
@@ -83,14 +83,14 @@
             (evidence-level-assertion report assertion-id id)
             (json-content-node report content-id)))) 
 
-
 (defmethod transform-doc :gci-legacy [doc-def]
   (let [report-json (json/parse-string (:document doc-def) true)]
     (l/statements-to-model  (gci-legacy-report-to-triples report-json))))
 
-
 (defmethod add-model :gci-legacy [event]
+  (log/debug :fn :add-model :format :gci-legacy :event event :msg :received-event)
   (let [report-json (json/parse-string (:genegraph.sink.event/value event) true)]
     (assoc event
            ::q/model
            (l/statements-to-model  (gci-legacy-report-to-triples report-json)))))
+  

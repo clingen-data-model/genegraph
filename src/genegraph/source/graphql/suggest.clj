@@ -6,7 +6,7 @@
   (:import [org.apache.lucene.search.suggest Lookup$LookupResult]
            [org.apache.lucene.util BytesRef]))
 
-(defresolver suggest [args value]
+(defn suggest [lacinia-context args value]
   (let [text (:text args)
         contexts (if (some #{:ALL} (:contexts args))
                    ()
@@ -20,23 +20,23 @@
       .bytes
       ser/deserialize))
 
-(defresolver suggest-type [args value]
+(defn suggest-type [context args value]
   (:type (payload value)))
 
-(defresolver iri [args value]
+(defn iri [context args value]
   (:iri (payload value)))
 
-(defresolver curie [args value]
+(defn curie [context args value]
   (:curie (payload value)))
 
-(defresolver text [args value]
+(defn text [context args value]
   (.key value))
 
-(defresolver highlighted-text [args value]
+(defn highlighted-text [context args value]
   (.highlightKey value))
 
-(defresolver weight [args value]
+(defn weight [context args value]
   (.value value))
 
-(defresolver curations [args value]
+(defn curations [context args value]
   (:curations (payload value)))

@@ -4,7 +4,8 @@
             [genegraph.transform.core :refer [transform-doc src-path add-model]]
             [cheshire.core :as json]
             [clojure.java.io :as io]
-            [clojure.spec.alpha :as spec]))
+            [clojure.spec.alpha :as spec]
+            [io.pedestal.log :as log]))
 
 
 (spec/def :condition/iri #(or (re-matches #"http://purl\.obolibrary\.org/obo/OMIM_\d+" %)
@@ -83,6 +84,7 @@
 
 
 (defmethod add-model :actionability-v1 [event]
+  (log/debug :fn :add-model :format :actionability-v1 :event event :msg :received-event)
   (assoc event
          ::q/model
          (transform (json/parse-string (:genegraph.sink.event/value event) true))))
