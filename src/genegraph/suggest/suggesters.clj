@@ -1,15 +1,20 @@
 (ns genegraph.suggest.suggesters
   (:require [mount.core :as mount :refer [defstate]]
             [genegraph.env :as env]
+            [genegraph.annotate :as ann]
             [genegraph.database.query :as q]
+            [genegraph.interceptor :as intercept :refer [interceptor-enter-def]]
             [genegraph.source.graphql.common.curation :as curation]
-            [genegraph.source.graphql.resource :as resource]
             [genegraph.source.graphql.drug :as drug]
             [genegraph.suggest.serder :as serder]
             [genegraph.suggest.infix-suggester :as suggest]
             [io.pedestal.log :as log]))
 
 (def suggesters (atom {}))
+
+(defn label [resource]
+  (first (concat (:skos/preferred-label resource)
+                 (:rdfs/label resource))))
 
 (def disease-query (q/create-query (str "select ?s WHERE "
                                         "{ ?s <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
@@ -18,9 +23,9 @@
 
 (defn disease-payload [disease]
   "Create a disease suggester payload"
-  (let [iri (resource/iri nil nil disease)
-        label (resource/label nil nil disease)
-        curie (resource/curie nil nil disease)
+  (let [iri (str disease)
+        label (label disease)
+        curie (q/curie disease)
         curations (curation/activities {:disease disease})
         weight (count curations)
         payload {:type :DISEASE
@@ -32,13 +37,13 @@
     (log/info :fn :disease-payload :msg "disease payload generated" :payload payload)
     payload))
 
-(def gene-query (q/create-query (str "select ?s WHERE { ?s a :so/ProteinCodingGene }")))
+(def gene-query (q/create-query "select ?s WHERE { ?s a :so/ProteinCodingGene }"))
 
 (defn gene-payload [gene]
   "Create a gene suggester payload"
-  (let [iri (resource/iri nil nil gene)
-        label (resource/label nil nil gene)
-        curie (resource/curie nil nil gene)
+  (let [iri (str gene)
+        label (label gene)
+        curie (q/curie gene)
         curations (curation/activities {:gene gene})
         weight (count curations)
         payload {:type :GENE
@@ -54,9 +59,9 @@
 
 (defn drug-payload [drug]
   "Create a drug suggester payload"
-  (let [iri (resource/iri nil nil drug)
-        label (drug/label nil nil drug)
-        curie (resource/curie nil nil drug)
+  (let [iri (str drug)
+        label  (label drug)
+        curie (q/curie drug)
         curations #{}
         weight 0
         payload {:type :DRUG
@@ -133,6 +138,49 @@
   (log/info :fn :lookup :suggester suggester-key :text text :contexts contexts :num num)
   (suggest/lookup (get-suggester suggester-key) text contexts num))
 
+(defn get-suggester-result-map [resource-iri suggester-key]
+  (let [resource (q/resource resource-iri)
+        label (label resource)]
+    (if-let [lookup-result (first (lookup suggester-key label #{:ALL} 1))]
+      (let [payload (-> (.payload lookup-result) .bytes serder/deserialize)]
+        (if (= resource-iri (:iri payload))
+          {:lookup-result lookup-result :resource resource :payload payload}
+          nil))
+      nil)))
+
+(defn process-event-resource [resource-iri suggester-type]
+  (log/info :fn :process-event-resource :resource-type suggester-type :resource-iri resource-iri)
+  (when-let [resource-payload-map (get-suggester-result-map resource-iri suggester-type)]
+    (let [suggester (get-suggester suggester-type)
+          suggest-map (get (suggesters-map) suggester-type)
+          resource (:resource resource-payload-map)
+          old-payload (:payload resource-payload-map)
+          new-payload ((suggest-map :payload) resource)]
+      (if-not (= (:curations old-payload) (:curations new-payload))
+        (do
+          (suggest/update-suggestion suggester
+                                     (:label new-payload)
+                                     new-payload
+                                     (:curations new-payload)
+                                     (:weight new-payload))
+          (suggest/commit-suggester suggester)
+          (suggest/refresh-suggester suggester)
+          (log/info :fn :process-event-resource :suggester suggester-type :text (:label new-payload) :msg :updated))
+        (log/info :fn :process-event-resource :suggester suggester-type :text (:label new-payload) :msg :not-updated)))))
+
+(defn update-suggesters [event]
+  (log/debug :fn :update-suggesters :event event :msg :received-event)
+  (when-let [subjects (::ann/subjects event)]
+    (when-let [gene-iris (:gene-iris subjects)]
+      (map #(process-event-resource % :gene) gene-iris))
+    (when-let [disease-iris (:disease-iris subjects)]
+      (map #(process-event-resource % :disease) disease-iris)))
+  event)
+
+(def update-suggesters-interceptor
+  "Interceptor for updating gene and disease suggesters with curation activities"
+  (interceptor-enter-def ::update-suggesters update-suggesters))
+         
 (defstate suggestions
   :start (create-suggesters)
   :stop (close-suggesters))

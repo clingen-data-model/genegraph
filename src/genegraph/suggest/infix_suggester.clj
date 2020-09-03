@@ -77,3 +77,9 @@
                               #{})]
     (.lookup suggester text serialized-contexts num true true)))
 
+(defn update-suggestion [suggester text payload contexts weight]
+  "Update terms and payloads in a suggester index"
+  (let [serialized-payload (-> payload serder/serialize BytesRef.)
+        serialized-text (BytesRef. (.getBytes text "UTF8"))
+        serialized-contexts (into #{} (map #(-> % serder/serialize BytesRef.) contexts))]
+    (.update suggester serialized-text serialized-contexts weight serialized-payload)))
