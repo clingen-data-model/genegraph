@@ -7,6 +7,7 @@
                  [org.clojure/core.async "1.2.603"  :exclusions [org.clojure/tools.reader]]
                  [io.pedestal/pedestal.service "0.5.8"]
                  [io.pedestal/pedestal.jetty "0.5.8"]
+                 [io.pedestal/pedestal.interceptor "0.5.8"]
                  [hiccup "1.0.5"]
                  [ch.qos.logback/logback-classic "1.2.3" :exclusions [org.slf4j/slf4j-api]]
                  [org.slf4j/jul-to-slf4j "1.7.26"]
