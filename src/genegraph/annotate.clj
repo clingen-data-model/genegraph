@@ -27,7 +27,7 @@
 (defn add-iri [event]
   (log/debug :fn :add-iri :event event :msg :received-event)
   (let [iri (-> (q/select "select ?x where {?x a ?type}"
-                          {:type (::root-type event)}
+                          {:type (::graph-name event)}
                           (::q/model event))
                 first
                 str)]

@@ -53,7 +53,7 @@
    [iri :sepio/activity-date (report-date report)]])
 
 (defn evidence-level-assertion [report iri id]
-  (let [prop-iri (resource (str gci-root "proposition_" id))
+  (let [prop-iri (resource (str gci-root "proposition_" (:iri report)))
         contribution-iri (l/blank-node)]
     (concat [[iri :rdf/type :sepio/GeneValidityEvidenceLevelAssertion]
              [iri :sepio/has-subject prop-iri]
