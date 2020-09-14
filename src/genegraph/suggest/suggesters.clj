@@ -34,7 +34,7 @@
                  :curie curie
                  :curations curations
                  :weight weight}]
-    (log/info :fn :disease-payload :msg "disease payload generated" :payload payload)
+    (log/debug :fn :disease-payload :msg "disease payload generated" :payload payload)
     payload))
 
 (def gene-query (q/create-query "select ?s WHERE { ?s a :so/ProteinCodingGene }"))
@@ -52,7 +52,7 @@
                  :curie curie
                  :curations curations
                  :weight weight}]
-    (log/info :fn :gene-payload :msg "gene payload generated" :payload payload)
+    (log/debug :fn :gene-payload :msg "gene payload generated" :payload payload)
     payload))
 
 (def drug-query (q/create-query (str "select ?s WHERE { ?s a :chebi/Drug }")))
@@ -70,7 +70,7 @@
                  :curie curie
                  :curations curations
                  :weight weight}]
-    (log/info :fn :drug-payload :msg "drug payload generated" :payload payload)
+    (log/debug :fn :drug-payload :msg "drug payload generated" :payload payload)
     payload))
 
 (defn suggesters-map []
@@ -107,7 +107,7 @@
 
 (defn build-suggestions [key]
   "Run a database query from which to build a suggester index, and persist it"
-  (log/info :fn :build-suggestions :suggester key :msg :start)
+  (log/debug :fn :build-suggestions :suggester key :msg :start)
   (let [map (get (suggesters-map) key)
         suggester (get @suggesters key)
         query (:query map)
@@ -122,7 +122,7 @@
                                     (:weight payload))))
     (suggest/commit-suggester suggester)
     (suggest/refresh-suggester suggester)
-    (log/info :fn :build-suggestions :suggester key :msg :complete)))
+    (log/debug :fn :build-suggestions :suggester key :msg :complete)))
                                     
 (defn build-all-suggestions []
   "Build all of the suggester indices for all configured suggesters"
@@ -135,7 +135,7 @@
 
 (defn lookup [suggester-key text contexts num]
   "Lookup a term using a suggester"
-  (log/info :fn :lookup :suggester suggester-key :text text :contexts contexts :num num)
+  (log/debug :fn :lookup :suggester suggester-key :text text :contexts contexts :num num)
   (suggest/lookup (get-suggester suggester-key) text contexts num))
 
 (defn get-suggester-result-map [resource-iri suggester-key]
@@ -149,7 +149,7 @@
       nil)))
 
 (defn process-event-resource [resource-iri suggester-type]
-  (log/info :fn :process-event-resource :resource-type suggester-type :resource-iri resource-iri)
+  (log/debug :fn :process-event-resource :resource-type suggester-type :resource-iri resource-iri)
   (when-let [resource-payload-map (get-suggester-result-map resource-iri suggester-type)]
     (let [suggester (get-suggester suggester-type)
           suggest-map (get (suggesters-map) suggester-type)
@@ -165,8 +165,8 @@
                                      (:weight new-payload))
           (suggest/commit-suggester suggester)
           (suggest/refresh-suggester suggester)
-          (log/info :fn :process-event-resource :suggester suggester-type :text (:label new-payload) :msg :updated))
-        (log/info :fn :process-event-resource :suggester suggester-type :text (:label new-payload) :msg :not-updated)))))
+          (log/debug :fn :process-event-resource :suggester suggester-type :text (:label new-payload) :msg :updated))
+        (log/debug :fn :process-event-resource :suggester suggester-type :text (:label new-payload) :msg :not-updated)))))
 
 (defn update-suggesters [event]
   (log/debug :fn :update-suggesters :event event :msg :received-event)

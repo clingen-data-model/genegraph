@@ -67,7 +67,7 @@
              turtle (println (q/to-turtle validation-result))
              iri (::iri event)
              root-type (::root-type event)]
-         (log/info :fn :add-validation :root-type root-type :iri iri :did-validate? did-validate :report turtle)
+         (log/debug :fn :add-validation :root-type root-type :iri iri :did-validate? did-validate :report turtle)
          (assoc event ::validation validation-result ::did-validate did-validate)))
       event)))
 

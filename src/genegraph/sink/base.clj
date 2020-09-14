@@ -44,14 +44,14 @@
 
 (defn import-documents! [documents]
   (doseq [d documents]
-    (log/info :fn :import-documents! :msg :importing :name (:name d))
+    (log/debug :fn :import-documents! :msg :importing :name (:name d))
     (db/load-model (transform-doc d) (:name d))))
 
 (defn initialize-db! []
   (let [res (read-base-resources)]
     (retrieve-base-data! res)
     (import-documents! res)
-    (log/info :fn :initialize-db! :msg :initialization-complete)))
+    (log/debug :fn :initialize-db! :msg :initialization-complete)))
 
 (defn import-document [name documents]
   (import-documents! (filter #(= name (:name %)) documents)))

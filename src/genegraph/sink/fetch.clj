@@ -55,14 +55,14 @@
          slurp
          (spit target-file))
     (unzip-target target-file)
-    (log/info :fn :get-file :msg :processed-file :file f :target target-file)))
+    (log/debug :fn :get-file :msg :processed-file :file f :target target-file)))
 
 (defn fetch-data
   "retrieve file from remote url and store in data directory
   used to stage imports from external sources. Currently supports only
   http and ftp"
   [url-str target-file opts]
-  (log/info :fn :fetch-data :msg :retrieving :url url-str)
+  (log/debug :fn :fetch-data :msg :retrieving :url url-str)
   (if-let [url (io/as-url url-str)]
     (cond 
       (= "http" (.getProtocol url)) (get-http url-str target-file opts)

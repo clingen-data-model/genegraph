@@ -107,7 +107,7 @@
     ([query-def] (select query-def {}))
     ([query-def params] (select query-def params db))
     ([query-def params db-or-model]
-     (log/info :fn :select-query
+     (log/debug :fn :select-query
                 :msg "Executing select query"
                 :query query-def
                 :params params)

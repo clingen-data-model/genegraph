@@ -35,7 +35,7 @@
   (let [validation-result (::ann/validation event)
         iri  (::ann/iri event)
         root-type (::ann/root-type event)]
-    (log/info :fn :add-to-db! :root-type root-type :iri iri :msg :loading)
+    (log/debug :fn :add-to-db! :root-type root-type :iri iri :msg :loading)
     (load-model (::q/model event) iri)
     event))
 
