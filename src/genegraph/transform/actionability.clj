@@ -7,7 +7,6 @@
             [clojure.spec.alpha :as spec]
             [io.pedestal.log :as log]))
 
-
 (spec/def :condition/iri #(or (re-matches #"http://purl\.obolibrary\.org/obo/OMIM_\d+" %)
                               (re-matches #"http://purl\.obolibrary\.org/obo/MONDO_\d+" %)))
 

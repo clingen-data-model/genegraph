@@ -17,4 +17,7 @@
                :genegraph.annotate/graph-name :sepio/GeneValidityProposition}
  :gene-validity-neo4j-export {:genegraph.transform.core/format :gene-validity-neo4j-export
                               :genegraph.annotate/root-type :sepio/GeneValidityReport
-                              :genegraph.annotate/graph-name :sepio/GeneValidityProposition}}
+                              :genegraph.annotate/graph-name :sepio/GeneValidityProposition}
+ :hgnc-genes {:genegraph.transform.core/format :hgnc-genes
+              :genegraph.annotate/root-type :void/Dataset
+              :genegraph.annotate/graph-name :void/Dataset}}
