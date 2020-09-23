@@ -94,6 +94,9 @@
     (doseq [model models] (.add union-model model))
     union-model))
 
+(defn empty-model []
+  (ModelFactory/createDefaultModel))
+
 (defn create-query 
   "Return parsed query object. If query is not a string, assume object that can
 use io/slurp"

@@ -27,24 +27,23 @@
         union-model (union sample-data other-model)]
     (is (= 2 (count (select "select ?x where { ?x a :owl/Class }" {} union-model))))))
 
-(def nested-sample (statements-to-model [["http://example/baby-class" 
-                                          :rdfs/sub-class-of
-                                          (resource "http://example/mama-class")]
-                                         ["http://example/baby-class" 
-                                          :rdfs/label
-                                          "I'm the baby!"]
-                                         ["http://example/mama-class" 
-                                          :rdfs/sub-class-of
-                                          (resource "http://example/nana-class")]
-                                         ["http://example/mama-class" 
-                                          :rdfs/label
-                                          "I'm the mama!"]
-                                         ["http://example/nana-class" 
-                                          :rdfs/label
-                                          "I'm the nana!"]]))
-
 (deftest test-data-threading
-  (let [baby-class (first (select "select ?x where { ?x :rdfs/label ?name }" {:name "I'm the baby!"} nested-sample))
+ (let [nested-sample (statements-to-model [["http://example/baby-class" 
+                                             :rdfs/sub-class-of
+                                             (resource "http://example/mama-class")]
+                                            ["http://example/baby-class" 
+                                             :rdfs/label
+                                             "I'm the baby!"]
+                                            ["http://example/mama-class" 
+                                             :rdfs/sub-class-of
+                                             (resource "http://example/nana-class")]
+                                            ["http://example/mama-class" 
+                                             :rdfs/label
+                                             "I'm the mama!"]
+                                            ["http://example/nana-class" 
+                                             :rdfs/label
+                                             "I'm the nana!"]])
+        baby-class (first (select "select ?x where { ?x :rdfs/label ?name }" {:name "I'm the baby!"} nested-sample))
         mama-class (first (select "select ?x where { ?x :rdfs/label ?name }" {:name "I'm the mama!"} nested-sample))
         nana-class (first (select "select ?x where { ?x :rdfs/label ?name }" {:name "I'm the nana!"} nested-sample))]
     (testing "testing ld->"

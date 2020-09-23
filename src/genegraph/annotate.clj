@@ -26,12 +26,14 @@
 
 (defn add-iri [event]
   (log/debug :fn :add-iri :event event :msg :received-event)
-  (let [iri (-> (q/select "select ?x where {?x a ?type}"
-                          {:type (::graph-name event)}
-                          (::q/model event))
-                first
-                str)]
-    (assoc event ::iri iri)))
+  (if (::graph-name event)
+    (let [iri (-> (q/select "select ?x where {?x a ?type}"
+                            {:type (::graph-name event)}
+                            (::q/model event))
+                  first
+                  str)]
+      (assoc event ::iri iri))
+    event))
 
 (def add-iri-interceptor
   "Interceptor adding iri annotation to stream events"

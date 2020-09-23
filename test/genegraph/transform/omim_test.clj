@@ -8,12 +8,12 @@
             [genegraph.transform.omim :as omim])
   (:import [org.apache.kafka.clients.consumer ConsumerRecord]))
 
-(def base-triples
-  [["http://purl.obolibrary.org/obo/OMIM_613090" :rdf/type :owl/Class]
-   ["https://www.ncbi.nlm.nih.gov/gene/1188" :rdf/type (q/resource "http://purl.obolibrary.org/obo/SO_0001217")]
-   ["http://purl.obolibrary.org/obo/MONDO_0000909" :rdfs/label "Barter disease type 4B"]
-   ["http://purl.obolibrary.org/obo/MONDO_0000909" :owl/equivalent-class (q/resource "http://purl.obolibrary.org/obo/OMIM_613090")]
-   ])
+;; (def base-triples
+;;   [["http://purl.obolibrary.org/obo/OMIM_613090" :rdf/type :owl/Class]
+;;    ["https://www.ncbi.nlm.nih.gov/gene/1188" :rdf/type (q/resource "http://purl.obolibrary.org/obo/SO_0001217")]
+;;    ["http://purl.obolibrary.org/obo/MONDO_0000909" :rdfs/label "Barter disease type 4B"]
+;;    ["http://purl.obolibrary.org/obo/MONDO_0000909" :owl/equivalent-class (q/resource "http://purl.obolibrary.org/obo/OMIM_613090")]
+;;    ])
 
 (def gene-dosage-record
   (ConsumerRecord. "gene_dosage_beta"

@@ -2,7 +2,7 @@
   (:require [clojure.data.csv :as csv]
             [clojure.string :as s]
             [genegraph.database.load :as l]
-            [genegraph.transform.core :refer [transform-doc src-path]]))
+            [genegraph.transform.core :refer [transform-doc src-path add-model]]))
 
 (def affiliation-prefix "http://dataexchange.clinicalgenome.org/agent/")
 
@@ -22,3 +22,12 @@
        csv/read-csv
        affiliations-to-triples
        l/statements-to-model))
+
+(defmethod add-model :affiliations [event]
+  (assoc event
+         :genegraph.database.query/model
+         (->> event
+              :genegraph.sink.event/value
+              csv/read-csv
+              affiliations-to-triples
+              l/statements-to-model)))
