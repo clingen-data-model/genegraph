@@ -37,7 +37,7 @@
 (defn warm-resolver-cache []
   (let [gql-file-names (-> "resolver-cache-warm.edn" io/resource slurp edn/read-string)]
     (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache..." :resources gql-file-names)
-    (pmap #(-> % io/resource slurp core/gql-query) gql-file-names)))
+    (map #(-> % io/resource slurp core/gql-query) gql-file-names)))
 
 (defn build-database
   "Build the Jena database and associated indexes from scratch."
