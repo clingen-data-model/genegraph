@@ -1,0 +1,39 @@
+{
+  affiliations(limit: null) {
+    count
+    agent_list {
+      iri
+      curie
+      label
+      genes {
+        count
+        gene_list {
+          curie
+          iri
+          label
+        }
+      }
+      diseases {
+        count
+        disease_list {
+          curie
+          iri
+          label
+        }
+      }
+      gene_validity_assertions {
+        count
+        curation_list {
+          iri
+          curie
+          label
+          mode_of_inheritance {
+            curie
+            iri
+            label
+          }
+        }
+      }
+    }
+  }
+}

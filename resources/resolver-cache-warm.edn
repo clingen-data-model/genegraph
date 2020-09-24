@@ -1,0 +1,10 @@
+;; vec of graphql queries in resources/queries
+;; to run against grapql to warm the lacinia
+;; resolvers cache. The names are jar resource
+;; path names relative to resources
+;;
+[ "queries/affiliations.graphql"
+  "queries/diseases.graphql"
+  "queries/drugs.graphql"
+  "queries/gene-validity-assertions.graphql"
+  "queries/genes.graphql"]

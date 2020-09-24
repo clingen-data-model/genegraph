@@ -1,0 +1,11 @@
+{
+  drugs(limit: null) {
+    count
+    drug_list {
+      curie
+      iri
+      label
+      aliases
+    }
+  }
+}
