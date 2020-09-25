@@ -1,5 +1,6 @@
 (ns genegraph.suggest.suggesters
-  (:require [mount.core :as mount :refer [defstate]]
+  (:require [clojure.string :as str]
+            [mount.core :as mount :refer [defstate]]
             [genegraph.env :as env]
             [genegraph.annotate :as ann]
             [genegraph.database.query :as q]
@@ -38,12 +39,14 @@
     payload))
 
 (def gene-query (q/create-query "select ?s WHERE { ?s a :so/ProteinCodingGene }"))
+(defn hgnc-curie [gene]
+  (first (filter #(str/starts-with? % "HGNC:") (q/ld-> gene [:owl/same-as]))))
 
 (defn gene-payload [gene]
   "Create a gene suggester payload"
   (let [iri (str gene)
         label (label gene)
-        curie (q/curie gene)
+        curie (hgnc-curie gene)
         curations (curation/activities {:gene gene})
         weight (count curations)
         payload {:type :GENE
