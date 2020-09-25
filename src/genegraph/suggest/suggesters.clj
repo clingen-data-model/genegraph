@@ -33,6 +33,7 @@
                  :iri iri
                  :label label
                  :curie curie
+                 :alternative-curie nil
                  :curations curations
                  :weight weight}]
     (log/info :fn :disease-payload :msg "disease payload generated" :payload payload)
@@ -46,13 +47,15 @@
   "Create a gene suggester payload"
   (let [iri (str gene)
         label (label gene)
-        curie (hgnc-curie gene)
+        curie (q/curie gene)
+        alt-curie (hgnc-curie gene)
         curations (curation/activities {:gene gene})
         weight (count curations)
         payload {:type :GENE
                  :iri iri
                  :label label
                  :curie curie
+                 :alternative-curie alt-curie
                  :curations curations
                  :weight weight}]
     (log/info :fn :gene-payload :msg "gene payload generated" :payload payload)
@@ -71,6 +74,7 @@
                  :iri iri
                  :label label
                  :curie curie
+                 :alternative-curie nil
                  :curations curations
                  :weight weight}]
     (log/info :fn :drug-payload :msg "drug payload generated" :payload payload)
