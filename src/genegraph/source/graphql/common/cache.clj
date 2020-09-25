@@ -13,6 +13,10 @@
     (:expire-by-value opts) (rocksdb/rocks-get-multipart-key 
                              resolver-cache-db
                              [resolver-value k])
+    (:expire-by-field opts) (do (println "getting with expire by " (get resolver-value (:expire-by-field opts)))
+                              (rocksdb/rocks-get-multipart-key 
+                                resolver-cache-db
+                                [(get resolver-value (:expire-by-field opts)) k]))
     (:expire-always opts) (rocksdb/rocks-get-multipart-key
                            resolver-cache-db
                            [::expire-always k])
@@ -24,6 +28,11 @@
                              resolver-cache-db
                              [resolver-value k]
                              v)
+    (:expire-by-field opts) (do (println "storing with expire by " (get resolver-value (:expire-by-field opts)))
+                              (rocksdb/rocks-put-multipart-key!
+                                 resolver-cache-db
+                                 [(get resolver-value (:expire-by-field opts)) k]
+                                 v))
     (:expire-always opts) (rocksdb/rocks-put-multipart-key!
                            resolver-cache-db
                            [::expire-always k]
@@ -31,10 +40,18 @@
     :else (rocks-put! resolver-cache-db k v)))
 
 (defn expire-resolver-cache-on-event! [event]
+  (println "expiring resolver cache on event reciept")
+  (println (keys event))
+  (println (:genegraph.annotate/subjects event))
   (rocksdb/rocks-delete-with-prefix! resolver-cache-db ::expire-always)
   (doseq [topic (-> event :genegraph.annotate/subjects vals flatten)]
+    (println "deleting with prefix " topic)
     (rocksdb/rocks-delete-with-prefix! resolver-cache-db topic))
   event)
+
+(def expire-resolver-cache-interceptor
+  {:name ::expire-resolver-cache-interceptor
+   :enter expire-resolver-cache-on-event!})
 
 (defmacro defresolver
   "Define a Lacinia GraphQL resolver that uses the resolver cache. Resolver should be

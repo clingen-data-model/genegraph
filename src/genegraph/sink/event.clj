@@ -21,7 +21,8 @@
                          ::ann/add-validation-interceptor
                          ::ann/add-subjects-interceptor
                          ::add-to-db-interceptor
-                         ::suggest/update-suggesters-interceptor])
+                         ::suggest/update-suggesters-interceptor
+                         ::cache/expire-resolver-cache-interceptor])
 
 (def context (atom {}))
 
@@ -46,8 +47,7 @@
 (defn process-event! [event]
   (log/debug :fn :process-event! :event event :msg :event-received)
   (swap! context #(assoc % :event event))
-  (chain/execute @context)
-  (cache/reset-cache!))
+  (chain/execute @context))
 
 (defstate interceptor-context
   :start (reset! context (chain/enqueue @context

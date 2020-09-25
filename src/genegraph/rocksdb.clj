@@ -2,7 +2,8 @@
   (:require [genegraph.env :as env]
             [taoensso.nippy :as nippy :refer [freeze thaw]]
             [digest])
-  (:import (org.rocksdb RocksDB Options)))
+  (:import (org.rocksdb RocksDB Options)
+           java.security.MessageDigest))
 
 
 (defn create-db-path [db-name] 

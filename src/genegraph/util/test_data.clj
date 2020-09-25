@@ -117,8 +117,8 @@
                                                            curations)))
                                            first)]
         (when second-published-curation
-          (map event-keys [first-published-curation
-                           second-published-curation]))))))
+          [first-published-curation
+           second-published-curation])))))
 
 (defn is-gene-validity-unpublish-sequence []
   ())
@@ -129,9 +129,9 @@
 (defn construct-event-sequence 
   "build sequence of events necessary for populating and evaluating database"
   [curation-events]
-  (let [single-gv-curation (-> curation-events first first event-keys)
-        gv-sequence-with-update (gene-validity-update-sequence)
-        all-published-curation-events [single-gv-curation]
+  (let [single-gv-curation (-> curation-events first first)
+        gv-sequence-with-update (some gene-validity-update-sequence curation-events)
+        all-published-curation-events (conj gv-sequence-with-update single-gv-curation)
         genes (curated-genes all-published-curation-events)
         diseases (curated-diseases all-published-curation-events)]
     {:curated-genes genes
@@ -139,8 +139,8 @@
      :base-data (base-data)
      :hgnc-genes (hgnc-gene-data genes)
      :mondo-diseases (mondo-data diseases)
-     :publish-gv-curation single-gv-curation
-     :gene-validity-update-sequence gv-sequence-with-update}))
+     :publish-gv-curation (event-keys single-gv-curation)
+     :gene-validity-update-sequence (map event-keys gv-sequence-with-update)}))
 
 (defn stream-data [stream]
   (->> (stream/topic-data stream)

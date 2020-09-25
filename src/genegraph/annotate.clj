@@ -87,6 +87,7 @@
   [event genes diseases]
   (let [gene-iris (mapv #(str %) genes)
          disease-iris (mapv #(str %) diseases)]
+    (println "adding subjects to " (::iri event) " genes " gene-iris " diseases " disease-iris)
     (assoc event ::subjects {:gene-iris gene-iris :disease-iris disease-iris})))
 
 (defmulti add-subjects ::root-type)
