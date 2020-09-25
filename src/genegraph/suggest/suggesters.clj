@@ -40,7 +40,7 @@
 
 (def gene-query (q/create-query "select ?s WHERE { ?s a :so/ProteinCodingGene }"))
 (defn hgnc-curie [gene]
-  (first (filter #(str/starts-with? % "HGNC:") (q/ld-> gene [:owl/same-as]))))
+  (str (first (filter #(str/starts-with? % "HGNC:") (q/ld-> gene [:owl/same-as])))))
 
 (defn gene-payload [gene]
   "Create a gene suggester payload"
