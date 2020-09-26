@@ -9,6 +9,8 @@
             [genegraph.sink.stream :as stream]
             [genegraph.suggest.suggesters :as suggest]
             [genegraph.sink.batch :as batch]
+            [genegraph.source.graphql.core :as core]
+            [genegraph.source.graphql.common.cache :as cache]
             [mount.core :refer [start stop]]
             [clojure.java.shell :refer [sh]]
             [io.pedestal.log :as log])
@@ -31,6 +33,12 @@
   []
   (.format (ZonedDateTime/now ZoneOffset/UTC) 
            (DateTimeFormatter/ofPattern "yyyy-MM-dd'T'HHmm")))
+
+(defn warm-resolver-cache []
+  (let [gql-file-names (-> "resolver-cache-warm.edn" io/resource slurp edn/read-string)]
+    (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache..." :resources gql-file-names)
+    (doall (pmap #(-> % io/resource slurp core/gql-query) gql-file-names))
+    (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache...complete.")))
 
 (defn build-database
   "Build the Jena database and associated indexes from scratch."
@@ -55,6 +63,9 @@
     (log/debug :fn :build-database :msg "Stopping streams...")
     (while (not (stream/consumers-closed?))
       (Thread/sleep 1000))
+    (start #'cache/resolver-cache-db)
+    (warm-resolver-cache)
+    (stop #'cache/resolver-cache-db)
     (stop #'suggest/suggestions)
     (stop #'event/interceptor-context)
     (stop #'db/db)))

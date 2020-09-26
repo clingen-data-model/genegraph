@@ -29,6 +29,9 @@
 (defn curie [context args value]
   (:curie (payload value)))
 
+(defn alternative-curie [context args value]
+  (:alternative-curie (payload value)))
+
 (defn text [context args value]
   (.key value))
 

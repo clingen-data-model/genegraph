@@ -16,6 +16,49 @@
         genomic_feature {
           __typename
         }
+        haplo_index
+        location_relationship
+        omim
+        pli_score
+        report_date
+        haploinsufficiency_assertion {
+          curie
+          iri
+          label
+          assertion_type
+          classification_description
+          comments
+          disease {
+            iri
+            curie
+            label
+            description
+          }
+          dosage_classification {
+            enum_value
+            label
+            ordinal
+          }
+        }
+        triplosensitivity_assertion {
+          curie
+          iri
+          label
+          assertion_type
+          classification_description
+          comments
+          disease {
+            iri
+            curie
+            label
+            description
+          }
+          dosage_classification {
+            enum_value
+            label
+            ordinal
+          }
+        }
       }
       genetic_conditions {
         disease {
@@ -86,23 +129,5 @@
         }
       }
     }
-  }
-}
-
-{
-  genes(curation_activity: ALL, limit: null) {
-    gene_list {
-      label
-      curation_activities
-      dosage_curation {
-        triplosensitivity_assertion {
-          score
-        }
-        haploinsufficiency_assertion {
-          score
-        }
-      }
-    }
-    count
   }
 }
