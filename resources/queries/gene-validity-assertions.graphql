@@ -1,26 +1,43 @@
 {
   gene_validity_assertions(limit: null) {
+    count
     curation_list {
-      disease {
-        label
+      iri
+      curie
+      label
+      legacy_json
+      report_date
+      attributed_to {
+        iri
         curie
-      }
-      gene {
         label
-      }
-      mode_of_inheritance {
-        label
-        curie
       }
       classification {
-        label
+        iri
         curie
+        label
+      }
+      disease {
+        iri
+        curie
+        label
+      }
+      gene {
+        iri
+        curie
+        label
+        hgnc_id
+      }
+      mode_of_inheritance {
+        iri
+        curie
+        label
       }
       specified_by {
-        label
+        iri
         curie
+        label
       }
     }
-    count
   }
 }

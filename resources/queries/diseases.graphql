@@ -1,0 +1,44 @@
+{
+  diseases(limit: null) {
+    count
+    disease_list {
+      iri
+      curie
+      label
+      aliases
+      curation_activities
+      description
+      equivalent_conditions
+      last_curated_date
+      previous_names
+      direct_subclasses {
+        iri
+        curie
+        label
+        aliases
+        description
+      }
+      direct_superclasses {
+        iri
+        curie
+        label
+        aliases
+        description
+      }
+      subclasses {
+        iri
+        curie
+        label
+        aliases
+        description
+      }
+      superclasses {
+        iri
+        curie
+        label
+        aliases
+        description
+      }
+    }
+  }
+}

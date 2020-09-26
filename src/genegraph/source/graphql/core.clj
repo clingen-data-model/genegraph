@@ -588,6 +588,7 @@
      {:type {:type 'String :resolve suggest/suggest-type}
       :iri {:type 'String :resolve suggest/iri}
       :curie {:type 'String :resolve suggest/curie}
+      :alternative-curie {:type 'String :resolve suggest/alternative-curie}
       :text {:type 'String :resolve suggest/text}
       :highlighted {:type 'String :resolve suggest/highlighted-text}
       :curations  {:type '(list :CurationActivity) :resolve suggest/curations}
