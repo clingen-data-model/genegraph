@@ -29,7 +29,7 @@
       context)))
 
 (defn store-processed-response [context]
-  (if (running?)
+  (when (running?)
     (log/debug :fn ::store-processed-response :msg "storing processed response")
     (rocksdb/rocks-put! cache-store 
                         (get-in context [:request :body])
@@ -42,6 +42,11 @@
    :leave store-processed-response})
 
 (defn clear-response-cache! []
+  (log/debug :fn ::clear-respsonse-cache! :msg "clearing response cache")
   (mount/stop #'cache-store)
   (rocksdb/rocks-destroy! db-name)
   (mount/start #'cache-store))
+
+(def expire-response-cache-interceptor
+  {:name ::expire-response-cache
+   :enter (fn [event] (clear-response-cache!) event)})

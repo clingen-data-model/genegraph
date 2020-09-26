@@ -2,6 +2,7 @@
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :refer [load-model]]
             [genegraph.source.graphql.common.cache :as cache]
+            [genegraph.response-cache :as response-cache]
             [genegraph.database.validation :as v]
             [genegraph.interceptor :as ggintercept :refer [interceptor-enter-def]]
             [genegraph.annotate :as ann :refer [add-model-interceptor
@@ -22,7 +23,8 @@
                          ::ann/add-subjects-interceptor
                          ::add-to-db-interceptor
                          ::suggest/update-suggesters-interceptor
-                         ::cache/expire-resolver-cache-interceptor])
+                         ::cache/expire-resolver-cache-interceptor
+                         ::response-cache/expire-response-cache-interceptor])
 
 (def context (atom {}))
 
