@@ -46,7 +46,7 @@
 
 (defn process-event! [event]
   (log/debug :fn :process-event! :event event :msg :event-received)
-  (swap! context #(assoc % :event event))
+  (swap! context #(merge % event))
   (chain/execute @context))
 
 (defstate interceptor-context

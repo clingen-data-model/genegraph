@@ -2,7 +2,7 @@
   (:require [genegraph.env :as env]
             [taoensso.nippy :as nippy :refer [freeze thaw]]
             [digest])
-  (:import (org.rocksdb RocksDB Options)
+  (:import (org.rocksdb RocksDB Options ReadOptions Slice)
            java.security.MessageDigest))
 
 
@@ -64,3 +64,10 @@
 
 (defn close [db]
   (.close db))
+
+(defn prefix-iter [db prefix]
+  (let [iter (.newIterator db 
+                           (.setIterateUpperBound (ReadOptions.)
+                                                  (Slice. (key-tail-digest prefix))))]
+    (.seek iter (key-digest prefix))
+    iter))

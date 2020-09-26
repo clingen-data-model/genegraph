@@ -2,7 +2,8 @@
   (:require [io.pedestal.log :as log]
             [genegraph.env :as env]
             [mount.core :refer [defstate]]
-            [genegraph.rocksdb :as rocksdb :refer [rocks-get rocks-put! rocks-delete!]]))
+            [genegraph.rocksdb :as rocksdb :refer [rocks-get rocks-put! rocks-delete!]]
+            [genegraph.database.query :refer [resource]]))
 
 (defstate resolver-cache-db
   :start (rocksdb/open "graphql_resolver_cache")
@@ -13,10 +14,9 @@
     (:expire-by-value opts) (rocksdb/rocks-get-multipart-key 
                              resolver-cache-db
                              [resolver-value k])
-    (:expire-by-field opts) (do (println "getting with expire by " (get resolver-value (:expire-by-field opts)))
-                              (rocksdb/rocks-get-multipart-key 
-                                resolver-cache-db
-                                [(get resolver-value (:expire-by-field opts)) k]))
+    (:expire-by-field opts) (rocksdb/rocks-get-multipart-key 
+                             resolver-cache-db
+                             [(get resolver-value (:expire-by-field opts)) k])
     (:expire-always opts) (rocksdb/rocks-get-multipart-key
                            resolver-cache-db
                            [::expire-always k])
@@ -28,11 +28,10 @@
                              resolver-cache-db
                              [resolver-value k]
                              v)
-    (:expire-by-field opts) (do (println "storing with expire by " (get resolver-value (:expire-by-field opts)))
-                              (rocksdb/rocks-put-multipart-key!
-                                 resolver-cache-db
-                                 [(get resolver-value (:expire-by-field opts)) k]
-                                 v))
+    (:expire-by-field opts) (rocksdb/rocks-put-multipart-key!
+                             resolver-cache-db
+                             [(get resolver-value (:expire-by-field opts)) k]
+                             v)
     (:expire-always opts) (rocksdb/rocks-put-multipart-key!
                            resolver-cache-db
                            [::expire-always k]
@@ -40,13 +39,9 @@
     :else (rocks-put! resolver-cache-db k v)))
 
 (defn expire-resolver-cache-on-event! [event]
-  (println "expiring resolver cache on event reciept")
-  (println (keys event))
-  (println (:genegraph.annotate/subjects event))
   (rocksdb/rocks-delete-with-prefix! resolver-cache-db ::expire-always)
   (doseq [topic (-> event :genegraph.annotate/subjects vals flatten)]
-    (println "deleting with prefix " topic)
-    (rocksdb/rocks-delete-with-prefix! resolver-cache-db topic))
+    (rocksdb/rocks-delete-with-prefix! resolver-cache-db (resource topic)))
   event)
 
 (def expire-resolver-cache-interceptor

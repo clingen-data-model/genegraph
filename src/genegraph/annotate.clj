@@ -77,10 +77,11 @@
   "Interceptor adding shacl validation to stream events.
   Short circuits interceptor chain when data is not validated."
  {:name ::add-validation
-  :enter (fn [context](let [evt (->> context :event add-validation)]
-                        (if (false? (::did-validate evt))
-                          (terminate context)
-                          (assoc context :event evt))))})
+  :enter (fn [context] (let [evt (add-validation context)]
+                         (if (false? (::did-validate evt))
+                           ;; TODO May want to take a different action here...
+                           (terminate context)
+                           evt)))})
 
 (defn add-subjects-to-event
   "Perform the actual event annotation, returnng the event to th caller"

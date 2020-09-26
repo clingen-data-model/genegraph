@@ -6,6 +6,7 @@
             [clojure.test :as t :refer [deftest testing is use-fixtures]]
             [genegraph.env :as env]
             [genegraph.database.util :refer [with-test-database]]
+            [genegraph.database.query :as q]
             [genegraph.sink.event :as event]
             [genegraph.source.graphql.core :as gql :refer [gql-query]]
             [genegraph.annotate :as ann]
@@ -14,7 +15,11 @@
             [me.raynes.fs :as fs]
             [mount.core :as mount]
             [io.pedestal.test :refer [response-for]]
-            [cheshire.core :as json])
+            [cheshire.core :as json]
+            ;; For testing at the repl
+            [genegraph.rocksdb :as rocksdb]
+            [taoensso.nippy :refer [freeze thaw]]
+            [genegraph.source.graphql.common.cache :as gqlcache])
   (:import [java.io PushbackReader]))
 
 (defn mount-database-fixture [f]
@@ -94,15 +99,21 @@
       ann/add-validation
       ann/add-subjects))
 
+(defn create-query-fn [server]
+  (fn [request variables]
+    (response-for server
+                  :post "/graphql"
+                  :headers {"Content-Type" "application/json"}
+                  :body (json/generate-string {:query request :variables variables}))))
+
+(defn get-test-events []
+  (-> "test_data/test_events.edn" io/resource slurp edn/read-string))
+
 (deftest event-lifecycle-test
   (with-open [r (io/reader (io/resource "test_data/test_events.edn"))]
     (let [events (edn/read (PushbackReader. r))
           server (::server/service-fn (server/create-servlet (service/service)))
-          query (fn [request variables]
-                  (response-for server
-                                :post "/graphql"
-                                :headers {"Content-Type" "application/json"}
-                                :body (json/generate-string {:query request :variables variables})))]
+          query (create-query-fn server)]
       (doseq [base-event (:base-data events)]
         (event/process-event! base-event))
       (event/process-event! (:hgnc-genes events))

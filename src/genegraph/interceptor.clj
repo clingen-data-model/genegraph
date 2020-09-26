@@ -6,7 +6,7 @@
    event from that context, calls event-fn on the event, and updates the 
    context with the result event for the next interceptor to process."
   {:name name
-   :enter (fn [context] (->> context :event event-fn (assoc context :event)))})
+   :enter (fn [context] (->> context event-fn))})
 
 (defn interceptor-leave-def [name event-fn]
   "Returns an interceptor definition with name, that defines an :leave 
@@ -14,5 +14,5 @@
    event from that context, calls event-fn on the event, and updates the 
    context with the result event for the next interceptor to process."
   {:name name
-   :leave (fn [context] (->> context :event event-fn (assoc context :event)))})
+   :leave (fn [context] (->> context event-fn))})
 
