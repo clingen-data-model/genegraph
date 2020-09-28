@@ -588,7 +588,7 @@
      {:type {:type 'String :resolve suggest/suggest-type}
       :iri {:type 'String :resolve suggest/iri}
       :curie {:type 'String :resolve suggest/curie}
-      :alternative-curie {:type 'String :resolve suggest/alternative-curie}
+      :alternative_curie {:type 'String :resolve suggest/alternative-curie}
       :text {:type 'String :resolve suggest/text}
       :highlighted {:type 'String :resolve suggest/highlighted-text}
       :curations  {:type '(list :CurationActivity) :resolve suggest/curations}
@@ -943,6 +943,7 @@
    :server-status/server-version-query server-status/server-version-query
    :suggest/curations suggest/curations
    :suggest/curie suggest/curie
+   :suggest/alternative-curie suggest/alternative-curie
    :suggest/highlighted-text suggest/highlighted-text
    :suggest/iri suggest/iri
    :suggest/suggest suggest/suggest
