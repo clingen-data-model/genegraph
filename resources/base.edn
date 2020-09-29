@@ -153,11 +153,12 @@
   :source "https://storage.googleapis.com/gnomad-public/release/2.1.1/constraint/gnomad.v2.1.1.lof_metrics.by_gene.txt.bgz"
   :target "gnomad_v2.1.1.lof_metrics_by_gene.txt.gz"
   :format :loss-intolerance}
- {:name "https://clinicalgenome.org/gene-validity/a0a9ec11-ef90-4095-9c9e-696eabd0395b"
-  :source "https://raw.githubusercontent.com/clingen-data-model/data-examples/master/gene-validity/gci-sepio-example-GDI1.json"
-  :target "a0a9ec11-ef90-4095-9c9e-696eabd0395b.jsonld"
-  :format :rdf
-  :reader-opts {:format :json-ld}}
+ ;; not 
+ ;; {:name "https://clinicalgenome.org/gene-validity/a0a9ec11-ef90-4095-9c9e-696eabd0395b"
+ ;;  :source "https://raw.githubusercontent.com/clingen-data-model/data-examples/master/gene-validity/gci-sepio-example-GDI1.json"
+ ;;  :target "a0a9ec11-ef90-4095-9c9e-696eabd0395b.jsonld"
+ ;;  :format :rdf
+ ;;  :reader-opts {:format :json-ld}}
  {:name "http://dataexchange.clinicalgenome.org/affiliations"
   :source "https://docs.google.com/spreadsheets/d/1IF9GiP8iiFx1CndgqdWNGx4A_uM2GsWnV7GSiUO33bs/gviz/tq?tqx=out:csv&sheet=VCI%2FGCI%20Affiliations%20List"
   :target "affiliations.csv"

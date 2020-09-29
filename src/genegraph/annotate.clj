@@ -26,12 +26,14 @@
 
 (defn add-iri [event]
   (log/debug :fn :add-iri :event event :msg :received-event)
-  (let [iri (-> (q/select "select ?x where {?x a ?type}"
-                          {:type (::root-type event)}
-                          (::q/model event))
-                first
-                str)]
-    (assoc event ::iri iri)))
+  (if (::graph-name event)
+    (let [iri (-> (q/select "select ?x where {?x a ?type}"
+                            {:type (::graph-name event)}
+                            (::q/model event))
+                  first
+                  str)]
+      (assoc event ::iri iri))
+    event))
 
 (def add-iri-interceptor
   "Interceptor adding iri annotation to stream events"
@@ -67,7 +69,7 @@
              turtle (println (q/to-turtle validation-result))
              iri (::iri event)
              root-type (::root-type event)]
-         (log/info :fn :add-validation :root-type root-type :iri iri :did-validate? did-validate :report turtle)
+         (log/debug :fn :add-validation :root-type root-type :iri iri :did-validate? did-validate :report turtle)
          (assoc event ::validation validation-result ::did-validate did-validate)))
       event)))
 
@@ -75,16 +77,18 @@
   "Interceptor adding shacl validation to stream events.
   Short circuits interceptor chain when data is not validated."
  {:name ::add-validation
-  :enter (fn [context](let [evt (->> context :event add-validation)]
-                        (if (false? (::did-validate evt))
-                          (terminate context)
-                          (assoc context :event evt))))})
+  :enter (fn [context] (let [evt (add-validation context)]
+                         (if (false? (::did-validate evt))
+                           ;; TODO May want to take a different action here...
+                           (terminate context)
+                           evt)))})
 
 (defn add-subjects-to-event
   "Perform the actual event annotation, returnng the event to th caller"
   [event genes diseases]
   (let [gene-iris (mapv #(str %) genes)
          disease-iris (mapv #(str %) diseases)]
+    (println "adding subjects to " (::iri event) " genes " gene-iris " diseases " disease-iris)
     (assoc event ::subjects {:gene-iris gene-iris :disease-iris disease-iris})))
 
 (defmulti add-subjects ::root-type)

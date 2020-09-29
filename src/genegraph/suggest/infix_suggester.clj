@@ -62,13 +62,13 @@
   "Loads the suggestion index from the file system for the suggester."
   (with-open [is (FileInputStream. index-file)]
     (.load suggester is)
-    (log/info :fn :load-suggestions :msg :loaded-index :index-file index-file)))
+    (log/debug :fn :load-suggestions :msg :loaded-index :index-file index-file)))
 
 (defn store-suggestions [suggester index-file]
   "Stores the suggestion index for the cuggester on the file system."
   (with-open [os (FileOutputStream. index-file)]
     (.store suggester os)
-    (log/info :fn :store-suggestions :msg :stored-index :index-file index-file)))
+    (log/debug :fn :store-suggestions :msg :stored-index :index-file index-file)))
 
 (defn lookup [suggester text contexts num]
   "Perform a suggester lookup"

@@ -2,9 +2,11 @@
   (:require [cheshire.core :as json]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
+            [io.pedestal.log :as log]
             [genegraph.database.load :as db]
-            [genegraph.transform.core :refer [transform-doc src-path]]
-            [genegraph.database.query :refer [resource]]))
+            [genegraph.transform.core :refer [transform-doc add-model src-path]]
+            [genegraph.database.query :refer [resource]]
+            [genegraph.database.query :as q]))
 
 ;; symbol -> skos:prefLabel ? rdf:label
 ;; name -> skos:altLabel 
@@ -61,8 +63,8 @@
 
 (defn genes-as-triple [genes-json]
   (let [genes (get-in genes-json [:response :docs])]
-    (mapcat gene-as-triple genes)))
-
+    (conj (mapcat gene-as-triple genes)
+          ["https://www.genenames.org/" :rdf/type :void/Dataset])))
 
 (defmethod transform-doc :genes
   ([doc-def] (transform-doc doc-def (slurp (src-path doc-def))))
@@ -71,3 +73,11 @@
 (defn load-genes [path]
   (-> path genes-from-file genes-as-triple (db/load-statements "https://www.genenames.org/")))
 
+(defmethod add-model :hgnc-genes [event]
+  (log/debug :fn :add-model :format :hgnc-genes :event event :msg :received-event)
+  (let [model (-> event 
+                  :genegraph.sink.event/value
+                  (json/parse-string true)
+                  genes-as-triple
+                  db/statements-to-model)]
+    (assoc event ::q/model model )))

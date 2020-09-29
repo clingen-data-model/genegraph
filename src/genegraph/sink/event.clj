@@ -2,6 +2,7 @@
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :refer [load-model]]
             [genegraph.source.graphql.common.cache :as cache]
+            [genegraph.response-cache :as response-cache]
             [genegraph.database.validation :as v]
             [genegraph.interceptor :as ggintercept :refer [interceptor-enter-def]]
             [genegraph.annotate :as ann :refer [add-model-interceptor
@@ -21,7 +22,9 @@
                          ::ann/add-validation-interceptor
                          ::ann/add-subjects-interceptor
                          ::add-to-db-interceptor
-                         ::suggest/update-suggesters-interceptor])
+                         ::suggest/update-suggesters-interceptor
+                         ::cache/expire-resolver-cache-interceptor
+                         ::response-cache/expire-response-cache-interceptor])
 
 (def context (atom {}))
 
@@ -35,7 +38,7 @@
   (let [validation-result (::ann/validation event)
         iri  (::ann/iri event)
         root-type (::ann/root-type event)]
-    (log/info :fn :add-to-db! :root-type root-type :iri iri :msg :loading)
+    (log/debug :fn :add-to-db! :root-type root-type :iri iri :msg :loading)
     (load-model (::q/model event) iri)
     event))
 
@@ -45,9 +48,8 @@
 
 (defn process-event! [event]
   (log/debug :fn :process-event! :event event :msg :event-received)
-  (swap! context #(assoc % :event event))
-  (chain/execute @context)
-  (cache/reset-cache!))
+  (swap! context #(merge % event))
+  (chain/execute @context))
 
 (defstate interceptor-context
   :start (reset! context (chain/enqueue @context

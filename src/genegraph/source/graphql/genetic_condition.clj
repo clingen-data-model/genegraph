@@ -11,11 +11,14 @@
 (defresolver mode-of-inheritance [args value]
   (:mode-of-inheritance value))
 
-(defresolver actionability-curations [args value]
+;; TODO need expire-by-field concept to properly handle cache expiration
+;; for these
+
+(defresolver ^{:expire-by-field :gene} actionability-curations [args value]
   (curation/actionability-curations-for-genetic-condition value))
 
-(defresolver gene-validity-curation [args value]
+(defresolver ^{:expire-by-field :gene} gene-validity-curation [args value]
   (curation/gene-validity-curations value))
 
-(defresolver gene-dosage-curation [args value]
+(defresolver ^{:expire-by-field :gene} gene-dosage-curation [args value]
   (curation/dosage-sensitivity-curations-for-genetic-condition value))

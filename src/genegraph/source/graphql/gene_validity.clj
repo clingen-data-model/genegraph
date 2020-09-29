@@ -11,16 +11,18 @@
 (defresolver report-date [args value]
   (ld1-> value [:sepio/qualified-contribution :sepio/activity-date]))
 
+
+;; DEPRECATED
 (defresolver gene-validity-list [args value]
   (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))]
     (curation/gene-validity-curations {::q/params params})))
 
-(defresolver gene-validity-curations [args value]
+(defresolver ^:expire-always gene-validity-curations [args value]
   (curation/gene-validity-curations-for-resolver args value))
 
+;; DEPRECATED -- may not be used at all
 (defresolver criteria [args value]
   nil)
-
 
 (def evidence-levels
   {:sepio/DefinitiveEvidence :DEFINITIVE

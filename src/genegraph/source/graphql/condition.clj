@@ -4,16 +4,18 @@
             [genegraph.source.graphql.common.curation :as curation]
             [clojure.string :as str]))
 
+;; DEPRECATED -- genetic condition concept used instead
 (defresolver gene [args value]
   (q/ld1-> value [:sepio/is-about-gene]))
 
 (defresolver condition-query [args value]
   (q/resource (:iri args)))
 
+;; DEPRECATED -- use actionability curations under genetic conditions
 (defresolver actionability-curations [args value]
   (q/ld-> value [[:sepio/is-about-condition :<]]))
 
-(defresolver genetic-conditions [args value]
+(defresolver ^:expire-by-value genetic-conditions [args value]
   (curation/curated-genetic-conditions-for-disease {:disease value}))
 
 (defresolver description [args value]
@@ -28,7 +30,7 @@
 (defresolver equivalent-conditions [args value]
   )
 
-(defresolver last-curated-date [args value]
+(defresolver ^:expire-by-value last-curated-date [args value]
   (let [curation-dates (concat (ld-> value [[:sepio/has-object :<] ;;GENE_VALIDITY
                                             [:sepio/has-subject :<]
                                             :sepio/qualified-contribution
@@ -44,7 +46,7 @@
                                             :sepio/activity-date]))]
     (->> curation-dates sort last)))
 
-(defresolver curation-activities [args value]
+(defresolver ^:expire-by-value curation-activities [args value]
   (curation/activities {:disease value}))
 
 
@@ -72,9 +74,8 @@
                                    "FILTER (!isBlank(?s)) }")))]
     (query {::q/params params})))
 
-(defresolver diseases [args value]
+(defresolver ^:expire-always diseases [args value]
   (curation/diseases-for-resolver args value))
-
 
 (def subclass-of-query 
   (q/create-query 

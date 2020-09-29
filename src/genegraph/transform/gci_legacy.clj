@@ -53,7 +53,7 @@
    [iri :sepio/activity-date (report-date report)]])
 
 (defn evidence-level-assertion [report iri id]
-  (let [prop-iri (resource (str gci-root "proposition_" id))
+  (let [prop-iri (resource (str gci-root "proposition_" (:iri report)))
         contribution-iri (l/blank-node)]
     (concat [[iri :rdf/type :sepio/GeneValidityEvidenceLevelAssertion]
              [iri :sepio/has-subject prop-iri]
@@ -75,13 +75,14 @@
         id (str (-> report :iri) "-" (s/replace (report-date report) #":" ""))
         iri (resource (str gci-root "report_" id))
         content-id (l/blank-node)
-        assertion-id (resource (str gci-root "assertion_" id))]
-    (concat [[iri :rdf/type :sepio/GeneValidityReport] 
-             [iri :rdfs/label (:title report)]
-             [iri :bfo/has-part content-id]
-             [iri :bfo/has-part assertion-id]]
-            (evidence-level-assertion report assertion-id id)
-            (json-content-node report content-id)))) 
+        assertion-id (resource (str gci-root "assertion_" id))
+        result (concat [[iri :rdf/type :sepio/GeneValidityReport] 
+                        [iri :rdfs/label (:title report)]
+                        [iri :bfo/has-part content-id]
+                        [iri :bfo/has-part assertion-id]]
+                       (evidence-level-assertion report assertion-id id)
+                       (json-content-node report content-id))]
+    result)) 
 
 (defmethod transform-doc :gci-legacy [doc-def]
   (let [report-json (json/parse-string (:document doc-def) true)]
