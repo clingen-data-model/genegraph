@@ -37,8 +37,9 @@
 (def pattern-curation-activities
   [[gene-validity-bgp :GENE_VALIDITY]
    [actionability-bgp :ACTIONABILITY]
-   ;; [gene-dosage-disease-bgp :GENE_DOSAGE] ;; omitting due to poor performance
-   [gene-dosage-bgp :GENE_DOSAGE]])
+   [gene-dosage-disease-bgp :GENE_DOSAGE] ;; omitting due to poor performance
+   ;;[gene-dosage-bgp :GENE_DOSAGE]
+   ])
 
 (def test-resource-for-activity
   (map (fn [[pattern activity]]
