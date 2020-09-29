@@ -11,7 +11,8 @@
             [genegraph.sink.base :as base]
             [genegraph.database.query :as q]
             [genegraph.database.load :as l]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            [clojure.string :as str]))
 
 (def streams-to-sample
   [:gene-dosage-stage
@@ -70,22 +71,36 @@
 (def construct-direct-disease-relationships
   (q/create-query "construct where {?disease ?p ?o}"))
 
+(defn construct-mondo-subgraph-of-diseases [diseases]
+  (reduce 
+   q/union
+   (q/empty-model)
+   (map (fn [disease] 
+          (let [params {:disease disease}]
+            (q/union (construct-mondo-subgraph params)
+                     (construct-direct-disease-relationships params))))
+        diseases)))
+
 (defn mondo-data [diseases]
   "get subset of mondo data related to selected diseases"
-  (let [result 
-        (q/to-turtle 
-         (reduce 
-          q/union
-          (q/empty-model)
-          (map (fn [disease] 
-                 (let [params {:disease (q/resource disease)}]
-                   (q/union (construct-mondo-subgraph params)
-                            (construct-direct-disease-relationships params))))
-               diseases)))]
+  (let [selected-uncurated-diseases 
+        (q/select (str 
+                   "select ?disease where "
+                   "{ ?disease "
+                   " <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+                   " <http://purl.obolibrary.org/obo/MONDO_0000001> . "
+                   " FILTER ( ?disease NOT IN ( "
+                   (str/join ", " (map #(str "<" % ">") diseases))
+                   " ) ) } limit 3") )
+        result (q/to-turtle 
+                (q/union (construct-mondo-subgraph-of-diseases (map q/resource diseases))
+                         (construct-mondo-subgraph-of-diseases selected-uncurated-diseases)))]
+    (println "in mondo data " selected-uncurated-diseases)
     {::event/key "http://purl.obolibrary.org/obo/mondo.owl"
      ::ann/iri "http://purl.obolibrary.org/obo/mondo.owl"
      ::event/value result
-     ::ann/format :mondo}))
+     ::ann/format :mondo
+     ::random-extra-diseases (map str selected-uncurated-diseases)}))
 
 (defn base-data []
   (let [base-data (-> "test_data/base_events.edn" io/resource slurp edn/read-string)]
@@ -137,13 +152,15 @@
         all-published-curation-events (conj gv-sequence-with-update single-gv-curation)
         genes (curated-genes all-published-curation-events)
         diseases (curated-diseases all-published-curation-events)
-        hgnc-genes (hgnc-gene-data genes)]
+        hgnc-genes (hgnc-gene-data genes)
+        mondo-diseases (mondo-data diseases)]
     {:curated-genes genes
      :random-uncurated-genes (::random-extra-genes hgnc-genes)
+     :random-uncurated-diseases (::random-extra-diseases mondo-diseases)
      :curated-diseases diseases
      :base-data (base-data)
      :hgnc-genes hgnc-genes
-     :mondo-diseases (mondo-data diseases)
+     :mondo-diseases mondo-diseases
      :publish-gv-curation (event-keys single-gv-curation)
      :gene-validity-update-sequence (map event-keys gv-sequence-with-update)}))
 

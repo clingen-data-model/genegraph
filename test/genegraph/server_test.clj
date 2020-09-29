@@ -94,6 +94,29 @@
   }
 }")
 
+(def disease-query
+"query Disease($iri: String) {
+  disease(iri: $iri) {
+    label
+    iri
+    curie
+    curation_activities
+    genetic_conditions {
+      disease {
+        label
+        iri
+      }
+      gene_validity_assertions {
+        classification {
+          label
+          iri
+        }
+        report_date
+      }
+    }
+  }
+}")
+
 (defn annotate-event [event]
   (-> event
       ann/add-metadata
@@ -146,4 +169,11 @@
       (testing "Test absence of curation activities in uncurated gene"
         (let [response (query gene-query {:iri (-> events :random-uncurated-genes first)})
               body (json/parse-string (:body response) true)]
-          (is (= 0 (-> body :data :gene :curation_activities count))))))))
+          (is (= 0 (-> body :data :gene :curation_activities count)))))
+      (testing "Test absence of curation activities in uncurated disease"
+        (println "Test absence of curation activities in uncurated disease")
+        (println (:random-uncurated-diseases events))
+        (let [response (query disease-query {:iri (-> events :random-uncurated-diseases last)})
+              body (json/parse-string (:body response) true)]
+          (clojure.pprint/pprint body)
+          (is (= 0 (-> body :data :disease :curation_activities count))))))))
