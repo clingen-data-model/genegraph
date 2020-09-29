@@ -51,11 +51,14 @@
     (let [hgnc-gene (get-in (json/parse-stream r true) [:response :docs])
           entrez-ids (into #{} (map #(re-find #"\d*$" %) genes))
           selected-hgnc-genes (filter #(entrez-ids (:entrez_id %)) hgnc-gene)
-          reconstructed-hgnc-genes {:response {:docs selected-hgnc-genes}}]
+          random-extra-genes (take 3 (remove #(entrez-ids (:entrez_id %)) hgnc-gene))
+          reconstructed-hgnc-genes {:response {:docs (concat selected-hgnc-genes random-extra-genes)}}]
       {::event/key "https://www.genenames.org/"
        ::event/value (json/generate-string reconstructed-hgnc-genes)
        ::ann/iri "https://www.genenames.org/"
-       ::ann/format :hgnc-genes})))
+       ::ann/format :hgnc-genes
+       ::random-extra-genes (map #(str "https://www.ncbi.nlm.nih.gov/gene/" (:entrez_id %))
+                                 random-extra-genes)})))
 
 (def construct-mondo-subgraph
   (q/create-query 
@@ -133,11 +136,13 @@
         gv-sequence-with-update (some gene-validity-update-sequence curation-events)
         all-published-curation-events (conj gv-sequence-with-update single-gv-curation)
         genes (curated-genes all-published-curation-events)
-        diseases (curated-diseases all-published-curation-events)]
+        diseases (curated-diseases all-published-curation-events)
+        hgnc-genes (hgnc-gene-data genes)]
     {:curated-genes genes
+     :random-uncurated-genes (::random-extra-genes hgnc-genes)
      :curated-diseases diseases
      :base-data (base-data)
-     :hgnc-genes (hgnc-gene-data genes)
+     :hgnc-genes hgnc-genes
      :mondo-diseases (mondo-data diseases)
      :publish-gv-curation (event-keys single-gv-curation)
      :gene-validity-update-sequence (map event-keys gv-sequence-with-update)}))
