@@ -50,7 +50,7 @@
 
 (def genes-query
 "{
-  genes {
+  genes(curation_activity: ALL) {
     gene_list {
       label
       iri
@@ -74,6 +74,32 @@
 "query Gene($iri: String) {
   gene(iri: $iri) {
     label
+    iri
+    curie
+    hgnc_id
+    curation_activities
+    genetic_conditions {
+      disease {
+        label
+        iri
+      }
+      gene_validity_assertions {
+        classification {
+          label
+          iri
+        }
+        report_date
+      }
+    }
+  }
+}")
+
+(def disease-query
+"query Disease($iri: String) {
+  disease(iri: $iri) {
+    label
+    iri
+    curie
     curation_activities
     genetic_conditions {
       disease {
@@ -123,15 +149,12 @@
         (let [response (query genes-query {})
               body (json/parse-string (:body response) true)
               gene-set (into #{} (map :iri (->> body :data :genes :gene_list)))]
-          (is (< 0 (count gene-set)))
-           (doseq [gene (:curated-genes events)]
-             (is (gene-set gene)))))
+          (is (< 0 (count gene-set)))))
       (testing "Test gene-validity curation query"
         (let [response (query gv-assertions-query {})
               body (json/parse-string (:body response) true)]
           (is (< 0 (get-in body [:data :gene_validity_assertions :count])))))
       (testing "Test cache expiration"
-        (println (-> events :gene-validity-update-sequence first keys ))
         (let [evt-with-annotation (-> events :gene-validity-update-sequence first annotate-event )
               gene-iri (-> evt-with-annotation ::ann/subjects :gene-iris first)
               disease-iri (-> evt-with-annotation ::ann/subjects :disease-iris first)
@@ -141,9 +164,16 @@
               first-single-gene-query-response (query gene-query {:iri gene-iri})
               _ (event/process-event! (-> events :gene-validity-update-sequence second))
               second-single-gene-query-response (query gene-query {:iri gene-iri})]
-          (println "---first response---")
-          (println first-single-gene-query-response)
-          (println "---second response---")
-          (println second-single-gene-query-response)
           (is (not= first-genes-query-response second-genes-query-response))
-          (is (not= first-single-gene-query-response second-single-gene-query-response)))))))
+          (is (not= first-single-gene-query-response second-single-gene-query-response))))
+      (testing "Test absence of curation activities in uncurated gene"
+        (let [response (query gene-query {:iri (-> events :random-uncurated-genes first)})
+              body (json/parse-string (:body response) true)]
+          (is (= 0 (-> body :data :gene :curation_activities count)))))
+      (testing "Test absence of curation activities in uncurated disease"
+        (println "Test absence of curation activities in uncurated disease")
+        (println (:random-uncurated-diseases events))
+        (let [response (query disease-query {:iri (-> events :random-uncurated-diseases last)})
+              body (json/parse-string (:body response) true)]
+          (clojure.pprint/pprint body)
+          (is (= 0 (-> body :data :disease :curation_activities count))))))))
