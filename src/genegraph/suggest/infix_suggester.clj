@@ -12,6 +12,7 @@
            [java.net URI]
            [java.nio.file Paths]
            [org.apache.lucene.store FSDirectory]
+           [org.apache.lucene.analysis CharArraySet]
            [org.apache.lucene.analysis.standard StandardAnalyzer]
            [org.apache.lucene.search.suggest Lookup Lookup$LookupResult InputIterator]
            [org.apache.lucene.search.suggest.analyzing AnalyzingInfixSuggester]
@@ -20,9 +21,13 @@
 ;; API Docs for AnalyzingInfixSuggester
 ;; https://lucene.apache.org/core/7_4_0/suggest/org/apache/lucene/search/suggest/analyzing/AnalyzingInfixSuggester.html
 
+
+
 (defn create-suggester
   "Create an Lucene AnalyzingInfixSuggester with highlighting enabled"
-  ([suggester-path] (create-suggester suggester-path (StandardAnalyzer.) (StandardAnalyzer.)))
+  ([suggester-path] (create-suggester suggester-path
+                                      (StandardAnalyzer.)
+                                      (StandardAnalyzer. CharArraySet/EMPTY_SET)))
   ([suggester-path index-analyzer query-analyzer]
    (let [suggester-file (Paths/get (URI. suggester-path))
          suggester-dir (FSDirectory/open suggester-file)
