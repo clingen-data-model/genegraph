@@ -1,6 +1,6 @@
 (ns genegraph.sink.event
   (:require [genegraph.database.query :as q]
-            [genegraph.database.load :refer [load-model]]
+            [genegraph.database.load :refer [load-model remove-model]]
             [genegraph.source.graphql.common.cache :as cache]
             [genegraph.response-cache :as response-cache]
             [genegraph.database.validation :as v]
@@ -21,7 +21,9 @@
                          ::ann/add-iri-interceptor
                          ::ann/add-validation-interceptor
                          ::ann/add-subjects-interceptor
+                         ::ann/add-action-interceptor
                          ::add-to-db-interceptor
+                         ::unpublish-interceptor
                          ::suggest/update-suggesters-interceptor
                          ::cache/expire-resolver-cache-interceptor
                          ::response-cache/expire-response-cache-interceptor])
@@ -35,8 +37,7 @@
    update of the db, annotates the event with :genegraph.sink.event/added-to-db
   true or false"
   [event]
-  (let [validation-result (::ann/validation event)
-        iri  (::ann/iri event)
+  (let [iri  (::ann/iri event)
         root-type (::ann/root-type event)]
     (log/debug :fn :add-to-db! :root-type root-type :iri iri :msg :loading)
     (load-model (::q/model event) iri)
@@ -45,6 +46,17 @@
 (def add-to-db-interceptor
   "Interceptor adding stream events to the database."
   (interceptor-enter-def ::add-to-db add-to-db!))
+
+(defn unpublish
+  [event]
+  (when (= :unpublish (::ann/action event))
+    (log/info :fn ::unpublish :root-type (::ann/root-type event) :iri (::ann/iri event))
+    (remove-model (::ann/iri event)))
+  event)
+
+(def unpublish-interceptor
+  {:name ::unpublish
+   :enter unpublish})
 
 (defn process-event! [event]
   (log/debug :fn :process-event! :event event :msg :event-received)

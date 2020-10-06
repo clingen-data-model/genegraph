@@ -127,10 +127,11 @@
 
 (defn create-query-fn [server]
   (fn [request variables]
-    (response-for server
-                  :post "/graphql"
-                  :headers {"Content-Type" "application/json"}
-                  :body (json/generate-string {:query request :variables variables}))))
+    (let [response (response-for server
+                                 :post "/graphql"
+                                 :headers {"Content-Type" "application/json"}
+                                 :body (json/generate-string {:query request :variables variables}))]
+      (assoc response :json (json/parse-string (:body response) true)))))
 
 (defn get-test-events []
   (-> "test_data/test_events.edn" io/resource slurp edn/read-string))
@@ -164,6 +165,7 @@
               first-single-gene-query-response (query gene-query {:iri gene-iri})
               _ (event/process-event! (-> events :gene-validity-update-sequence second))
               second-single-gene-query-response (query gene-query {:iri gene-iri})]
+          (println gene-iri)
           (is (not= first-genes-query-response second-genes-query-response))
           (is (not= first-single-gene-query-response second-single-gene-query-response))))
       (testing "Test absence of curation activities in uncurated gene"
@@ -176,4 +178,21 @@
         (let [response (query disease-query {:iri (-> events :random-uncurated-diseases last)})
               body (json/parse-string (:body response) true)]
           (clojure.pprint/pprint body)
-          (is (= 0 (-> body :data :disease :curation_activities count))))))))
+          (is (= 0 (-> body :data :disease :curation_activities count)))))
+      (testing "Test deletion of gene-validity curation"
+        (let [gene (-> events 
+                       :gene-validity-unpublish-sequence
+                       first
+                       annotate-event
+                       ::ann/subjects
+                       :gene-iris
+                       first)]
+          (println gene)
+          (event/process-event! (first (:gene-validity-unpublish-sequence events)))
+          (is (< 0 
+                 (count (get-in (query gene-query {:iri gene}) 
+                                [:json :data :gene :genetic_conditions]))))
+          (event/process-event! (second (:gene-validity-unpublish-sequence events)))
+          (is (= 0 
+                 (count (get-in (query gene-query {:iri gene}) 
+                                [:json :data :gene :genetic_conditions])))))))))
