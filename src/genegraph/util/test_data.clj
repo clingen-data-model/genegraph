@@ -144,6 +144,13 @@
       [publish-curation
        unpublish-curation])))
 
+(defn add-gene-validity-unpublish-sequence [curation-sequence]
+  (-> curation-sequence
+      (assoc :gene-validity-unpublish-sequence 
+             (some gene-validity-unpublish-sequence
+                   (:gene-validity-stream curation-sequence)))
+      (update :curation-keys conj :gene-validity-unpublish-sequence)))
+
 (defn stream-data [stream]
   (->> (stream/topic-data stream)
        annotate-stream
@@ -186,6 +193,7 @@
 (defn construct-test-data [event-streams]
   (-> event-streams
       add-gene-validity-update-sequence
+      add-gene-validity-unpublish-sequence
       add-curated-genes
       add-curated-diseases
       add-hgnc-gene-data

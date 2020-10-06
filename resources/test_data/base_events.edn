@@ -1,0 +1,144 @@
+[{:genegraph.annotate/iri "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  :source "http://www.w3.org/1999/02/22-rdf-syntax-ns.ttl",
+  :target "rdf.ttl",
+  :genegraph.transform.core/format :turtle,
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:genegraph.annotate/iri "http://www.w3.org/2000/01/rdf-schema#"
+  :source "http://www.w3.org/2000/01/rdf-schema.ttl",
+  :target "rdf-schema.ttl",
+  :genegraph.transform.core/format :turtle,
+  :format :rdf
+  :reader-opts {:format :turtle}} 
+ {:genegraph.annotate/iri "http://www.w3.org/2011/content#"
+  :source "http://www.w3.org/2011/content.rdf",
+  :target "content.ttl",
+  :genegraph.transform.core/format :rdf-xml,
+  :format :rdf} 
+ {:genegraph.annotate/iri "http://www.w3.org/ns/sparql-service-description#"
+  :source "https://www.w3.org/ns/sparql-service-description.ttl"
+  :target "sparql-service-description.ttl"
+  :genegraph.transform.core/format :turtle,
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:genegraph.annotate/iri "https://www.w3.org/2002/07/owl"
+  :source "https://www.w3.org/2002/07/owl.ttl",
+  :target "owl.ttl",
+  :genegraph.transform.core/format :turtle,
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:genegraph.annotate/iri "http://purl.org/dc/terms/"
+  :source "https://www.dublincore.org/specifications/dublin-core/dcmi-terms/dublin_core_terms.ttl"
+  :target "dcterms.ttl",
+  :genegraph.transform.core/format :turtle,
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:genegraph.annotate/iri "http://www.w3.org/2004/02/skos/core"
+  :source "https://www.w3.org/2009/08/skos-reference/skos.rdf",
+  :target "skos.rdf",
+  :genegraph.transform.core/format :rdf-xml,
+  :format :rdf}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/so.owl"
+  :source "https://raw.githubusercontent.com/The-Sequence-Ontology/SO-Ontologies/master/Ontology_Files/so.owl",
+  :target "so.owl",
+  :genegraph.transform.core/format :rdf-xml,
+  :format :rdf}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/iao/ontology-metadata.owl"
+  :source "http://purl.obolibrary.org/obo/iao/2015-02-23/ontology-metadata.owl",
+  :target "iao.owl",
+  :genegraph.transform.core/format :rdf-xml,
+  :format :rdf}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/bfo.owl"
+  :source "http://purl.obolibrary.org/obo/bfo/2.0/bfo.owl",
+  :target "bfo.owl",
+  :genegraph.transform.core/format :rdf-xml,
+  :format :rdf}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/ro.owl"
+  :source "http://purl.obolibrary.org/obo/ro.owl",
+  :target "ro.owl",
+  :genegraph.transform.core/format :rdf-xml,
+  :format :rdf}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/geno.owl"
+  :source "https://raw.githubusercontent.com/monarch-initiative/GENO-ontology/develop/geno.owl"
+  :target "geno.owl"
+  :genegraph.transform.core/format :rdf-xml,
+  :format :rdf}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/sepio-clingen-dosage-valueset"
+  :source "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-dosage/sepio-clingen-dosage-valueset.owl"
+  :target "sepio-clingen-dosage-valueset.owl"
+  :genegraph.transform.core/format :rdf-xml,
+  :format :rdf}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/sepio-clingen-dosage.owl"
+  :source "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-dosage/sepio-clingen-dosage.owl"
+  :target "sepio-clingen-dosage.owl"
+  :genegraph.transform.core/format :rdf-xml,
+  :format :rdf}
+ {:genegraph.annotate/iri "http://dataexchange.clinicalgenome.org/models/sepio-clingen-dosage-shapes.ttl"
+  :source "https://raw.githubusercontent.com/clingen-data-model/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-dosage/sepio-clingen-dosage-shapes.ttl"
+  :target "sepio-clingen-dosage-shapes.ttl"
+  :genegraph.transform.core/format :turtle,
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:genegraph.annotate/iri "http://dataexchange.clinicalgenome.org/models/sepio-clingen-actionability-shapes.ttl"
+  :source "https://raw.githubusercontent.com/clingen-data-model/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-actionability/sepio-clingen-actionability-shapes.ttl"
+  :target "sepio-clingen-actionability-shapes.ttl"
+  :genegraph.transform.core/format :turtle,
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/sepio-valueset.owl"
+  :source "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/sepio-valueset.owl" 
+  :target "sepio-valueset.owl"
+  :genegraph.transform.core/format :rdf-xml,
+  :format :rdf}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/sepio.owl"
+  :source
+  "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/sepio.owl",
+  :target "sepio.owl",
+  :genegraph.transform.core/format :rdf-xml,
+  :format :rdf}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/sepio-clingen-acmg.owl"
+  :source "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg.owl",
+  :target "sepio-clingen-acmg.owl",
+  :genegraph.transform.core/format :rdf-xml,
+  :format :rdf}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/sepio-clingen-acmg-valueset.owl"
+  :source "https://raw.githubusercontent.com/tnavatar/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-acmg/sepio-clingen-acmg-valueset.owl",
+  :target "sepio-clingen-acmg-valueset.owl",
+  :genegraph.transform.core/format :rdf-xml,
+  :format :rdf}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/sepio-clingen-gene-validity"
+  :source "https://raw.githubusercontent.com/clingen-data-model/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-gene-validity/sepio-clingen-gene-validity.ttl"
+  :target "sepio-clingen-gene-validity.ttl"
+  :genegraph.transform.core/format :turtle,
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/sepio-clingen-gene-validity-valueset"
+  :source "https://raw.githubusercontent.com/clingen-data-model/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-gene-validity/sepio-clingen-gene-validity-valueset.ttl"
+  :target "sepio-clingen-gene-validity-valueset.ttl"
+  :genegraph.transform.core/format :turtle,
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:genegraph.annotate/iri "http://purl.obolibrary.org/obo/sepio-clingen-gene-validity-shapes"
+  :source "https://raw.githubusercontent.com/clingen-data-model/SEPIO-ontology/master/src/ontology/extensions/clingen/clingen-gene-validity/sepio-clingen-gene-validity-shapes.ttl"
+  :target "sepio-clingen-gene-validity-shapes.ttl"
+  :genegraph.transform.core/format :turtle,
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:genegraph.annotate/iri "http://dataexchange.clinicalgenome.org/terms"
+  :source "https://raw.githubusercontent.com/clingen-data-model/clingen-terms/master/clingen-terms.ttl"
+  :target "clingen-terms.ttl"
+  :genegraph.transform.core/format :turtle,
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:genegraph.annotate/iri "http://dataexchange.clinicalgenome.org/build-assembly-chr.ttl"
+  :source "https://raw.githubusercontent.com/clingen-data-model/clingen-terms/master/build-assembly-chr.ttl"
+  :target "build-assembly-chr.ttl"
+  :genegraph.transform.core/format :turtle,
+  :format :rdf
+  :reader-opts {:format :turtle}}
+ {:genegraph.annotate/iri "http://dataexchange.clinicalgenome.org/affiliations"
+  :source "https://docs.google.com/spreadsheets/d/1IF9GiP8iiFx1CndgqdWNGx4A_uM2GsWnV7GSiUO33bs/gviz/tq?tqx=out:csv&sheet=VCI%2FGCI%20Affiliations%20List"
+  :genegraph.transform.core/format :affiliations
+  :target "affiliations.csv"
+  :format :affiliations}]
+
