@@ -19,6 +19,10 @@
 
 (defn add-action [event]
   (action/add-action event))
+
+(def add-action-interceptor
+  {:name ::add-action
+   :enter add-action})
   
 (defn add-metadata [event]
   (log/debug :fn :add-metadata :event event :msg :received-event)

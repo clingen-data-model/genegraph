@@ -14,7 +14,7 @@
 
 (spec/def ::gene #(re-matches #"HGNC:\d+" %))
 
-(spec/def ::statusFlag #(#{"Released" "Released - Under Revision"} %))
+(spec/def ::statusFlag #(#{"Released" "Released - Under Revision" "Retracted"} %))
 
 (spec/def ::condition
   (spec/keys :req-un [:condition/iri ::gene]))
