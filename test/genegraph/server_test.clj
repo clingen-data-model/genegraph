@@ -23,7 +23,7 @@
   (:import [java.io PushbackReader]))
 
 (defn mount-database-fixture [f]
-  (let [data-vol (str (System/getProperty "java.io.tmpdir") (java.util.UUID/randomUUID))]
+  (let [data-vol (str (System/getProperty "java.io.tmpdir") "/" (java.util.UUID/randomUUID))]
     (fs/mkdir data-vol)
     (mount/stop)
     (with-test-database

@@ -1,5 +1,6 @@
 (ns genegraph.annotate
-  (:require [genegraph.database.query :as q]
+  (:require [genegraph.annotate.action :as action]
+            [genegraph.database.query :as q]
             [genegraph.database.validation :as validate]
             [genegraph.database.util :as util :refer [tx]]
             [genegraph.env :as env]
@@ -15,6 +16,9 @@
 
 (def formats (-> "formats.edn" io/resource slurp edn/read-string))
 (def shapes (-> "shapes.edn" io/resource slurp edn/read-string))
+
+(defn add-action [event]
+  (action/add-action event))
   
 (defn add-metadata [event]
   (log/debug :fn :add-metadata :event event :msg :received-event)
@@ -88,7 +92,6 @@
   [event genes diseases]
   (let [gene-iris (mapv #(str %) genes)
          disease-iris (mapv #(str %) diseases)]
-    (println "adding subjects to " (::iri event) " genes " gene-iris " diseases " disease-iris)
     (assoc event ::subjects {:gene-iris gene-iris :disease-iris disease-iris})))
 
 (defmulti add-subjects ::root-type)

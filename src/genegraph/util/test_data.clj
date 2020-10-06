@@ -29,6 +29,7 @@
        (map ann/add-iri)
        (map ann/add-validation)       
        (map ann/add-subjects)
+       (map ann/add-action)
        (map add-parsed-json)))
 
 (defn top-curations-with-updates 
@@ -138,8 +139,15 @@
           [first-published-curation
            second-published-curation])))))
 
-(defn is-gene-validity-unpublish-sequence []
-  ())
+
+
+
+(defn gene-validity-unpublish-sequence [curation-sequence]
+  (let [publish-curation (first (filter #(= :publish (::ann/action %)) curation-sequence))
+        unpublish-curation (first (filter #(= :unpublish (::ann/action %)) curation-sequence))]
+    (when (and publish-curation unpublish-curation)
+      [publish-curation
+       unpublish-curation])))
 
 (defn is-gene-validity-invalid []
   ())
