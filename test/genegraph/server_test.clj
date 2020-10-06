@@ -23,7 +23,7 @@
   (:import [java.io PushbackReader]))
 
 (defn mount-database-fixture [f]
-  (let [data-vol (str (System/getProperty "java.io.tmpdir") (java.util.UUID/randomUUID))]
+  (let [data-vol (str (System/getProperty "java.io.tmpdir") "/" (java.util.UUID/randomUUID))]
     (fs/mkdir data-vol)
     (mount/stop)
     (with-test-database
@@ -50,7 +50,7 @@
 
 (def genes-query
 "{
-  genes(curation_activity: ALL) {
+  genes {
     gene_list {
       label
       iri
@@ -144,16 +144,16 @@
         (event/process-event! base-event))
       (event/process-event! (:hgnc-genes events))
       (event/process-event! (:mondo-diseases events))
-      (event/process-event! (:publish-gv-curation events))
+      ;; (event/process-event! (:publish-gv-curation events))
       (testing "Test simple genes query"
         (let [response (query genes-query {})
               body (json/parse-string (:body response) true)
               gene-set (into #{} (map :iri (->> body :data :genes :gene_list)))]
           (is (< 0 (count gene-set)))))
-      (testing "Test gene-validity curation query"
-        (let [response (query gv-assertions-query {})
-              body (json/parse-string (:body response) true)]
-          (is (< 0 (get-in body [:data :gene_validity_assertions :count])))))
+      ;; (testing "Test gene-validity curation query"
+      ;;   (let [response (query gv-assertions-query {})
+      ;;         body (json/parse-string (:body response) true)]
+      ;;     (is (< 0 (get-in body [:data :gene_validity_assertions :count])))))
       (testing "Test cache expiration"
         (let [evt-with-annotation (-> events :gene-validity-update-sequence first annotate-event )
               gene-iri (-> evt-with-annotation ::ann/subjects :gene-iris first)
