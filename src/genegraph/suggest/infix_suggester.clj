@@ -1,5 +1,6 @@
 (ns genegraph.suggest.infix-suggester
-  (:require [mount.core :as mount :refer [defstate]]
+  (:require [clojure.string :as str]
+            [mount.core :as mount :refer [defstate]]
             [genegraph.env :as env]
             [genegraph.database.instance :refer [db]]
             [genegraph.database.query :as q]
@@ -80,7 +81,7 @@
   (let [serialized-contexts (if (> 0 (count contexts))
                               (into #{} (map #(-> % serder/serialize BytesRef.) contexts))
                               #{})]
-    (.lookup suggester text serialized-contexts num true true)))
+    (sort-by str/lower-case (.lookup suggester text serialized-contexts num true true))))
 
 (defn update-suggestion [suggester text payload contexts weight]
   "Update terms and payloads in a suggester index"

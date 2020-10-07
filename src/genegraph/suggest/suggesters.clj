@@ -28,7 +28,7 @@
         label (label disease)
         curie (q/curie disease)
         curations (curation/activities {:disease disease})
-        weight (count curations)
+        weight 0 ;; (count curations)
         payload {:type :DISEASE
                  :iri iri
                  :label label
@@ -50,7 +50,7 @@
         curie (q/curie gene)
         alt-curie (hgnc-curie gene)
         curations (curation/activities {:gene gene})
-        weight (count curations)
+        weight 0 ;; (count curations)
         payload {:type :GENE
                  :iri iri
                  :label label
@@ -118,9 +118,10 @@
   (let [map (get (suggesters-map) key)
         suggester (get @suggesters key)
         query (:query map)
-        payload-fn (:payload map)]
+        payload-fn (:payload map)
+        rows (query)]
     (suggest/initialize suggester)
-    (doseq [row (query)]
+    (doseq [row rows]
       (let [payload (payload-fn row)]
         (suggest/add-to-suggestions suggester
                                     (:label payload)
