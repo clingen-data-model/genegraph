@@ -16,17 +16,7 @@
             [io.pedestal.interceptor.chain :as chain]
             [io.pedestal.log :as log]))
 
-(def interceptor-chain '[::ann/add-metadata-interceptor
-                         ::ann/add-model-interceptor
-                         ::ann/add-iri-interceptor
-                         ::ann/add-validation-interceptor
-                         ::ann/add-subjects-interceptor
-                         ::ann/add-action-interceptor
-                         ::add-to-db-interceptor
-                         ::unpublish-interceptor
-                         ::suggest/update-suggesters-interceptor
-                         ::cache/expire-resolver-cache-interceptor
-                         ::response-cache/expire-response-cache-interceptor])
+
 
 (def context (atom {}))
 
@@ -39,9 +29,10 @@
   [event]
   (let [iri  (::ann/iri event)
         root-type (::ann/root-type event)]
-    (log/debug :fn :add-to-db! :root-type root-type :iri iri :msg :loading)
-    (load-model (::q/model event) iri)
-    event))
+    (when (= :publish (::ann/action event))
+      (log/debug :fn :add-to-db! :root-type root-type :iri iri :msg :loading)
+      (load-model (::q/model event) iri)))
+  event)
 
 (def add-to-db-interceptor
   "Interceptor adding stream events to the database."
@@ -58,12 +49,21 @@
   {:name ::unpublish
    :enter unpublish})
 
+(def interceptor-chain [ann/add-metadata-interceptor
+                        ann/add-model-interceptor
+                        ann/add-iri-interceptor
+                        ann/add-validation-interceptor
+                        ann/add-subjects-interceptor
+                        ann/add-action-interceptor
+                        add-to-db-interceptor
+                        unpublish-interceptor
+                        suggest/update-suggesters-interceptor
+                        cache/expire-resolver-cache-interceptor
+                        response-cache/expire-response-cache-interceptor])
+
 (defn process-event! [event]
   (log/debug :fn :process-event! :event event :msg :event-received)
-  (swap! context #(merge % event))
-  (chain/execute @context))
-
-(defstate interceptor-context
-  :start (reset! context (chain/enqueue @context
-                                        (map #(intercept/interceptor (symbol %))
-                                             interceptor-chain))))
+  (-> event 
+      (chain/enqueue (map #(intercept/interceptor %)
+        interceptor-chain))
+      chain/execute))

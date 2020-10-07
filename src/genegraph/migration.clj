@@ -50,7 +50,6 @@
     (base/initialize-db!)
     (start #'suggest/suggestions)
     (suggest/build-all-suggestions)
-    (start #'event/interceptor-context)
     (batch/process-batched-events!)
     (start #'stream/consumer-thread)
     (log/debug :fn :build-database :msg "Starting streams...")
@@ -67,7 +66,6 @@
     (warm-resolver-cache)
     (stop #'cache/resolver-cache-db)
     (stop #'suggest/suggestions)
-    (stop #'event/interceptor-context)
     (stop #'db/db)))
 
 (defn compress-database
