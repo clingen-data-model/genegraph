@@ -119,8 +119,11 @@
   (if-let [gv-prop (first (q/select "select ?s where { ?s a :sepio/GeneValidityProposition }" {}
                                     (::q/model event)))]
     (let [genes (q/ld-> gv-prop [:sepio/has-subject])
-          diseases (q/ld-> gv-prop [:sepio/has-object])]
-      (add-subjects-to-event event genes diseases))
+          diseases (q/ld-> gv-prop [:sepio/has-object])
+          modes-of-inheritance (q/ld-> gv-prop [:sepio/has-qualifier])]
+      (assoc event ::subjects {:gene-iris (mapv str genes)
+                               :disease-iris (mapv str diseases)
+                               :moi-iris (mapv str modes-of-inheritance)}))
     event))
 
 (defmethod add-subjects :default [event]
