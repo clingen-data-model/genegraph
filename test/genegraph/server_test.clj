@@ -195,4 +195,33 @@
           (event/process-event! (second (:gene-validity-unpublish-sequence events)))
           (is (= 0 
                  (count (get-in (query gene-query {:iri gene}) 
-                                [:json :data :gene :genetic_conditions])))))))))
+                                [:json :data :gene :genetic_conditions]))))))
+      (testing "Test gci-express update sequence"
+        (let [gene (-> events 
+                       :gci-express-update-sequence
+                       first
+                       annotate-event
+                       ::ann/subjects
+                       :gene-iris
+                       first)]
+          (println gene)
+          (is (= 0 (count (get-in (query gene-query {:iri gene}) 
+                                  [:json :data :gene :genetic_conditions]))))
+          (event/process-event! (first (:gci-express-update-sequence events)))
+          (is (= 1 
+                 (count (:gene_validity_assertions
+                         (first 
+                          (get-in (query gene-query {:iri gene}) 
+                                  [:json
+                                   :data
+                                   :gene
+                                   :genetic_conditions]))))))
+          (event/process-event! (second (:gci-express-update-sequence events)))
+          (is (= 1 
+                 (count (:gene_validity_assertions
+                         (first 
+                          (get-in (query gene-query {:iri gene}) 
+                                  [:json
+                                   :data
+                                   :gene
+                                   :genetic_conditions])))))))))))

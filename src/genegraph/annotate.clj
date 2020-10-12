@@ -1,5 +1,6 @@
 (ns genegraph.annotate
   (:require [genegraph.annotate.action :as action]
+            [genegraph.annotate.replaces :as replaces]
             [genegraph.database.query :as q]
             [genegraph.database.validation :as validate]
             [genegraph.database.util :as util :refer [tx]]
@@ -134,3 +135,10 @@
   "Interceptor adding a subject annotation (gene/disease iris) to stream events"
   (interceptor-enter-def ::add-subjects add-subjects))
 
+(defn add-replaces [event]
+  (replaces/add-replaces event))
+
+(def add-replaces-interceptor
+  "Interceptor checking to see if an incoming curation should replace any existing records"
+  {:name ::add-replaces-interceptor
+   :enter add-replaces})

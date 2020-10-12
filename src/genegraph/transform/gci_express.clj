@@ -80,7 +80,8 @@
     (concat [[iri :rdf/type :sepio/GeneValidityReport] 
              [iri :rdfs/label (:title content)]
              [iri :bfo/has-part content-id]
-             [iri :bfo/has-part assertion-id]]
+             [iri :bfo/has-part assertion-id]
+             [iri :dc/source :cg/GeneCurationExpress]]
             (evidence-level-assertion content assertion-id id)
             (json-content-node content content-id))))
 
@@ -94,4 +95,4 @@
   (assoc event
          :genegraph.database.query/model
          (l/statements-to-model (gci-express-report-to-triples
-                                 (json/parse-string (:genegraph.sink.event/value event))))))
+                                 (:genegraph.sink.event/value event)))))

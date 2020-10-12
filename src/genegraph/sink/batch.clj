@@ -6,10 +6,14 @@
             [clojure.java.io :as io]
             [me.raynes.fs :as fs]
             [clojure.java.shell :refer [sh]]
-            [io.pedestal.log :as log])
+            [io.pedestal.log :as log]
+            [cheshire.core :as json])
   (:import (java.io PushbackReader File)))
 
 (def batch-events "batch-events.edn")
+
+(defn target-path [filename]
+  (str env/data-vol "/events/" filename))
 
 (defn process-directory! 
   "Read and integrate a directory full of event records"
@@ -22,18 +26,34 @@
         (log/debug :fn :process-directory! :msg (str "processing: " f))
         (event/process-event! (edn/read pushback-rdr))))))
 
+(defn process-compressed-event-file!
+  "process a tarball containing multiple gzipped events"
+  [descriptor]
+  (let [batch-dir (target-path (:name descriptor))
+        archive-path (str batch-dir ".tar.gz")]
+    (log/debug :fn :process-batched-events! :msg (:name descriptor))
+    (fs/mkdirs batch-dir)
+    (gcs/get-file-from-bucket! (:source descriptor) archive-path)
+    (sh "tar" "-xzf" archive-path "-C" batch-dir)
+    (process-directory! batch-dir)))
+
+
+(defn process-json-event-sequence!
+  "read and process a json file with a sequence of event records"
+  [descriptor]
+  (let [path (target-path (:name descriptor))]
+    (gcs/get-file-from-bucket! (:source descriptor) path)
+    (with-open [r (io/reader path)]
+      (doseq [curation (json/parse-stream r true)]
+        (event/process-event! {:genegraph.annotate/format (:format descriptor)
+                               ::event/value curation})))))
+
 (defn process-batched-events! 
   "Should be run during database initialization. Download and read events stored in batch format into database."
   []
-  (let [target-dir (str env/data-vol "/events/")
-        batches (-> batch-events io/resource slurp edn/read-string)]
-    (doseq [batch batches]
-      (let [batch-dir (str target-dir (:name batch)) 
-            archive-path (str batch-dir ".tar.gz")]
-        (log/debug :fn :process-batched-events! :msg (:name batch))
-        (fs/mkdirs batch-dir)
-        (gcs/get-file-from-bucket! (:source batch) archive-path)
-        (sh "tar" "-xzf" archive-path "-C" batch-dir)
-        (process-directory! batch-dir)))))
+  (doseq [descriptor (-> batch-events io/resource slurp edn/read-string)]
+    (case (:type descriptor)
+      :compressed-event-files (process-compressed-event-file! descriptor)
+      :json-event-sequence (process-json-event-sequence! descriptor))))
 
 
