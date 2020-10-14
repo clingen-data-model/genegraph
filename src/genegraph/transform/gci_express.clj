@@ -1,7 +1,7 @@
 (ns genegraph.transform.gci-express
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q :refer [resource]]
-            [genegraph.transform.core :refer [transform-doc src-path]]
+            [genegraph.transform.core :refer [transform-doc src-path add-model]]
             [cheshire.core :as json]))
 
 (def gci-express-root "http://dataexchange.clinicalgenome.org/gci-express/")
@@ -80,7 +80,8 @@
     (concat [[iri :rdf/type :sepio/GeneValidityReport] 
              [iri :rdfs/label (:title content)]
              [iri :bfo/has-part content-id]
-             [iri :bfo/has-part assertion-id]]
+             [iri :bfo/has-part assertion-id]
+             [iri :dc/source :cg/GeneCurationExpress]]
             (evidence-level-assertion content assertion-id id)
             (json-content-node content content-id))))
 
@@ -88,3 +89,10 @@
   (let [raw-report (or (:document doc-def) (slurp (src-path doc-def)))
         report-json (json/parse-string raw-report true)]
     (l/statements-to-model (mapcat gci-express-report-to-triples report-json))))
+
+
+(defmethod add-model :gci-express [event]
+  (assoc event
+         :genegraph.database.query/model
+         (l/statements-to-model (gci-express-report-to-triples
+                                 (:genegraph.sink.event/value event)))))

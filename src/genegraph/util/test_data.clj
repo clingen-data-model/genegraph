@@ -9,6 +9,7 @@
             [clojure.java.io :as io]
             [genegraph.annotate :as ann]
             [genegraph.sink.base :as base]
+            [genegraph.sink.batch :as batch]
             [genegraph.database.query :as q]
             [genegraph.database.load :as l]
             [clojure.edn :as edn]
@@ -20,7 +21,9 @@
    :gene-validity])
 
 (defn add-parsed-json [curation]
-  (assoc curation ::json (json/parse-string (::event/value curation) true)))
+  (if (= :gci-legacy (:genegraph.transform.core/format curation))
+    (assoc curation ::json (json/parse-string (::event/value curation) true))
+    curation))
 
 (defn annotate-stream [stream]
   (->> stream
@@ -131,10 +134,11 @@
 
 
 (defn add-gene-validity-update-sequence [curation-sequence]
-  (merge curation-sequence
-         {:gene-validity-update-sequence (some gene-validity-update-sequence 
-                                               (:gene-validity-stream curation-sequence))
-          :curation-keys (conj (:curation-keys curation-sequence) :gene-validity-update-sequence)}))
+  (-> curation-sequence
+      (assoc :gene-validity-update-sequence 
+             (some gene-validity-update-sequence 
+                   (:gene-validity-stream curation-sequence)))
+      (update :curation-keys conj :gene-validity-update-sequence)))
 
 
 (defn gene-validity-unpublish-sequence [curation-sequence]
@@ -150,6 +154,8 @@
              (some gene-validity-unpublish-sequence
                    (:gene-validity-stream curation-sequence)))
       (update :curation-keys conj :gene-validity-unpublish-sequence)))
+
+
 
 (defn stream-data [stream]
   (->> (stream/topic-data stream)
@@ -190,10 +196,23 @@
           curation-events
           (:curation-keys curation-events)))
 
+(defn add-gci-express-update-sequence [curation-events]
+  (let [gci-express-by-subjects (reduce #(assoc %1 (::ann/subjects %2) %2)
+                                        {}
+                                        (:gci-express-data curation-events))
+        gci-update-of-gci-express (first (filter #(get gci-express-by-subjects (::ann/subjects %))
+                                                 (flatten (:gene-validity-stream curation-events))))]
+    (-> curation-events 
+        (assoc :gci-express-update-sequence
+               [(get gci-express-by-subjects  (::ann/subjects gci-update-of-gci-express))
+                gci-update-of-gci-express])
+        (update :curation-keys conj :gci-express-update-sequence))))
+
 (defn construct-test-data [event-streams]
   (-> event-streams
       add-gene-validity-update-sequence
       add-gene-validity-unpublish-sequence
+      add-gci-express-update-sequence
       add-curated-genes
       add-curated-diseases
       add-hgnc-gene-data
@@ -208,8 +227,21 @@
     (binding [*out* w]
       (pr event-sequence))))
 
+(defn construct-gci-express-data []
+  (annotate-stream
+   (map (fn [curation]
+          {::event/value curation
+           ::ann/format :gci-express})
+        (-> (batch/target-path "/gci-express-json") 
+            slurp
+            (json/parse-string true)))))
+
 (defn write-test-data [target-file]
-  (-> {:gene-validity-stream (stream-data :gene-validity)}
+  (-> {:gene-validity-stream (stream-data :gene-validity)
+       :gci-express-data (construct-gci-express-data)}
        construct-test-data
-       (dissoc :gene-validity-stream)
+       (dissoc :gene-validity-stream :gci-express-data)
        (write-event-sequence target-file)))
+
+(defn get-test-events []
+  (-> "test_data/test_events.edn" io/resource slurp edn/read-string))

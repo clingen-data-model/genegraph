@@ -49,14 +49,27 @@
   {:name ::unpublish
    :enter unpublish})
 
+(defn replace-curation
+  [event]
+  (when (::ann/replaces event)
+    (log/info :fn ::replace :root-type (::ann/root-type event) :iri (str (::ann/replaces event)))
+    (remove-model (str (::ann/replaces event))))
+  event)
+
+(def replace-interceptor
+  {:name ::replace
+   :enter replace-curation})
+
 (def interceptor-chain [ann/add-metadata-interceptor
                         ann/add-model-interceptor
                         ann/add-iri-interceptor
                         ann/add-validation-interceptor
                         ann/add-subjects-interceptor
                         ann/add-action-interceptor
+                        ann/add-replaces-interceptor
                         add-to-db-interceptor
                         unpublish-interceptor
+                        replace-interceptor
                         suggest/update-suggesters-interceptor
                         cache/expire-resolver-cache-interceptor
                         response-cache/expire-response-cache-interceptor])
