@@ -23,7 +23,7 @@
         '[dosage_report :bfo/has-part dosage_assertion]
         '[dosage_assertion :sepio/has-subject dosage_proposition]
         '[dosage_proposition :sepio/has-object omim_disease]
-        '[disease :owl/equivalent-class omim_disease]
+        '[disease :skos/has-exact-match omim_disease]
         ;; label filter included to remove non-mondo diseases
         ;; bit of a hack; should probably restructure dosage import to use mondo
         ;; condition instead of OMIM
