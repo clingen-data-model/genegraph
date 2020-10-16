@@ -37,9 +37,7 @@
 (def pattern-curation-activities
   [[gene-validity-bgp :GENE_VALIDITY]
    [actionability-bgp :ACTIONABILITY]
-   [gene-dosage-disease-bgp :GENE_DOSAGE] ;; omitting due to poor performance
-   ;;[gene-dosage-bgp :GENE_DOSAGE]
-   ])
+   [gene-dosage-bgp :GENE_DOSAGE]])
 
 (def test-resource-for-activity
   (map (fn [[pattern activity]]
@@ -53,6 +51,24 @@
               acc))
           #{}
           test-resource-for-activity))
+
+(def pattern-disease-curation-activities
+  [[gene-validity-bgp :GENE_VALIDITY]
+   [actionability-bgp :ACTIONABILITY]
+   [gene-dosage-disease-bgp :GENE_DOSAGE]])
+
+(def test-disease-for-activity
+  (map (fn [[pattern activity]]
+         [(create-query (cons :bgp pattern) {::q/type :ask}) activity])
+       pattern-disease-curation-activities))
+
+(defn disease-activities [query-params]
+  (reduce (fn [acc [test activity]] 
+            (if (test query-params) 
+              (conj acc activity)
+              acc))
+          #{}
+          test-disease-for-activity))
 
 (def union-of-all-curations
   (cons :union (map #(cons :bgp %) curation-bgps)))

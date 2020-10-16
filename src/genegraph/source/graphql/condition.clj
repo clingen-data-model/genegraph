@@ -47,7 +47,7 @@
     (->> curation-dates sort last)))
 
 (defresolver ^:expire-by-value curation-activities [args value]
-  (curation/activities {:disease value}))
+  (curation/disease-activities {:disease value}))
 
 
 ;; DEPRECATED
