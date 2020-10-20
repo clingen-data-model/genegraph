@@ -109,6 +109,7 @@
   "Returns true if all partitions of all topics subscribed to have had messages
   consumed up to the latest offset when the consumer was started."
   []
+  (log/debug :fn :up-to-date? :current-offsets @current-offsets :end-offsets @end-offsets)
   (when (= (set (keys @current-offsets)) (set (keys @end-offsets)))
     (let [partition-is-up-to-date? (merge-with <= @end-offsets @current-offsets)]
       (if (some false? (vals partition-is-up-to-date?))
