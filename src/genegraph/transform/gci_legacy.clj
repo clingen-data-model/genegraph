@@ -62,7 +62,7 @@
                                      (-> report :scoreJson :summary :FinalClassification))]
              [iri :sepio/qualified-contribution contribution-iri]
              [iri :sepio/is-specified-by (gci-sop-version (or (:selectedSOPVersion report)
-                                                              (gci-sop-version (:sopVersion report))))]
+                                                              (:sopVersion report)))]
              [iri :dc/has-format (gci-sop-version (:sopVersion report))]]
             (validity-proposition report prop-iri)
              (contribution report contribution-iri)
