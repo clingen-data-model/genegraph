@@ -5,6 +5,7 @@
       iri
       curie
       label
+      has_format	
       legacy_json
       report_date
       attributed_to {

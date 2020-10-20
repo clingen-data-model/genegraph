@@ -446,6 +446,9 @@
       :specified_by {:type :Criteria
                      :description "Criteria used by the curators to create the gene validity assertion"
                      :resolve :gene-validity/specified-by}
+      :has_format {:type String
+                   :description "Format of the Legacy JSON from the GCI."
+                   :resolve :gene-validity/has-format}
       :legacy_json {:type String
                     :description "Legacy JSON from the GCI."
                     :resolve :gene-validity/legacy-json}}}
