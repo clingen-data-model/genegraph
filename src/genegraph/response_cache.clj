@@ -48,5 +48,6 @@
   (mount/start #'cache-store))
 
 (def expire-response-cache-interceptor
+  "Interceptor for expiring cached http responses."
   {:name ::expire-response-cache
    :enter (fn [event] (clear-response-cache!) event)})
