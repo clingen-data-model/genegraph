@@ -396,6 +396,9 @@
 (defn- assertion-iri [curation dosage]
   (str cg-prefix (:key curation) "x" dosage "-" (updated-date curation)))
 
+(defn- proposition-iri [curation dosage]
+  (str cg-prefix (:key curation) "x" dosage))
+
 (def evidence-field-map
   {1 [[:customfield-10183 :customfield-10184]
       [:customfield-10185 :customfield-10186]
@@ -422,15 +425,31 @@
                  ]))
             findings)))
 
+(defn- construct-proposition
+  "Return proposition object from interpretation"
+  [interp dosage]
+  (let [result {:id (str cg-prefix (:key interp) "x" dosage)
+                 :has-subject (construct-gene-dosage-variant interp dosage)
+                 :has-predicate (proposition-predicate interp dosage)
+                 :type "SEPIO:0002003"}]
+    (-> result 
+        (merge (get-dosage-dependent-fields interp dosage proposition-fields))       
+        substitute-genetic-condition)))
+
+(defn- proposition [curation dosage]
+  (let [iri (proposition-iri curation dosage)])
+  (concat [[iri :sepio/has-subject]]))
+
 (defn- common-assertion-fields
   [iri curation dosage]
   (concat [[iri :sepio/is-specified-by :sepio/DosageSensitivityEvaluationGuideline]
-           [iri :sepio/qualified-contribution (contribution-iri curation)]]
+           [iri :sepio/qualified-contribution (contribution-iri curation)]
+           [iri :sepio/has-subject (proposition-iri curation dosage)]]
           (case dosage
             1 [[iri :sepio/has-object (get-in curation [:fields :customfield-10165 :value])]
-               [iri :dc/description (get-in curation [:fields :customfield-10198] "")]]
+               [iri :dc/description (or (get-in curation [:fields :customfield-10198]) "")]]
             3 [[iri :sepio/has-object (get-in curation [:fields :customfield-10166 :value])]
-               [iri :dc/description (get-in curation [:fields :customfield-10199] "")]])
+               [iri :dc/description (or (get-in curation [:fields :customfield-10199]) "")]])
           (study-findings iri curation dosage)
           ;; add proposition (:sepio/has-subject)
           ))
@@ -467,9 +486,9 @@
             )))
 
 (defn interpretation-to-sepio [jira-issue]
-  (clojure.pprint/pprint   (-> jira-issue
-                               (json/parse-string ->kebab-case-keyword)
-                               gene-dosage-report))
+  ;; (clojure.pprint/pprint   (-> jira-issue
+  ;;                              (json/parse-string ->kebab-case-keyword)
+  ;;                              gene-dosage-report))
   (-> jira-issue
       (json/parse-string ->kebab-case-keyword)
       gene-dosage-report))
