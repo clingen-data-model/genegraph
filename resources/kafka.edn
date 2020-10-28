@@ -30,6 +30,10 @@
                                 :reader-opts {:format :json-ld}
                                 :root-type :sepio/GeneDosageReport
                                 :cluster :dx-stage}
+            :gene-dosage-jira {:name "gene_dosage_raw"
+                                :format :gene-dosage-jira
+                                :root-type :sepio/GeneDosageReport
+                                :cluster :dx-stage}
             :gene-validity  {:format :gene-validity-v1
                              :name "gene_validity"
                              :root-type :sepio/GeneValidityReport

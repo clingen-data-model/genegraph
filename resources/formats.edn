@@ -7,6 +7,9 @@
  :gene-dosage-stage {:genegraph.transform.core/format :json-ld
                      :genegraph.annotate/root-type :sepio/GeneDosageReport
                      :genegraph.annotate/graph-name :sepio/GeneDosageReport}
+ :gene-dosage-raw {:genegraph.transform.core/format :gene-dosage-jira
+                   :genegraph.annotate/root-type :sepio/GeneDosageReport
+                   :genegraph.annotate/graph-name :sepio/GeneDosageReport}
  :gene-validity  {:genegraph.transform.core/format :gci-legacy
                   :genegraph.annotate/root-type :sepio/GeneValidityReport
                   :genegraph.annotate/graph-name :sepio/GeneValidityProposition}

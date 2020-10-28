@@ -65,6 +65,7 @@
  [:sepio/ActionabilityReport "http://purl.obolibrary.org/obo/SEPIO_0003010"]
  [:sepio/GeneValidityReport "http://purl.obolibrary.org/obo/SEPIO_0004004"]
  [:sepio/ApproverRole "http://purl.obolibrary.org/obo/SEPIO_0000155"]
+ [:sepio/InterpreterRole "http://purl.obolibrary.org/obo/SEPIO_0000331"]
  [:sepio/GeneticCondition "http://purl.obolibrary.org/obo/SEPIO_0000219"]
  [:sepio/EvidenceRole "http://purl.obolibrary.org/obo/SEPIO_0000148"]
  [:cg/DomainModel "http://dataexchange.clinicalgenome.org/terms/DomainModel"]

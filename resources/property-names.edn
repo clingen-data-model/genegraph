@@ -379,6 +379,8 @@
  [:geno/has-quantifier "http://purl.obolibrary.org/obo/GENO_0000866"]
  [:geno/has-reference-part
   "http://purl.obolibrary.org/obo/GENO_0000385"]
+ [:geno/has-reference-sequence
+  "http://purl.obolibrary.org/obo/GENO_0000967"]
  [:geno/has-sequence "http://purl.obolibrary.org/obo/GENO_0000239"]
  [:geno/has-sequence-attribute
   "http://purl.obolibrary.org/obo/GENO_0000207"]
