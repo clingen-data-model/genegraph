@@ -1,0 +1,28 @@
+# Cloud Build configuration for Genegraph
+# 
+# Command line test usage:
+# gcloud builds submit --project=clingen-stage --config ./cloudbuild.yaml \
+#  --substitutions=COMMIT_SHA="testbuild" .
+
+# Builds genegraph and tags for both stage and prod image repositories
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '.', '-t', 'genegraph:$COMMIT_SHA']
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'tag', 'genegraph:testbuild', 'gcr.io/clingen-stage/genegraph:$COMMIT_SHA']
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'tag', 'genegraph:testbuild', 'gcr.io/clingen-dx/genegraph:$COMMIT_SHA']
+  
+# sync genegraph-stage and genegraph-prod migration buckets
+- name: 'gcr.io/cloud-builders/gsutil'
+  args: [ '-m', 'rsync', '-dru', 'gs://genegraph-stage/', 'gs://genegraph-prod' ]
+
+# push the images
+images:
+  - 'gcr.io/clingen-stage/genegraph:$COMMIT_SHA'
+  - 'gcr.io/clingen-dx/genegraph:$COMMIT_SHA'
+
+# timeout if not complete in 30 minutes
+timeout: 1800s
+
+  
