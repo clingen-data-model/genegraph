@@ -7,7 +7,8 @@
             [clojure.edn :as edn]
             [io.pedestal.log :as log]
             [clojure.string :as s]
-            [clojure.walk :refer [postwalk]])
+            [clojure.walk :refer [postwalk]]
+            [taoensso.nippy :as nippy])
   (:import java.util.Properties
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
             ConsumerRecords]
@@ -153,15 +154,20 @@
                                    (recur (concat records addl-records)))))]
         (mapv #(consumer-record-to-clj % topic) consumer-records)))))
 
-(defn topic-data-to-disk [topic dest]
-  (doseq [record (topic-data topic)]
-    (let [file-name (str (::topic record) "_" (::partition record) "_" (::offset record) ".edn")]
-      (println file-name)
-      (with-open [w (io/writer (str dest "/" file-name))]
-        (println (str dest "/" file-name))
-        (binding [*print-length* false
-                  *out* w]
-          (pr record))))))
+(defn topic-data-to-disk 
+  "Read topic data to disk. Assumes single partition topic."
+  [topic dest]
+  (with-open [c (consumer-for-topic topic)]
+    (let [tps (topic-partitions c topic)
+          end (-> (.endOffsets c tps) first val)]
+      (.assign c tps)
+      (.seekToBeginning c tps)
+      (loop [records (poll-once c)]
+        (doseq [r records]
+          (with-open [w (io/output-stream (str dest "/" (name topic) "-" (.offset r)))]
+            (.write w (nippy/freeze (consumer-record-to-clj r topic)))))
+        (when (< (.position c (first tps)) end)
+          (recur (poll-once c)))))))
 
 
 
