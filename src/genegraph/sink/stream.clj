@@ -8,7 +8,8 @@
             [io.pedestal.log :as log]
             [clojure.string :as s]
             [clojure.walk :refer [postwalk]]
-            [taoensso.nippy :as nippy])
+            [taoensso.nippy :as nippy]
+            [genegraph.rocksdb :as rocksdb])
   (:import java.util.Properties
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
             ConsumerRecords]
@@ -56,7 +57,7 @@
     (map #(TopicPartition. (.topic %) (.partition %)) partition-infos)))
 
 (defn- poll-once 
-  ([c] (-> c (.poll (Duration/ofMillis 100)) .iterator iterator-seq)))
+  ([c] (-> c (.poll (Duration/ofMillis 500)) .iterator iterator-seq)))
 
 (defn- consumer-for-topic [topic]
   (let [cluster-key (-> config :topics topic :cluster)]
@@ -142,17 +143,36 @@
 (defn long-poll [c]
   (-> c (.poll (Duration/ofMillis 2000)) .iterator iterator-seq))
 
-(defn topic-data [topic]
-  (with-open [c (consumer-for-topic topic)]
-    (let [tp (topic-partitions c topic)]
-      (.assign c tp)
-      (.seekToBeginning c tp)
-      (let [consumer-records (loop [records (long-poll c)]
-                               (let [addl-records (long-poll c)]
-                                 (if-not (seq addl-records)
-                                   records
-                                   (recur (concat records addl-records)))))]
-        (mapv #(consumer-record-to-clj % topic) consumer-records)))))
+;; (defn topic-data [topic]
+;;   (with-open [c (consumer-for-topic topic)]
+;;     (let [tp (topic-partitions c topic)]
+;;       (.assign c tp)
+;;       (.seekToBeginning c tp)
+;;       (let [consumer-records (loop [records (long-poll c)]
+;;                                (let [addl-records (long-poll c)]
+;;                                  (if-not (seq addl-records)
+;;                                    records
+;;                                    (recur (concat records addl-records)))))]
+;;         (mapv #(consumer-record-to-clj % topic) consumer-records)))))
+
+(defn topic-data
+  "Read topic data to disk. Assumes single partition topic."
+  ([topic]
+   (topic-data topic nil))
+  ([topic max-records]
+   (with-open [c (consumer-for-topic topic)]
+     (let [tps (topic-partitions c topic)
+           _ (.assign c tps)
+           _ (.seekToBeginning c tps)
+           end (if max-records
+                 (+ max-records (.position c (first tps)))
+                 (-> (.endOffsets c tps) first val))]
+       (->> (loop [records (poll-once c)]
+              (println (.position c (first tps)) "/" end)
+              (if (< (.position c (first tps)) end)
+                (recur (concat records (poll-once c)))
+                records))
+            (mapv #(consumer-record-to-clj % topic)))))))
 
 (defn topic-data-to-disk 
   "Read topic data to disk. Assumes single partition topic."
@@ -168,6 +188,29 @@
             (.write w (nippy/freeze (consumer-record-to-clj r topic)))))
         (when (< (.position c (first tps)) end)
           (recur (poll-once c)))))))
+
+
+(defn topic-data-to-rocksdb
+  "Read topic data to disk. Assumes single partition topic. Optiionally accepts key-fn that accepts the
+  value off the topic and returns a sequence to use as key. In the event that key-fn returns nil or is not supplied, 
+  will use offset as key."
+  ([topic db-name]
+   (topic-data-to-rocksdb topic db-name (constantly nil)))
+  ([topic db-name key-fn]
+   (with-open [c (consumer-for-topic topic)
+               db (rocksdb/open db-name)]
+     (let [tps (topic-partitions c topic)
+           end (-> (.endOffsets c tps) first val)]
+       (.assign c tps)
+       (.seekToBeginning c tps)
+       (loop [records (poll-once c)]
+         (println (.position c (first tps)) "/" end)
+         (doseq [record records]
+           (let [annotated-record (consumer-record-to-clj record topic)
+                 k (or (key-fn annotated-record) (::offset annotated-record))]
+             (rocksdb/rocks-put-multipart-key! db k annotated-record)))
+         (when (< (.position c (first tps)) end)
+           (recur (poll-once c))))))))
 
 
 

@@ -49,4 +49,10 @@
                              :root-type :sepio/GeneValidityReport
                              :cluster :dx-prod}
             :gene-validity-events-dev {:name "gene_validity_events_dev"
-                                       :cluster :dx-prod}}}
+                                       :cluster :dx-prod}
+            :clinvar-raw {:name "clinvar-raw"
+                          :cluster :dx-stage}
+            :clinvar-scv {:name "clinvar-scv"
+                          :cluster :dx-stage
+                          :format :clinvar-scv
+                          :root-type :sepio/VariantPathogenicityInterpretation}}}

@@ -292,17 +292,17 @@
       (dissoc fields :has-object))))
 
 
-;; (defn- common-assertion-fields
-;;   [interp dosage]
-;;   (let [date-part (updated-date interp)
-;;         result {:id (str cg-prefix (:key interp) "x" dosage "-" date-part)
-;;                 :qualified-contribution (construct-contribution interp)
-;;                 :has-subject (construct-proposition interp dosage)
-;;                 :is-specified-by "SEPIO:0002004"}
-;;         dosage-fields (get-dosage-assertion-fields interp dosage)]
-;;     (-> result
-;;         (-add-evidence interp dosage)
-;;         (merge dosage-fields))))
+(defn- common-assertion-fields
+  [interp dosage]
+  (let [date-part (updated-date interp)
+        result {:id (str cg-prefix (:key interp) "x" dosage "-" date-part)
+                :qualified-contribution (construct-contribution interp)
+                :has-subject (construct-proposition interp dosage)
+                :is-specified-by "SEPIO:0002004"}
+        dosage-fields (get-dosage-assertion-fields interp dosage)]
+    (-> result
+        (-add-evidence interp dosage)
+        (merge dosage-fields))))
 
 (defn- construct-scope-assertion
   [interp dosage]
@@ -436,9 +436,9 @@
         (merge (get-dosage-dependent-fields interp dosage proposition-fields))       
         substitute-genetic-condition)))
 
-(defn- proposition [curation dosage]
-  (let [iri (proposition-iri curation dosage)])
-  (concat [[iri :sepio/has-subject]]))
+;; (defn- proposition [curation dosage]
+;;   (let [iri (proposition-iri curation dosage)])
+;;   (concat [[iri :sepio/has-subject]]))
 
 (defn- common-assertion-fields
   [iri curation dosage]

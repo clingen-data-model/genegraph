@@ -35,4 +35,7 @@
               :genegraph.annotate/graph-name :owl/Ontology}
  :mondo {:genegraph.transform.core/format :turtle
          :genegraph.annotate/root-type :owl/Ontology
-         :genegraph.annotate/graph-name :owl/Ontology}}
+         :genegraph.annotate/graph-name :owl/Ontology}
+ :clinvar-raw {:genegraph.transform.core/format :clinvar-scv
+               :genegraph.annotate/root-type :sepio/VariantPathogenicityInterpretation
+               :genegraph.annotate/graph-name :sepio/VariantPathogenicityInterpretation}}

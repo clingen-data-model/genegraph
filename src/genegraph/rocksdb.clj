@@ -71,3 +71,31 @@
                                                   (Slice. (key-tail-digest prefix))))]
     (.seek iter (key-digest prefix))
     iter))
+
+(defn rocks-iterator-seq [iter]
+  (lazy-seq 
+   (if (.isValid iter)
+     (let [v (thaw (.value iter))]
+       (.next iter)
+       (cons v
+             (rocks-iterator-seq iter)))
+     nil)))
+
+(defn prefix-seq 
+  "Return a lazy-seq over all records beginning with prefix"
+  [db prefix]
+  (-> db (prefix-iter prefix) rocks-iterator-seq))
+
+(defn sample-prefix 
+  "Take first n records from db given prefix"
+  [db prefix n]
+  (let [iter (prefix-iter db prefix)]
+    (loop [i 0
+           ret (transient [])]
+      (if (and (< i n) (.isValid iter))
+        (let [new-ret (conj! ret (-> iter .value thaw))] 
+          (.next iter)
+          (recur (inc i) new-ret))
+        (do 
+          (.close iter)
+          (persistent! ret))))))
