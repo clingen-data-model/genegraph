@@ -9,9 +9,9 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: [ 'build', '.', '-t', 'genegraph:$COMMIT_SHA']
 - name: 'gcr.io/cloud-builders/docker'
-  args: [ 'tag', 'genegraph:testbuild', 'gcr.io/clingen-stage/genegraph:$COMMIT_SHA']
+  args: [ 'tag', 'genegraph:$COMMIT_SHA', 'gcr.io/clingen-stage/genegraph:$COMMIT_SHA']
 - name: 'gcr.io/cloud-builders/docker'
-  args: [ 'tag', 'genegraph:testbuild', 'gcr.io/clingen-dx/genegraph:$COMMIT_SHA']
+  args: [ 'tag', 'genegraph:$COMMIT_SHA', 'gcr.io/clingen-dx/genegraph:$COMMIT_SHA']
   
 # sync genegraph-stage and genegraph-prod migration buckets
 - name: 'gcr.io/cloud-builders/gsutil'
