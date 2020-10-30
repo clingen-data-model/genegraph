@@ -6,9 +6,21 @@
             [flatland.ordered.map :refer [ordered-map]]
             [camel-snake-kebab.core :refer :all]
             [genegraph.database.query :as q]
-            [genegraph.database.load :as l])
+            [genegraph.database.load :as l]
+            [genegraph.transform.core :refer [add-model]]
+            [clojure.spec.alpha :as spec])
   (:import java.time.Instant
            java.time.OffsetDateTime))
+
+(spec/def ::status #(= "Closed" (:name %)))
+
+(spec/def ::resolutiondate string?)
+
+(spec/def ::resolution #(= "Complete" (:name %)))
+
+(spec/def ::fields (spec/keys :req-un [::resolutiondate 
+                                       ::status
+                                       ::resolution]))
 
 (def context (into (ordered-map) [["id" "@id"]
                                   ["type" "@type"]
@@ -421,7 +433,7 @@
                  [assertion-iri :sepio/has-evidence-line-with-item finding-iri]
                  [finding-iri :rdf/type :sepio/StudyFinding]
                  [finding-iri :dc/source (str "PMID:" (re-find #"\d+" pmid))]
-                 [finding-iri :dc/description description]
+                 [finding-iri :dc/description (or description "")]
                  ]))
             findings)))
 
@@ -446,6 +458,10 @@
            [iri :sepio/qualified-contribution (contribution-iri curation)]
            [iri :sepio/has-subject (proposition-iri curation dosage)]]
           (case dosage
+            ;; TODO I think the object returns an integer (the score) that needs to be translated
+            ;; to appropriate SEPIO IRIs
+            ;; when is nil, does that count as not scored?
+            ;; if nil is invalid, should add to spec...
             1 [[iri :sepio/has-object (get-in curation [:fields :customfield-10165 :value])]
                [iri :dc/description (or (get-in curation [:fields :customfield-10198]) "")]]
             3 [[iri :sepio/has-object (get-in curation [:fields :customfield-10166 :value])]
@@ -475,29 +491,22 @@
         report-iri (str base-iri "-" (updated-date curation))
         contribution-iri (contribution-iri curation)
         assertions (filterv :has-object [(assertion curation 1)
-                                         (assertion curation 3)])]
-    (concat [[report-iri :rdf/type :sepio/GeneDosageReport]
-             [report-iri :dc/is-version-of base-iri]
-             [report-iri :sepio/qualified-contribution contribution-iri]]
-            (contribution contribution-iri curation)
-            (assertion curation 1)
-            ;; (assertion curation 3)
-            (topic report-iri curation)
-            )))
+                                         (assertion curation 3)])
+        result (concat [[report-iri :rdf/type :sepio/GeneDosageReport]
+                        [report-iri :dc/is-version-of base-iri]
+                        [report-iri :sepio/qualified-contribution contribution-iri]]
+                       (contribution contribution-iri curation)
+                       (assertion curation 1)
+                       ;; (assertion curation 3)
+                       (topic report-iri curation))]
+    ;; (clojure.pprint/pprint result)
+    result))
 
-(defn interpretation-to-sepio [jira-issue]
-  ;; (clojure.pprint/pprint   (-> jira-issue
-  ;;                              (json/parse-string ->kebab-case-keyword)
-  ;;                              gene-dosage-report))
-  (-> jira-issue
-      (json/parse-string ->kebab-case-keyword)
-      gene-dosage-report))
-
-
-
-
-
-
-
-
-
+(defmethod add-model :gene-dosage-jira [event]
+  (let [jira-json (json/parse-string (:genegraph.sink.event/value event) ->kebab-case-keyword)]
+    ;;    (println (:key jira-json))
+    (if (spec/invalid? (spec/conform ::fields (:fields jira-json)))
+      (assoc event ::spec/invalid true)
+      (do
+        (println (get-in jira-json [:fields :status :name]) "-" (:genegraph.sink.stream/offset event))
+        (assoc event ::q/model (-> jira-json gene-dosage-report l/statements-to-model))))))
