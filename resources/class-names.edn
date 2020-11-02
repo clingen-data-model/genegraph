@@ -92,6 +92,8 @@
  [:sepio/DosageMinimalEvidence "http://purl.obolibrary.org/obo/SEPIO_0002007"]
  [:sepio/DosageModerateEvidence "http://purl.obolibrary.org/obo/SEPIO_0002009"]
  [:sepio/DosageSufficientEvidence "http://purl.obolibrary.org/obo/SEPIO_0002006"]
+ [:sepio/DosageScopeAssertion "http://purl.obolibrary.org/obo/SEPIO_0002505"]
+ [:sepio/GeneAssociatedWithAutosomalRecessivePhenotype "http://purl.obolibrary.org/obo/SEPIO_0002502"]
  [:sepio/HasEvidenceLevel "http://purl.obolibrary.org/obo/SEPIO_0000146"]
  [:sepio/DefinitiveEvidence "http://purl.obolibrary.org/obo/SEPIO_0004504"]
  [:sepio/LimitedEvidence "http://purl.obolibrary.org/obo/SEPIO_0004507"]

@@ -12,6 +12,14 @@
   (:import java.time.Instant
            java.time.OffsetDateTime))
 
+(def evidence-levels {"3" :sepio/DosageSufficientEvidence
+                      "2" :sepio/DosageModerateEvidence
+                      "1" :sepio/DosageMinimalEvidence
+                      "0" :sepio/DosageNoEvidence
+                      "30: Gene associated with autosomal recessive phenotype" :associated-with-ar-pheno
+                      ;; assume moderate evidence for dosage sensitivity unlikely
+                      "40: Dosage sensitivity unlikely" :sepio/DosageSufficientEvidence})
+
 (spec/def ::status #(= "Closed" (:name %)))
 
 (spec/def ::resolutiondate string?)
@@ -437,6 +445,16 @@
                  ]))
             findings)))
 
+(defn- dosage-proposition-object [curation dosage]
+  (let [object-field (if (= 1 dosage) :customfield-10200 :customfield-10201)
+        phenotype-str (get-in curation [:fields object-field])
+        iri (proposition-iri curation dosage)]
+    (if phenotype-str
+      (map #(vector iri :sepio/has-object %)
+           (->> (s/split phenotype-str #",")
+                (map #(q/resource (str "http://identifiers.org/omim/" (s/trim %))))))
+      [[iri :sepio/has-object (q/resource "http://purl.obolibrary.org/obo/MONDO_0000001")]])))
+
 (defn- construct-proposition
   "Return proposition object from interpretation"
   [interp dosage]
@@ -448,42 +466,75 @@
         (merge (get-dosage-dependent-fields interp dosage proposition-fields))       
         substitute-genetic-condition)))
 
-;; (defn- proposition [curation dosage]
-;;   (let [iri (proposition-iri curation dosage)])
-;;   (concat [[iri :sepio/has-subject]]))
+(defn- construct-gene-dosage-variant
+  "Construct the variant representing the stated dosage of a gene"
+  [interp dosage]
+  (let [fields (:fields interp)]
+    {:has-location (dosage-subject-id interp)
+     :type "GENO:0000963" 
+     :has-count dosage}))
+
+(defn- gene-dosage-variant [iri curation dosage]
+  [[iri :rdf/type :geno/FunctionalCopyNumberComplement]
+   [iri :geno/has-count dosage]
+   ;; TODO pickup work here--complete variant construction
+   ])
+
+(defn- proposition-predicate [curation dosage]
+  (if (and (= 1 dosage)
+           (= "40: Dosage sensitivity unlikely" 
+              (get-in curation [:fields :customfield-10165 :value])))
+    :geno/BenignForCondition
+    :geno/PathogenicForCondition))
+
+(defn- proposition [curation dosage]
+  (let [iri (proposition-iri curation dosage)
+        variant-iri (l/blank-node)]
+    (concat [[iri :rdf/type :sepio/DosageSensitivityProposition]
+             [iri :sepio/has-predicate (proposition-predicate curation dosage)]]
+            (dosage-proposition-object curation dosage)
+            (gene-dosage-variant variant-iri curation dosage))))
+
+(defn- dosage-assertion-value [curation dosage]
+  (let [assertion-field (if (= 1 dosage) :customfield-10165 :customfield-10166)]
+      (evidence-levels (get-in curation [:fields assertion-field :value]))))
+
+(defn- dosage-assertion-description [curation dosage]
+  (let [description-field (if (= 1 dosage) :customfield-10198 :customfield-10199)]
+    (or (get-in curation [:fields description-field :value]) "")))
 
 (defn- common-assertion-fields
   [iri curation dosage]
   (concat [[iri :sepio/is-specified-by :sepio/DosageSensitivityEvaluationGuideline]
            [iri :sepio/qualified-contribution (contribution-iri curation)]
-           [iri :sepio/has-subject (proposition-iri curation dosage)]]
-          (case dosage
-            ;; TODO I think the object returns an integer (the score) that needs to be translated
-            ;; to appropriate SEPIO IRIs
-            ;; when is nil, does that count as not scored?
-            ;; if nil is invalid, should add to spec...
-            1 [[iri :sepio/has-object (get-in curation [:fields :customfield-10165 :value])]
-               [iri :dc/description (or (get-in curation [:fields :customfield-10198]) "")]]
-            3 [[iri :sepio/has-object (get-in curation [:fields :customfield-10166 :value])]
-               [iri :dc/description (or (get-in curation [:fields :customfield-10199]) "")]])
+           [iri :sepio/has-subject (proposition-iri curation dosage)]
+           [iri :sepio/has-object (dosage-assertion-value curation dosage)]
+           [iri :dc/description (dosage-assertion-description curation dosage)]]
           (study-findings iri curation dosage)
-          ;; add proposition (:sepio/has-subject)
-          ))
+          (proposition curation dosage)))
 
 (defn- evidence-strength-assertion [curation dosage]
   (let [iri (assertion-iri curation dosage)]
     (concat (common-assertion-fields iri curation dosage)
      [[iri :rdf/type :sepio/EvidenceLevelAssertion]
-      [iri :sepio/has-predicate :sepio/HasEvidenceLevel]
-      ])))
+      [iri :sepio/has-predicate :sepio/HasEvidenceLevel]])))
+
+(defn- scope-assertion
+  [curation dosage]
+  (let [iri (assertion-iri curation dosage)]
+    (concat (common-assertion-fields curation dosage)
+            [[iri :has-predicate :sepio/DosageScopeAssertion]
+             [iri :has-object :sepio/GeneAssociatedWithAutosomalRecessivePhenotype]
+             [iri :type :sepio/PropositionScopeAssertion]])))
 
 (defn- assertion [curation dosage]
-  (if (and (= 1 dosage)
-           (= "30: Gene associated with autosomal recessive phenotype" 
-              (get-in curation [:fields :customfield-10165 :value])))
-    ;;    (construct-scope-assertion interp dosage)
-    []
-    (evidence-strength-assertion curation dosage)))
+  (if (dosage-assertion-value curation dosage)
+    (if (and (= 1 dosage)
+             (= "30: Gene associated with autosomal recessive phenotype" 
+                (get-in curation [:fields :customfield-10165 :value])))
+      (scope-assertion curation dosage)
+      (evidence-strength-assertion curation dosage))
+    []))
 
 (defn gene-dosage-report
   [curation]
@@ -497,7 +548,7 @@
                         [report-iri :sepio/qualified-contribution contribution-iri]]
                        (contribution contribution-iri curation)
                        (assertion curation 1)
-                       ;; (assertion curation 3)
+                       (assertion curation 3)
                        (topic report-iri curation))]
     ;; (clojure.pprint/pprint result)
     result))
@@ -508,5 +559,5 @@
     (if (spec/invalid? (spec/conform ::fields (:fields jira-json)))
       (assoc event ::spec/invalid true)
       (do
-        (println (get-in jira-json [:fields :status :name]) "-" (:genegraph.sink.stream/offset event))
+        ;; (println (get-in jira-json [:fields :status :name]) "-" (:genegraph.sink.stream/offset event))
         (assoc event ::q/model (-> jira-json gene-dosage-report l/statements-to-model))))))
