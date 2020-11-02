@@ -21,14 +21,13 @@
 (defresolver description [args value]
   (q/ld1-> value [:iao/definition]))
 
-(defresolver previous-names [args value]
-  )
-
-(defresolver aliases [args value]
-  )
-
-(defresolver equivalent-conditions [args value]
-  )
+(defresolver synonyms [args value]
+  (into [] (sort
+            (concat
+             (q/ld-> value [:oboInOwl/has-broad-synonym])
+             (q/ld-> value [:oboInOwl/has-exact-synonym])
+             (q/ld-> value [:oboInOwl/has-narrow-synonym])
+             (q/ld-> value [:oboInOwl/has-related-synonym])))))
 
 (defresolver ^:expire-by-value last-curated-date [args value]
   (let [curation-dates (concat (ld-> value [[:sepio/has-object :<] ;;GENE_VALIDITY
