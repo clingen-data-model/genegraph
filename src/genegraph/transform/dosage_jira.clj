@@ -476,9 +476,8 @@
 
 (defn- gene-dosage-variant [iri curation dosage]
   [[iri :rdf/type :geno/FunctionalCopyNumberComplement]
-   [iri :geno/has-count dosage]
-   ;; TODO pickup work here--complete variant construction
-   ])
+   [iri :geno/has-member-count dosage]
+   [iri :geno/has-location (subject-iri curation)]])
 
 (defn- proposition-predicate [curation dosage]
   (if (and (= 1 dosage)
@@ -491,7 +490,8 @@
   (let [iri (proposition-iri curation dosage)
         variant-iri (l/blank-node)]
     (concat [[iri :rdf/type :sepio/DosageSensitivityProposition]
-             [iri :sepio/has-predicate (proposition-predicate curation dosage)]]
+             [iri :sepio/has-predicate (proposition-predicate curation dosage)]
+             [iri :sepio/has-subject variant-iri]]
             (dosage-proposition-object curation dosage)
             (gene-dosage-variant variant-iri curation dosage))))
 
@@ -550,14 +550,10 @@
                        (assertion curation 1)
                        (assertion curation 3)
                        (topic report-iri curation))]
-    ;; (clojure.pprint/pprint result)
     result))
 
 (defmethod add-model :gene-dosage-jira [event]
   (let [jira-json (json/parse-string (:genegraph.sink.event/value event) ->kebab-case-keyword)]
-    ;;    (println (:key jira-json))
     (if (spec/invalid? (spec/conform ::fields (:fields jira-json)))
       (assoc event ::spec/invalid true)
-      (do
-        ;; (println (get-in jira-json [:fields :status :name]) "-" (:genegraph.sink.stream/offset event))
-        (assoc event ::q/model (-> jira-json gene-dosage-report l/statements-to-model))))))
+      (assoc event ::q/model (-> jira-json gene-dosage-report l/statements-to-model)))))
