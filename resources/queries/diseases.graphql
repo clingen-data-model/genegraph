@@ -5,12 +5,10 @@
       iri
       curie
       label
-      aliases
       curation_activities
       description
-      equivalent_conditions
+      synonyms
       last_curated_date
-      previous_names
       direct_subclasses {
         iri
         curie

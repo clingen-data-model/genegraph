@@ -41,7 +41,6 @@
    :affiliation/curated-genes affiliation/curated-genes
    :affiliation/gene-validity-assertions affiliation/gene-validity-assertions
    :classification/classifications classification/classifications
-   :condition/aliases condition/aliases
    :condition/condition-query condition/condition-query
    :condition/curation-activities condition/curation-activities
    :condition/description condition/description
@@ -49,12 +48,11 @@
    :condition/direct-superclasses condition/direct-superclasses
    :condition/disease-list condition/disease-list
    :condition/diseases condition/diseases
-   :condition/equivalent-conditions condition/equivalent-conditions
    :condition/genetic-conditions condition/genetic-conditions
    :condition/last-curated-date condition/last-curated-date
-   :condition/previous-names condition/previous-names
    :condition/subclasses condition/subclasses
    :condition/superclasses condition/superclasses
+   :condition/synonyms condition/synonyms
    :coordinate/assembly coordinate/assembly
    :coordinate/build coordinate/build
    :coordinate/chromosome coordinate/chromosome
