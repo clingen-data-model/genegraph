@@ -144,7 +144,9 @@
 (defn lookup [suggester-key text contexts num]
   "Lookup a term using a suggester"
   (log/debug :fn :lookup :suggester suggester-key :text text :contexts contexts :num num)
-  (suggest/lookup (get-suggester suggester-key) text contexts num))
+  (if (some? text)
+    (suggest/lookup (get-suggester suggester-key) text contexts num)
+    nil))
 
 (defn get-suggester-result-map [resource-iri suggester-key]
   (let [resource (q/resource resource-iri)

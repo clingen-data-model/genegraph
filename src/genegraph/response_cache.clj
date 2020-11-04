@@ -44,7 +44,10 @@
 (defn clear-response-cache! []
   (log/debug :fn ::clear-respsonse-cache! :msg "clearing response cache")
   (mount/stop #'cache-store)
-  (rocksdb/rocks-destroy! db-name)
+  (try
+    (rocksdb/rocks-destroy! db-name)
+    (catch Exception e
+      (log/debug :fn clear-response-cache! :msg (str "caught exception: " (.getMessage e)))))
   (mount/start #'cache-store))
 
 (def expire-response-cache-interceptor

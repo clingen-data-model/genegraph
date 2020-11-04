@@ -7,7 +7,6 @@
 (def ^:dynamic data-vol (if data-version
                           (str base-dir "/" data-version)
                           base-dir))
-(def dx-key-pass (System/getenv "SERVEUR_KEY_PASS"))
 (def dx-topics (System/getenv "CG_SEARCH_TOPICS"))
 (def dx-stage-jaas (System/getenv "DX_STAGE_JAAS"))
 (def genegraph-bucket (System/getenv "GENEGRAPH_BUCKET"))
@@ -19,7 +18,6 @@
 (defn log-environment []
   (log/info :fn :log-environment
             :data-vol data-vol
-            :dx-key-pass (true? dx-key-pass)
             :dx-topics dx-topics
             :genegraph-data-version data-version
             :genegraph-bucket genegraph-bucket
