@@ -101,8 +101,12 @@
         (read-end-offsets! consumer tp)
         (while @run-consumer
           (doseq [record (poll-once consumer)]
-            (-> record (consumer-record-to-clj topic) event/process-event!))
-          (update-offsets! consumer tp))
+            (try
+              (-> record (consumer-record-to-clj topic) event/process-event!)
+              (catch Exception e
+                (log/info :fn :assign-topic! :topic topic :msg (str "Caught exception " (.getMessage e))
+                          :exception e)))
+            (update-offsets! consumer tp)))
         (swap! topic-state assoc topic :stopped)))))
 
 (defn up-to-date? 
