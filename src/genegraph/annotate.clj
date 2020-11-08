@@ -22,6 +22,7 @@
   (action/add-action event))
 
 (def add-action-interceptor
+  "Interceptor for annotating an event with a publish or unpublish action."
   {:name ::add-action
    :enter add-action})
   

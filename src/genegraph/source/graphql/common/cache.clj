@@ -52,6 +52,7 @@
   event)
 
 (def expire-resolver-cache-interceptor
+  "Interceptor that expires graphql resolver cache."
   {:name ::expire-resolver-cache-interceptor
    :enter expire-resolver-cache-on-event!})
 

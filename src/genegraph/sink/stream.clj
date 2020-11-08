@@ -103,14 +103,19 @@
         (read-end-offsets! consumer tp)
         (while @run-consumer
           (doseq [record (poll-once consumer)]
-            (-> record (consumer-record-to-clj topic) event/process-event!))
-          (update-offsets! consumer tp))
+            (try
+              (-> record (consumer-record-to-clj topic) event/process-event!)
+              (catch Exception e
+                (log/info :fn :assign-topic! :topic topic :msg (str "Caught exception " (.getMessage e))
+                          :exception e)))
+            (update-offsets! consumer tp)))
         (swap! topic-state assoc topic :stopped)))))
 
 (defn up-to-date? 
   "Returns true if all partitions of all topics subscribed to have had messages
   consumed up to the latest offset when the consumer was started."
   []
+  (log/debug :fn :up-to-date? :current-offsets @current-offsets :end-offsets @end-offsets)
   (when (= (set (keys @current-offsets)) (set (keys @end-offsets)))
     (let [partition-is-up-to-date? (merge-with <= @end-offsets @current-offsets)]
       (if (some false? (vals partition-is-up-to-date?))

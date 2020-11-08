@@ -46,6 +46,7 @@
   event)
 
 (def unpublish-interceptor
+  "Interceptor handling unpublish events in the database (removing/soft deleting)."
   {:name ::unpublish
    :enter unpublish})
 
@@ -57,6 +58,7 @@
   event)
 
 (def replace-interceptor
+  "Interceptor for removing replaced curations"
   {:name ::replace
    :enter replace-curation})
 

@@ -240,15 +240,9 @@
               :description {:type String
                             :resolve :condition/description
                             :description "Disease description name."}
-              :previous_names {:type (list String)
-                            :resolve :condition/previous-names
-                               :description "Previous condition names."}
-              :aliases {:type (list String)
-                        :resolve :condition/aliases
-                        :description "Alias condition names."}
-              :equivalent_conditions {:type (list String)
-                                      :resolve :condition/equivalent-conditions
-                                      :description "Equivalent condition names."}
+              :synonyms {:type (list String)
+                         :resolve :condition/synonyms
+                         :description "Disease synonyms"}
               :last_curated_date {:type String
                                   :resolve :condition/last-curated-date
                                   :description "Most recent date a curation (of any kind) has been performed on this condition."}
@@ -446,6 +440,9 @@
       :specified_by {:type :Criteria
                      :description "Criteria used by the curators to create the gene validity assertion"
                      :resolve :gene-validity/specified-by}
+      :has_format {:type String
+                   :description "Format of the Legacy JSON from the GCI."
+                   :resolve :gene-validity/has-format}
       :legacy_json {:type String
                     :description "Legacy JSON from the GCI."
                     :resolve :gene-validity/legacy-json}}}

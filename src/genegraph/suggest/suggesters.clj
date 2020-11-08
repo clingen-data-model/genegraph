@@ -144,7 +144,9 @@
 (defn lookup [suggester-key text contexts num]
   "Lookup a term using a suggester"
   (log/debug :fn :lookup :suggester suggester-key :text text :contexts contexts :num num)
-  (suggest/lookup (get-suggester suggester-key) text contexts num))
+  (if (some? text)
+    (suggest/lookup (get-suggester suggester-key) text contexts num)
+    nil))
 
 (defn get-suggester-result-map [resource-iri suggester-key]
   (let [resource (q/resource resource-iri)
@@ -156,8 +158,8 @@
           nil))
       nil)))
 
-(defn process-event-resource [resource-iri suggester-type]
-  (log/debug :fn :process-event-resource :resource-type suggester-type :resource-iri resource-iri)
+(defn process-event-resource! [resource-iri suggester-type]
+  (log/debug :fn :process-event-resource! :resource-type suggester-type :resource-iri resource-iri)
   (when-let [resource-payload-map (get-suggester-result-map resource-iri suggester-type)]
     (let [suggester (get-suggester suggester-type)
           suggest-map (get (suggesters-map) suggester-type)
@@ -173,16 +175,16 @@
                                      (:weight new-payload))
           (suggest/commit-suggester suggester)
           (suggest/refresh-suggester suggester)
-          (log/debug :fn :process-event-resource :suggester suggester-type :text (:label new-payload) :msg :updated))
-        (log/debug :fn :process-event-resource :suggester suggester-type :text (:label new-payload) :msg :not-updated)))))
+          (log/debug :fn :process-event-resource! :suggester suggester-type :text (:label new-payload) :msg :updated))
+        (log/debug :fn :process-event-resource! :suggester suggester-type :text (:label new-payload) :msg :not-updated)))))
 
 (defn update-suggesters [event]
   (log/debug :fn :update-suggesters :event event :msg :received-event)
   (when-let [subjects (::ann/subjects event)]
-    (when-let [gene-iris (:gene-iris subjects)]
-      (map #(process-event-resource % :gene) gene-iris))
-    (when-let [disease-iris (:disease-iris subjects)]
-      (map #(process-event-resource % :disease) disease-iris)))
+    (doseq [gene (:gene-iris subjects)]
+      (process-event-resource! gene :gene))
+    (doseq [disease (:disease-iris subjects)]
+      (process-event-resource! disease :disease)))
   event)
 
 (def update-suggesters-interceptor

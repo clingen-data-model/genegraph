@@ -51,5 +51,8 @@
 (defresolver specified-by [args value]
   (ld1-> value [:sepio/is-specified-by]))
 
+(defresolver has-format [args value]
+  (ld1-> value [:dc/has-format]))
+
 (defn legacy-json [_ _ value]
   (ld1-> value [[:bfo/has-part :<] :bfo/has-part :cnt/chars]))
