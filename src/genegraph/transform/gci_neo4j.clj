@@ -71,7 +71,7 @@
         id (str (:id report) "-" (s/replace (:date report) #":" ""))
         iri (q/resource (str gci-root "report_" id))
         content-id (l/blank-node)
-        assertion-id (q/resource (str gci-root "assertion_" id))]
+        assertion-id (q/resource (str gci-root "assertion_" (:id report)))]
     (concat [[iri :rdf/type :sepio/GeneValidityReport] 
              [iri :rdfs/label (:title report)]
              [iri :bfo/has-part content-id]

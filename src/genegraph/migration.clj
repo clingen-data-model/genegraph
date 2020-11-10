@@ -40,6 +40,19 @@
     (doall (pmap #(-> % io/resource slurp core/gql-query) gql-file-names))
     (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache...complete.")))
 
+(defn build-base-database
+  "Build the database with base data only (no curations from streaming service"
+  [path]
+  (with-redefs [env/data-vol path]
+    (fs/mkdirs env/data-vol)
+    (start #'db/db)
+    (base/initialize-db!)
+    (start #'suggest/suggestions)
+    (suggest/build-all-suggestions)
+    (batch/process-batched-events!)
+    (stop #'suggest/suggestions)
+    (stop #'db/db)))
+
 (defn build-database
   "Build the Jena database and associated indexes from scratch."
   [path]
@@ -97,6 +110,13 @@
     (compress-database database-path archive-path)
     (Thread/sleep 1000) ;; seems to be a race condition here to avoid
     (send-database env/genegraph-bucket archive-path version-id)))
+
+(defn create-local-base-migration
+  "Populate a new database with just local data, not intended for Google Cloud"
+  []
+  (let [version-id (new-version-identifier)
+        database-path (str env/base-dir "/" version-id)]
+    (build-base-database database-path)))
 
 (defn retrieve-migration
   "Pull the specified migration from cloud storage."

@@ -107,6 +107,7 @@
  [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP5 "http://purl.obolibrary.org/obo/SEPIO_0004093"]
  [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP6 "http://purl.obolibrary.org/obo/SEPIO_0004094"]
  [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP7 "http://purl.obolibrary.org/obo/SEPIO_0004095"]
+ [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP8 "http://purl.obolibrary.org/obo/SEPIO_0004096"]
 [:sepio/ClinGenProteinFunctionCriteria
   "http://purl.obolibrary.org/obo/SEPIO_0004074"]
  [:sepio/NonHumanModelOrganismEvidenceItem

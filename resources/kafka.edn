@@ -35,9 +35,9 @@
                                     :name "gene_validity_raw_dev"
                                     :cluster :dx-ccloud}
             :gci-legacy  {:format :gci-legacy
-                             :name "gene_validity"
-                             :root-type :sepio/GeneValidityReport
-                             :cluster :dx-ccloud}
+                          :name "gene_validity"
+                          :root-type :sepio/GeneValidityReport
+                          :cluster :dx-ccloud}
             :gene-validity-events-dev {:name "gene_validity_events_dev"
                                        :cluster :dx-ccloud}
             :clinvar-raw {:name "clinvar-raw"
