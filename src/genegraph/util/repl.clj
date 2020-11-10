@@ -2,6 +2,8 @@
   "Functions and environment useful for developing Genegraph at the REPL"
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :as l]
+            [genegraph.database.instance :as db-instance]
+            [genegraph.database.util :refer [tx]]
             [genegraph.sink.stream :as stream]
             [genegraph.sink.event :as event]
             [genegraph.annotate :as ann]
@@ -21,3 +23,10 @@
   [event-seq]
   (doseq [event event-seq]
     (event/process-event! event)))
+
+(defn get-graph-names []
+  (tx
+   (into []
+         (-> db-instance/db
+             .listNames
+             iterator-seq))))

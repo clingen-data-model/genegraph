@@ -51,7 +51,7 @@
    [iri :sepio/activity-date (:date report)]])
 
 (defn evidence-level-assertion [report iri id]
-  (let [prop-iri (q/resource (str gci-root "proposition_" id))
+  (let [prop-iri (q/resource (str gci-root "proposition_" (:id report)))
         contribution-iri (l/blank-node)]
     (concat [[iri :rdf/type :sepio/GeneValidityEvidenceLevelAssertion]
              [iri :sepio/has-subject prop-iri]
@@ -71,7 +71,7 @@
         id (str (:id report) "-" (s/replace (:date report) #":" ""))
         iri (q/resource (str gci-root "report_" id))
         content-id (l/blank-node)
-        assertion-id (q/resource (str gci-root "assertion_" (:id report)))]
+        assertion-id (q/resource (str gci-root "assertion_" id))]
     (concat [[iri :rdf/type :sepio/GeneValidityReport] 
              [iri :rdfs/label (:title report)]
              [iri :bfo/has-part content-id]

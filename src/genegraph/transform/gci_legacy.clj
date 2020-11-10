@@ -96,8 +96,6 @@
 (defmethod add-model :gci-legacy [event]
   (log/debug :fn :add-model :format :gci-legacy :event event :msg :received-event)
   (let [report-json (json/parse-string (:genegraph.sink.event/value event) true)]
-    (println (:iri report-json))
-    (clojure.pprint/pprint (gci-legacy-report-to-triples report-json))
     (assoc event
            ::q/model
            (l/statements-to-model  (gci-legacy-report-to-triples report-json)))))
