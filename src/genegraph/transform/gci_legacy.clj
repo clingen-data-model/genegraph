@@ -96,7 +96,9 @@
 (defmethod add-model :gci-legacy [event]
   (log/debug :fn :add-model :format :gci-legacy :event event :msg :received-event)
   (let [report-json (json/parse-string (:genegraph.sink.event/value event) true)]
-    (assoc event
-           ::q/model
-           (l/statements-to-model  (gci-legacy-report-to-triples report-json)))))
+    (try 
+      (assoc event
+             ::q/model
+             (l/statements-to-model  (gci-legacy-report-to-triples report-json)))
+      (catch Exception e (assoc event :exception e)))))
   

@@ -1,4 +1,5 @@
-(ns genegraph.interceptor)
+(ns genegraph.interceptor
+  (:require [io.pedestal.interceptor.chain :as ic]))
 
 (defn interceptor-enter-def [name event-fn]
   "Returns an interceptor definition with name, that defines an :enter
@@ -6,7 +7,11 @@
    event from that context, calls event-fn on the event, and updates the 
    context with the result event for the next interceptor to process."
   {:name name
-   :enter (fn [context] (->> context event-fn))})
+   :enter (fn [context] 
+            (let [new-context (event-fn context)]
+              (if (:exception new-context)
+                (ic/terminate context)
+                new-context)))})
 
 (defn interceptor-leave-def [name event-fn]
   "Returns an interceptor definition with name, that defines an :leave 

@@ -8,6 +8,7 @@
             [genegraph.sink.event :as event]
             [genegraph.annotate :as ann]
             [genegraph.rocksdb :as rocks]
+            [genegraph.migration :as migrate]
             [cheshire.core :as json]
             [clojure.string :as s]))
 
