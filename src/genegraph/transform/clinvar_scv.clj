@@ -1,7 +1,7 @@
 (ns genegraph.transform.clinvar-scv
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q]
-            [genegraph.transform.core :refer [add-model]]
+            [genegraph.transform.types :refer [add-model]]
             [cheshire.core :as json]
             [clojure.java.io :as io]))
 

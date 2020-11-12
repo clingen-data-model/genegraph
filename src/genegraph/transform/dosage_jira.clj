@@ -7,7 +7,7 @@
             [camel-snake-kebab.core :refer :all]
             [genegraph.database.query :as q]
             [genegraph.database.load :as l]
-            [genegraph.transform.core :refer [add-model]]
+            [genegraph.transform.types :refer [add-model]]
             [clojure.spec.alpha :as spec])
   (:import java.time.Instant
            java.time.OffsetDateTime))
@@ -96,54 +96,54 @@
 (def cg-prefix "http://dx.clinicalgenome.org/entities/")
 (def region-prefix (str cg-prefix "region-"))
 
-(def chr-to-ref {:grch37 {"chr1" "NCBI_NU:NC_000001.10"
-                          "chr2" "NCBI_NU:NC_000002.11"
-                          "chr3" "NCBI_NU:NC_000003.11"
-                          "chr4" "NCBI_NU:NC_000004.11"
-                          "chr5" "NCBI_NU:NC_000005.9"
-                          "chr6" "NCBI_NU:NC_000006.11"
-                          "chr7" "NCBI_NU:NC_000007.13"
-                          "chr8" "NCBI_NU:NC_000008.10"
-                          "chr9" "NCBI_NU:NC_000009.11"
-                          "chr10" "NCBI_NU:NC_000010.10"
-                          "chr11" "NCBI_NU:NC_000011.9"
-                          "chr12" "NCBI_NU:NC_000012.11"
-                          "chr13" "NCBI_NU:NC_000013.10"
-                          "chr14" "NCBI_NU:NC_000014.8"
-                          "chr15" "NCBI_NU:NC_000015.9"
-                          "chr16" "NCBI_NU:NC_000016.9"
-                          "chr17" "NCBI_NU:NC_000017.10"
-                          "chr18" "NCBI_NU:NC_000018.9"
-                          "chr19" "NCBI_NU:NC_000019.9"
-                          "chr20" "NCBI_NU:NC_000020.10"
-                          "chr21" "NCBI_NU:NC_000021.8"
-                          "chr22" "NCBI_NU:NC_000022.10"
-                          "chrX" "NCBI_NU:NC_000023.10"
-                          "chrY" "NCBI_NU:NC_000024.9"}
-                 :grch38 {"chr1" "NCBI_NU:NC_000001.11"
-                          "chr2" "NCBI_NU:NC_000002.12"
-                          "chr3" "NCBI_NU:NC_000003.12"
-                          "chr4" "NCBI_NU:NC_000004.12"
-                          "chr5" "NCBI_NU:NC_000005.10"
-                          "chr6" "NCBI_NU:NC_000006.12"
-                          "chr7" "NCBI_NU:NC_000007.14"
-                          "chr8" "NCBI_NU:NC_000008.11"
-                          "chr9" "NCBI_NU:NC_000009.12"
-                          "chr10" "NCBI_NU:NC_000010.11"
-                          "chr11" "NCBI_NU:NC_000011.10"
-                          "chr12" "NCBI_NU:NC_000012.12"
-                          "chr13" "NCBI_NU:NC_000013.11"
-                          "chr14" "NCBI_NU:NC_000014.9"
-                          "chr15" "NCBI_NU:NC_000015.10"
-                          "chr16" "NCBI_NU:NC_000016.10"
-                          "chr17" "NCBI_NU:NC_000017.11"
-                          "chr18" "NCBI_NU:NC_000018.10"
-                          "chr19" "NCBI_NU:NC_000019.10"
-                          "chr20" "NCBI_NU:NC_000020.11"
-                          "chr21" "NCBI_NU:NC_000021.9"
-                          "chr22" "NCBI_NU:NC_000022.11"
-                          "chrX" "NCBI_NU:NC_000023.11"
-                          "chrY" "NCBI_NU:NC_000024.10"}})
+(def chr-to-ref {:grch37 {"1" "NCBI_NU:NC_000001.10"
+                          "2" "NCBI_NU:NC_000002.11"
+                          "3" "NCBI_NU:NC_000003.11"
+                          "4" "NCBI_NU:NC_000004.11"
+                          "5" "NCBI_NU:NC_000005.9"
+                          "6" "NCBI_NU:NC_000006.11"
+                          "7" "NCBI_NU:NC_000007.13"
+                          "8" "NCBI_NU:NC_000008.10"
+                          "9" "NCBI_NU:NC_000009.11"
+                          "10" "NCBI_NU:NC_000010.10"
+                          "11" "NCBI_NU:NC_000011.9"
+                          "12" "NCBI_NU:NC_000012.11"
+                          "13" "NCBI_NU:NC_000013.10"
+                          "14" "NCBI_NU:NC_000014.8"
+                          "15" "NCBI_NU:NC_000015.9"
+                          "16" "NCBI_NU:NC_000016.9"
+                          "17" "NCBI_NU:NC_000017.10"
+                          "18" "NCBI_NU:NC_000018.9"
+                          "19" "NCBI_NU:NC_000019.9"
+                          "20" "NCBI_NU:NC_000020.10"
+                          "21" "NCBI_NU:NC_000021.8"
+                          "22" "NCBI_NU:NC_000022.10"
+                          "X" "NCBI_NU:NC_000023.10"
+                          "Y" "NCBI_NU:NC_000024.9"}
+                 :grch38 {"1" "NCBI_NU:NC_000001.11"
+                          "2" "NCBI_NU:NC_000002.12"
+                          "3" "NCBI_NU:NC_000003.12"
+                          "4" "NCBI_NU:NC_000004.12"
+                          "5" "NCBI_NU:NC_000005.10"
+                          "6" "NCBI_NU:NC_000006.12"
+                          "7" "NCBI_NU:NC_000007.14"
+                          "8" "NCBI_NU:NC_000008.11"
+                          "9" "NCBI_NU:NC_000009.12"
+                          "10" "NCBI_NU:NC_000010.11"
+                          "11" "NCBI_NU:NC_000011.10"
+                          "12" "NCBI_NU:NC_000012.12"
+                          "13" "NCBI_NU:NC_000013.11"
+                          "14" "NCBI_NU:NC_000014.9"
+                          "15" "NCBI_NU:NC_000015.10"
+                          "16" "NCBI_NU:NC_000016.10"
+                          "17" "NCBI_NU:NC_000017.11"
+                          "18" "NCBI_NU:NC_000018.10"
+                          "19" "NCBI_NU:NC_000019.10"
+                          "20" "NCBI_NU:NC_000020.11"
+                          "21" "NCBI_NU:NC_000021.9"
+                          "22" "NCBI_NU:NC_000022.11"
+                          "X" "NCBI_NU:NC_000023.11"
+                          "Y" "NCBI_NU:NC_000024.10"}})
 
 (def build-location {:grch38 :customfield-10532
                      :grch37 :customfield-10160}) 
@@ -196,7 +196,7 @@
       {:type "SequenceLocation"
        :sequence-id (-> chr-to-ref
                         (get build)
-                        (get chr))
+                        (get (s/lower-case chr)))
        :interval {:type "SimpleInterval" ; sequence interval
                   :start (-> start-coord (s/replace #"\D" "") Integer.)
                   :end (-> end-coord (s/replace #"\D" "") Integer.)}})))
@@ -378,11 +378,13 @@
   (when-let [loc-str (get-in curation [:fields (build-location build)])]
     (let [[_ chr start-coord end-coord] (re-find #"(\w+):(.+)-(.+)$" loc-str)
           iri (l/blank-node)
-          interval-iri (l/blank-node)]
+          interval-iri (l/blank-node)
+          reference-sequence (get-in chr-to-ref 
+                                     [build 
+                                      (subs chr 3)])]
       [iri [[iri :rdf/type :geno/SequenceFeatureLocation]
-            [iri :geno/has-reference-sequence (-> chr-to-ref
-                                                  (get build)
-                                                  (get chr))]
+            ;; TODO reference sequence should be a resource
+            [iri :geno/has-reference-sequence reference-sequence]
             [iri :geno/has-interval interval-iri]
             [interval-iri :rdf/type :geno/SequenceInterval]
             [interval-iri :geno/start-position (-> start-coord (s/replace #"\D" "") Integer.)]
@@ -554,6 +556,7 @@
 
 (defmethod add-model :gene-dosage-jira [event]
   (let [jira-json (json/parse-string (:genegraph.sink.event/value event) ->kebab-case-keyword)]
+    ;;(clojure.pprint/pprint (gene-dosage-report jira-json))
     (if (spec/invalid? (spec/conform ::fields (:fields jira-json)))
       (assoc event ::spec/invalid true)
       (assoc event ::q/model (-> jira-json gene-dosage-report l/statements-to-model)))))

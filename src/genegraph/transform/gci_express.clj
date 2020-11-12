@@ -1,7 +1,7 @@
 (ns genegraph.transform.gci-express
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q :refer [resource]]
-            [genegraph.transform.core :refer [transform-doc src-path add-model]]
+            [genegraph.transform.types :refer [transform-doc src-path add-model]]
             [cheshire.core :as json]))
 
 (def gci-express-root "http://dataexchange.clinicalgenome.org/gci-express/")

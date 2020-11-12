@@ -1,7 +1,7 @@
 (ns genegraph.transform.gci
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q]
-            [genegraph.transform.core :refer [transform-doc src-path]]
+            [genegraph.transform.types :refer [transform-doc src-path]]
             [cheshire.core :as json]
             [clojure.set :as set]
             [clojure.walk :as walk]))

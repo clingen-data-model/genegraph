@@ -1,5 +1,5 @@
 (ns genegraph.transform.gci-neo4j
-  (:require [genegraph.transform.core :as xform :refer [add-model]]
+  (:require [genegraph.transform.types :refer [add-model]]
             [genegraph.database.load :as l]
             [genegraph.database.query :as q]
             [clojure.string :as s]))

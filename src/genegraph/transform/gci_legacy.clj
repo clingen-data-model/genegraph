@@ -1,7 +1,7 @@
 (ns genegraph.transform.gci-legacy
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q :refer [resource]]
-            [genegraph.transform.core :as xform :refer [transform-doc src-path add-model]]
+            [genegraph.transform.types :refer [transform-doc src-path add-model]]
             [clojure.string :as s]
             [cheshire.core :as json]
             [io.pedestal.log :as log]))
@@ -96,9 +96,7 @@
 (defmethod add-model :gci-legacy [event]
   (log/debug :fn :add-model :format :gci-legacy :event event :msg :received-event)
   (let [report-json (json/parse-string (:genegraph.sink.event/value event) true)]
-    (try 
-      (assoc event
-             ::q/model
-             (l/statements-to-model  (gci-legacy-report-to-triples report-json)))
-      (catch Exception e (assoc event :exception e)))))
+    (assoc event
+           ::q/model
+           (l/statements-to-model  (gci-legacy-report-to-triples report-json)))))
   

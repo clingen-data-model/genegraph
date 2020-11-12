@@ -4,7 +4,7 @@
             [clojure.pprint :refer [pprint]]
             [io.pedestal.log :as log]
             [genegraph.database.load :as db]
-            [genegraph.transform.core :refer [transform-doc add-model src-path]]
+            [genegraph.transform.types :refer [transform-doc add-model src-path]]
             [genegraph.database.query :refer [resource]]
             [genegraph.database.query :as q]))
 
