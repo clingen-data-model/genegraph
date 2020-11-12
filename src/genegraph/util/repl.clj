@@ -10,7 +10,12 @@
             [genegraph.rocksdb :as rocks]
             [genegraph.migration :as migrate]
             [cheshire.core :as json]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [clojure.spec.alpha :as spec]
+            [cognitect.rebl :as rebl]))
+
+(defn start-rebl []
+  (rebl/ui))
 
 (defn clear-named-grpahs-with-type [type-carrying-graph-name]
   (let [named-graphs (map str

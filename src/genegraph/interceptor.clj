@@ -1,5 +1,6 @@
 (ns genegraph.interceptor
-  (:require [io.pedestal.interceptor.chain :as ic]))
+  (:require [io.pedestal.interceptor.chain :as ic]
+            [clojure.spec.alpha :as spec]))
 
 (defn interceptor-enter-def [name event-fn]
   "Returns an interceptor definition with name, that defines an :enter
@@ -9,7 +10,8 @@
   {:name name
    :enter (fn [context] 
             (let [new-context (event-fn context)]
-              (if (:exception new-context)
+              (if (or (:exception new-context)
+                      (::spec/invalid new-context))
                 (ic/terminate context)
                 new-context)))})
 
