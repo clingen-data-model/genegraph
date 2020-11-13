@@ -196,9 +196,9 @@
   (when-let [loc-str (get-in interp [:fields (build-location build)])]
     (let [[_ chr start-coord end-coord] (re-find #"(\w+):(.+)-(.+)$" loc-str)]
       {:type "SequenceLocation"
-       :sequence-id (-> chr-to-ref
-                        (get build)
-                        (get (s/lower-case chr)))
+       :sequence-id (q/resource (-> chr-to-ref
+                                    (get build)
+                                    (get (s/lower-case chr))))
        :interval {:type "SimpleInterval" ; sequence interval
                   :start (-> start-coord (s/replace #"\D" "") Integer.)
                   :end (-> end-coord (s/replace #"\D" "") Integer.)}})))
@@ -522,9 +522,9 @@
   [curation dosage]
   (let [iri (assertion-iri curation dosage)]
     (concat (common-assertion-fields iri curation dosage)
-            [[iri :has-predicate :sepio/DosageScopeAssertion]
-             [iri :has-object :sepio/GeneAssociatedWithAutosomalRecessivePhenotype]
-             [iri :type :sepio/PropositionScopeAssertion]])))
+            [[iri :sepio/has-predicate :sepio/DosageScopeAssertion]
+             [iri :sepio/has-object :sepio/GeneAssociatedWithAutosomalRecessivePhenotype]
+             [iri :rdf/type :sepio/PropositionScopeAssertion]])))
 
 (defn- base-iri [curation]
   (str cg-prefix (:key curation)))
@@ -559,7 +559,7 @@
 
 (defmethod add-model :gene-dosage-jira [event]
   (let [jira-json (json/parse-string (:genegraph.sink.event/value event) ->kebab-case-keyword)]
-    (clojure.pprint/pprint (gene-dosage-report jira-json))
+    ;; (clojure.pprint/pprint (gene-dosage-report jira-json))
     (if (spec/invalid? (spec/conform ::fields (:fields jira-json)))
       (assoc event ::spec/invalid true)
       (assoc event ::q/model (-> jira-json gene-dosage-report l/statements-to-model)))))

@@ -12,7 +12,8 @@
             [cheshire.core :as json]
             [clojure.string :as s]
             [clojure.spec.alpha :as spec]
-            [cognitect.rebl :as rebl]))
+            [cognitect.rebl :as rebl]
+            [clojure.pprint :refer [pprint]]))
 
 (defn start-rebl []
   (rebl/ui))
