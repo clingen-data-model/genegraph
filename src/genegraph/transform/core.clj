@@ -18,12 +18,14 @@
             [genegraph.transform.clinvar-scv]
             [genegraph.transform.rxnorm]
             [genegraph.env :as env]
-            [genegraph.transform.core :as xform]))
+            [genegraph.transform.core :as xform]
+            [io.pedestal.log :as log]))
 
 (defn add-model [event]
   (try
     (xform-types/add-model event)
-    (catch Exception e (assoc event :exception e))))
+    (catch Exception e 
+      (assoc event :exception e))))
 
 (defn transform-doc [doc]
   (xform-types/transform-doc doc))

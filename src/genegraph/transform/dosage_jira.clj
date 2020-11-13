@@ -16,7 +16,9 @@
                       "2" :sepio/DosageModerateEvidence
                       "1" :sepio/DosageMinimalEvidence
                       "0" :sepio/DosageNoEvidence
-                      "30: Gene associated with autosomal recessive phenotype" :associated-with-ar-pheno
+                      "30: Gene associated with autosomal recessive phenotype"
+                      ;;(q/resource "http://purl.obolibrary.org/obo/SEPIO_0002502")
+                      :sepio/GeneAssociatedWithAutosomalRecessivePhenotype
                       ;; assume moderate evidence for dosage sensitivity unlikely
                       "40: Dosage sensitivity unlikely" :sepio/DosageSufficientEvidence})
 
@@ -230,13 +232,6 @@
      :type "GENO:0000963" 
      :has-count dosage}))
 
-(def evidence-levels {"3" "SEPIO:0002006"
-                      "2" "SEPIO:0002009"
-                      "1" "SEPIO:0002007"
-                      "0" "SEPIO:0002008"
-                      ;; assume moderate evidence for dosage sensitivity unlikely
-                      "40: Dosage sensitivity unlikely" "SEPIO:0002009"})
-
 (defn- get-dosage-dependent-fields [interp dosage fields]
   (reduce #(let [ks (cons :fields (first %2))]
                (if-let [v (get-in interp ks)] 
@@ -364,7 +359,8 @@
 ;---------
 
 (defn- gene-iri [curation]
-  (q/resource (get-in curation [:fields :customfield-10157])))
+  (when-let [gene (get-in curation [:fields :customfield-10157])]
+    (q/resource gene)))
 
 (defn- region-iri [curation]
   (q/resource (str region-prefix (:key curation))))
@@ -408,7 +404,7 @@
 
 (defn- contribution-iri
   [curation]
-  (str cg-prefix "contribution-" (:key curation)  "-" (updated-date curation)))
+  (q/resource (str cg-prefix "contribution-" (:key curation)  "-" (updated-date curation))))
 
 (defn- contribution
   [iri curation]
@@ -416,10 +412,10 @@
    [iri :bfo/realizes :sepio/InterpreterRole]])
 
 (defn- assertion-iri [curation dosage]
-  (str cg-prefix (:key curation) "x" dosage "-" (updated-date curation)))
+  (q/resource (str cg-prefix (:key curation) "x" dosage "-" (updated-date curation))))
 
 (defn- proposition-iri [curation dosage]
-  (str cg-prefix (:key curation) "x" dosage))
+  (q/resource (str cg-prefix (:key curation) "x" dosage)))
 
 (def evidence-field-map
   {1 [[:customfield-10183 :customfield-10184]
@@ -507,10 +503,10 @@
 
 (defn- common-assertion-fields
   [iri curation dosage]
+  []
   (concat [[iri :sepio/is-specified-by :sepio/DosageSensitivityEvaluationGuideline]
            [iri :sepio/qualified-contribution (contribution-iri curation)]
            [iri :sepio/has-subject (proposition-iri curation dosage)]
-           [iri :sepio/has-object (dosage-assertion-value curation dosage)]
            [iri :dc/description (dosage-assertion-description curation dosage)]]
           (study-findings iri curation dosage)
           (proposition curation dosage)))
@@ -518,35 +514,42 @@
 (defn- evidence-strength-assertion [curation dosage]
   (let [iri (assertion-iri curation dosage)]
     (concat (common-assertion-fields iri curation dosage)
-     [[iri :rdf/type :sepio/EvidenceLevelAssertion]
-      [iri :sepio/has-predicate :sepio/HasEvidenceLevel]])))
+            [[iri :rdf/type :sepio/EvidenceLevelAssertion]
+             [iri :sepio/has-predicate :sepio/HasEvidenceLevel]
+             [iri :sepio/has-object (dosage-assertion-value curation dosage)]])))
 
 (defn- scope-assertion
   [curation dosage]
   (let [iri (assertion-iri curation dosage)]
-    (concat (common-assertion-fields curation dosage)
+    (concat (common-assertion-fields iri curation dosage)
             [[iri :has-predicate :sepio/DosageScopeAssertion]
              [iri :has-object :sepio/GeneAssociatedWithAutosomalRecessivePhenotype]
              [iri :type :sepio/PropositionScopeAssertion]])))
 
+(defn- base-iri [curation]
+  (str cg-prefix (:key curation)))
+
+(defn- report-iri [curation]
+  (q/resource (str (base-iri curation) "-" (updated-date curation))))
+
 (defn- assertion [curation dosage]
   (if (dosage-assertion-value curation dosage)
-    (if (and (= 1 dosage)
-             (= "30: Gene associated with autosomal recessive phenotype" 
-                (get-in curation [:fields :customfield-10165 :value])))
-      (scope-assertion curation dosage)
-      (evidence-strength-assertion curation dosage))
+    (conj 
+     (if (and (= 1 dosage)
+              (= "30: Gene associated with autosomal recessive phenotype" 
+                 (get-in curation [:fields :customfield-10165 :value])))
+       (scope-assertion curation dosage)
+       (evidence-strength-assertion curation dosage))
+     [(report-iri curation) :bfo/has-part (assertion-iri curation dosage)])
     []))
 
 (defn gene-dosage-report
   [curation]
   (let [base-iri (str cg-prefix (:key curation))
-        report-iri (str base-iri "-" (updated-date curation))
+        report-iri (report-iri curation)
         contribution-iri (contribution-iri curation)
-        assertions (filterv :has-object [(assertion curation 1)
-                                         (assertion curation 3)])
         result (concat [[report-iri :rdf/type :sepio/GeneDosageReport]
-                        [report-iri :dc/is-version-of base-iri]
+                        [report-iri :dc/is-version-of (q/resource base-iri)]
                         [report-iri :sepio/qualified-contribution contribution-iri]]
                        (contribution contribution-iri curation)
                        (assertion curation 1)
@@ -556,7 +559,7 @@
 
 (defmethod add-model :gene-dosage-jira [event]
   (let [jira-json (json/parse-string (:genegraph.sink.event/value event) ->kebab-case-keyword)]
-    ;;(clojure.pprint/pprint (gene-dosage-report jira-json))
+    (clojure.pprint/pprint (gene-dosage-report jira-json))
     (if (spec/invalid? (spec/conform ::fields (:fields jira-json)))
       (assoc event ::spec/invalid true)
       (assoc event ::q/model (-> jira-json gene-dosage-report l/statements-to-model)))))
