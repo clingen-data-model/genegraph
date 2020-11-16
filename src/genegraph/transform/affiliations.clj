@@ -2,7 +2,7 @@
   (:require [clojure.data.csv :as csv]
             [clojure.string :as s]
             [genegraph.database.load :as l]
-            [genegraph.transform.core :refer [transform-doc src-path add-model]]))
+            [genegraph.transform.types :refer [transform-doc src-path add-model]]))
 
 (def affiliation-prefix "http://dataexchange.clinicalgenome.org/agent/")
 

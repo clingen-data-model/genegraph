@@ -1,5 +1,5 @@
 (ns genegraph.transform.gci-neo4j
-  (:require [genegraph.transform.core :as xform :refer [add-model]]
+  (:require [genegraph.transform.types :refer [add-model]]
             [genegraph.database.load :as l]
             [genegraph.database.query :as q]
             [clojure.string :as s]))
@@ -51,7 +51,7 @@
    [iri :sepio/activity-date (:date report)]])
 
 (defn evidence-level-assertion [report iri id]
-  (let [prop-iri (q/resource (str gci-root "proposition_" id))
+  (let [prop-iri (q/resource (str gci-root "proposition_" (:id report)))
         contribution-iri (l/blank-node)]
     (concat [[iri :rdf/type :sepio/GeneValidityEvidenceLevelAssertion]
              [iri :sepio/has-subject prop-iri]

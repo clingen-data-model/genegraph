@@ -1,7 +1,7 @@
 (ns genegraph.transform.rxnorm
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q :refer [resource]]
-            [genegraph.transform.core :refer [transform-doc]]
+            [genegraph.transform.types :refer [transform-doc]]
             [io.pedestal.log :as log]))
 
 (defmethod transform-doc :rxnorm [doc-def]

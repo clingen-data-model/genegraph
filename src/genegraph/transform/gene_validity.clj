@@ -1,7 +1,7 @@
 (ns genegraph.transform.gene-validity
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q :refer [select construct ld-> ld1-> declare-query]]
-            [genegraph.transform.core :refer [transform-doc src-path add-model]]
+            [genegraph.transform.types :refer [transform-doc src-path add-model]]
             [cheshire.core :as json]
             [clojure.string :as s]
             [clojure.java.io :as io :refer [resource]])

@@ -6,7 +6,7 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [io.pedestal.log :as log]
-            [genegraph.transform.core :refer [transform-doc src-path]]))
+            [genegraph.transform.types :refer [transform-doc src-path]]))
 
 ;; TODO - try using the ensembl id (nth row 63) from the file to lookup using
 ;; "select ?s where { ?s a :so/ProteinCodingGene . ?s :owl/same-as ?ensembl }" {:ensembl "URI" }

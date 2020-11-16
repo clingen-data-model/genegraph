@@ -7,6 +7,9 @@
  :gene-dosage-stage {:genegraph.transform.core/format :json-ld
                      :genegraph.annotate/root-type :sepio/GeneDosageReport
                      :genegraph.annotate/graph-name :sepio/GeneDosageReport}
+ :gene-dosage-jira {:genegraph.transform.core/format :gene-dosage-jira
+                   :genegraph.annotate/root-type :sepio/GeneDosageReport
+                   :genegraph.annotate/graph-name :sepio/GeneDosageReport}
  :gene-validity  {:genegraph.transform.core/format :gci-legacy
                   :genegraph.annotate/root-type :sepio/GeneValidityReport
                   :genegraph.annotate/graph-name :sepio/GeneValidityProposition}
@@ -32,4 +35,7 @@
               :genegraph.annotate/graph-name :owl/Ontology}
  :mondo {:genegraph.transform.core/format :turtle
          :genegraph.annotate/root-type :owl/Ontology
-         :genegraph.annotate/graph-name :owl/Ontology}}
+         :genegraph.annotate/graph-name :owl/Ontology}
+ :clinvar-raw {:genegraph.transform.core/format :clinvar-scv
+               :genegraph.annotate/root-type :sepio/VariantPathogenicityInterpretation
+               :genegraph.annotate/graph-name :sepio/VariantPathogenicityInterpretation}}

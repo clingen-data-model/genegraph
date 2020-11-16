@@ -20,6 +20,10 @@
                                 :reader-opts {:format :json-ld}
                                 :root-type :sepio/GeneDosageReport
                                 :cluster :dx-ccloud}
+            :gene-dosage-jira {:name "gene_dosage_raw"
+                                :format :gene-dosage-jira
+                                :root-type :sepio/GeneDosageReport
+                                :cluster :dx-ccloud}
             :gene-validity  {:format :gene-validity-v1
                              :name "gene_validity"
                              :root-type :sepio/GeneValidityReport
@@ -31,8 +35,15 @@
                                     :name "gene_validity_raw_dev"
                                     :cluster :dx-ccloud}
             :gci-legacy  {:format :gci-legacy
-                             :name "gene_validity"
-                             :root-type :sepio/GeneValidityReport
-                             :cluster :dx-ccloud}
+                          :name "gene_validity"
+                          :root-type :sepio/GeneValidityReport
+                          :cluster :dx-ccloud}
             :gene-validity-events-dev {:name "gene_validity_events_dev"
-                                       :cluster :dx-ccloud}}}
+                                       :cluster :dx-ccloud}
+            :clinvar-raw {:name "clinvar-raw"
+                          :cluster :dx-ccloud}
+            :clinvar-scv {:name "clinvar-scv"
+                          :cluster :dx-ccloud
+                          :format :clinvar-scv
+                          :root-type :sepio/VariantPathogenicityInterpretation}}}
+

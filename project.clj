@@ -46,7 +46,7 @@
                  [com.fasterxml.jackson.core/jackson-databind "2.11.0"]
                  [com.google.cloud/google-cloud-storage "1.108.0"]
                  [org.rocksdb/rocksdbjni "6.11.4"]
-                 [com.taoensso/nippy "2.15.0"]
+                 [com.taoensso/nippy "3.0.0"]
                  [digest "1.4.9"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources", "jars/REBL-0.9.220.jar"]

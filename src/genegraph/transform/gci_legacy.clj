@@ -1,7 +1,7 @@
 (ns genegraph.transform.gci-legacy
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q :refer [resource]]
-            [genegraph.transform.core :as xform :refer [transform-doc src-path add-model]]
+            [genegraph.transform.types :refer [transform-doc src-path add-model]]
             [clojure.string :as s]
             [cheshire.core :as json]
             [io.pedestal.log :as log]))
@@ -43,8 +43,11 @@
    "No Classification" :sepio/NoEvidence})
 
 (def gci-sop-version 
-  {"6" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP6
-   "7" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP7})
+  {"4" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP4
+   "5" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP5
+   "6" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP6
+   "7" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP7
+   "8" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP8})
 
 (defn contribution [report iri]
   [[iri :bfo/realizes :sepio/ApproverRole]
@@ -88,7 +91,7 @@
 
 (defmethod transform-doc :gci-legacy [doc-def]
   (let [report-json (json/parse-string (:document doc-def) true)]
-    (l/statements-to-model  (gci-legacy-report-to-triples report-json))))
+    (l/statements-to-model (gci-legacy-report-to-triples report-json))))
 
 (defmethod add-model :gci-legacy [event]
   (log/debug :fn :add-model :format :gci-legacy :event event :msg :received-event)

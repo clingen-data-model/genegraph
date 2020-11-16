@@ -37,6 +37,7 @@
  [:sepio/DosageSensitivityProposition "http://purl.obolibrary.org/obo/SEPIO_0002003"]
  [:sepio/EvidenceLevelAssertion "http://purl.obolibrary.org/obo/SEPIO_0002001"]
  [:sepio/EvidenceDirection "http://purl.obolibrary.org/obo/SEPIO_0000402"]
+ [:sepio/VariantPathogenicityInterpretation "http://purl.obolibrary.org/obo/SEPIO_0000190"]
  [:foaf/Group "http://xmlns.com/foaf/0.1/Group"]
  [:foaf/Organization "http://xmlns.com/foaf/0.1/Organization"]
  [:sepio/StudyFinding "http://purl.obolibrary.org/obo/SEPIO_0000173"]
@@ -65,6 +66,7 @@
  [:sepio/ActionabilityReport "http://purl.obolibrary.org/obo/SEPIO_0003010"]
  [:sepio/GeneValidityReport "http://purl.obolibrary.org/obo/SEPIO_0004004"]
  [:sepio/ApproverRole "http://purl.obolibrary.org/obo/SEPIO_0000155"]
+ [:sepio/InterpreterRole "http://purl.obolibrary.org/obo/SEPIO_0000331"]
  [:sepio/GeneticCondition "http://purl.obolibrary.org/obo/SEPIO_0000219"]
  [:sepio/EvidenceRole "http://purl.obolibrary.org/obo/SEPIO_0000148"]
  [:cg/DomainModel "http://dataexchange.clinicalgenome.org/terms/DomainModel"]
@@ -90,6 +92,8 @@
  [:sepio/DosageMinimalEvidence "http://purl.obolibrary.org/obo/SEPIO_0002007"]
  [:sepio/DosageModerateEvidence "http://purl.obolibrary.org/obo/SEPIO_0002009"]
  [:sepio/DosageSufficientEvidence "http://purl.obolibrary.org/obo/SEPIO_0002006"]
+ [:sepio/DosageScopeAssertion "http://purl.obolibrary.org/obo/SEPIO_0002505"]
+ [:sepio/GeneAssociatedWithAutosomalRecessivePhenotype "http://purl.obolibrary.org/obo/SEPIO_0002502"]
  [:sepio/HasEvidenceLevel "http://purl.obolibrary.org/obo/SEPIO_0000146"]
  [:sepio/DefinitiveEvidence "http://purl.obolibrary.org/obo/SEPIO_0004504"]
  [:sepio/LimitedEvidence "http://purl.obolibrary.org/obo/SEPIO_0004507"]
@@ -103,6 +107,7 @@
  [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP5 "http://purl.obolibrary.org/obo/SEPIO_0004093"]
  [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP6 "http://purl.obolibrary.org/obo/SEPIO_0004094"]
  [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP7 "http://purl.obolibrary.org/obo/SEPIO_0004095"]
+ [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP8 "http://purl.obolibrary.org/obo/SEPIO_0004096"]
 [:sepio/ClinGenProteinFunctionCriteria
   "http://purl.obolibrary.org/obo/SEPIO_0004074"]
  [:sepio/NonHumanModelOrganismEvidenceItem

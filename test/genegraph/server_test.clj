@@ -165,7 +165,8 @@
               first-single-gene-query-response (query gene-query {:iri gene-iri})
               _ (event/process-event! (-> events :gene-validity-update-sequence second))
               second-single-gene-query-response (query gene-query {:iri gene-iri})]
-          (println gene-iri)
+          (clojure.pprint/pprint first-single-gene-query-response)
+          (clojure.pprint/pprint second-single-gene-query-response)
           (is (not= first-genes-query-response second-genes-query-response))
           (is (not= first-single-gene-query-response second-single-gene-query-response))))
       (testing "Test absence of curation activities in uncurated gene"

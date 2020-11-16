@@ -6,7 +6,7 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [io.pedestal.log :as log]
-            [genegraph.transform.core :refer [transform-doc src-path]]))
+            [genegraph.transform.types :refer [transform-doc src-path]]))
 
 (defn hi-row-to-triples [row]
   (let [[gene-symbol _ hi-score] (str/split (nth row 3) #"\|")

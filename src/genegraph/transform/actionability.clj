@@ -1,7 +1,7 @@
 (ns genegraph.transform.actionability
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q]
-            [genegraph.transform.core :refer [transform-doc src-path add-model]]
+            [genegraph.transform.types :refer [transform-doc src-path add-model]]
             [cheshire.core :as json]
             [clojure.java.io :as io]
             [clojure.spec.alpha :as spec]

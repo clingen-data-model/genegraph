@@ -4,7 +4,7 @@
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [clojure.string :as str]
-            [genegraph.transform.core :refer [transform-doc src-path]]))
+            [genegraph.transform.types :refer [transform-doc src-path]]))
 
 (def gene-prefix "https://www.ncbi.nlm.nih.gov/gene/")
 (def mim-prefix "http://purl.obolibrary.org/obo/OMIM_")
