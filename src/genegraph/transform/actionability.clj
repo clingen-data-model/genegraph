@@ -36,7 +36,7 @@
 (defn genetic-condition-label [parent-condition gene]
   (str (q/ld1-> parent-condition [:rdfs/label]) ", " (q/ld1-> gene [:skos/preferred-label])))
 
-(defn conditition-resource [condition]
+(defn condition-resource [condition]
   (if (re-find #"MONDO" condition)
     (q/resource condition)
     (first (filter #(re-find #"MONDO" (str %))
@@ -44,7 +44,7 @@
                            [[:owl/equivalent-class :-]])))))
 
 (defn gene-resource [gene]
-  (q/ld1-> (q/resource (:gene condition)) [[:owl/same-as :<]]))
+  (q/ld1-> (q/resource gene) [[:owl/same-as :<]]))
 
 (defn genetic-condition [curation-iri condition]
   (when-let [condition-resource-for-gc (condition-resource (:iri condition))]
@@ -65,13 +65,13 @@
      [contrib-iri :sepio/has-agent agent-iri]]))
 
 (def actionability-assertion-objects 
-  {"Definitive Actionability" []
-   "Strong Actionability" []
-   "Moderate Actionability" []
-   "Limited Actionability" []
-   "Insufficient Actionability" []
-   "No Actionability" []
-   "Assertion Pending" []})
+  {"Definitive Actionability" :sepio/DefinitiveActionability
+   "Strong Actionability" :sepio/StrongActionability
+   "Moderate Actionability" :sepio/ModerateActionability
+   "Limited Actionability" :sepio/LimitedActionability
+   "Insufficient Actionability" :sepio/InsufficientActionability
+   "No Actionability" :sepio/NoActionability
+   "Assertion Pending" :sepio/AssertionPending})
 
 ;; Very rough and non-sepioized view of actionability assertions
 ;; need to do appropriate modeling work to expand on this
@@ -81,7 +81,7 @@
        [assertion-iri :rdf/type :sepio/ActionabilityAssertion]
        [assertion-iri :sepio/has-subject (gene-resource (:gene assertion))]
        [assertion-iri :sepio/has-qualifier (condition-resource (:iri assertion))]
-       [assertion-iri :sepio/has-object ]]))
+       [assertion-iri :sepio/has-object (get actionability-assertion-objects (:assertion assertion))]]))
 
 (defn transform [curation]
   (let [statements (if (spec/valid? ::curation curation)
