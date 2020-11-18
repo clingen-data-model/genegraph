@@ -283,6 +283,27 @@
   "http://purl.obolibrary.org/obo/SEPIO_0004090"]
  [:sepio/FamilyWithMultiLocusSegregationEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004091"]
+ [:sepio/GeneticConditionActionabilityProposition
+  "http://purl.obolibrary.org/obo/SEPIO_0003011"]
+ [:sepio/GeneticConditionActionabilityEvidenceLevelAssertion
+  "http://purl.obolibrary.org/obo/SEPIO_0003013"]
+ ;; sepio actionability VS
+ [:sepio/ActionabilityAssertionValueSet
+  "http://purl.obolibrary.org/obo/SEPIO_0003534"]
+ [:sepio/DefinitiveActionability
+  "http://purl.obolibrary.org/obo/SEPIO_0003535"]
+ [:sepio/StrongActionability
+  "http://purl.obolibrary.org/obo/SEPIO_0003013"]
+ [:sepio/ModerateActionability
+  "http://purl.obolibrary.org/obo/SEPIO_0003013"]
+ [:sepio/LimitedActionability
+  "http://purl.obolibrary.org/obo/SEPIO_0003013"]
+ [:sepio/InsufficientActionability
+  "http://purl.obolibrary.org/obo/SEPIO_0003013"]
+ [:sepio/NoActionability
+  "http://purl.obolibrary.org/obo/SEPIO_0003013"]
+ [:sepio/AssertionPending
+  "http://purl.obolibrary.org/obo/SEPIO_0003013"]
  [:void/Dataset "http://rdfs.org/ns/void#Dataset"]
  [:chebi/Drug "http://purl.obolibrary.org/obo/CHEBI_23888"]]
 
