@@ -64,6 +64,7 @@
  [:hpo/YLinkedInheritance "http://purl.obolibrary.org/obo/HP_0001450"]
  [:sepio/ValueSet "http://purl.obolibrary.org/obo/SEPIO_0000412"]
  [:sepio/ActionabilityReport "http://purl.obolibrary.org/obo/SEPIO_0003010"]
+ [:sepio/ActionabilityAssertion "http://purl.obolibrary.org/obo/SEPIO_0003003"]
  [:sepio/GeneValidityReport "http://purl.obolibrary.org/obo/SEPIO_0004004"]
  [:sepio/ApproverRole "http://purl.obolibrary.org/obo/SEPIO_0000155"]
  [:sepio/InterpreterRole "http://purl.obolibrary.org/obo/SEPIO_0000331"]
