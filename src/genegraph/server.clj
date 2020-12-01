@@ -8,8 +8,10 @@
             [genegraph.sink.stream :as stream]
             [genegraph.migration :as migration]
             [genegraph.env :as env]
-            [io.pedestal.log :as log]))
+            [io.pedestal.log :as log])
+  (:import com.google.firebase.FirebaseApp))
 
+(def initialized? (atom false))
 
 (def status-routes 
   {::server/routes
@@ -34,13 +36,15 @@
   :start (start-server!)
   :stop (server/stop server))
 
+(defstate firebase
+  :start (FirebaseApp/initializeApp)
+  :stop (.delete firebase))
+
 (defn run-dev
   "Run a development-focused environment: skip connection to Kafka unless
   requested, watch for updates in base data."
   []
-  (mount.core/start-without #'genegraph.sink.stream/consumer-thread)
-  ;;(base/watch-base-dir)
-  )
+  (mount.core/start-without #'genegraph.sink.stream/consumer-thread))
 
 (defn -main
   "The entry-point for 'lein run'"

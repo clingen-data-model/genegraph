@@ -12,6 +12,7 @@
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]
             [genegraph.source.graphql.core :as gql]
+            [genegraph.auth :as auth]
             [genegraph.source.graphql.gene :as gql-gene]
             [genegraph.response-cache :refer [response-cache-interceptor]]
             [genegraph.env :as env]
@@ -38,6 +39,21 @@
                       ::lacinia-pedestal/query-executor)
       (lacinia/inject log-request-interceptor
                       :before
+                      ::lacinia-pedestal/body-data)
+      (lacinia/inject auth/auth-interceptor
+                      :before
+                      ::lacinia-pedestal/body-data)))
+
+(defn prod-interceptors []
+  (-> (lacinia-pedestal/default-interceptors (gql/schema) {})
+      (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
+                      :before
+                      ::lacinia-pedestal/query-executor)
+      (lacinia/inject (pedestal-interceptor/interceptor (response-cache-interceptor))
+                      :before
+                      ::lacinia-pedestal/body-data)
+      (lacinia/inject auth/auth-interceptor
+                      :before
                       ::lacinia-pedestal/body-data)))
 
 (defn dev-subscription-interceptors []
@@ -47,6 +63,9 @@
                       ::lacinia-subs/execute-operation)
       (lacinia/inject (pedestal-interceptor/interceptor log-request-interceptor)
                       :before
+                      ::lacinia-subs/exception-handler)
+      (lacinia/inject auth/auth-interceptor
+                      :after
                       ::lacinia-subs/exception-handler)))
 
 (defn prod-subscription-interceptors []
@@ -56,9 +75,10 @@
                       ::lacinia-subs/execute-operation)
       (lacinia/inject (pedestal-interceptor/interceptor (response-cache-interceptor))
                       :before
-                      ::lacinia-subs/send-operation-response)))
-
-
+                      ::lacinia-subs/send-operation-response)
+      (lacinia/inject auth/auth-interceptor
+                      :after
+                      ::lacinia-subs/exception-handler)))
 
 (defn service-map [interceptors subscription-interceptors]
   (-> {:env :dev,
