@@ -11,8 +11,6 @@
             [io.pedestal.log :as log]))
 
 
-(def initialized? (atom false))
-
 (def status-routes 
   {::server/routes
    [["/live"

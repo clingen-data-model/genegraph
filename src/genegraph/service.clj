@@ -1,11 +1,14 @@
 (ns genegraph.service
   (:require [hiccup.page :refer [html5]]
+            [io.pedestal.interceptor :as pedestal-interceptor]
             [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.http.body-params :as body-params]
             [ring.util.response :as ring-resp]
             [genegraph.source.html.common :as cg-html]
             [com.walmartlabs.lacinia.pedestal :as lacinia]
+            [com.walmartlabs.lacinia.pedestal2 :as lacinia-pedestal]
+            [com.walmartlabs.lacinia.pedestal.subscriptions :as lacinia-subs]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]
             [genegraph.source.graphql.core :as gql]
@@ -15,133 +18,76 @@
             [mount.core :refer [defstate]]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [genegraph.database.util :refer [begin-read-tx close-read-tx]]))
-
-(defn about-page
-  [request]
-  (ring-resp/response (str request (format "Clojure %s - served from %s"
-                                           (clojure-version)
-                                           (route/url-for ::about-page)))))
-
-(defn home-page
-  [request]
-  (ring-resp/response (html5 (cg-html/template cg-html/index request))))
-
-(defn resource-page
-  [request]
-  (ring-resp/response (html5 (cg-html/template 
-                              cg-html/resource 
-                              (select-keys request [:path-params :query-params])))))
-
-
-
-
-;; Defines "/" and "/about" routes with their associated :get handlers.
-;; The interceptors defined after the verb map (e.g., {:get home-page}
-;; apply to / and its children (/about).
-(def common-interceptors [(body-params/body-params) http/html-body])
-
-
-(def model-pages {::http/routes
-                  [["/model"
-                    :get (conj common-interceptors `home-page)
-                    :route-name ::model-home]
-                   ["/r/:id"
-                    :get (conj common-interceptors `resource-page)
-                    :route-name ::model-resource]]
-                  ::http/resource-path "/public"})
-
-;; Tabular routes
-(def routes #{["/" :get (conj common-interceptors `home-page)]
-              ["/r/:id" :get (conj common-interceptors `resource-page)]
-              ["/about" :get (conj common-interceptors `about-page)]})
-
-;; Map-based routes
-;; (def routes `{"/" {:interceptors [(body-params/body-params) http/html-body]
-;;                   :get home-page
-;;                   "/about" {:get about-page}}})
-
-;; Terse/Vector-based routes
-;(def routes
-;  `[[["/" {:get home-page}
-;      ^:interceptors [(body-params/body-params) http/html-body]
-;      ["/about" {:get about-page}]]]])
-
+            [clojure.set :as set]
+            [genegraph.database.util :refer [begin-read-tx close-read-tx]]
+            [io.pedestal.log :as log]))
 
 (def open-tx-interceptor
   {:name ::open-tx
    :enter (fn [context] (begin-read-tx) context)
    :leave (fn [context] (close-read-tx) context)})
 
+(def log-request-interceptor
+  {:name ::log-request
+   :enter (fn [context] (log/info :request context) context)})
+
+(defn dev-interceptors []
+  (-> (lacinia-pedestal/default-interceptors gql/schema {})
+      (lacinia/inject open-tx-interceptor
+                      :before
+                      ::lacinia-pedestal/query-executor)
+      (lacinia/inject log-request-interceptor
+                      :before
+                      ::lacinia-pedestal/body-data)))
+
+(defn dev-subscription-interceptors []
+  (-> (lacinia-subs/default-subscription-interceptors gql/schema {})
+      (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
+                      :before
+                      ::lacinia-subs/execute-operation)
+      (lacinia/inject (pedestal-interceptor/interceptor log-request-interceptor)
+                      :before
+                      ::lacinia-subs/exception-handler)))
+
+(defn prod-subscription-interceptors []
+  (-> (lacinia-subs/default-subscription-interceptors (gql/schema) {})
+      (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
+                      :before
+                      ::lacinia-subs/execute-operation)
+      (lacinia/inject (pedestal-interceptor/interceptor (response-cache-interceptor))
+                      :before
+                      ::lacinia-subs/send-operation-response)))
+
+
+
+(defn service-map [interceptors subscription-interceptors]
+  (-> {:env :dev,
+       ::http/host "0.0.0.0"
+       :io.pedestal.http/routes
+       (set/union
+        (lacinia-pedestal/graphiql-asset-routes "/assets/graphiql")
+        #{["/api"
+           :post interceptors
+           :route-name
+           :com.walmartlabs.lacinia.pedestal2/graphql-api]
+          ["/ide"
+           :get (lacinia-pedestal/graphiql-ide-handler {})
+           :route-name
+           :com.walmartlabs.lacinia.pedestal2/graphiql-ide]}),
+       :io.pedestal.http/port 8888,
+       :io.pedestal.http/type :jetty,
+       :io.pedestal.http/join? false,
+       :io.pedestal.http/secure-headers nil}
+      lacinia-pedestal/enable-graphiql
+      (lacinia-pedestal/enable-subscriptions 
+       gql/schema 
+       {:subscription-interceptors subscription-interceptors})))
+
 (defn dev-service 
   "Service map to be used for development mode."
   []
-  (let [gql-schema (gql/schema)
-        interceptors (cond-> (lacinia/default-interceptors gql/schema {})
-                       true (lacinia/inject open-tx-interceptor :before ::lacinia/query-executor)
-                       env/use-response-cache (lacinia/inject (response-cache-interceptor) :before ::lacinia/json-response))]
-    (merge-with into  
-                (lacinia/service-map gql/schema
-                                     {:graphiql true
-                                      :interceptors interceptors
-                                      :subscriptions true})
-                model-pages
-                {::http/host "0.0.0.0"})))
+  (service-map (dev-interceptors) (dev-subscription-interceptors)))
 
-;;(def service (lacinia/service-map (graphql-schema) {:graphiql true}))
 (defn service []
-  (let [gql-schema (gql/schema)
-        interceptors (cond-> (lacinia/default-interceptors gql-schema {})
-                       true (lacinia/inject open-tx-interceptor :before ::lacinia/query-executor)
-                       env/use-response-cache (lacinia/inject (response-cache-interceptor) :before ::lacinia/json-response))]
-    (merge-with into  
-                (lacinia/service-map gql-schema
-                                     {:graphiql true
-                                      :interceptors interceptors
-                                      :subscriptions true})
-                model-pages
-                {::http/host "0.0.0.0"})))
-
-;; Consumed by genegraph.server/create-server
-;; See http/default-interceptors for additional options you can configure
-;; (def service {:env :prod
-;;               ;; You can bring your own non-default interceptors. Make
-;;               ;; sure you include routing and set it up right for
-;;               ;; dev-mode. If you do, many other keys for configuring
-;;               ;; default interceptors will be ignored.
-;;               ;; ::http/interceptors []
-;;               ::http/routes routes
-
-;;               ;; Uncomment next line to enable CORS support, add
-;;               ;; string(s) specifying scheme, host and port for
-;;               ;; allowed source(s):
-;;               ;;
-;;               ;; "http://localhost:8080"
-;;               ;;
-;;               ;;::http/allowed-origins ["scheme://host:port"]
-
-;;               ;; Tune the Secure Headers
-;;               ;; and specifically the Content Security Policy appropriate to your service/application
-;;               ;; For more information, see: https://content-security-policy.com/
-;;               ;;   See also: https://github.com/pedestal/pedestal/issues/499
-;;               ;;::http/secure-headers {:content-security-policy-settings {:object-src "'none'"
-;;               ;;                                                          :script-src "'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:"
-;;               ;;                                                          :frame-ancestors "'none'"}}
-
-;;               ;; Root for resource interceptor that is available by default.
-;;
-
-
-;;               ;; Either :jetty, :immutant or :tomcat (see comments in project.clj)
-;;               ;;  This can also be your own chain provider/server-fn -- http://pedestal.io/reference/architecture-overview#_chain_provider
-;;               ::http/type :jetty
-;;               ::http/host "0.0.0.0"
-;;               ::http/port 8080
-;;               ;; Options to pass to the container (Jetty)
-;;               ::http/container-options {:h2c? true
-;;                                         :h2? false
-;;                                         ;:keystore "test/hp/keystore.jks"
-;;                                         ;:key-password "password"
-;;                                         ;:ssl-port 8443
-;;                                         :ssl? false}})
+  (service-map (prod-interceptors) (prod-subscription-interceptors)))
 
