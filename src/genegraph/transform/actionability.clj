@@ -36,26 +36,20 @@
 (defn genetic-condition-label [parent-condition gene]
   (str (q/ld1-> parent-condition [:rdfs/label]) ", " (q/ld1-> gene [:skos/preferred-label])))
 
-(defn condition-resource [condition]
-  (if (re-find #"MONDO" condition)
-    (q/resource condition)
-    (first (filter #(re-find #"MONDO" (str %))
-                   (q/ld-> (q/resource condition)
-                           [[:owl/equivalent-class :-]])))))
-
-(defn gene-resource [gene]
-  (q/ld1-> (q/resource gene) [[:owl/same-as :<]]))
-
 (defn genetic-condition [curation-iri condition]
-  (when-let [condition-resource-for-gc (condition-resource (:iri condition))]
+  (when-let [condition-resource (if (re-find #"MONDO" (:iri condition))
+                                  (q/resource (:iri condition))
+                                  (first (filter #(re-find #"MONDO" (str %))
+                                                 (q/ld-> (q/resource (:iri condition))
+                                                         [[:owl/equivalent-class :-]]))))]
     (let [gc-node (l/blank-node)
-          gene (gene-resource (:gene condition))]
+          gene (q/ld1-> (q/resource (:gene condition)) [[:owl/same-as :<]])]
       [[curation-iri :sepio/is-about-condition gc-node]
        [gc-node :rdf/type :sepio/GeneticCondition]
        [gc-node :rdf/type :cg/ActionabilityGeneticCondition]
-       [gc-node :rdfs/sub-class-of condition-resource-for-gc]
+       [gc-node :rdfs/sub-class-of condition-resource]
        [gc-node :sepio/is-about-gene gene]
-       [gc-node :rdfs/label (genetic-condition-label condition-resource-for-gc gene)]])))
+       [gc-node :rdfs/label (genetic-condition-label condition-resource gene)]])))
 
 (defn search-contributions [curation-iri search-date agent-iri]
   (let [contrib-iri (l/blank-node)]
@@ -63,25 +57,6 @@
      [contrib-iri :sepio/activity-date search-date]
      [contrib-iri :bfo/realizes :sepio/EvidenceRole]
      [contrib-iri :sepio/has-agent agent-iri]]))
-
-(def actionability-assertion-objects 
-  {"Definitive Actionability" :sepio/DefinitiveActionability
-   "Strong Actionability" :sepio/StrongActionability
-   "Moderate Actionability" :sepio/ModerateActionability
-   "Limited Actionability" :sepio/LimitedActionability
-   "Insufficient Actionability" :sepio/InsufficientActionability
-   "No Actionability" :sepio/NoActionability
-   "Assertion Pending" :sepio/AssertionPending})
-
-;; Very rough and non-sepioized view of actionability assertions
-;; need to do appropriate modeling work to expand on this
-(defn actionability-assertion [curation-iri assertion]
-  (let [assertion-iri (l/blank-node)]
-      [[curation-iri :bfo/has-part assertion-iri]
-       [assertion-iri :rdf/type :sepio/ActionabilityAssertion]
-       [assertion-iri :sepio/has-subject (gene-resource (:gene assertion))]
-       [assertion-iri :sepio/has-qualifier (condition-resource (:iri assertion))]
-       [assertion-iri :sepio/has-object (get actionability-assertion-objects (:assertion assertion))]]))
 
 (defn transform [curation]
   (let [statements (if (spec/valid? ::curation curation)
