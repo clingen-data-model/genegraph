@@ -45,16 +45,20 @@
                       ::lacinia-pedestal/body-data)))
 
 (defn prod-interceptors []
-  (-> (lacinia-pedestal/default-interceptors (gql/schema) {})
-      (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
-                      :before
-                      ::lacinia-pedestal/query-executor)
-      (lacinia/inject (pedestal-interceptor/interceptor (response-cache-interceptor))
-                      :before
-                      ::lacinia-pedestal/body-data)
-      (lacinia/inject auth/auth-interceptor
-                      :before
-                      ::lacinia-pedestal/body-data)))
+  (let [interceptor-chain
+        (-> (lacinia-pedestal/default-interceptors (gql/schema) {})
+            (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
+                            :before
+                            ::lacinia-pedestal/query-executor)
+            (lacinia/inject auth/auth-interceptor
+                            :before
+                            ::lacinia-pedestal/body-data))]
+    (cond-> interceptor-chain
+      env/use-response-cache (lacinia/inject 
+                              (pedestal-interceptor/interceptor
+                               (response-cache-interceptor))
+                              :before
+                              ::lacinia-pedestal/body-data))))
 
 (defn dev-subscription-interceptors []
   (-> (lacinia-subs/default-subscription-interceptors gql/schema {})
@@ -69,16 +73,20 @@
                       ::lacinia-subs/exception-handler)))
 
 (defn prod-subscription-interceptors []
-  (-> (lacinia-subs/default-subscription-interceptors (gql/schema) {})
-      (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
-                      :before
-                      ::lacinia-subs/execute-operation)
-      (lacinia/inject (pedestal-interceptor/interceptor (response-cache-interceptor))
-                      :before
-                      ::lacinia-subs/send-operation-response)
-      (lacinia/inject auth/auth-interceptor
-                      :after
-                      ::lacinia-subs/exception-handler)))
+  (let [interceptor-chain 
+        (-> (lacinia-subs/default-subscription-interceptors (gql/schema) {})
+            (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
+                            :before
+                            ::lacinia-subs/execute-operation)
+            (lacinia/inject auth/auth-interceptor
+                            :after
+                            ::lacinia-subs/exception-handler))]
+    (cond-> interceptor-chain
+      env/use-response-cache (lacinia/inject 
+                              (pedestal-interceptor/interceptor
+                               (response-cache-interceptor))
+                              :before
+                              ::lacinia-subs/send-operation-response))))
 
 (defn service-map [interceptors subscription-interceptors]
   (-> {:env :dev,
@@ -90,6 +98,10 @@
            :post interceptors
            :route-name
            :com.walmartlabs.lacinia.pedestal2/graphql-api]
+          ["/graphql"
+           :post interceptors
+           :route-name
+           ::legacy-api-route]
           ["/ide"
            :get (lacinia-pedestal/graphiql-ide-handler {})
            :route-name
