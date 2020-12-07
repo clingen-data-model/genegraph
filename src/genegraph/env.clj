@@ -14,13 +14,18 @@
 (def mode (System/getenv "GENEGRAPH_MODE"))
 (def validate-events (System/getenv "GENEGRAPH_VALIDATE_EVENTS"))
 (def use-response-cache (System/getenv "GENEGRAPH_RESPONSE_CACHE"))
+(def genegraph-version (System/getenv "GENEGRAPH_IMAGE_VERSION"))
+
+(def environment {:data-vol data-vol
+                  :dx-topics dx-topics
+                  :genegraph-data-version data-version
+                  :genegraph-bucket genegraph-bucket
+                  :gengraph-cache use-gql-cache
+                  :genegraph-mode mode
+                  :genegraph-validate-events validate-events
+                  :genegraph-version genegraph-version})
+  
 
 (defn log-environment []
   (log/info :fn :log-environment
-            :data-vol data-vol
-            :dx-topics dx-topics
-            :genegraph-data-version data-version
-            :genegraph-bucket genegraph-bucket
-            :gengraph-cache use-gql-cache
-            :genegraph-mode mode
-            :genegraph-validate-events validate-events))
+            :env environment))

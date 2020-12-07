@@ -22,7 +22,10 @@
      :get (fn [_] (if (and @initialized? (stream/up-to-date?))
                     {:status 200 :body "server is ready"}
                     {:status 503 :body "server is not ready"}))
-     :route-name ::readiness]]})
+     :route-name ::readiness]
+    ["/env"
+     :get (fn [_] {:status 200 :body (str env/environment)})
+     :route-name ::env]]})
 
 (defn start-server! []
   (let [service-map (case env/mode
