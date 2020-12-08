@@ -36,6 +36,7 @@
        (reset! current-union-model (.getUnionModel db))
        (try
          (let [result# (do ~@body)]
+           (.commit db)
            result#)
          (catch Exception e# (log/error :fn :tx :msg e#) (.abort db))
          (finally (.end db))))))
@@ -52,6 +53,24 @@
   "Close a transaction opened with begin-read-tx"
   []
   (.end db))
+
+(defn begin-write-tx
+  "Open a write transaction on the persistent database and leave it open within the context of the current thread. When possible, the macro form is preferred, however this fn is available when one does not have access to the block of code to be called in the context of a transaction (i.e. in a Pedestal interceptor"
+  []
+  (when-not (.isInTransaction db)
+    (.begin db ReadWrite/WRITE)
+    (reset! current-union-model (.getUnionModel db))
+    true))
+
+(defn close-write-tx
+  "Close a transaction opened with begin-write-tx"
+  ([] (close-write-tx :commit))
+  ([commit-or-abort]
+   (case commit-or-abort
+     :commit (.commit db)
+     :abort (.abort db)
+     :default (.commit db))
+   (.end db)))
 
 (defmacro with-test-database 
   "Uses with-redefs to replace reference to production database with temporary,

@@ -73,22 +73,16 @@
   ([model name]
    (load-model model name {}))
   ([model name opts]
-   (try
      (write-tx
       (.replaceNamedModel db name model)
-      (.commit db)
-      {:succeeded true})
-     (catch Exception e# (log/error :fn :load-model :msg e#)))))
+      {:succeeded true})))
 
 (defn remove-model
   "Remove a named model from the database."
   [name]
-  (try
-    (write-tx
-     (.removeNamedModel db name)
-     (.commit db)
-     {:succeded true})
-    (catch Exception e# (log/error :fn :remove-model :msg e#))))
+  (write-tx
+   (.removeNamedModel db name)
+   {:succeded true}))
 
 (defn load-statements
   "Statements are a three-item sequence. Will be imported as a named graph into TDB"

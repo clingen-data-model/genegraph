@@ -71,5 +71,5 @@
   {:name ::expire-response-cache
    :enter (fn [event] 
             (when (running?)
-              (<!! expiration-notification-chan true)) 
+              (>!! @expiration-notification-chan true)) 
             event)})
