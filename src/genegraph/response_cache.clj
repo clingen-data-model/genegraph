@@ -30,14 +30,16 @@
 
 (defn check-for-cached-response [context]
   (let [body (get-in context [:request :body])]
+    (println " checking for cached response ")
+    (println body)
     (if (running?)
       (let [cached-response (rocksdb/rocks-get cache-store body)]
         (if (= ::rocksdb/miss cached-response)
           (do 
-            (log/debug :fn ::check-for-cached-response :msg "request cache miss!")
+            (log/info :fn ::check-for-cached-response :msg "request cache miss!")
             context)
           (do
-            (log/debug :fn ::check-for-cached-response :msg "request cache hit")
+            (log/info :fn ::check-for-cached-response :msg "request cache hit")
             (-> context
                 (assoc :response cached-response)
                 terminate))))

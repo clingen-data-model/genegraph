@@ -58,7 +58,7 @@
                               (pedestal-interceptor/interceptor
                                (response-cache-interceptor))
                               :before
-                              ::lacinia-pedestal/body-data))))
+                              ::lacinia-pedestal/json-response))))
 
 (defn dev-subscription-interceptors []
   (-> (lacinia-subs/default-subscription-interceptors gql/schema {})
