@@ -41,8 +41,6 @@
 
 (defn check-for-cached-response [context]
   (let [body (get-in context [:request :body])]
-    (println " checking for cached response ")
-    (println body)
     (if (running?)
       (let [cached-response (rocksdb/rocks-get cache-store body)]
         (if (= ::rocksdb/miss cached-response)

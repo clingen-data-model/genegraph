@@ -32,5 +32,4 @@
                                (make-array java.lang.String 0))
         blob (.get (.getService (StorageOptions/getDefaultInstance))
                    (BlobId/of env/genegraph-bucket source-blob))]
-    (println source-blob " " target-file)
     (.downloadTo blob target-path)))

@@ -76,7 +76,6 @@
         iri (str gci-express-root "report_" id)
         content-id (l/blank-node)
         assertion-id (resource (str gci-express-root "assertion_" id))]
-    (println iri)
     (concat [[iri :rdf/type :sepio/GeneValidityReport] 
              [iri :rdfs/label (:title content)]
              [iri :bfo/has-part content-id]
