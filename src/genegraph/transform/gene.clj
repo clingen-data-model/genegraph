@@ -38,7 +38,6 @@
                   "RNA, ribosomal" "http://purl.obolibrary.org/obo/SO_0000252"
                   "RNA, misc" "http://purl.obolibrary.org/obo/SO_0000356"})
 
-;; TODO add cyto location, locus type
 (defn gene-as-triple [gene]
   (let [uri (str "https://www.ncbi.nlm.nih.gov/gene/" (:entrez_id gene))
         hgnc-id (:hgnc_id gene)

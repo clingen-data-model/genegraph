@@ -76,7 +76,7 @@
              data-model (::q/model event)
              validation-result (validate/validate data-model shape-model)
              did-validate (validate/did-validate? validation-result)
-             turtle (println (q/to-turtle validation-result))
+             turtle (q/to-turtle validation-result)
              iri (::iri event)
              root-type (::root-type event)]
          (log/debug :fn :add-validation :root-type root-type :iri iri :did-validate? did-validate :report turtle)

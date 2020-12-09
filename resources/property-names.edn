@@ -1178,6 +1178,8 @@
   "http://purl.obolibrary.org/obo/SEPIO_0000293"]
  [:sepio/family-segregation-data
   "http://purl.obolibrary.org/obo/SEPIO_0000287"]
+ [:sepio/gene-is-actionable-for-condition
+  "http://purl.obolibrary.org/obo/SEPIO_0003012"]
  [:sepio/has-agent "http://purl.obolibrary.org/obo/SEPIO_0000017"]
  [:sepio/has-compatability
   "http://purl.obolibrary.org/obo/SEPIO_0000113"]

@@ -1,6 +1,7 @@
 (ns genegraph.sink.event
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :refer [load-model remove-model]]
+            [genegraph.database.util :refer [begin-write-tx close-write-tx]]
             [genegraph.source.graphql.common.cache :as cache]
             [genegraph.response-cache :as response-cache]
             [genegraph.database.validation :as v]
@@ -14,9 +15,18 @@
             [mount.core :as mount :refer [defstate]]
             [io.pedestal.interceptor :as intercept]
             [io.pedestal.interceptor.chain :as chain]
-            [io.pedestal.log :as log]))
+            [io.pedestal.log :as log]
+            [clojure.spec.alpha :as spec]))
 
 
+(def write-tx-interceptor
+  {:name ::write-tx
+   :enter (fn [context] (begin-write-tx) context)
+   :leave (fn [context] 
+            (if (or (:exception context)
+                    (::spec/invalid context))
+              (close-write-tx :abort)
+              (close-write-tx :commit)))})
 
 (def context (atom {}))
 
@@ -41,7 +51,7 @@
 (defn unpublish
   [event]
   (when (= :unpublish (::ann/action event))
-    (log/info :fn ::unpublish :root-type (::ann/root-type event) :iri (::ann/iri event))
+    (log/debug :fn ::unpublish :root-type (::ann/root-type event) :iri (::ann/iri event))
     (remove-model (::ann/iri event)))
   event)
 
@@ -53,7 +63,7 @@
 (defn replace-curation
   [event]
   (when (::ann/replaces event)
-    (log/info :fn ::replace :root-type (::ann/root-type event) :iri (str (::ann/replaces event)))
+    (log/debug :fn ::replace :root-type (::ann/root-type event) :iri (str (::ann/replaces event)))
     (remove-model (str (::ann/replaces event))))
   event)
 
@@ -62,7 +72,8 @@
   {:name ::replace
    :enter replace-curation})
 
-(def interceptor-chain [ann/add-metadata-interceptor
+(def interceptor-chain [write-tx-interceptor
+                        ann/add-metadata-interceptor
                         ann/add-model-interceptor
                         ann/add-iri-interceptor
                         ann/add-validation-interceptor

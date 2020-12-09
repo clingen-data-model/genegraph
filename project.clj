@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.10.1"]
-                 [org.clojure/core.async "1.2.603"  :exclusions [org.clojure/tools.reader]]
+                 [org.clojure/core.async "1.3.610" :exclusions [org.clojure/tools.reader]]
                  [io.pedestal/pedestal.service "0.5.8"]
                  [io.pedestal/pedestal.jetty "0.5.8"]
                  [io.pedestal/pedestal.interceptor "0.5.8"]
@@ -27,7 +27,7 @@
                  [mount "0.1.16"]
                  [com.velisco/clj-ftp "0.3.9"] ;; For downloading ftp docs
                  [clj-http "3.9.1"] ;; For downloading 
-                 [com.walmartlabs/lacinia-pedestal "0.13.0"]
+                 [com.walmartlabs/lacinia-pedestal "0.14.0"]
                  [clj-commons/fs "1.5.2"]
                  ;; Dirwatch for updating base files in development
                  [juxt/dirwatch "0.2.5"]
@@ -42,12 +42,14 @@
                  [org.openjfx/javafx-web "11.0.1"]
                  [expound "0.7.2"]
                  [medley "1.3.0"]
+                 [buddy/buddy-sign "3.2.0"]
                  [com.fasterxml.jackson.core/jackson-core "2.11.0"]
                  [com.fasterxml.jackson.core/jackson-databind "2.11.0"]
                  [com.google.cloud/google-cloud-storage "1.108.0"]
                  [org.rocksdb/rocksdbjni "6.11.4"]
                  [com.taoensso/nippy "3.0.0"]
-                 [digest "1.4.9"]]
+                 [digest "1.4.9"]
+                 [com.google.firebase/firebase-admin "7.0.1"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources", "jars/REBL-0.9.220.jar"]
   ;; If you use HTTP/2 or ALPN, use the java-agent to pull in the correct alpn-boot dependency

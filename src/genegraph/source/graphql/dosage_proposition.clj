@@ -4,7 +4,6 @@
             [clojure.string :as str]))
 
 (defresolver wg-label [args value]
-  (println "DosageCuration - in WG-LABEL Value=" value)
   "Gene Dosage Working Group")
 
 (def evidence-level-enum 
