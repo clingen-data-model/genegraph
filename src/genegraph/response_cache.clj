@@ -19,13 +19,13 @@
   (and env/use-response-cache ((mount/running-states) (str #'cache-store))))
 
 (defn clear-response-cache! []
-  (log/info :fn ::clear-respsonse-cache! :msg "clearing response cache")
+  (log/debug :fn ::clear-respsonse-cache! :msg "clearing response cache")
   (when (running?)
     (mount/stop #'cache-store)
     (try
       (rocksdb/rocks-destroy! db-name)
       (catch Exception e
-        (log/info :fn clear-response-cache! :msg (str "Caught exception: " (.getMessage e)) :exception e)))
+        (log/debug :fn clear-response-cache! :msg (str "Caught exception: " (.getMessage e)) :exception e)))
     (mount/start #'cache-store)))
 
 (defstate cache-store
@@ -45,10 +45,10 @@
       (let [cached-response (rocksdb/rocks-get cache-store body)]
         (if (= ::rocksdb/miss cached-response)
           (do 
-            (log/info :fn ::check-for-cached-response :msg "request cache miss!")
+            (log/debug :fn ::check-for-cached-response :msg "request cache miss!")
             context)
           (do
-            (log/info :fn ::check-for-cached-response :msg "request cache hit")
+            (log/debug :fn ::check-for-cached-response :msg "request cache hit")
             (-> context
                 (assoc :response cached-response)
                 terminate))))

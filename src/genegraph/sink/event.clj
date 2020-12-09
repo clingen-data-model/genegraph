@@ -51,7 +51,7 @@
 (defn unpublish
   [event]
   (when (= :unpublish (::ann/action event))
-    (log/info :fn ::unpublish :root-type (::ann/root-type event) :iri (::ann/iri event))
+    (log/debug :fn ::unpublish :root-type (::ann/root-type event) :iri (::ann/iri event))
     (remove-model (::ann/iri event)))
   event)
 
@@ -63,7 +63,7 @@
 (defn replace-curation
   [event]
   (when (::ann/replaces event)
-    (log/info :fn ::replace :root-type (::ann/root-type event) :iri (str (::ann/replaces event)))
+    (log/debug :fn ::replace :root-type (::ann/root-type event) :iri (str (::ann/replaces event)))
     (remove-model (str (::ann/replaces event))))
   event)
 
