@@ -34,11 +34,15 @@
 
 (defn dev-interceptors []
   (-> (lacinia-pedestal/default-interceptors gql/schema {})
+      (lacinia/inject nil :replace ::lacinia-pedestal/body-data)
+      (lacinia/inject lacinia-pedestal/body-data-interceptor
+                      :before
+                      ::lacinia-pedestal/json-response)
       (lacinia/inject open-tx-interceptor
                       :before
                       ::lacinia-pedestal/query-executor)
       (lacinia/inject log-request-interceptor
-                      :before
+                      :after
                       ::lacinia-pedestal/body-data)
       (lacinia/inject auth/auth-interceptor
                       :before
@@ -47,6 +51,10 @@
 (defn prod-interceptors []
   (let [interceptor-chain
         (-> (lacinia-pedestal/default-interceptors (gql/schema) {})
+            (lacinia/inject nil :replace ::lacinia-pedestal/body-data)
+            (lacinia/inject lacinia-pedestal/body-data-interceptor
+                            :before
+                            ::lacinia-pedestal/json-response)
             (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
                             :before
                             ::lacinia-pedestal/query-executor)
@@ -57,8 +65,8 @@
       env/use-response-cache (lacinia/inject 
                               (pedestal-interceptor/interceptor
                                (response-cache-interceptor))
-                              :before
-                              ::lacinia-pedestal/json-response))))
+                              :after
+                              ::lacinia-pedestal/body-data))))
 
 (defn dev-subscription-interceptors []
   (-> (lacinia-subs/default-subscription-interceptors gql/schema {})
