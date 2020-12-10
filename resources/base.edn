@@ -123,10 +123,6 @@
   :source "https://data.omim.org/downloads/U7rx7IRhSIah-gm1M-yBDA/genemap2.txt"
   :target "genemap2.txt"
   :format :omim-genemap}
- {:name "http://dataexchange.clinicalgenome.org/gci-express"
-  :source "https://raw.githubusercontent.com/clingen-data-model/data-exchange-shared-json/master/json-from-gene-express/ClinGen-Gene-Expess-Data-01092020.json"
-  :target "gci-express.json"
-  :format :gci-express}
  {:name "http://dataexchange.clinicalgenome.org/terms"
   :source "https://raw.githubusercontent.com/clingen-data-model/clingen-terms/master/clingen-terms.ttl"
   :target "clingen-terms.ttl"
