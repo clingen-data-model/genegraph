@@ -12,13 +12,14 @@
   (first (concat (:skos/preferred-label resource)
                  (:rdfs/label resource))))
 
+(defresolver type [args value]
+  (:rdf/type value))
+
 (defresolver alternative-label [args resource]
   (first (:skos/alternative-label resource)))
 
 (defresolver description [args value]
   (first (:dc/description value)))
-
-
 
 (defresolver direct-superclasses [args value]
   (q/ld-> value [:rdfs/sub-class-of]))

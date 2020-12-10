@@ -91,6 +91,9 @@
               :label {:type String
                       :resolve :resource/label
                       :description "Gene symbol"}
+              :type  {:type (list :Class)
+                      :resolve :resource/type
+                      :description "Type of the gene, includes gene and more specific classifications of the locus"}
               :alternative_label {:type String
                                   :resolve :resource/alternative-label
                                   :description "Full name of gene"}
@@ -269,6 +272,18 @@
     {:description "A collection of diseases."
      :fields {:disease_list {:type (list :Disease)}
               :count {:type Int}}}
+
+    :Class
+    {:description "The class of a resource"
+     :fields {:iri {:type String
+                    :resolve :resource/iri
+                    :description "IRI identifying this resource"}
+              :curie {:type String
+                      :resolve :resource/curie
+                      :description "CURIE of the IRI identifying this resource"}
+              :label {:type String
+                      :resolve :resource/label
+                      :description "Label for this resourcce"}}}
 
     :Classification
     {:description "The result of an assertion relative to a proposition"
