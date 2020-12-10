@@ -49,6 +49,7 @@
                      (when-let [loc (:location gene)] [uri :so/chromosome-band loc])
                      (when-let [locus-type (locus-types (:locus_type gene))]
                        [uri :rdf/type (resource locus-type)])
+                     (uri :rdf/type :so/Gene)
                      ^{:object :Resource} [uri :owl/same-as hgnc-id]
                      [hgnc-id :dc/source (resource hgnc)]
                      ^{:object :Resource} [uri :owl/same-as ensembl-iri]
