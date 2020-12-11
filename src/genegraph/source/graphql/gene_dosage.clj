@@ -21,7 +21,7 @@
       {?feature a :so/SequenceFeature .
       ?feature :rdfs/label ?label}
       UNION
-      {?feature a :so/ProteinCodingGene .
+      {?feature a :so/Gene .
        ?feature :skos/preferred-label ?label} }
       ORDER BY ?label"))
 
@@ -30,7 +30,7 @@
   (q/select "select ?report where { 
     ?report a :sepio/GeneDosageReport .
     ?report :iao/is-about ?feature .
-    ?feature a :so/ProteinCodingGene .
+    ?feature a :so/Gene .
     ?feature :skos/preferred-label ?label }
     ORDER BY ?label"))
 
@@ -39,7 +39,7 @@
   (q/select "select ?report where {
     ?report a :sepio/GeneDosageReport .
     ?report :iao/is-about ?feature .
-    FILTER NOT EXISTS {?feature a :so/ProteinCodingGene .} }"))
+    FILTER NOT EXISTS {?feature a :so/Gene .} }"))
 
 (defn all-region-dosage-reports []
   "Selects all dosage reports for regions with a label"
@@ -74,7 +74,7 @@
              PREFIX cg: <http://dataexchange.clinicalgenome.org/terms/>
              SELECT ?report WHERE { 
              ?feature text:query ( cg:genes '( " genes-or-lower " )' ) .
-             ?feature a :so/ProteinCodingGene .
+             ?feature a :so/Gene .
              ?report :iao/is-about ?feature .
              ?report a :sepio/GeneDosageReport }")]
     ;; (q/select gq {:genes genes-or-lower})))
@@ -159,7 +159,7 @@
   (q/ld1-> value [:sepio/qualified-contribution :sepio/activity-date]))
 
 (defn gene? [dosage-report-resource]
-  (= (str (:so/ProteinCodingGene names/local-names))
+  (= (str (:so/Gene names/local-names))
      (str (q/ld1-> dosage-report-resource [:iao/is-about :rdf/type]))))
 
 (defresolver gene [args value]

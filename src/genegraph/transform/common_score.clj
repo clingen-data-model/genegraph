@@ -2,7 +2,7 @@
   (:require [genegraph.database.load :as l])
   (:import java.time.Instant))
 
-(def symbol-query "select ?s where { { ?s a :so/ProteinCodingGene . ?s :skos/preferred-label ?gene } union { ?s a :so/ProteinCodingGene . ?s :skos/hidden-label ?gene } }")
+(def symbol-query "select ?s where { { ?s a :so/Gene . ?s :skos/preferred-label ?gene } union { ?s a :so/Gene . ?s :skos/hidden-label ?gene } }")
 
 (defn date-time-now []
   (str (Instant/now)))

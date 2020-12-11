@@ -214,7 +214,7 @@
                            {})
                          (assoc ::q/params params)
                          (merge value))
-        gene-bgp '[[gene :rdf/type :so/ProteinCodingGene]
+        gene-bgp '[[gene :rdf/type :so/Gene]
                    [gene :skos/preferred-label gene_label]]
         base-bgp (if (:text args)
                    (concat (q/text-search-bgp 'gene :cg/resource 'text) gene-bgp)

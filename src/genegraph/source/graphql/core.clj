@@ -136,6 +136,7 @@
    :resource/curie resource/curie
    :resource/iri resource/iri
    :resource/label resource/label
+   :resource/type resource/type
    :server-status/migration-version server-status/migration-version
    :server-status/server-version-query server-status/server-version-query
    :suggest/curations suggest/curations

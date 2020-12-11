@@ -7,14 +7,14 @@
 
 (defresolver gene-query [args value]
   (let [gene (q/resource (:iri args))]
-    (if (q/is-rdf-type? gene :so/ProteinCodingGene)
+    (if (q/is-rdf-type? gene :so/Gene)
        gene
-       (first (filter #(q/is-rdf-type? % :so/ProteinCodingGene) (get gene [:owl/same-as :<]))))))
+       (first (filter #(q/is-rdf-type? % :so/Gene) (get gene [:owl/same-as :<]))))))
 
 ;; DEPRECATED
 (defresolver gene-list [args value]
   (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
-        gene-bgp '[[gene :rdf/type :so/ProteinCodingGene]
+        gene-bgp '[[gene :rdf/type :so/Gene]
                    [gene :skos/preferred-label gene_label]]
         base-bgp (if (:text args)
                    (concat (q/text-search-bgp 'gene :cg/resource 'text) gene-bgp)
