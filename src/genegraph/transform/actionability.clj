@@ -41,7 +41,7 @@
                                   (q/resource (:iri condition))
                                   (first (filter #(re-find #"MONDO" (str %))
                                                  (q/ld-> (q/resource (:iri condition))
-                                                         [[:owl/equivalent-class :-]]))))]
+                                                         [[:skos/has-exact-match :-]]))))]
     (let [gc-node (l/blank-node)
           gene (q/ld1-> (q/resource (:gene condition)) [[:owl/same-as :<]])]
       [[curation-iri :sepio/is-about-condition gc-node]

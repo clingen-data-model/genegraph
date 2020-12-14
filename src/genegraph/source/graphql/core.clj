@@ -159,5 +159,7 @@
 (defn gql-query 
   "Function not used except for evaluating queries in the REPL
   may consider moving into test namespace in future"
-  [query-str]
-  (tx (lacinia/execute (schema) query-str nil nil)))
+  ([query-str]
+   (tx (lacinia/execute (schema) query-str nil nil)))
+  ([query-str variables]
+   (tx (lacinia/execute (schema) query-str variables nil))))

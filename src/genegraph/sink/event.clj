@@ -72,7 +72,18 @@
   {:name ::replace
    :enter replace-curation})
 
-(def interceptor-chain [write-tx-interceptor
+(def log-result-interceptor
+  {:name ::log-result
+   :leave (fn [event] 
+            (log/info
+             :event
+             (select-keys 
+              event 
+              [::ann/iri :exception ::spec/invalid]))
+            event)})
+
+(def interceptor-chain [log-result-interceptor
+                        write-tx-interceptor
                         ann/add-metadata-interceptor
                         ann/add-model-interceptor
                         ann/add-iri-interceptor
@@ -93,3 +104,4 @@
       (chain/enqueue (map #(intercept/interceptor %)
         interceptor-chain))
       chain/execute))
+
