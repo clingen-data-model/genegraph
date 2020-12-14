@@ -76,6 +76,7 @@
   {:name ::log-result
    :leave (fn [event] 
             (log/info
+             :fn :log-result
              :event
              (select-keys 
               event 

@@ -37,10 +37,10 @@
   (str (q/ld1-> parent-condition [:rdfs/label]) ", " (q/ld1-> gene [:skos/preferred-label])))
 
 (defn genetic-condition [curation-iri condition]
-  (when-let [condition-resource (if (re-find #"MONDO" (:iri condition))
+  (if-let [condition-resource (if (re-find #"MONDO" (:iri condition))
                                   (q/resource (:iri condition))
                                   (first (filter #(re-find #"MONDO" (str %))
-                                                 (q/ld-> (q/resource (:iri condition))
+                                                 (q/ld-> (q/resource (:curie condition))
                                                          [[:skos/has-exact-match :-]]))))]
     (let [gc-node (l/blank-node)
           gene (q/ld1-> (q/resource (:gene condition)) [[:owl/same-as :<]])]
@@ -49,7 +49,9 @@
        [gc-node :rdf/type :cg/ActionabilityGeneticCondition]
        [gc-node :rdfs/sub-class-of condition-resource]
        [gc-node :sepio/is-about-gene gene]
-       [gc-node :rdfs/label (genetic-condition-label condition-resource gene)]])))
+       [gc-node :rdfs/label (genetic-condition-label condition-resource gene)]])
+    (do (println curation-iri)
+        nil)))
 
 (defn search-contributions [curation-iri search-date agent-iri]
   (let [contrib-iri (l/blank-node)]
