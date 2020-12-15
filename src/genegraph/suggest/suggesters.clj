@@ -148,35 +148,19 @@
     (suggest/lookup (get-suggester suggester-key) text contexts num)
     nil))
 
-(defn get-suggester-result-map [resource-iri suggester-key]
-  (let [resource (q/resource resource-iri)
-        label (label resource)]
-    (if-let [lookup-result (first (lookup suggester-key label #{:ALL} 1))]
-      (let [payload (-> (.payload lookup-result) .bytes serder/deserialize)]
-        (if (= resource-iri (:iri payload))
-          {:lookup-result lookup-result :resource resource :payload payload}
-          nil))
-      nil)))
-
 (defn process-event-resource! [resource-iri suggester-type]
   (log/debug :fn :process-event-resource! :resource-type suggester-type :resource-iri resource-iri)
-  (when-let [resource-payload-map (get-suggester-result-map resource-iri suggester-type)]
-    (let [suggester (get-suggester suggester-type)
-          suggest-map (get (suggesters-map) suggester-type)
-          resource (:resource resource-payload-map)
-          old-payload (:payload resource-payload-map)
-          new-payload ((suggest-map :payload) resource)]
-      (if-not (= (:curations old-payload) (:curations new-payload))
-        (do
-          (suggest/update-suggestion suggester
-                                     (:label new-payload)
-                                     new-payload
-                                     (:curations new-payload)
-                                     (:weight new-payload))
-          (suggest/commit-suggester suggester)
-          (suggest/refresh-suggester suggester)
-          (log/debug :fn :process-event-resource! :suggester suggester-type :text (:label new-payload) :msg :updated))
-        (log/debug :fn :process-event-resource! :suggester suggester-type :text (:label new-payload) :msg :not-updated)))))
+  (let [suggester (get-suggester suggester-type)
+        suggest-map (get (suggesters-map) suggester-type)
+        resource (q/resource resource-iri)
+        new-payload ((suggest-map :payload) resource)]
+    (suggest/update-suggestion suggester
+                               (:label new-payload)
+                               new-payload
+                               (:curations new-payload)
+                               (:weight new-payload))
+    (suggest/commit-suggester suggester)
+    (suggest/refresh-suggester suggester)))
 
 (defn update-suggesters [event]
   (log/debug :fn :update-suggesters :event event :msg :received-event)
