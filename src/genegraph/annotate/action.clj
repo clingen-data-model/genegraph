@@ -13,3 +13,11 @@
            (case (:statusPublishFlag report-json)
              "Publish" :publish
              "Unpublish" :unpublish))))
+
+(defmethod add-action :actionability-v1 [event]
+  (let [report-json (json/parse-string (:genegraph.sink.event/value event) true)]
+    (assoc event 
+           :genegraph.annotate/action 
+           (case (:statusFlag report-json)
+             "Retracted" :unpublish
+             :publish))))

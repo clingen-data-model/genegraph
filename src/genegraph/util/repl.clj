@@ -17,7 +17,8 @@
             [clojure.spec.alpha :as spec]
             [cognitect.rebl :as rebl]
             [clojure.pprint :refer [pprint]]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.java.io :as io]))
 
 (defn start-rebl []
   (rebl/ui))
@@ -108,11 +109,11 @@
          (-> event
              ann/add-metadata
              ann/add-model
-             ;; ann/add-iri
-             ;; ann/add-validation
-             ;; ann/add-subjects
-             ;; ann/add-action
-             ;; ann/add-replaces
+             ann/add-iri
+             ann/add-validation
+             ann/add-subjects
+             ann/add-action
+             ann/add-replaces
              ))
        stream))
 
@@ -130,3 +131,17 @@
   (filter #(re-find re-to-match (::event/value %)) events))
 
 ;; (count (set/difference (original-validity-genes "/Users/thnelson/Desktop/cg-data/gene-validity.csv") (hgnc-id-set-for-curation-type "GENE_VALIDITY")))
+
+(defn construct-csv-for-manual-gene-review 
+  "Contruct a CSV out of a set of gene IDs. Created to faciliate testing of
+  newly included dosage genes in new release"
+  [target-path gene-curie-set]
+  (with-open [w (io/writer target-path)]
+    (->> gene-curie-set
+         (map (fn [gene-curie]
+                (let [gene (q/resource gene-curie)]
+                  [(q/ld1-> gene [:skos/preferred-label])
+                   (str gene)
+                   (q/curie (q/ld1-> gene [[:iao/is-about :<] :dc/is-version-of]))])))
+         (cons ["symbol" "entrez gene" "ISCA id"])
+         (csv/write-csv w))))

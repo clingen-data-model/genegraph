@@ -50,8 +50,7 @@
        [gc-node :rdfs/sub-class-of condition-resource]
        [gc-node :sepio/is-about-gene gene]
        [gc-node :rdfs/label (genetic-condition-label condition-resource gene)]])
-    (do (println curation-iri)
-        nil)))
+    nil))
 
 (defn search-contributions [curation-iri search-date agent-iri]
   (let [contrib-iri (l/blank-node)]
