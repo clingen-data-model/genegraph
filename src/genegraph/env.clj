@@ -20,7 +20,8 @@
                   :dx-topics dx-topics
                   :genegraph-data-version data-version
                   :genegraph-bucket genegraph-bucket
-                  :gengraph-cache use-gql-cache
+                  :genegraph-gql-cache use-gql-cache
+                  :genegraph-response-cache use-response-cache
                   :genegraph-mode mode
                   :genegraph-validate-events validate-events
                   :genegraph-version genegraph-version})
