@@ -104,7 +104,14 @@
        (map second)
        (into #{})))
 
-(defn annotate-stream [stream]
+(defn annotate-stream-with-model [stream]
+  (map (fn [event]
+         (-> event
+             ann/add-metadata
+             ann/add-model))
+       stream))
+
+(defn annotate-stream-with-full-data [stream]
   (map (fn [event]
          (-> event
              ann/add-metadata
@@ -113,8 +120,7 @@
              ann/add-validation
              ann/add-subjects
              ann/add-action
-             ann/add-replaces
-             ))
+             ann/add-replaces))
        stream))
 
 (defn invalid-events [events]
@@ -145,3 +151,5 @@
                    (q/curie (q/ld1-> gene [[:iao/is-about :<] :dc/is-version-of]))])))
          (cons ["symbol" "entrez gene" "ISCA id"])
          (csv/write-csv w))))
+
+;; (->> gd-stream-with-model (remove ::spec/invalid) annotate-stream-with-full-data first ::ann/iri)

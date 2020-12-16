@@ -77,6 +77,7 @@
  [:so/ProteinCodingGene "http://purl.obolibrary.org/obo/SO_0001217"]
  [:so/SequenceFeature "http://purl.obolibrary.org/obo/SO_0000110"]
  [:sepio/GeneDosageReport "http://purl.obolibrary.org/obo/SEPIO_0002015"]
+ [:sepio/GeneDosageRecord "http://purl.obolibrary.org/obo/SEPIO_0002016"]
  [:geno/SequenceInterval "http://purl.obolibrary.org/obo/GENO_0000965"]
  [:geno/SequenceFeatureLocation"http://purl.obolibrary.org/obo/GENO_0000815"]
  [:geno/SequenceFeatureSet "http://purl.obolibrary.org/obo/GENO_0000659"]

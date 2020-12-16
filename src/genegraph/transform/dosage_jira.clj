@@ -286,7 +286,8 @@
         contribution-iri (contribution-iri curation)
         result (concat [[report-iri :rdf/type :sepio/GeneDosageReport]
                         [report-iri :dc/is-version-of (q/resource base-iri)]
-                        [report-iri :sepio/qualified-contribution contribution-iri]]
+                        [report-iri :sepio/qualified-contribution contribution-iri]
+                        [base-iri :rdf/type :sepio/GeneDosageRecord]]
                        (contribution contribution-iri curation)
                        (assertion curation 1)
                        (assertion curation 3)
