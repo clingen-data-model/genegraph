@@ -37,7 +37,9 @@
 (defn warm-resolver-cache []
   (let [gql-file-names (-> "resolver-cache-warm.edn" io/resource slurp edn/read-string)]
     (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache..." :resources gql-file-names)
-    (doall (pmap #(-> % io/resource slurp core/gql-query) gql-file-names))
+    (doseq [query-file gql-file-names]
+      (-> query-file io/resource slurp core/gql-query))
+;;    (doall (pmap #(-> % io/resource slurp core/gql-query) gql-file-names))
     (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache...complete.")))
 
 (defn build-base-database

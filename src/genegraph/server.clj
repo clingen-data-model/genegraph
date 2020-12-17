@@ -56,10 +56,16 @@
     (do
       (log/info :fn :-main :message "Starting Genegraph")
       (mount.core/start #'server)
+      (log/info :fn :-main :message "Pedestal initialized")
       (env/log-environment)
       (migration/populate-data-vol-if-needed)
+      (log/info :fn :-main :message "Data volume exists")
       (mount.core/start)
-      (reset! initialized? true))
+      (log/info :fn :-main :message "All services started")
+      (migration/warm-resolver-cache)
+      (log/info :fn :-main :message "Resolver cache warm")
+      (reset! initialized? true)
+      (log/info :fn :-main :message "Genegraph fully initialized, all systems go"))
     (do
       (log/info :fn :-main :message "Creating migration")
       (env/log-environment)
