@@ -43,19 +43,29 @@
 (defresolver ^:expire-by-value curation-activities [args value]
   (curation/activities {:gene value}))
 
+(def most-recent-curation-for-gene 
+  (q/create-query "select ?contribution where {
+{ ?validityproposition :sepio/has-subject ?gene .
+  ?validityassertion :sepio/has-subject ?validityproposition .
+  ?validityassertion :sepio/qualified-contribution ?contribution .  }
+ union
+{ ?dosagereport :iao/is-about ?gene .
+  ?dosagereport a :sepio/GeneDosageReport .
+  ?dosagereport :sepio/qualified-contribution ?contribution . }
+ union
+{ ?actionabilitycondition :sepio/is-about-gene ?gene .
+  ?actionabilityreport :sepio/is-about-condition ?actionabilitycondition .
+  ?actionabilityreport a :sepio/ActionabilityReport .
+  ?actionabilityreport :sepio/qualified-contribution ?contribution .
+  ?contribution :bfo/realizes :sepio/EvidenceRole . }
+ ?contribution :sepio/activity-date ?activitydate }
+ order by desc(?activitydate)
+ limit 1"))
+
 (defresolver ^:expire-by-value last-curated-date [args value]
-  (let [curation-dates (concat (ld-> value [[:sepio/has-subject :<]
-                                            [:sepio/has-subject :<]
-                                            :sepio/qualified-contribution
-                                            :sepio/activity-date])
-                               (ld-> value [[:sepio/is-about-gene :<]
-                                            [:sepio/is-about-condition :<]
-                                            :sepio/qualified-contribution
-                                            :sepio/activity-date])
-                               (ld-> value [[:iao/is-about :<]
-                                            :sepio/qualified-contribution
-                                            :sepio/activity-date]))]
-    (->> curation-dates sort last)))
+  (some-> (most-recent-curation-for-gene {:gene value})
+          first
+          (q/ld1-> [:sepio/activity-date])))
 
 (defresolver hgnc-id [args value]
   (->> (q/ld-> value [:owl/same-as])
