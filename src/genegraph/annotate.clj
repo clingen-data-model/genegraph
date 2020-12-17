@@ -67,21 +67,21 @@
   "Annotate the event with the result of any configured Shacl validation"
   [event]
   (log/debug :fn :add-validation :event event :msg :received-event)
-  (let [validate-env (Boolean/valueOf env/validate-events)
-        shape-doc-def (-> event ::root-type shapes)]
-    (if (and (true? validate-env)
-             (some? shape-doc-def))
-      (tx
-       (let [shape-model (q/get-named-graph (:graph-name shape-doc-def))
-             data-model (::q/model event)
-             validation-result (validate/validate data-model shape-model)
-             did-validate (validate/did-validate? validation-result)
-             turtle (q/to-turtle validation-result)
-             iri (::iri event)
-             root-type (::root-type event)]
-         (log/debug :fn :add-validation :root-type root-type :iri iri :did-validate? did-validate :report turtle)
-         (assoc event ::validation validation-result ::did-validate did-validate)))
-      event)))
+  (when (and (some? shapes)
+             (true? (Boolean/valueOf env/validate-events)))
+    (let [shape-doc-def (-> event ::root-type shapes)]
+      (when (some? shape-doc-def)
+        (tx
+         (let [shape-model (q/get-named-graph (:graph-name shape-doc-def))
+               data-model (::q/model event)
+               validation-result (validate/validate data-model shape-model)
+               did-validate (validate/did-validate? validation-result)
+               turtle (q/to-turtle validation-result)
+               iri (::iri event)
+               root-type (::root-type event)]
+           (log/debug :fn :add-validation :root-type root-type :iri iri :did-validate? did-validate :report turtle)
+           (assoc event ::validation validation-result ::did-validate did-validate))))))
+  event)
 
 (def add-validation-interceptor
   "Interceptor adding shacl validation to stream events.

@@ -123,14 +123,15 @@
     (suggest/initialize suggester)
     (doseq [row rows]
       (let [payload (payload-fn row)]
-        (suggest/add-to-suggestions suggester
-                                    (:label payload)
-                                    payload
-                                    (:curations payload)
-                                    (:weight payload))))
-    (suggest/commit-suggester suggester)
-    (suggest/refresh-suggester suggester)
-    (log/debug :fn :build-suggestions :suggester key :msg :complete)))
+        (when (some? (:label payload))
+          (suggest/add-to-suggestions suggester
+                                      (:label payload)
+                                      payload
+                                      (:curations payload)
+                                      (:weight payload))
+          (suggest/commit-suggester suggester)
+          (suggest/refresh-suggester suggester))
+        (log/debug :fn :build-suggestions :suggester key :msg :complete)))))
                                     
 (defn build-all-suggestions []
   "Build all of the suggester indices for all configured suggesters"
@@ -154,13 +155,14 @@
         suggest-map (get (suggesters-map) suggester-type)
         resource (q/resource resource-iri)
         new-payload ((suggest-map :payload) resource)]
-    (suggest/update-suggestion suggester
-                               (:label new-payload)
-                               new-payload
-                               (:curations new-payload)
-                               (:weight new-payload))
-    (suggest/commit-suggester suggester)
-    (suggest/refresh-suggester suggester)))
+    (when (some? (:label new-payload))
+      (suggest/update-suggestion suggester
+                                 (:label new-payload)
+                                 new-payload
+                                 (:curations new-payload)
+                                 (:weight new-payload))
+      (suggest/commit-suggester suggester)
+      (suggest/refresh-suggester suggester))))
 
 (defn update-suggesters [event]
   (log/debug :fn :update-suggesters :event event :msg :received-event)
