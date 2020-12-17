@@ -4,7 +4,11 @@
             [genegraph.transform.types :refer [transform-doc src-path add-model]]
             [clojure.string :as s]
             [cheshire.core :as json]
-            [io.pedestal.log :as log]))
+            [io.pedestal.log :as log]
+            [clojure.spec.alpha :as spec]))
+
+(spec/def ::curation
+  (spec/keys :req-un [::iri]))
 
 (def gci-root "http://dataexchange.clinicalgenome.org/gci/")
 (def affiliation-root "http://dataexchange.clinicalgenome.org/agent/")
@@ -96,7 +100,9 @@
 (defmethod add-model :gci-legacy [event]
   (log/debug :fn :add-model :format :gci-legacy :event event :msg :received-event)
   (let [report-json (json/parse-string (:genegraph.sink.event/value event) true)]
-    (assoc event
-           ::q/model
-           (l/statements-to-model  (gci-legacy-report-to-triples report-json)))))
+    (if (spec/valid? ::curation report-json)
+      (assoc event
+             ::q/model
+             (l/statements-to-model  (gci-legacy-report-to-triples report-json)))
+      (assoc event ::spec/invalid true))))
   
