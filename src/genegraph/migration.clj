@@ -49,9 +49,9 @@
     (fs/mkdirs env/data-vol)
     (start #'db/db)
     (base/initialize-db!)
+    (batch/process-batched-events!)
     (start #'suggest/suggestions)
     (suggest/build-all-suggestions)
-    (batch/process-batched-events!)
     (stop #'suggest/suggestions)
     (stop #'db/db)))
 
@@ -63,8 +63,6 @@
     (fs/mkdirs env/data-vol)
     (start #'db/db)
     (base/initialize-db!)
-    (start #'suggest/suggestions)
-    (suggest/build-all-suggestions)
     (batch/process-batched-events!)
     (start #'stream/consumer-thread)
     (log/debug :fn :build-database :msg "Starting streams...")
@@ -80,6 +78,8 @@
     (start #'cache/resolver-cache-db)
     (warm-resolver-cache)
     (stop #'cache/resolver-cache-db)
+    (start #'suggest/suggestions)
+    (suggest/build-all-suggestions)
     (stop #'suggest/suggestions)
     (stop #'db/db)))
 
