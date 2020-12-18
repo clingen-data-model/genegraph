@@ -152,8 +152,9 @@
 (defn get-suggester-result-map [resource-iri suggester-key]
   (let [resource (q/resource resource-iri)
         label (label resource)
-        lookup-results (lookup suggester-key label #{:ALL} 20)] ;; how to exact-match?
-    (if-let [lookup-result (first (filter #(= label (.key %)) lookup-results))]
+        lookup-results (lookup suggester-key label #{:ALL} 20) ;; how to exact-match?
+        lookup-result (first (filter #(= label (.key %)) lookup-results))]
+    (if (some? lookup-result)
       (let [payload (-> (.payload lookup-result) .bytes serder/deserialize)]
         (if (= resource-iri (:iri payload))
           {:lookup-result lookup-result :resource resource :payload payload}
@@ -179,20 +180,25 @@
         (suggest/refresh-suggester suggester)
         (log/debug :fn :process-event-resource! :suggester suggester-type :text (:label new-payload) :msg :updated)))))
 
+(defstate suggestions
+  :start (create-suggesters)
+  :stop (close-suggesters))
+
+(defn running? []
+  ((mount/running-states) (str #'suggestions)))
+
 (defn update-suggesters [event]
-  (log/debug :fn :update-suggesters :event event :msg :received-event)
-  (when-let [subjects (::ann/subjects event)]
-    (doseq [gene (:gene-iris subjects)]
-      (process-event-resource! gene :gene))
-    (doseq [disease (:disease-iris subjects)]
-      (process-event-resource! disease :disease)))
+  (when (running?)
+    (log/debug :fn :update-suggesters :event event :msg :received-event)
+    (when-let [subjects (::ann/subjects event)]
+      (doseq [gene (:gene-iris subjects)]
+        (process-event-resource! gene :gene))
+      (doseq [disease (:disease-iris subjects)]
+        (process-event-resource! disease :disease))))
   event)
 
 (def update-suggesters-interceptor
   "Interceptor for updating gene and disease suggesters with curation activities"
   {:name ::update-suggesters
    :enter update-suggesters})
-         
-(defstate suggestions
-  :start (create-suggesters)
-  :stop (close-suggesters))
+
