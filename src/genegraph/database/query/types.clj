@@ -153,11 +153,17 @@
   
   java.lang.String
   (resource 
-    ([r] (let [[_ curie-prefix rest] (re-find #"^([a-zA-Z]+)[:_](.*)$" r)
-               iri (if-let [iri-prefix (-> curie-prefix s/lower-case prefix-ns-map)]
-                     (str iri-prefix rest)
-                     r)]
-           (->RDFResource (ResourceFactory/createResource iri) (get-all-graphs))))
+    ([r] (let [[_ curie-prefix rest] (re-find #"^([a-zA-Z]+)[:_](.*)$" r)]
+           (if curie-prefix
+             (->RDFResource 
+              (ResourceFactory/createResource             
+               (if-let [iri-prefix (-> curie-prefix s/lower-case prefix-ns-map)]
+                 (str iri-prefix rest)
+                 r))
+              (get-all-graphs))
+             (->RDFResource 
+              (ResourceFactory/createResource r)
+              (get-all-graphs)))))
     ([ns-prefix r] (when-let [prefix (prefix-ns-map ns-prefix)]
                      (->RDFResource (ResourceFactory/createResource (str prefix r))
                                     (get-all-graphs)))))
