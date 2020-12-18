@@ -15,6 +15,7 @@
             [mount.core :as mount :refer [defstate]]
             [io.pedestal.interceptor :as intercept]
             [io.pedestal.interceptor.chain :as chain]
+            [io.pedestal.interceptor.helpers :as helper]
             [io.pedestal.log :as log]
             [clojure.spec.alpha :as spec]))
 
@@ -26,7 +27,8 @@
             (if (or (:exception context)
                     (::spec/invalid context))
               (close-write-tx :abort)
-              (close-write-tx :commit)))})
+              (close-write-tx :commit))
+            context)})
 
 (def context (atom {}))
 
@@ -74,14 +76,7 @@
 
 (def log-result-interceptor
   {:name ::log-result
-   :leave (fn [event] 
-            (log/info
-             :fn :log-result
-             :event
-             (select-keys 
-              event 
-              [::ann/iri :exception ::spec/invalid]))
-            event)})
+   :leave (fn [e] (log/info :fn :log-result-interceptor :event e) e)})
 
 (def interceptor-chain [log-result-interceptor
                         write-tx-interceptor
@@ -99,10 +94,23 @@
                         cache/expire-resolver-cache-interceptor
                         response-cache/expire-response-cache-interceptor])
 
+(defn inject-trace-into-interceptor-chain
+  "Modifies the interceptor chain so that For every interceptor in the chain,
+  adds an interceptor right after it that logs the name of the interceptor into
+  the :executed-interceptors vector in the event for tracking purposes."
+  [interceptors]
+  (reduce (fn [vec intercept]
+            (conj vec intercept 
+                  (helper/before (fn [e] (assoc e :executed-interceptors
+                                                (conj (get e :executed-interceptors [])
+                                                      (:name intercept)))))))
+          []
+          interceptors))
+
 (defn process-event! [event]
   (log/debug :fn :process-event! :event event :msg :event-received)
   (-> event 
       (chain/enqueue (map #(intercept/interceptor %)
-        interceptor-chain))
+                          (inject-trace-into-interceptor-chain interceptor-chain)))
       chain/execute))
 
