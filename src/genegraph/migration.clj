@@ -58,7 +58,7 @@
 (defn build-database
   "Build the Jena database and associated indexes from scratch."
   [path]
-  (log/debug :fn :build-database :msg (str "Building database at " path))
+  (log/info :fn :build-database :msg (str "Building database at " path))
   (with-redefs [env/data-vol path]
     (fs/mkdirs env/data-vol)
     (start #'db/db)
@@ -68,7 +68,7 @@
     (log/debug :fn :build-database :msg "Starting streams...")
     ;; Address race where all threads are "up to date", needs better fix
     (Thread/sleep (* 1000 60 2))
-    (log/debug :fn :build-database :msg "Processing streams...")
+    (log/info :fn :build-database :msg "Processing streams...")
     (while (not (stream/up-to-date?))
       (Thread/sleep (* 1000 10)))
     (stop #'stream/consumer-thread)
@@ -79,6 +79,7 @@
     (warm-resolver-cache)
     (stop #'cache/resolver-cache-db)
     (start #'suggest/suggestions)
+    (log/info :fn :build-database :msg "Building suggesters...")
     (suggest/build-all-suggestions)
     (stop #'suggest/suggestions)
     (stop #'db/db)))
@@ -86,7 +87,7 @@
 (defn compress-database
   "Construct a tarball out of the given database"
   [source-dir target-archive]
-  (log/debug :fn :compress-database :msg (str "Compressing database at " source-dir " to " target-archive))
+  (log/info :fn :compress-database :msg (str "Compressing database at " source-dir " to " target-archive))
   (let [result (sh "tar" "-czf" target-archive "-C" source-dir ".")]
     (if (= 0 (:exit result))
       true
@@ -94,7 +95,7 @@
 
 (defn send-database
   [target-bucket database-archive database-version]
-  (log/debug :fn :send-database :msg (str "Sending " database-archive " to " target-bucket " with version " database-version))
+  (log/info :fn :send-database :msg (str "Sending " database-archive " to " target-bucket " with version " database-version))
   (let [gc-storage (.getService (StorageOptions/getDefaultInstance))
         blob-id (BlobId/of target-bucket (str database-version ".tar.gz"))
         blob-info (-> blob-id BlobInfo/newBuilder (.setContentType "application/gzip") .build)
@@ -134,7 +135,7 @@
   "After database has been downloaded, extract the tarball"
   [target-dir archive-path]
   (let [result (sh "tar" "-xzf" archive-path "-C" target-dir)]
-    (log/debug :fn :decompress-database :msg result)
+    (log/info :fn :decompress-database :msg result)
     (if (= 0 (:exit result))
       true
       false)))
@@ -147,9 +148,8 @@
     (let [archive-file (str env/data-version ".tar.gz")
           archive-path (str env/data-vol "/" archive-file)]
       (fs/mkdirs env/data-vol)
-      (log/debug :fn :populate-data-vol-if-needed :msg (str "retrieving " archive-file))
+      (log/info :fn :populate-data-vol-if-needed :msg (str "retrieving " archive-file))
       (retrieve-migration env/genegraph-bucket archive-file env/data-vol)
-      (log/debug :fn :populate-data-vol-if-needed :msg (str "decompressing " archive-path))
       (decompress-database env/data-vol archive-path))))
 
 
