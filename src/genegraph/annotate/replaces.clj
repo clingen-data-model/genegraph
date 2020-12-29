@@ -18,7 +18,7 @@
         " ?proposition :sepio/has-qualifier ?moi ."
         " ?proposition :sepio/has-object ?disease . }")))
 
-(defmethod add-replaces :gene-validity [event]
+(defmethod add-replaces :gci-legacy [event]
   (let [subjects (:genegraph.annotate/subjects event)
         old-gci-express-curation (first
                                   (find-old-gci-express-curation
