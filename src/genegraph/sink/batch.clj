@@ -10,7 +10,7 @@
             [cheshire.core :as json])
   (:import (java.io PushbackReader File)))
 
-(def batch-events "batch-events.edn")
+;; (def batch-events "batch-events.edn")
 
 (defn target-path [filename]
   (str env/data-vol "/events/" filename))
@@ -50,7 +50,7 @@
 
 (defn process-batched-events! 
   "Should be run during database initialization. Download and read events stored in batch format into database."
-  []
+  [batch-events]
   (doseq [descriptor (-> batch-events io/resource slurp edn/read-string)]
     (case (:type descriptor)
       :compressed-event-files (process-compressed-event-file! descriptor)

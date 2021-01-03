@@ -28,6 +28,10 @@
             Storage$BlobSourceOption
             Blob$BlobSourceOption]))
 
+(def initial-event-batch "batch-events.edn")
+
+(def final-event-batch "final-batch-events.edn")
+
 (defn- new-version-identifier
   "Generate a new identifier for a migration"
   []
@@ -49,7 +53,7 @@
     (fs/mkdirs env/data-vol)
     (start #'db/db)
     (base/initialize-db!)
-    (batch/process-batched-events!)
+    (batch/process-batched-events! initial-event-batch)
     (start #'suggest/suggestions)
     (suggest/build-all-suggestions)
     (stop #'suggest/suggestions)
@@ -63,7 +67,7 @@
     (fs/mkdirs env/data-vol)
     (start #'db/db)
     (base/initialize-db!)
-    (batch/process-batched-events!)
+    (batch/process-batched-events! initial-event-batch)
     (start #'stream/consumer-thread)
     (log/debug :fn :build-database :msg "Starting streams...")
     ;; Address race where all threads are "up to date", needs better fix
