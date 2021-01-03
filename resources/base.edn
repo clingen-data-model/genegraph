@@ -11,6 +11,10 @@
  {:name "http://www.w3.org/2011/content#"
   :source "http://www.w3.org/2011/content.rdf",
   :target "content.ttl",
+  :format :rdf}
+ {:name "http://xmlns.com/foaf/0.1/"
+  :source "http://xmlns.com/foaf/spec/index.rdf",
+  :target "foaf.rdf",
   :format :rdf} 
  {:name "http://www.w3.org/ns/sparql-service-description#"
   :source "https://www.w3.org/ns/sparql-service-description.ttl"
