@@ -10,7 +10,8 @@
 
 (defresolver label [args resource]
   (first (concat (:skos/preferred-label resource)
-                 (:rdfs/label resource))))
+                 (:rdfs/label resource)
+                 (:foaf/name resource))))
 
 (defresolver type [args value]
   (:rdf/type value))

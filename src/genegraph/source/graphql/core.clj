@@ -20,6 +20,7 @@
             [genegraph.source.graphql.mode-of-inheritance :as mode-of-inheritance]
             [genegraph.source.graphql.criteria :as criteria]
             [genegraph.source.graphql.classification :as classification]
+            [genegraph.source.graphql.user :as user]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]
@@ -147,7 +148,9 @@
    :suggest/suggest suggest/suggest
    :suggest/suggest-type suggest/suggest-type
    :suggest/text suggest/text
-   :suggest/weight suggest/weight}) 
+   :suggest/weight suggest/weight
+   :user/user-query user/user-query
+   :user/current-user user/current-user}) 
 
 (defn schema []
   (-> (io/resource "graphql-schema.edn")

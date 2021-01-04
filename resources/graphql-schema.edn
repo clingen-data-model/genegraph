@@ -762,6 +762,11 @@
     :dosage_query{:type (non-null :GeneDosageCuration)
                   :args {:iri {:type String}}
                   :resolve :gene-dosage/gene-dosage-query}
+    :user_query {:type :Agent
+                 :args {:email {:type String}}
+                 :resolve :user/user-query}
+    :current_user {:type :Agent
+                   :resolve :user/current-user}
     :totals {:type :Totals
              :resolve :gene-dosage/totals-query}
     :suggest {:type (list :Suggestion)
