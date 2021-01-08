@@ -501,6 +501,10 @@
               :resolve :resource/label
               :description "Name of the agent"}
 
+      :is_admin {:type Boolean
+                 :resolve :user/is-admin
+                 :description "Returns true if the Agent is an administrator"}
+
       :gene_validity_assertions
       {:type :GeneValidityAssertions
        :resolve :affiliation/gene-validity-assertions

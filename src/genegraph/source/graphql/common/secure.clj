@@ -1,8 +1,13 @@
 (ns genegraph.source.graphql.common.secure
-  (:require [genegraph.database.query :as q]))
+  (:require [genegraph.database.query :as q]
+            [clojure.set :as set]))
 
 (defmacro def-role-controlled-resolver [resolver-name roles args & body]
-  (let [context (gensym "context")]
-    `(defn ~resolver-name ~args
-       (let [context# (first ~args)]
-         (do ~@body)))))
+  `(defn ~resolver-name ~args
+     (let [context# (first ~args)
+           user-roles# (:genegraph.auth/roles context#)
+           authorized-roles# (->> ~roles (map q/resource) (into #{}))
+           user-is-authorized# (seq (set/intersection authorized-roles# user-roles#))]
+       (if user-is-authorized#
+         (do ~@body)
+         (throw (Exception. (str "User is unauthorized for resolver " ~resolver-name)))))))

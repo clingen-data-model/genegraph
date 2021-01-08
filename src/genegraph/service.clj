@@ -36,12 +36,11 @@
   (pedestal-interceptor/interceptor
    {:name ::user-info
     :enter (fn [context]
-              (let [user-info (:user context)]
-                (if user-info
-                  (assoc-in context
-                            [:request :lacinia-app-context :user]
-                            user-info)
-                  context)))}))
+             (let [user-info (select-keys context [::auth/user ::auth/roles])]
+               (assoc-in context
+                         [:request :lacinia-app-context]
+                         (merge (get-in context [:request :lacinia-app-context])
+                                user-info))))}))
 
 (defn dev-interceptors []
   (-> (lacinia-pedestal/default-interceptors gql/schema {})

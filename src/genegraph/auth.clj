@@ -21,7 +21,8 @@
       (let [user (-> (FirebaseAuth/getInstance) (.verifyIdToken token))]
         (if (.isEmailVerified user)
           (let [user-resource (find-user-by-email (.getEmail user))]
-            (assoc context :user user-resource))
+            (assoc context ::user user-resource
+                           ::roles (into #{} (:foaf/member user-resource))))
           context))
       (catch Exception e 
         (-> context

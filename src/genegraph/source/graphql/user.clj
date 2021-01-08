@@ -16,4 +16,8 @@
   (find-user-by-email (:email args)))
 
 (defn current-user [context args value]
-  (:user context))
+  (:genegraph.auth/user context))
+
+(defn is-admin [context args value]
+  (some #(= (q/resource :cgagent/genegraph-admin) %)
+        (:foaf/member value)))

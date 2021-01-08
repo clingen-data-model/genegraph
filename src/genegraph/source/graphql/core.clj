@@ -150,7 +150,8 @@
    :suggest/text suggest/text
    :suggest/weight suggest/weight
    :user/user-query user/user-query
-   :user/current-user user/current-user}) 
+   :user/current-user user/current-user
+   :user/is-admin user/is-admin}) 
 
 (defn schema []
   (-> (io/resource "graphql-schema.edn")
