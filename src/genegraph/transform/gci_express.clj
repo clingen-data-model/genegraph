@@ -66,7 +66,8 @@
              [iri :sepio/has-object (evidence-level-label-to-concept
                                      (-> report :scores vals first :label))]
              [iri :sepio/qualified-contribution contribution-iri]
-             [iri :sepio/is-specified-by (sop-version-gci-e report)]]
+             [iri :sepio/is-specified-by (sop-version-gci-e report)]
+             [iri :dc/has-format (sop-version-gci-e report)]]
             (validity-proposition report prop-iri)
             (contribution report contribution-iri))))
 

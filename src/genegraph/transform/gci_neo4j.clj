@@ -58,7 +58,8 @@
              [iri :sepio/has-predicate :sepio/HasEvidenceLevel]
              [iri :sepio/has-object (old-score-to-new (:score report))]
              [iri :sepio/qualified-contribution contribution-iri]
-             [iri :sepio/is-specified-by (gci-sop-version (:sop-version report))]]
+             [iri :sepio/is-specified-by (gci-sop-version (:sop-version report))]
+             [iri :dc/has-format (gci-sop-version (:sop-version report))]]
             (validity-proposition report prop-iri)
              (contribution report contribution-iri))))
 
