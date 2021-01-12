@@ -481,6 +481,20 @@
               :resolve :resource/label
               :description "Label for this resourcce"}}}
 
+    :Group
+    {:implements [:Resource]
+     :description "A group that may contain one or more users, and grant priveliges within Genegraph"
+     :fields
+     {:iri {:type String
+            :resolve :resource/iri
+            :description "IRI identifying this resource"}
+      :curie {:type String
+              :resolve :resource/curie
+              :description "CURIE of the IRI identifying this resource"}
+      :label {:type String
+              :resolve :resource/label
+              :description "Label for this resourcce"}}}
+
     :Agents
     {:description "A list of agents, with a possible limit, and a count of the total number matching the query"
      :fields
@@ -500,7 +514,12 @@
       :label {:type String
               :resolve :resource/label
               :description "Name of the agent"}
-
+      :email {:type String
+              :resolve :user/email
+              :description "Email of user"}
+      :member_of {:type (list :Agent)
+                  :resolve :user/member-of
+                  :description "Returns the roles or groups a user is a member of."}
       :is_admin {:type Boolean
                  :resolve :user/is-admin
                  :description "Returns true if the Agent is an administrator"}
@@ -769,6 +788,8 @@
     :user_query {:type :Agent
                  :args {:email {:type String}}
                  :resolve :user/user-query}
+    :groups_query {:type (list :Group)
+                   :resolve :group/groups}
     :current_user {:type :Agent
                    :resolve :user/current-user}
     :totals {:type :Totals

@@ -21,6 +21,7 @@
             [genegraph.source.graphql.criteria :as criteria]
             [genegraph.source.graphql.classification :as classification]
             [genegraph.source.graphql.user :as user]
+            [genegraph.source.graphql.group :as group]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]
@@ -130,6 +131,7 @@
    :genetic-condition/gene-dosage-curation genetic-condition/gene-dosage-curation
    :genetic-condition/gene-validity-curation genetic-condition/gene-validity-curation
    :genetic-condition/mode-of-inheritance genetic-condition/mode-of-inheritance
+   :group/groups group/groups
    :mode-of-inheritance/modes-of-inheritance mode-of-inheritance/modes-of-inheritance
    :region-feature/chromosomal-band region-feature/chromosomal-band
    :region-feature/coordinates region-feature/coordinates
@@ -151,7 +153,9 @@
    :suggest/weight suggest/weight
    :user/user-query user/user-query
    :user/current-user user/current-user
-   :user/is-admin user/is-admin}) 
+   :user/email user/email
+   :user/is-admin user/is-admin
+   :user/member-of user/member-of}) 
 
 (defn schema []
   (-> (io/resource "graphql-schema.edn")

@@ -10,10 +10,21 @@
         {:email (q/resource (str "mailto:" email))})
        first))
 
+(defn email [context args value]
+  (some->> (q/ld1-> value [:foaf/mbox])
+           str
+           (re-find #"mailto:(.*)")
+           second))
+
 (def-role-controlled-resolver user-query
   [:cgagent/genegraph-admin]
   [context args value]
   (find-user-by-email (:email args)))
+
+(def-role-controlled-resolver member-of
+  [:cgagent/genegraph-admin]
+  [context args value]
+  (:foaf/member value))
 
 (defn current-user [context args value]
   (:genegraph.auth/user context))
