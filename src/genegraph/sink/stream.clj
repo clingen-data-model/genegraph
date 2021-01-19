@@ -148,18 +148,6 @@
 (defn long-poll [c]
   (-> c (.poll (Duration/ofMillis 2000)) .iterator iterator-seq))
 
-;; (defn topic-data [topic]
-;;   (with-open [c (consumer-for-topic topic)]
-;;     (let [tp (topic-partitions c topic)]
-;;       (.assign c tp)
-;;       (.seekToBeginning c tp)
-;;       (let [consumer-records (loop [records (long-poll c)]
-;;                                (let [addl-records (long-poll c)]
-;;                                  (if-not (seq addl-records)
-;;                                    records
-;;                                    (recur (concat records addl-records)))))]
-;;         (mapv #(consumer-record-to-clj % topic) consumer-records)))))
-
 (defn topic-data
   "Read topic data to disk. Assumes single partition topic."
   ([topic]

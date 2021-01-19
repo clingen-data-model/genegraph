@@ -18,7 +18,8 @@
             [cognitect.rebl :as rebl]
             [clojure.pprint :refer [pprint]]
             [clojure.string :as str]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.edn :as edn]))
 
 (defn start-rebl []
   (rebl/ui))

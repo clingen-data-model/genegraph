@@ -32,6 +32,16 @@
   {:name ::log-request
    :enter (fn [context] (log/info :request context) context)})
 
+(def user-info-interceptor
+  (pedestal-interceptor/interceptor
+   {:name ::user-info
+    :enter (fn [context]
+             (let [user-info (select-keys context [::auth/user ::auth/roles])]
+               (assoc-in context
+                         [:request :lacinia-app-context]
+                         (merge (get-in context [:request :lacinia-app-context])
+                                user-info))))}))
+
 (defn dev-interceptors []
   (-> (lacinia-pedestal/default-interceptors gql/schema {})
       (lacinia/inject nil :replace ::lacinia-pedestal/body-data)
@@ -46,7 +56,10 @@
                       ::lacinia-pedestal/body-data)
       (lacinia/inject auth/auth-interceptor
                       :before
-                      ::lacinia-pedestal/body-data)))
+                      ::lacinia-pedestal/body-data)
+      (lacinia/inject user-info-interceptor
+                      :after
+                      ::lacinia-pedestal/inject-app-context)))
 
 (defn prod-interceptors []
   (let [interceptor-chain
@@ -60,7 +73,10 @@
                             ::lacinia-pedestal/query-executor)
             (lacinia/inject auth/auth-interceptor
                             :before
-                            ::lacinia-pedestal/body-data))]
+                            ::lacinia-pedestal/body-data)
+            (lacinia/inject user-info-interceptor
+                            :after
+                            ::lacinia-pedestal/inject-app-context))]
     (cond-> interceptor-chain
       env/use-response-cache (lacinia/inject 
                               (pedestal-interceptor/interceptor
@@ -78,7 +94,10 @@
                       ::lacinia-subs/exception-handler)
       (lacinia/inject auth/auth-interceptor
                       :after
-                      ::lacinia-subs/exception-handler)))
+                      ::lacinia-subs/exception-handler)
+      (lacinia/inject user-info-interceptor
+                      :after
+                      ::lacinia-subs/inject-app-context)))
 
 (defn prod-subscription-interceptors []
   (let [interceptor-chain 
@@ -88,7 +107,10 @@
                             ::lacinia-subs/execute-operation)
             (lacinia/inject auth/auth-interceptor
                             :after
-                            ::lacinia-subs/exception-handler))]
+                            ::lacinia-subs/exception-handler)
+            (lacinia/inject user-info-interceptor
+                            :after
+                            ::lacinia-subs/inject-app-context))]
     (cond-> interceptor-chain
       env/use-response-cache (lacinia/inject 
                               (pedestal-interceptor/interceptor

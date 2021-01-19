@@ -54,7 +54,8 @@
  "cgacta" "https://actionability.clinicalgenome.org/ac/Adult/api/sepio/doc/"
  "cgactp" "https://actionability.clinicalgenome.org/ac/Pediatric/api/sepio/doc/"
  "cgdosage" "http://dx.clinicalgenome.org/entities/"
- "cgagent" "http://dataexchange.clinicalgenome.org/agent/"}
+ "cgagent" "http://dataexchange.clinicalgenome.org/agent/"
+ "cgmembership" "http://dataexchange.clinicalgenome.org/membership/"
  "chebi" "http://purl.obolibrary.org/obo/CHEBI_"
  "rxnorm" "http://purl.bioontology.org/ontology/RXNORM/"}
 

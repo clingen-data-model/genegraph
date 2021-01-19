@@ -280,6 +280,8 @@
  [:faldo/position "http://biohackathon.org/resource/faldo#position"]
  [:faldo/reference "http://biohackathon.org/resource/faldo#reference"]
  [:foaf/name "http://xmlns.com/foaf/0.1/name"]
+ [:foaf/mbox "http://xmlns.com/foaf/0.1/mbox"]
+ [:foaf/member "http://xmlns.com/foaf/0.1/member"]
  [:foaf/page "http://xmlns.com/foaf/0.1/page"]
  [:geno/bears-concretization-of
   "http://purl.obolibrary.org/obo/GENO_0000211"]

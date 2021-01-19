@@ -82,15 +82,6 @@
                        result#)))))
          (do ~@body)))))
 
-;; (defmacro defresolver
-;;   "Define a Lacinia GraphQL resolver that uses the cache defined above. Resolver should be
-;;   a two-argument function, the first argument representing the args to the resolver, the
-;;   second representing value. Context is not used, or useable."
-;;   [resolver-name args & body]
-;;   (let [fn-args (into [] (cons '_ args))]
-;;     `(defn ~resolver-name ~fn-args
-;;        (do ~@body))))
-
 (defn reset-cache! 
   "Blow away the entire cache."
   []
