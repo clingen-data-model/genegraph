@@ -21,20 +21,21 @@
             ;; "@vocab" "http://actionability.clinicalgenome.org/"
             "@base" "http://actionability.clinicalgenome.org/"
             "aci" "http://actionability.clinicalgenome.org/"
-            "acixform" "http://dataexchange.clinicalgenome.org/gcixform/"
+            "acixform" "http://dataexchange.clinicalgenome.org/acixform/"
             "type" "@type"
-            "iri" {"@id" "http://dataexchange.clinicalgenome.org/gcixform/iri"
+            "iri" {"@id" "http://dataexchange.clinicalgenome.org/acixform/iri"
                    "@type" "@id"}
-            "gene" {"@id" "http://dataexchange.clinicalgenome.org/gcixform/gene"
+            "gene" {"@id" "http://dataexchange.clinicalgenome.org/acixform/gene"
                     "@type" "@id"}
-            "assertions" {"@id" "http://dataexchange.clinicalgenome.org/gcixform/assertions"}
-            "assertion" {"@id" "http://dataexchange.clinicalgenome.org/gcixform/assertion"
+            "assertions" {"@id" "http://dataexchange.clinicalgenome.org/acixform/assertions"}
+            "assertion" {"@id" "http://dataexchange.clinicalgenome.org/acixform/assertion"
                          "@type" "@vocab"}
-            "conditions" {"@id" "http://dataexchange.clinicalgenome.org/gcixform/conditions"}
-            "dateISO8601" {"@id" "http://dataexchange.clinicalgenome.org/gcixform/approvalDate"}
-            "searchDates" {"@id" "http://dataexchange.clinicalgenome.org/gcixform/searchDates"}
-            "id" {"@type" "@id"
-                  "@id" "http://dataexchange.clinicalgenome.org/gcixform/id"}
+            "conditions" {"@id" "http://dataexchange.clinicalgenome.org/acixform/conditions"}
+            "dateISO8601" {"@id" "http://dataexchange.clinicalgenome.org/acixform/approvalDate"}
+            "searchDates" {"@id" "http://dataexchange.clinicalgenome.org/acixform/searchDates"}
+            "affiliations" {"@id" "http://dataexchange.clinicalgenome.org/acixform/affiliations"}
+            "id" {"@type" "@vocab"
+                  "@id" "http://dataexchange.clinicalgenome.org/acixform/id"}
 
             "Definitive Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003535"
             "Strong Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003536"

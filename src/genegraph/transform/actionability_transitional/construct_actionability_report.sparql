@@ -1,14 +1,20 @@
 prefix aci: <http://actionability.clinicalgenome.org/>
-prefix acixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+prefix acixform: <http://dataexchange.clinicalgenome.org/acixform/>
 prefix cg: <http://dataexchange.clinicalgenome.org/terms/> 
 
 construct
-{ ?report a :sepio/ActionabilityReport ;
-  :sepio/qualified-contribution ?approval_contribution, ?search_contribution ;
+{
+
+  ?report a :sepio/ActionabilityReport ;
+  :sepio/qualified-contribution _:approval_contribution, _:evidence_contribution ;
   :bfo/has-part ?condition_node .
 
-  ?approval_contribution :bfo/realizes :sepio/ApproverRole .
+  _:approval_contribution :bfo/realizes :sepio/ApproverRole ;
+  :sepio/activity-date ?approval_date .
 
+  _:evidence_contribution :bfo/realizes :sepio/EvidenceRole ;
+  :sepio/activity-date ?search_date .
+  
   ?condition_node a :sepio/ActionabilityAssertion ;
   :sepio/has-object ?disease ;
   :sepio/has-predicate ?assertion ;
@@ -19,12 +25,11 @@ where
   acixform:iri ?report ;
   acixform:approvalDate ?approval_date ;
   acixform:searchDates ?search_date ;
+  acixform:affiliations ?affiliation ;
   acixform:conditions ?condition_node .
 
   ?condition_node acixform:iri ?disease ;
   acixform:gene ?gene .
-
-
 
   optional {
     ?report_node acixform:assertions ?assertion_node .
