@@ -33,8 +33,23 @@
 (spec/def ::curation
   (spec/keys :req-un [::statusFlag ::conditions ::affiliations]))
 
+(def vocab
+  {"Definitive Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003535"
+   "Strong Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003536"
+   "Moderate Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003537"
+   "Limited Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003538"
+   "Insufficient Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003539"
+   "No Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003540"
+   "Assertion Pending" "http://purl.obolibrary.org/obo/SEPIO_0003541"
+   
+   "Pediatric AWG" "http://dataexchange.clinicalgenome.org/terms/PediatricActionabilityWorkingGroup"
+   "Adult AWG" "http://dataexchange.clinicalgenome.org/terms/AdultActionabilityWorkingGroup"})
+
 (defn genetic-condition-label [parent-condition gene]
   (str (q/ld1-> parent-condition [:rdfs/label]) ", " (q/ld1-> gene [:skos/preferred-label])))
+
+(defn gene-resource [gene-str]
+  (q/ld1-> (q/resource gene-str) [[:owl/same-as :<]]))
 
 (defn genetic-condition [curation-iri condition]
   (if-let [condition-resource (if (re-find #"MONDO" (:iri condition))
@@ -43,7 +58,7 @@
                                                  (q/ld-> (q/resource (:curie condition))
                                                          [[:skos/has-exact-match :-]]))))]
     (let [gc-node (l/blank-node)
-          gene (q/ld1-> (q/resource (:gene condition)) [[:owl/same-as :<]])]
+          gene (gene-resource (:gene condition))]
       [[curation-iri :sepio/is-about-condition gc-node]
        [gc-node :rdf/type :sepio/GeneticCondition]
        [gc-node :rdf/type :cg/ActionabilityGeneticCondition]
@@ -59,11 +74,41 @@
      [contrib-iri :bfo/realizes :sepio/EvidenceRole]
      [contrib-iri :sepio/has-agent agent-iri]]))
 
+(defn assertion [curation-iri assertion-map]
+  (let [assertion-iri (l/blank-node)]
+    [[curation-iri :bfo/has-part assertion-iri]
+     [assertion-iri :rdf/type :sepio/ActionabilityAssertion]
+     [assertion-iri :sepio/has-subject (-> assertion-map :gene gene-resource)]
+     [assertion-iri :sepio/has-predicate (-> assertion-map :assertion vocab q/resource)]
+     [assertion-iri :sepio/has-object (-> assertion-map :iri q/resource)]]))
+
+(defn total-scores [curation]
+  (->> curation
+       :scores
+       (map :ScoringGroups)
+       flatten
+       (map :Interventions)
+       flatten
+       (map :ScoringGroups)
+       flatten
+       (map :Total)
+       flatten
+       (map #(re-find #"\d+" %))
+       (map #(Integer/parseInt %))
+       (map #(vector (:iri curation) :cg/has-total-actionability-score %))))
+
+(defn assertions [curation]
+  (let [assertion-set (if (:assertions curation)
+                        (into #{} (:assertions curation))
+                        (into #{} (map #(assoc % :assertion "Assertion Pending")
+                                       (:conditions curation))))]
+    (mapcat #(assertion (:iri curation) %) assertion-set)))
+
 (defn transform [curation]
   (let [statements (if (spec/valid? ::curation curation)
                      (let [curation-iri (:iri curation)
                            contrib-iri (l/blank-node)
-                           agent-iri (l/blank-node)]
+                           agent-iri (-> curation :affiliations first :id vocab q/resource)]
                        (concat 
                         [[curation-iri :rdf/type :sepio/ActionabilityReport]
                          [curation-iri :sepio/qualified-contribution contrib-iri]
@@ -71,10 +116,13 @@
                          [contrib-iri :sepio/activity-date (:dateISO8601 curation)]
                          [contrib-iri :bfo/realizes :sepio/ApproverRole]
                          [contrib-iri :sepio/has-agent agent-iri]
-                         [agent-iri :rdfs/label (-> curation :affiliations first :name)]]
+                         ;; [agent-iri :rdfs/label (-> curation :affiliations first :name)]
+                         ]
                         (mapcat #(genetic-condition curation-iri %) (:conditions curation))
                         (mapcat #(search-contributions curation-iri % agent-iri)
-                                (:searchDates curation))))
+                                (:searchDates curation))
+                        (assertions curation)
+                        (total-scores curation)))
                      [])] 
     (l/statements-to-model statements)))
 

@@ -61,3 +61,12 @@
 
 (defn as-sepio [aci-model]
   (construct-actionability-report {::q/model aci-model}))
+
+(defn search-contributions [curation-iri search-date agent-iri]
+  (let [contrib-iri (l/blank-node)]
+    [[curation-iri :sepio/qualified-contribution contrib-iri]
+     [contrib-iri :sepio/activity-date search-date]
+     [contrib-iri :bfo/realizes :sepio/EvidenceRole]
+     [contrib-iri :sepio/has-agent agent-iri]]))
+
+
