@@ -20,4 +20,5 @@
            :genegraph.annotate/action 
            (case (:statusFlag report-json)
              "Retracted" :unpublish
+             "In Preparation" :no-action
              :publish))))

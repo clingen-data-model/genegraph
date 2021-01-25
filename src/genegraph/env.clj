@@ -16,6 +16,8 @@
 (def use-response-cache (System/getenv "GENEGRAPH_RESPONSE_CACHE"))
 (def genegraph-version (System/getenv "GENEGRAPH_IMAGE_VERSION"))
 
+(def dx-key-pass (System/getenv "SERVEUR_KEY_PASS"))
+
 (def environment {:data-vol data-vol
                   :dx-topics dx-topics
                   :genegraph-data-version data-version

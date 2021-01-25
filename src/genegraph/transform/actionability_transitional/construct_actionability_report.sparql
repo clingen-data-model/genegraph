@@ -1,0 +1,46 @@
+prefix aci: <http://actionability.clinicalgenome.org/>
+prefix acixform: <http://dataexchange.clinicalgenome.org/acixform/>
+prefix cg: <http://dataexchange.clinicalgenome.org/terms/> 
+
+construct
+{
+
+  ?report a :sepio/ActionabilityReport ;
+  :sepio/qualified-contribution _:approval_contribution; # _:evidence_contribution ;
+  :bfo/has-part ?condition_node .
+
+  _:approval_contribution :bfo/realizes :sepio/ApproverRole ;
+  :sepio/activity-date ?approval_date .
+
+#   _:evidence_contribution :bfo/realizes :sepio/EvidenceRole .
+  # :sepio/activity-date ?search_date .
+  
+  ?condition_node a :sepio/ActionabilityAssertion ;
+  :sepio/has-object ?disease ;
+  :sepio/has-predicate ?assertion ;
+  :sepio/has-subject ?gene .
+}
+where
+{ ?report_node a aci:actionability ;
+  acixform:iri ?report ;
+  acixform:approvalDate ?approval_date ;
+  acixform:searchDates ?search_date ;
+  acixform:affiliations ?affiliation ;
+  acixform:conditions ?condition_node .
+
+  ?condition_node acixform:iri ?disease ;
+  acixform:gene ?gene .
+
+  optional {
+    ?report_node acixform:assertions ?assertion_node .
+    
+    ?assertion_node acixform:assertion ?included_assertion ;
+    acixform:gene ?gene ;
+    acixform:iri ?disease .
+  }
+
+  # Bind 'assertion pending' in case no linked assertion exists
+  bind(coalesce(?included_assertion, <http://purl.obolibrary.org/obo/SEPIO_0003541>)
+       as ?assertion)
+}
+  
