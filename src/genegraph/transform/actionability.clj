@@ -39,6 +39,7 @@
    "Moderate Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003537"
    "Limited Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003538"
    "Insufficient Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003539"
+   "Insufficient Evidence" "http://purl.obolibrary.org/obo/SEPIO_0003539"
    "No Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003540"
    "Assertion Pending" "http://purl.obolibrary.org/obo/SEPIO_0003541"
    
@@ -98,10 +99,17 @@
        (map #(vector (:iri curation) :cg/has-total-actionability-score %))))
 
 (defn assertions [curation]
-  (let [assertion-set (if (:assertions curation)
-                        (into #{} (:assertions curation))
-                        (into #{} (map #(assoc % :assertion "Assertion Pending")
-                                       (:conditions curation))))]
+  (let [assertion-set
+        (cond 
+          (:assertions curation)
+          (into #{} (:assertions curation))
+          
+          (= "Failed" (:earlyRuleOutStatus curation))
+          (into #{} (map #(assoc % :assertion "Insufficient Evidence")
+                         (:conditions curation)))
+          :else
+          (into #{} (map #(assoc % :assertion "Assertion Pending")
+                         (:conditions curation))))]
     (mapcat #(assertion (:iri curation) %) assertion-set)))
 
 (defn transform [curation]
