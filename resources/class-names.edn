@@ -297,17 +297,19 @@
  [:sepio/DefinitiveActionability
   "http://purl.obolibrary.org/obo/SEPIO_0003535"]
  [:sepio/StrongActionability
-  "http://purl.obolibrary.org/obo/SEPIO_0003013"]
+  "http://purl.obolibrary.org/obo/SEPIO_0003536"]
  [:sepio/ModerateActionability
-  "http://purl.obolibrary.org/obo/SEPIO_0003013"]
+  "http://purl.obolibrary.org/obo/SEPIO_0003537"]
  [:sepio/LimitedActionability
-  "http://purl.obolibrary.org/obo/SEPIO_0003013"]
- [:sepio/InsufficientActionability
-  "http://purl.obolibrary.org/obo/SEPIO_0003013"]
+  "http://purl.obolibrary.org/obo/SEPIO_0003538"]
+ [:sepio/InsufficientEvidenceForActionabilityEarlyRuleOut
+  "http://purl.obolibrary.org/obo/SEPIO_0003539"]
  [:sepio/NoActionability
-  "http://purl.obolibrary.org/obo/SEPIO_0003013"]
+  "http://purl.obolibrary.org/obo/SEPIO_0003540"]
  [:sepio/AssertionPending
-  "http://purl.obolibrary.org/obo/SEPIO_0003013"]
+  "http://purl.obolibrary.org/obo/SEPIO_0003541"]
+ [:sepio/InsufficientEvidenceForActionabilityExpertReview
+  "http://purl.obolibrary.org/obo/SEPIO_0003542"]
  [:void/Dataset "http://rdfs.org/ns/void#Dataset"]
  [:chebi/Drug "http://purl.obolibrary.org/obo/CHEBI_23888"]]
 

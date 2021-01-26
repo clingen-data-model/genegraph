@@ -219,5 +219,7 @@ use io/slurp"
                                           (slurp query-source)))))]
      (case (:genegraph.database.query/type params)
        :ask (.setQueryAskType query)
-       (.setDistinct query true))
+       (if  (:genegraph.database.query/distinct params true)
+         (.setDistinct query true)
+         query))
      (->StoredQuery query))))
