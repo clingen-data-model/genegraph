@@ -13,6 +13,11 @@
     [ac_report :rdf/type :sepio/ActionabilityReport]
     [actionability_genetic_condition :rdfs/sub-class-of disease]])
 
+(def actionability-assertion-bgp
+  '[[actionability_assertion :sepio/has-subject gene]
+    [actionability_assertion :sepio/has-object disease]
+    [actionability_assertion :rdf/type :sepio/ActionabilityAssertion]])
+
 (def gene-dosage-bgp
   '[[dosage_report :iao/is-about gene]
     [dosage_report :rdf/type :sepio/GeneDosageReport]
@@ -76,6 +81,10 @@
 (def actionability-curations-for-genetic-condition
   (create-query [:project ['ac_report]
                  (cons :bgp actionability-bgp)]))
+
+(def actionability-assertions-for-genetic-condition
+  (create-query [:project ['actionability_assertion]
+                 (cons :bgp actionability-assertion-bgp)]))
 
 (def gene-validity-with-sort-bgp
   (conj gene-validity-bgp

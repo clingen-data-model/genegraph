@@ -132,9 +132,13 @@
               :mode_of_inheritance {:type :ModeOfInheritance
                                     :resolve :genetic-condition/mode-of-inheritance
                                     :description "The mode of inheritance associated with this genetic condition."}
+              :actionability_assertions {:type (list :ActionabilityAssertion)
+                                         :resolve :genetic-condition/actionability-assertions
+                                         :description "Actionability assertions associated with this genetic condition. Unlike gene_validity and dosage, there may be more than one per genetic condition, as the condition may be curated in both pediatric and adult contexts."}
               :actionability_curations {:type (list :ActionabilityCuration)
-                                       :resolve :genetic-condition/actionability-curations
-                                       :description "Actionability curations associated with this genetic condition. Unlike gene_validity and dosage, there may be more than one per genetic condition, as the condition may be curated in both pediatric and adult contexts."}
+                                        :resolve :genetic-condition/actionability-curations
+                                        :deprecated "use actionability_assertions field instead"
+                                        :description "Actionability curations associated with this genetic condition. Unlike gene_validity and dosage, there may be more than one per genetic condition, as the condition may be curated in both pediatric and adult contexts."}
               :gene_validity_assertions {:type (list :GeneValidityAssertion)
                                         :resolve :genetic-condition/gene-validity-curation
                                         :description "Gene Validity curation associated with this genetic condition."}
@@ -421,6 +425,16 @@
       :conditions {:type (list :Disease)
                    :resolve :actionability/conditions}
       :source {:type String :resolve :actionability/source}}}
+
+    :ActionabilityAssertion
+    {;;:implements [:Resource :Curation]
+     :fields 
+     {:report_date {:type String :resolve :ac-assertion/report-date}
+      :source {:type String :resolve :ac-assertion/source}
+      :classification {:type :Classification
+                       :resolve :ac-assertion/classification}
+      :attributed_to {:type :Agent
+                      :resolve :ac-assertion/attributed-to}}}
 
     :GeneValidityAssertion
     {:implements [:Resource :Curation]
