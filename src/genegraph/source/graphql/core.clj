@@ -4,6 +4,7 @@
             [genegraph.source.graphql.gene :as gene]
             [genegraph.source.graphql.resource :as resource]
             [genegraph.source.graphql.actionability :as actionability]
+            [genegraph.source.graphql.actionability-assertion :as ac-assertion]
             [genegraph.source.graphql.gene-validity :as gene-validity]
             [genegraph.source.graphql.gene-dosage :as gene-dosage]
             [genegraph.source.graphql.gene-feature :as gene-feature]
@@ -37,6 +38,10 @@
    :actionability/report-id actionability/report-id
    :actionability/source actionability/source
    :actionability/wg-label actionability/wg-label
+   :ac-assertion/report-date ac-assertion/report-date
+   :ac-assertion/source ac-assertion/source
+   :ac-assertion/classification ac-assertion/classification
+   :ac-assertion/attributed-to ac-assertion/attributed-to
    :affiliation/affiliation-query affiliation/affiliation-query
    :affiliation/affiliations affiliation/affiliations
    :affiliation/curated-diseases affiliation/curated-diseases
@@ -126,6 +131,7 @@
    :gene-validity/specified-by gene-validity/specified-by
    :gene-validity/has-format gene-validity/has-format
    :genetic-condition/actionability-curations genetic-condition/actionability-curations
+   :genetic-condition/actionability-assertions genetic-condition/actionability-assertions
    :genetic-condition/disease genetic-condition/disease
    :genetic-condition/gene genetic-condition/gene
    :genetic-condition/gene-dosage-curation genetic-condition/gene-dosage-curation
