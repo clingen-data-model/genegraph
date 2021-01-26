@@ -122,10 +122,14 @@
                                     (::q/model event)))]
     (let [genes (q/ld-> gv-prop [:sepio/has-subject])
           diseases (q/ld-> gv-prop [:sepio/has-object])
-          modes-of-inheritance (q/ld-> gv-prop [:sepio/has-qualifier])]
+          modes-of-inheritance (q/ld-> gv-prop [:sepio/has-qualifier])
+          affiliations (q/ld-> gv-prop [[:sepio/has-subject :<]
+                                        :sepio/qualified-contribution
+                                        :sepio/has-agent])]
       (assoc event ::subjects {:gene-iris (mapv str genes)
                                :disease-iris (mapv str diseases)
-                               :moi-iris (mapv str modes-of-inheritance)}))
+                               :moi-iris (mapv str modes-of-inheritance)
+                               :agent-iris (mapv str affiliations)}))
     event))
 
 (defmethod add-subjects :default [event]
