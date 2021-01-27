@@ -76,7 +76,9 @@
 
 (def log-result-interceptor
   {:name ::log-result
-   :leave (fn [e] (log/info :fn :log-result-interceptor :event e) e)})
+   :leave (fn [e] (log/info
+                   :fn :log-result-interceptor
+                   :event (select-keys e [::ann/iri ::ann/subjects])) e)})
 
 (def interceptor-chain [log-result-interceptor
                         write-tx-interceptor
