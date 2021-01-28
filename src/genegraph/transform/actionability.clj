@@ -75,13 +75,27 @@
      [contrib-iri :bfo/realizes :sepio/EvidenceRole]
      [contrib-iri :sepio/has-agent agent-iri]]))
 
-(defn assertion [curation-iri assertion-map]
-  (let [assertion-iri (l/blank-node)]
-    [[curation-iri :bfo/has-part assertion-iri]
-     [assertion-iri :rdf/type :sepio/ActionabilityAssertion]
-     [assertion-iri :sepio/has-subject (-> assertion-map :gene gene-resource)]
-     [assertion-iri :sepio/has-predicate (-> assertion-map :assertion vocab q/resource)]
-     [assertion-iri :sepio/has-object (-> assertion-map :iri q/resource)]]))
+(defn is-preferred-condition [curation condition]
+  (let [preferred-conditions
+        (->> (:preferred_conditions curation)
+             (map #(vector (:iri %) (:gene %)))
+             (into #{}))]
+    (preferred-conditions [(:iri condition) (:gene condition)])))
+
+(defn assertion [curation assertion-map]
+  (let [assertion-iri (l/blank-node)
+        curation-iri (:iri curation)
+        preferred-condition
+        (if (is-preferred-condition curation assertion-map)
+          [[assertion-iri :rdf/type :cg/ActionabilityAssertionForPreferredCondition]]
+          [])]
+    (concat
+     [[curation-iri :bfo/has-part assertion-iri]
+      [assertion-iri :rdf/type :sepio/ActionabilityAssertion]
+      [assertion-iri :sepio/has-subject (-> assertion-map :gene gene-resource)]
+      [assertion-iri :sepio/has-predicate (-> assertion-map :assertion vocab q/resource)]
+      [assertion-iri :sepio/has-object (-> assertion-map :iri q/resource)]]
+     preferred-condition)))
 
 (defn total-scores [curation]
   (->> curation
@@ -110,7 +124,8 @@
           :else
           (into #{} (map #(assoc % :assertion "Assertion Pending")
                          (:conditions curation))))]
-    (mapcat #(assertion (:iri curation) %) assertion-set)))
+    (->> assertion-set
+         (mapcat #(assertion curation %)))))
 
 (defn transform [curation]
   (let [statements (if (spec/valid? ::curation curation)
