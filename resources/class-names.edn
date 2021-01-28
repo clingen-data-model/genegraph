@@ -73,6 +73,7 @@
  [:sepio/EvidenceRole "http://purl.obolibrary.org/obo/SEPIO_0000148"]
  [:cg/DomainModel "http://dataexchange.clinicalgenome.org/terms/DomainModel"]
  [:cg/ActionabilityGeneticCondition "http://dataexchange.clinicalgenome.org/terms/ActionabilityGeneticCondition"]
+ [:cg/ActionabilityAssertionForPreferredCondition "http://dataexchange.clinicalgenome.org/terms/ActionabilityAssertionForPreferredCondition"]
  [:cg/Affiliation "http://dataexchange.clinicalgenome.org/terms/Affiliation"]
  [:cg/GeneCurationExpress "http://dataexchange.clinicalgenome.org/terms/GeneCurationExpress"]
  [:cgagent/genegraph-admin "http://dataexchange.clinicalgenome.org/agent/genegraph-admin"]
