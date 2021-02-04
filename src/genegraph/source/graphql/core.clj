@@ -38,6 +38,16 @@
    :actionability/report-id actionability/report-id
    :actionability/source actionability/source
    :actionability/wg-label actionability/wg-label
+   :actionability/tot-actionability-reports actionability/tot-actionability-reports
+   :actionability/tot-actionability-updated-reports actionability/tot-actionability-updated-reports
+   :actionability/tot-adult-gene-disease-pairs actionability/tot-adult-gene-disease-pairs
+   :actionability/tot-pediatric-gene-disease-pairs actionability/tot-pediatric-gene-disease-pairs
+   :actionability/tot-outcome-intervention-pairs actionability/tot-outcome-intervention-pairs
+   :actionability/tot-adult-outcome-intervention-pairs actionability/tot-adult-outcome-intervention-pairs
+   :actionability/tot-pediatric-outcome-intervention-pairs actionability/tot-pediatric-outcome-intervention-pairs
+   :actionability/tot-adult-score-counts actionability/tot-adult-score-counts
+   :actionability/tot-pediatric-score-counts actionability/tot-pediatric-score-counts
+   :actionability/statistics-query actionability/statistics-query
    :ac-assertion/report-date ac-assertion/report-date
    :ac-assertion/source ac-assertion/source
    :ac-assertion/classification ac-assertion/classification
@@ -177,3 +187,4 @@
    (tx (lacinia/execute (schema) query-str nil nil)))
   ([query-str variables]
    (tx (lacinia/execute (schema) query-str variables nil))))
+

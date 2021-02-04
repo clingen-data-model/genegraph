@@ -136,6 +136,7 @@
                         [[curation-iri :rdf/type :sepio/ActionabilityReport]
                          [curation-iri :sepio/qualified-contribution contrib-iri]
                          [curation-iri :dc/source (:scoreDetails curation)]
+                         [curation-iri :dc/has-version (:curationVersion curation)]
                          [contrib-iri :sepio/activity-date (:dateISO8601 curation)]
                          [contrib-iri :bfo/realizes :sepio/ApproverRole]
                          [contrib-iri :sepio/has-agent agent-iri]

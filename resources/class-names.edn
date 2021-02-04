@@ -311,6 +311,8 @@
   "http://purl.obolibrary.org/obo/SEPIO_0003541"]
  [:sepio/InsufficientEvidenceForActionabilityExpertReview
   "http://purl.obolibrary.org/obo/SEPIO_0003542"]
+ [:cg/AdultActionabilityWorkingGroup "http://dataexchange.clinicalgenome.org/terms/AdultActionabilityWorkingGroup"]
+ [:cg/PediatricActionabilityWorkingGroup "http://dataexchange.clinicalgenome.org/terms/PediatricActionabilityWorkingGroup"]
  [:void/Dataset "http://rdfs.org/ns/void#Dataset"]
  [:chebi/Drug "http://purl.obolibrary.org/obo/CHEBI_23888"]]
 
