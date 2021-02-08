@@ -40,6 +40,7 @@
    :actionability/wg-label actionability/wg-label
    :actionability/tot-actionability-reports actionability/tot-actionability-reports
    :actionability/tot-actionability-updated-reports actionability/tot-actionability-updated-reports
+   :actionability/tot-gene-disease-pairs actionability/tot-gene-disease-pairs
    :actionability/tot-adult-gene-disease-pairs actionability/tot-adult-gene-disease-pairs
    :actionability/tot-pediatric-gene-disease-pairs actionability/tot-pediatric-gene-disease-pairs
    :actionability/tot-outcome-intervention-pairs actionability/tot-outcome-intervention-pairs

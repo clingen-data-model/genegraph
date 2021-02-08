@@ -66,41 +66,47 @@
                              "?qc :sepio/has-agent ?wg } "
                              "GROUP BY ?gene ?disease ") {::q/distinct false}))
 
+(defn tot-gene-disease-pairs [context args value]
+  (uniq-disease-pairs {::q/params {:type :count}}))
+
 (defn tot-adult-gene-disease-pairs [context args value]
   (uniq-disease-pairs {::q/params {:type :count} :wg :cg/AdultActionabilityWorkingGroup}))
 
 (defn tot-pediatric-gene-disease-pairs [context args value]
   (uniq-disease-pairs {::q/params {:type :count} :wg :cg/PediatricActionabilityWorkingGroup}))
 
-(defn tot-outcome-intervention-pairs [context args value]
-  "N/A")
-
-(defn tot-adult-outcome-intervention-pairs [context args value]
-  "N/A")
-
-(defn tot-pediatric-outcome-intervention-pairs [context args value]
-  "N/A")
-
 (def score-counts (q/create-query (str "select ?s where { "
                        "?s a :sepio/ActionabilityReport . "
                        "?s :sepio/qualified-contribution ?qc . "
                        "?qc :sepio/has-agent ?wg }") {::q/distinct false}))
 
-(defn tot-score-counts [context args value wg]
-  (let [records (score-counts {:wg wg})
+(defn tot-wg-score-counts [wg]
+  (let [records (if (some? wg)
+                  (score-counts {:wg wg})
+                  (score-counts))
         counts (->> records
                     (mapcat #(q/ld-> % [ :cg/has-total-actionability-score ]))
                     frequencies
                     sort)]
-    ;; counts))
-    (str/join " " (map #(str/join "=" %) counts))))
+    counts))
 
 (defn tot-adult-score-counts [context args value]
-  (tot-score-counts context args value :cg/AdultActionabilityWorkingGroup))
+  (str/join " " (map #(str/join "=" %) (tot-wg-score-counts :cg/AdultActionabilityWorkingGroup))))
 
 (defn tot-pediatric-score-counts [context args value]
-  (tot-score-counts context args value :cg/PediatricActionabilityWorkingGroup))
+  (str/join " " (map #(str/join "=" %) (tot-wg-score-counts :cg/PediatricActionabilityWorkingGroup))))
 
-;; property names
-;; :cg/has-total-actionability-score
-;; :cg/has-total-actionability-outcome-intervention-pairs = select count ? x where { ?x  :cg/has-total-actionability-score [] }"
+(defn tot-outcome-intervention-pairs [context args value]
+  (->> (tot-wg-score-counts nil)
+       (map second)
+       (reduce +)))
+
+(defn tot-adult-outcome-intervention-pairs [context args value]
+  (->> (tot-wg-score-counts  :cg/AdultActionabilityWorkingGroup)
+       (map second)
+       (reduce +)))
+
+(defn tot-pediatric-outcome-intervention-pairs [context args value]
+  (->> (tot-wg-score-counts :cg/PediatricActionabilityWorkingGroup)
+       (map second)
+       (reduce +)))
