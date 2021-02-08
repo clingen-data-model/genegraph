@@ -46,6 +46,7 @@
    :actionability/tot-outcome-intervention-pairs actionability/tot-outcome-intervention-pairs
    :actionability/tot-adult-outcome-intervention-pairs actionability/tot-adult-outcome-intervention-pairs
    :actionability/tot-pediatric-outcome-intervention-pairs actionability/tot-pediatric-outcome-intervention-pairs
+   :actionability/tot-failed-early-rule-out actionability/tot-failed-early-rule-out
    :actionability/tot-adult-score-counts actionability/tot-adult-score-counts
    :actionability/tot-pediatric-score-counts actionability/tot-pediatric-score-counts
    :actionability/statistics-query actionability/statistics-query

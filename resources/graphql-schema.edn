@@ -648,9 +648,13 @@
       :actionability_tot_adult_outcome_intervention_pairs  {:type Int
                                                             :resolve :actionability/tot-adult-outcome-intervention-pairs
                                                             :description "Total number of adult context outcome-intervention pairs."}
-      :actionability_tot_pediatric_outcome_intervention_pairs  {:type Int
+      :actionability_tot_pediatric_outcome_intervention_pairs {:type Int
                                                                 :resolve :actionability/tot-pediatric-outcome-intervention-pairs
                                                                 :description "Total number of pedicatric context outcome-intervention pairs."}
+      :actionability_tot_failed_early_rule_out {:type Int
+                                                :resolve :actionability/tot-failed-early-rule-out
+                                                :description "Total number of records that failed stage 1 curation."}
+
       :actionability_tot_adult_score_counts {:type String
                                              :resolve :actionability/tot-adult-score-counts
                                              :description "Histogram of adult context scores."}

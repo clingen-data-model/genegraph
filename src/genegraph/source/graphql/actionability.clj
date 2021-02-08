@@ -110,3 +110,12 @@
   (->> (tot-wg-score-counts :cg/PediatricActionabilityWorkingGroup)
        (map second)
        (reduce +)))
+
+(def rule-out (q/create-query (str "select ?p where { "
+                       "?s a :sepio/ActionabilityReport . "
+                       "?s :bfo/has-part ?p . "
+                       "?p :sepio/has-predicate :sepio/InsufficientEvidenceForActionabilityEarlyRuleOut }")))
+                       
+
+(defn tot-failed-early-rule-out [context args value]
+  (rule-out {::q/params {:type :count}}))
