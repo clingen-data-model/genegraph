@@ -2,7 +2,9 @@
 
 (ns genegraph.source.graphql.actionability
   (:require [genegraph.database.query :as q]
-            [genegraph.source.graphql.common.cache :refer [defresolver]]))
+            [genegraph.source.graphql.common.cache :refer [defresolver]]
+            [clojure.string :as str]
+            [io.pedestal.log :as log]))
 
 (defresolver actionability-query [args value]
   (q/resource (:iri args)))
@@ -33,3 +35,78 @@
 
 (defresolver source [args value]
   (q/ld1-> value [:dc/source]))
+
+(def wg-search-actionability-reports
+  (q/create-query (str "select ?qc where { ?s a :sepio/ActionabilityReport . "
+                       "?s :sepio/qualified-contribution ?qc . "
+                       "?qc :bfo/realizes :sepio/EvidenceRole ."
+                       "?qc :sepio/has-agent ?agent . }"
+                       )))
+
+(defn statistics-query [context args value]
+  1)
+
+(defn tot-actionability-reports [context args value]
+  ((q/create-query "select ?s where { ?s a :sepio/ActionabilityReport }" {::q/distinct false})
+   {::q/params {:type :count}}))
+
+(defn tot-actionability-updated-reports [context args value]
+  (let [updated-reports-query (str "select ?s where { ?s a :sepio/ActionabilityReport . "
+                                  "?s :dc/has-version ?v . "
+                                  "FILTER regex(?v, '[2-9].[0-9].[0-9]') }")]
+  ((q/create-query updated-reports-query {::q/distinct false}) {::q/params {:type :count}})))
+
+(def uniq-disease-pairs (q/create-query (str "select ?gene where { "
+                             "?part a :cg/ActionabilityAssertionForPreferredCondition . "
+                             "?part :sepio/has-object ?disease . "
+                             "?part :sepio/has-subject ?gene . "
+                             "?s :bfo/has-part ?part . "
+                             "?s a :sepio/ActionabilityReport . "
+                             "?s :sepio/qualified-contribution ?qc . "
+                             "?qc :sepio/has-agent ?wg } "
+                             "GROUP BY ?gene ?disease ") {::q/distinct false}))
+
+(defn tot-gene-disease-pairs [context args value]
+  (uniq-disease-pairs {::q/params {:type :count}}))
+
+(defn tot-adult-gene-disease-pairs [context args value]
+  (uniq-disease-pairs {::q/params {:type :count} :wg :cg/AdultActionabilityWorkingGroup}))
+
+(defn tot-pediatric-gene-disease-pairs [context args value]
+  (uniq-disease-pairs {::q/params {:type :count} :wg :cg/PediatricActionabilityWorkingGroup}))
+
+(def score-counts (q/create-query (str "select ?s where { "
+                       "?s a :sepio/ActionabilityReport . "
+                       "?s :sepio/qualified-contribution ?qc . "
+                       "?qc :sepio/has-agent ?wg }") {::q/distinct false}))
+
+(defn tot-wg-score-counts [wg]
+  (let [records (if (some? wg)
+                  (score-counts {:wg wg})
+                  (score-counts))
+        counts (->> records
+                    (mapcat #(q/ld-> % [ :cg/has-total-actionability-score ]))
+                    frequencies
+                    sort)]
+    counts))
+
+(defn tot-adult-score-counts [context args value]
+  (str/join " " (map #(str/join "=" %) (tot-wg-score-counts :cg/AdultActionabilityWorkingGroup))))
+
+(defn tot-pediatric-score-counts [context args value]
+  (str/join " " (map #(str/join "=" %) (tot-wg-score-counts :cg/PediatricActionabilityWorkingGroup))))
+
+(defn tot-outcome-intervention-pairs [context args value]
+  (->> (tot-wg-score-counts nil)
+       (map second)
+       (reduce +)))
+
+(defn tot-adult-outcome-intervention-pairs [context args value]
+  (->> (tot-wg-score-counts  :cg/AdultActionabilityWorkingGroup)
+       (map second)
+       (reduce +)))
+
+(defn tot-pediatric-outcome-intervention-pairs [context args value]
+  (->> (tot-wg-score-counts :cg/PediatricActionabilityWorkingGroup)
+       (map second)
+       (reduce +)))

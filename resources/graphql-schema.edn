@@ -623,7 +623,40 @@
     :Drugs
     {:description "A collection of drugs."
      :fields {:drug_list {:type (list :Drug)}
-              :count {:type Int}}}}
+              :count {:type Int}}}
+
+    :Statistics
+    {:fields
+     {:actionability_tot_reports {:type Int
+                                  :resolve :actionability/tot-actionability-reports
+                                  :description "Total number of Actionability reports."}
+      :actionability_tot_updated_reports {:type Int
+                                          :resolve :actionability/tot-actionability-updated-reports
+                                          :description "Total number of updated Actionability reports."}
+      :actionability_tot_gene_disease_pairs  {:type Int
+                                              :resolve :actionability/tot-gene-disease-pairs
+                                              :description "Total number of gene-disease pairs."}
+      :actionability_tot_adult_gene_disease_pairs  {:type Int
+                                                    :resolve :actionability/tot-adult-gene-disease-pairs
+                                                    :description "Total number of adult context gene-disease pairs."}
+      :actionability_tot_pediatric_gene_disease_pairs  {:type Int
+                                                        :resolve :actionability/tot-pediatric-gene-disease-pairs
+                                                        :description "Total number of pediatric context gene-disease pairs."}
+      :actionability_tot_outcome_intervention_pairs  {:type Int
+                                                      :resolve :actionability/tot-outcome-intervention-pairs
+                                                      :description "Total number of outcome-intervention pairs."}
+      :actionability_tot_adult_outcome_intervention_pairs  {:type Int
+                                                            :resolve :actionability/tot-adult-outcome-intervention-pairs
+                                                            :description "Total number of adult context outcome-intervention pairs."}
+      :actionability_tot_pediatric_outcome_intervention_pairs  {:type Int
+                                                                :resolve :actionability/tot-pediatric-outcome-intervention-pairs
+                                                                :description "Total number of pedicatric context outcome-intervention pairs."}
+      :actionability_tot_adult_score_counts {:type String
+                                             :resolve :actionability/tot-adult-score-counts
+                                             :description "Histogram of adult context scores."}
+      :actionability_tot_pediatric_score_counts {:type String
+                                                 :resolve :actionability/tot-pediatric-score-counts
+                                                 :description "Histogram of pediatric context scores."}}}}
 
    :input-objects
    {:range
@@ -836,4 +869,6 @@
                           :description "Filter list for drugs including text in name and synonyms."}
                    :sort {:type :Sort
                           :description "Order in which to sort drugs"}}
-               :resolve :drug/drugs}}}
+            :resolve :drug/drugs}
+    :statistics {:type :Statistics
+                 :resolve :actionability/statistics-query}}}
