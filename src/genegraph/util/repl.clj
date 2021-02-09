@@ -19,8 +19,10 @@
             [clojure.pprint :refer [pprint]]
             [clojure.string :as str]
             [clojure.java.io :as io]
-            [clojure.edn :as edn])
-  (:import java.time.Instant))
+            [clojure.edn :as edn]
+            [taoensso.nippy :as nippy])
+  (:import java.time.Instant
+           org.apache.jena.rdf.model.AnonId))
 
 (defn start-rebl []
   (rebl/ui))

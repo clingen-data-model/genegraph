@@ -10,7 +10,7 @@
              [class-uri->keyword local-names prefix-ns-map property-uri->keyword]]
             [genegraph.database.util :as util :refer [tx]]
             [taoensso.nippy :as nippy])
-  (:import [org.apache.jena.rdf.model Literal RDFList Resource ResourceFactory]))
+  (:import [org.apache.jena.rdf.model Literal RDFList Resource ResourceFactory AnonId]))
 
 (def first-property (ResourceFactory/createProperty "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"))
 
@@ -95,7 +95,7 @@
                      (to-clj (.getObject %) model)) out-attributes)))))
 
   Object
-  (toString [_] (.getURI resource))
+  (toString [_] (.toString resource))
   (equals [this other]
     (and (satisfies? AsJenaResource other)
          (= resource (as-jena-resource other))))
@@ -170,18 +170,29 @@
   
   clojure.lang.Keyword
   (resource [r] (when-let [res (local-names r)]
-                  (->RDFResource res (get-all-graphs)))))
+                  (->RDFResource res (get-all-graphs))))
+
+  org.apache.jena.rdf.model.Resource
+  (resource [r] (->RDFResource r (get-all-graphs))))
 
 (nippy/extend-freeze 
  RDFResource ::rdf-resource
  [x data-output]
- (.writeUTF data-output (str x)))
+ (let [resource-descriptor
+       (if-let [id (-> x as-jena-resource .getURI)]
+         {:iri id}
+         {:bnode-id (-> x as-jena-resource .getId str)})]
+   (nippy/freeze-to-out! data-output resource-descriptor)))
 
 (nippy/extend-thaw 
  ::rdf-resource
  [data-input]
- (when-let [resource-iri (.readUTF data-input)]
-   (resource resource-iri)))
+ (let [resource-descriptor (nippy/thaw-from-in! data-input)]
+   (if (:iri resource-descriptor)
+     (resource (:iri resource-descriptor))
+     (resource (.createResource
+                (get-all-graphs)
+                (-> resource-descriptor :bnode-id AnonId/create))))))
 
 (defn- kw-to-property [kw]
   (if-let [prop (names/local-property-names kw)]
