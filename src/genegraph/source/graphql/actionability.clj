@@ -114,8 +114,12 @@
 (def rule-out (q/create-query (str "select ?p where { "
                        "?s a :sepio/ActionabilityReport . "
                        "?s :bfo/has-part ?p . "
-                       "?p :sepio/has-predicate :sepio/InsufficientEvidenceForActionabilityEarlyRuleOut }")))
-                       
+                       "?p :sepio/has-predicate :sepio/InsufficientEvidenceForActionabilityEarlyRuleOut . "
+                       "?s :sepio/qualified-contribution ?qc . "
+                       "?qc :sepio/has-agent ?wg }") {::q/distinct false}))
 
-(defn tot-failed-early-rule-out [context args value]
-  (rule-out {::q/params {:type :count}}))
+(defn tot-adult-failed-early-rule-out [context args value]
+  (rule-out {::q/params {:type :count} :wg :cg/AdultActionabilityWorkingGroup}))
+
+(defn tot-pediatric-failed-early-rule-out [context args value]
+  (rule-out {::q/params {:type :count} :wg :cg/PediatricActionabilityWorkingGroup}))
