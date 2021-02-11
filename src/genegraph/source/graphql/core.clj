@@ -158,6 +158,7 @@
    :resource/curie resource/curie
    :resource/iri resource/iri
    :resource/label resource/label
+   :resource/website-display-label resource/website-display-label
    :resource/type resource/type
    :server-status/migration-version server-status/migration-version
    :server-status/server-version-query server-status/server-version-query

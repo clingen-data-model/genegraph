@@ -231,7 +231,7 @@
                       :resolve :resource/label
                       :description "Label for the resource."}
               :website_display_label {:type String
-                                      :resolve :resource/label
+                                      :resolve :resource/website-display-label
                                       :description "Label used to display resource on the ClinGen Website. In general will correspond with the standard label for the resource, but may include overrides based on the specific display needs of the website."}}}
 
 

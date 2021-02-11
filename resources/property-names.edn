@@ -213,6 +213,7 @@
  [:cg/diseases "http://dataexchange.clinicalgenome.org/terms/diseases"]
  [:cg/has-total-actionability-score "http://dataexchange.clinicalgenome.org/terms/has_total_actionability_score"]
  [:cg/has-total-actionability-outcome-intervention-pairs "http://dataexchange.clinicalgenome.org/terms/has_total_actionability_outcome_intervention_pairs"]
+ [:cg/website-display-label "http://dataexchange.clinicalgenome.org/terms/website_display_label"]
  [:cnt/chars "http://www.w3.org/2011/content#chars"]
  [:data/genome-build-identifier "http://edamontology.org/data_2340"]
  [:dc/abstract "http://purl.org/dc/terms/abstract"]
