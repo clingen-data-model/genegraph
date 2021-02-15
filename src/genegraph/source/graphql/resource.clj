@@ -13,6 +13,12 @@
                  (:rdfs/label resource)
                  (:foaf/name resource))))
 
+(defresolver website-display-label [args resource]
+  (first (concat (:cg/website-display-label resource)
+                 (:skos/preferred-label resource)
+                 (:rdfs/label resource)
+                 (:foaf/name resource))))
+
 (defresolver type [args value]
   (:rdf/type value))
 
