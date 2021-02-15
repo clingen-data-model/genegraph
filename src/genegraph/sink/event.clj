@@ -14,7 +14,7 @@
             [genegraph.suggest.suggesters :as suggest :refer [update-suggesters-interceptor]]
             [mount.core :as mount :refer [defstate]]
             [io.pedestal.interceptor :as intercept]
-            [io.pedestal.interceptor.chain :as chain]
+            [io.pedestal.interceptor.chain :as chain :refer [terminate]]
             [io.pedestal.interceptor.helpers :as helper]
             [io.pedestal.log :as log]
             [clojure.spec.alpha :as spec]))
@@ -80,6 +80,13 @@
                    :fn :log-result-interceptor
                    :event (select-keys e [::ann/iri ::ann/subjects])) e)})
 
+(def abort-on-dry-run-interceptor
+  {:name ::abort-on-dry-run
+   :enter (fn [e]
+            (if (::dry-run e)
+              (terminate e)
+              e))})
+
 (def interceptor-chain [log-result-interceptor
                         write-tx-interceptor
                         ann/add-metadata-interceptor
@@ -89,6 +96,7 @@
                         ann/add-subjects-interceptor
                         ann/add-action-interceptor
                         ann/add-replaces-interceptor
+                        abort-on-dry-run-interceptor
                         add-to-db-interceptor
                         unpublish-interceptor
                         replace-interceptor
