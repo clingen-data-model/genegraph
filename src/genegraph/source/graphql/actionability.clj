@@ -78,6 +78,7 @@
 (def score-counts (q/create-query (str "select ?s where { "
                        "?s a :sepio/ActionabilityReport . "
                        "?s :sepio/qualified-contribution ?qc . "
+                       "?qc :bfo/realizes :sepio/ApproverRole ."
                        "?qc :sepio/has-agent ?wg }") {::q/distinct false}))
 
 (defn tot-wg-score-counts [wg]
