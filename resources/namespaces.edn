@@ -56,6 +56,7 @@
  "cgdosage" "http://dx.clinicalgenome.org/entities/"
  "cgagent" "http://dataexchange.clinicalgenome.org/agent/"
  "cgmembership" "http://dataexchange.clinicalgenome.org/membership/"
+ "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"
  "chebi" "http://purl.obolibrary.org/obo/CHEBI_"
  "rxnorm" "http://purl.bioontology.org/ontology/RXNORM/"}
 
