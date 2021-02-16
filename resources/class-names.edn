@@ -77,6 +77,10 @@
  [:cg/Affiliation "http://dataexchange.clinicalgenome.org/terms/Affiliation"]
  [:cg/GeneCurationExpress "http://dataexchange.clinicalgenome.org/terms/GeneCurationExpress"]
  [:cg/ClinVarObject "http://dataexchange.clinicalgenome.org/terms/ClinVarObject"]
+ [:cg/VariantClinicalSignificanceAssertion
+  "http://dataexchange.clinicalgenome.org/terms/VariantClinicalSignificanceAssertion"]
+ [:cg/AggregateVariantClinicalSignificanceAssertion
+  "http://dataexchange.clinicalgenome.org/terms/AggregateVariantClinicalSignificanceAssertion"]
  [:cgagent/genegraph-admin "http://dataexchange.clinicalgenome.org/agent/genegraph-admin"]
  [:cgagent/crc-curator "http://dataexchange.clinicalgenome.org/agent/crc-curator"]
  [:so/ProteinCodingGene "http://purl.obolibrary.org/obo/SO_0001217"]
