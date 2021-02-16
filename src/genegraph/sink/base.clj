@@ -17,7 +17,6 @@
             [genegraph.transform.gci-express]
             [genegraph.transform.affiliations]
             [genegraph.transform.rxnorm]
-            [genegraph.transform.clinvar.core]
             [genegraph.env :as env]
             [io.pedestal.log :as log]
             [juxt.dirwatch :refer [watch-dir]])
