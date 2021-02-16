@@ -16,11 +16,12 @@
                    (:id msg)
                    (:release_date msg))
         rdf-type (str iri/cgterms "VariantClinicalSignificanceAssertion")
-        context {"@context" {"@vocab"             iri/cgterms
-                             "clingen"            iri/cgterms
-                             "sepio"              "http://purl.obolibrary.org/obo/SEPIO_"
-                             "clinvar"            "https://www.ncbi.nlm.nih.gov/clinvar/"
-                             rdf-type             {"@type" "@id"}
+        context {"@context" {"@vocab"          iri/cgterms
+                             "clingen"         iri/cgterms
+                             "sepio"           "http://purl.obolibrary.org/obo/SEPIO_"
+                             "clinvar"         "https://www.ncbi.nlm.nih.gov/clinvar/"
+                             rdf-type          {"@type" "@id"}
+                             :cg/ClinVarObject {"@type" "@id"}
                              ;"entity_type"        {"@id"   "@type"
                              ;                      "@type" "@vocab"}
                              ;"clinical_assertion" rdf-type
@@ -30,7 +31,8 @@
     (genegraph-kw-to-iri
       (merge
         context
-        {:rdf/type                     [:cg/ClinVarObject rdf-type]
+        {:rdf/type                     [{"@id" :cg/ClinVarObject}
+                                        {"@id" rdf-type}]
          :dc/is-version-of             (str iri/clinvar-assertion (:id msg))
          :dc/has-version               (:version msg)
          :dc/title                     (:title msg)
