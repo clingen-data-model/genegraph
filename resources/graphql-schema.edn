@@ -79,7 +79,21 @@
     {:fields {:report_date {:type String}}}}
 
    :objects
-   {:Gene
+   {:ClinicalAssertion
+    {:description "A single assertion about clinical significance of a genomic feature."
+     ;:implements [:Resource]
+     :fields {:iri {:type String
+                    :resolve :resource/iri
+                    :description "IRI of the assertion. Scheme based on where the assertion was originally submitted."}
+              ;:label {:type String
+              ;        :resolve :resource/label}
+              :version {:type String
+                        :resolve :clinvar/clinical-assertion-version}
+              :subject {:type String
+                        :resolve :clinvar/clinical-assertion-subject}}
+     }
+
+    :Gene
     {:description "A genomic feature (a gene or a region). Along with conditions, one of the basic units of curation."
      :implements [:Resource]
      :fields {:iri {:type String
@@ -725,7 +739,10 @@
      {:sort_fields {:type (list :sort_spec)}}}}   
 
    :queries
-   {:gene {:type (non-null :Gene)
+   {:clinical_assertion {:type :ClinicalAssertion
+                         :args {:iri {:type String}}
+                         :resolve :clinvar/clinical-assertion-query}
+    :gene {:type (non-null :Gene)
            :args {:iri {:type String}}
            :resolve :gene/gene-query}
     :genes {:type :Genes
