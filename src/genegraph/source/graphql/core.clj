@@ -35,6 +35,7 @@
   {:clinvar/clinical-assertion-query cv-clinical-assertion/clinical-assertion-query
    :clinvar/clinical-assertion-subject cv-clinical-assertion/subject
    :clinvar/clinical-assertion-version cv-clinical-assertion/version
+   :clinvar/clinical-assertion-list cv-clinical-assertion/clinical-assertion-list
 
    :actionability/actionability-query actionability/actionability-query
    :actionability/classification-description actionability/classification-description

@@ -49,7 +49,7 @@
     {:description "Suggesters."
      :values [:GENE :DISEASE :DRUG]
      }}
-   
+
    :interfaces
    {:Resource
      {:description "An RDF Resource; generic type suitable for return when a variety of resources may be returned as the result of a function all"
@@ -70,12 +70,12 @@
                         :description "End coordinate"}
               :strand {:type String
                        :description "Strand the feature appears on."}}}
-    
+
     :GenomicFeature
     {:description "Genomic feature represented by a Gene or Region"
      :fields {:coordinates {:type (list :GenomicCoordinate)}}}
 
-    :Curation 
+    :Curation
     {:fields {:report_date {:type String}}}}
 
    :objects
@@ -117,7 +117,7 @@
               :chromosome_band {:type String
                                 :resolve :gene/chromosome-band
                                 :description "Cytogenetic band of gene."}
-              :hgnc_id {:type String  
+              :hgnc_id {:type String
                         :resolve :gene/hgnc-id
                         :description "HGNC ID of gene"}
               :curation_activities {:type (list :CurationActivity)
@@ -181,7 +181,7 @@
               :end_pos {:type Int
                         :resolve :coordinate/end-pos
                         :description "The coordinate end position."}}}
-    
+
     :GeneFeature
     {:description "A gene feature"
      :implements [:Resource :GenomicFeature]
@@ -215,7 +215,7 @@
               :coordinates {:type (list :Coordinate)
                             :resolve :gene-feature/coordinates
                             :description "Coordinates of the feature"}}}
-    
+
     :RegionFeature
     {:description "A region feature"
      :implements [:Resource :GenomicFeature]
@@ -397,7 +397,7 @@
                          :description "Label for the working group responsible for the curation"}
               :dosage_classification {:type :DosageClassification
                                       :resolve :dosage-proposition/dosage-classification
-                                      :description 
+                                      :description
                                       "Classification for a gene dosage assertion that mirrors the scores in the gene dosage process."}
               :classification_description {:type String
                                            :resolve :dosage-proposition/classification-description
@@ -429,7 +429,7 @@
 
     :ActionabilityCuration
     {:implements [:Resource :Curation]
-     :fields 
+     :fields
      {:iri {:type String
             :resolve :resource/iri}
       :curie {:type String
@@ -446,7 +446,7 @@
     :ActionabilityAssertion
     {;;:implements [:Resource :Curation]
      :description "An assertion regarding the Actionability of a gene-disease pair."
-     :fields 
+     :fields
      {:report_date {:type String :resolve :ac-assertion/report-date}
       :source {:type String :resolve :ac-assertion/source}
       :classification {:type :Classification
@@ -570,7 +570,7 @@
                      :description "Filter list including text in gene, disease and synonyms."}
               :sort {:type :Sort
                      :description "Order in which to sort genes. Supported fields: GENE_LABEL"}}}
-      
+
       :genes
       {:type :Genes
        :resolve :affiliation/curated-genes
@@ -636,7 +636,7 @@
               :aliases {:type (list String)
                         :resolve :drug/aliases
                         :description "Alias drug names."}}}
-    
+
     :Drugs
     {:description "A collection of drugs."
      :fields {:drug_list {:type (list :Drug)}
@@ -696,7 +696,7 @@
     {:fields
      {:build {:type :Build}
       :chr {:type :Chromosome}
-      :start {:type Int} 
+      :start {:type Int}
       :end {:type Int}}}
     :chromo_locus
     {:fields
@@ -736,12 +736,15 @@
       :offset {:type Int}}}
     :sorting
     {:fields
-     {:sort_fields {:type (list :sort_spec)}}}}   
+     {:sort_fields {:type (list :sort_spec)}}}}
 
    :queries
    {:clinical_assertion {:type :ClinicalAssertion
                          :args {:iri {:type String}}
                          :resolve :clinvar/clinical-assertion-query}
+    :clinical_assertions {:type (list :ClinicalAssertion)
+                         :args {:subject {:type String}}
+                         :resolve :clinvar/clinical-assertion-list}
     :gene {:type (non-null :Gene)
            :args {:iri {:type String}}
            :resolve :gene/gene-query}
@@ -756,7 +759,7 @@
                    :text {:type String
                           :description "Filter list for genes including text in symbol previous symbols, names, or previous names."}
                    :curation_activity {:type :CurationActivity
-                                       :description 
+                                       :description
                                        "Limit genes returned to those that have a curation, or a curation of a specific type."}
                    :sort {:type :Sort
                           :description "Order in which to sort genes."}}}
@@ -769,7 +772,7 @@
                                 :default-value 0
                                 :description "Index to begin returning records from"}
                        :curation_type {:type :CurationActivity
-                                       :description 
+                                       :description
                                        "Limit genes returned to those that have a curation, or a curation of a specific type."}
                        :sort {:type :Sort
                               :description "Order in which to sort genes. Supported fields: GENE_LABEL"}}
@@ -785,7 +788,7 @@
                                :default-value 0
                                :description "Index to begin returning records from"}
                       :curation_activity {:type :CurationActivity
-                                          :description 
+                                          :description
                                           "Limit genes returned to those that have a curation, or a curation of a specific type."}
                       :text {:type String
                              :description "Filter list for genes including text in name and synonyms."}
@@ -814,7 +817,7 @@
                                    :default-value 0
                                    :description "Index to begin returning records from"}
                           :curation_type {:type :CurationActivity
-                                          :description 
+                                          :description
                                           "Limit genes returned to those that have a curation, or a curation of a specific type."}}
                    :resolve :condition/disease-list}
     :gene_validity_assertions {:type :GeneValidityAssertions
