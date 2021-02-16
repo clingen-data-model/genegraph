@@ -10,6 +10,7 @@
             [genegraph.annotate :as ann]
             [genegraph.rocksdb :as rocks]
             [genegraph.migration :as migrate]
+            [genegraph.sink.rocksdb :as rocks-sink]
             [cheshire.core :as json]
             [clojure.data.csv :as csv]
             [clojure.string :as s]
@@ -40,6 +41,11 @@
   (doseq [event event-seq]
     (event/process-event! event)))
 
+(defn process-event-seq-dry-run
+  "Run event sequence through event processor; do not perform side effects"
+  [event-seq]
+  (doseq [event event-seq]
+    (event/process-event! (assoc event ::event/dry-run true))))
 
 (defn get-graph-names []
   (tx

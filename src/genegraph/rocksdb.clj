@@ -16,21 +16,41 @@
     ;; todo add logging...
     (RocksDB/open opts full-path)))
 
-(defn key-digest [k]
+(defn- key-digest [k]
   (-> k freeze digest/md5 .getBytes))
 
-(defn key-tail-digest [k]
+(defn- key-tail-digest [k]
   (let [key-byte-array (-> k freeze digest/md5 .getBytes)
         last-byte-idx (- (count key-byte-array) 1)
         last-byte (aget key-byte-array last-byte-idx)]
     (aset-byte key-byte-array last-byte-idx (+ 1 last-byte))
     key-byte-array))
 
-(defn multipart-key-digest [ks]
+(defn- multipart-key-digest [ks]
   (->> ks (map #(-> % freeze digest/md5)) (apply str) .getBytes))
 
-(defn rocks-put! [db k v]
+(defn rocks-put!
+  "Put v in db with key k. Key will be frozen with md5 hash.
+   Suitable for keys large and small with arbitrary Clojure data,
+   but breaks any expectation of ordering. Value will be frozen,
+   supports arbitrary Clojure data."
+  [db k v]
   (.put db (key-digest k) (freeze v)))
+
+(defn rocks-put-raw-key!
+  "Put v in db with key k. Key will be used without freezing and must be
+   a Java byte array. Intended to support use cases where the user must
+   be able to define the ordering of data. Value will be frozen."
+  [db k v]
+  (.put db k (freeze v)))
+
+(defn rocks-get-raw-key!
+  "Retrieve data that has been stored with a byte array defined key. K must be a
+  Java byte array."
+  [db k]
+  (if-let [result (.get db (key-digest k))]
+    (thaw result)
+    ::miss))
 
 (defn rocks-put-multipart-key! 
   "ks is a sequence, will hash each element in ks independently to support 
@@ -44,15 +64,22 @@
 (defn rocks-delete-multipart-key! [db ks]
   (.delete db (multipart-key-digest ks)))
 
-(defn rocks-destroy! [db-name]
+(defn rocks-destroy!
+  "Delete the named instance. Database must be closed prior to this call"
+  [db-name]
   (RocksDB/destroyDB (create-db-path db-name) (Options.)))
 
-(defn rocks-get [db k]
+(defn rocks-get
+  "Get and thaw element with key k. Key may be any arbitrary Clojure datatype"
+  [db k]
   (if-let [result (.get db (key-digest k))]
     (thaw result)
     ::miss))
 
-(defn rocks-get-multipart-key [db ks]
+(defn rocks-get-multipart-key
+  "Get and thaw element with key sequence ks. ks is a sequence of
+  arbitrary Clojure datatypes."
+  [db ks]
   (if-let [result (.get db (multipart-key-digest ks))]
     (thaw result)
     ::miss))
@@ -62,7 +89,9 @@
   [db prefix]
   (.deleteRange db (key-digest prefix) (key-tail-digest prefix)))
 
-(defn close [db]
+(defn close
+  "Close the database"
+  [db]
   (.close db))
 
 (defn prefix-iter [db prefix]
