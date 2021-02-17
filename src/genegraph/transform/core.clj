@@ -15,7 +15,7 @@
             [genegraph.transform.gci-neo4j]
             [genegraph.transform.gene-validity]
             [genegraph.transform.actionability]
-            [genegraph.transform.clinvar-scv]
+            [genegraph.transform.clinvar.core]
             [genegraph.transform.rxnorm]
             [genegraph.env :as env]
             [genegraph.transform.core :as xform]

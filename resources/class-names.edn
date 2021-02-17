@@ -76,6 +76,11 @@
  [:cg/ActionabilityAssertionForPreferredCondition "http://dataexchange.clinicalgenome.org/terms/ActionabilityAssertionForPreferredCondition"]
  [:cg/Affiliation "http://dataexchange.clinicalgenome.org/terms/Affiliation"]
  [:cg/GeneCurationExpress "http://dataexchange.clinicalgenome.org/terms/GeneCurationExpress"]
+ [:cg/ClinVarObject "http://dataexchange.clinicalgenome.org/terms/ClinVarObject"]
+ [:cg/VariantClinicalSignificanceAssertion
+  "http://dataexchange.clinicalgenome.org/terms/VariantClinicalSignificanceAssertion"]
+ [:cg/AggregateVariantClinicalSignificanceAssertion
+  "http://dataexchange.clinicalgenome.org/terms/AggregateVariantClinicalSignificanceAssertion"]
  [:cgagent/genegraph-admin "http://dataexchange.clinicalgenome.org/agent/genegraph-admin"]
  [:cgagent/crc-curator "http://dataexchange.clinicalgenome.org/agent/crc-curator"]
  [:so/ProteinCodingGene "http://purl.obolibrary.org/obo/SO_0001217"]
@@ -87,6 +92,10 @@
  [:geno/SequenceFeatureSet "http://purl.obolibrary.org/obo/GENO_0000659"]
  [:geno/PathogenicForCondition "http://purl.obolibrary.org/obo/GENO_0000840"]
  [:geno/BenignForCondition "http://purl.obolibrary.org/obo/GENO_0000843"]
+ [:geno/VariantAllele "http://purl.obolibrary.org/obo/GENO_0000002"]
+ [:geno/Allele "http://purl.obolibrary.org/obo/GENO_0000512"]
+ [:geno/Haplotype "http://purl.obolibrary.org/obo/GENO_0000871"]
+ [:geno/Genotype "http://purl.obolibrary.org/obo/GENO_0000536"]
  [:cg/HaploinsufficiencyScore "http://dataexchange.clinicalgenome.org/terms/HaploinsufficiencyScore"]
  [:cg/TriplosensitivityScore "http://dataexchange.clinicalgenome.org/terms/TriplosensitivityScore"]
  [:sepio/Contribution "http://purl.obolibrary.org/obo/SEPIO_0000158"]

@@ -23,6 +23,7 @@
             [genegraph.source.graphql.classification :as classification]
             [genegraph.source.graphql.user :as user]
             [genegraph.source.graphql.group :as group]
+            [genegraph.source.graphql.clinvar.clinical_assertion :as cv-clinical-assertion]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]
@@ -31,7 +32,12 @@
             [genegraph.source.graphql.common.curation :as curation]))
 
 (defn resolver-map []
-  {:actionability/actionability-query actionability/actionability-query
+  {:clinvar/clinical-assertion-query cv-clinical-assertion/clinical-assertion-query
+   :clinvar/clinical-assertion-subject cv-clinical-assertion/subject
+   :clinvar/clinical-assertion-version cv-clinical-assertion/version
+   :clinvar/clinical-assertion-list cv-clinical-assertion/clinical-assertion-list
+
+   :actionability/actionability-query actionability/actionability-query
    :actionability/classification-description actionability/classification-description
    :actionability/conditions actionability/conditions
    :actionability/report-date actionability/report-date
