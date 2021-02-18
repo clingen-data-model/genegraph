@@ -76,7 +76,7 @@
 
 (def log-result-interceptor
   {:name ::log-result
-   :leave (fn [e] (log/info
+   :leave (fn [e] (log/debug
                    :fn :log-result-interceptor
                    :event (select-keys e [::ann/iri ::ann/subjects])) e)})
 

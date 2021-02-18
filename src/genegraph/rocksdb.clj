@@ -2,7 +2,7 @@
   (:require [genegraph.env :as env]
             [taoensso.nippy :as nippy :refer [freeze thaw]]
             [digest])
-  (:import (org.rocksdb RocksDB Options ReadOptions Slice)
+  (:import (org.rocksdb RocksDB Options ReadOptions Slice RocksIterator)
            java.security.MessageDigest))
 
 
@@ -94,12 +94,20 @@
   [db]
   (.close db))
 
-(defn prefix-iter [db prefix]
+(defn prefix-iter
+  "return a RocksIterator that covers records with prefix"
+  [db prefix]
   (let [iter (.newIterator db 
                            (.setIterateUpperBound (ReadOptions.)
                                                   (Slice. (key-tail-digest prefix))))]
     (.seek iter (key-digest prefix))
     iter))
+
+(defn entire-db-iter
+  "return a RocksIterator that iterates over the entire database"
+  [db]
+  (doto (.newIterator db)
+    (.seekToFirst)))
 
 (defn rocks-iterator-seq [iter]
   (lazy-seq 
@@ -114,6 +122,11 @@
   "Return a lazy-seq over all records beginning with prefix"
   [db prefix]
   (-> db (prefix-iter prefix) rocks-iterator-seq))
+
+(defn entire-db-seq
+  "Return a lazy-seq over all records in the database"
+  [db]
+  (-> db entire-db-iter rocks-iterator-seq))
 
 (defn sample-prefix 
   "Take first n records from db given prefix"

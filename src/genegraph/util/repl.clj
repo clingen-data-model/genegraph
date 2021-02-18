@@ -41,6 +41,11 @@
   (doseq [event event-seq]
     (event/process-event! event)))
 
+(defn process-event-dry-run
+  "Run event through event processor, do not create side effects"
+  [event]
+  (event/process-event! (assoc event ::event/dry-run true)))
+
 (defn process-event-seq-dry-run
   "Run event sequence through event processor; do not perform side effects"
   [event-seq]

@@ -10,7 +10,17 @@
              [class-uri->keyword local-names prefix-ns-map property-uri->keyword]]
             [genegraph.database.util :as util :refer [tx]]
             [taoensso.nippy :as nippy])
-  (:import [org.apache.jena.rdf.model Literal RDFList Resource ResourceFactory AnonId]))
+  (:import [org.apache.jena.rdf.model
+            Literal
+            RDFList
+            Resource
+            ResourceFactory
+            AnonId
+            Model
+            ModelFactory]
+           [java.io
+            ByteArrayOutputStream
+            ByteArrayInputStream]))
 
 (def first-property (ResourceFactory/createProperty "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"))
 
@@ -193,6 +203,29 @@
      (resource (.createResource
                 (get-all-graphs)
                 (-> resource-descriptor :bnode-id AnonId/create))))))
+
+;; Standard freeze doesn't seem to work with the model nested
+;; in anotehr object, am therefore round-tripping the model to a
+;; string, rather than writing the bytes directly to the output
+
+(nippy/extend-freeze
+ Model ::model
+ [x data-output]
+ (let [string-container-stream (ByteArrayOutputStream.)]
+   (.write x string-container-stream "NTRIPLES")
+   (.writeUTF data-output
+              (-> string-container-stream
+                  .toString))))
+
+(nippy/extend-thaw
+ ::model
+ [data-input]
+ (let [input-stream (-> data-input
+                        .readUTF
+                        .getBytes
+                        ByteArrayInputStream.)]
+   (-> (ModelFactory/createDefaultModel)
+       (.read input-stream nil "NTRIPLES"))))
 
 (defn- kw-to-property [kw]
   (if-let [prop (names/local-property-names kw)]

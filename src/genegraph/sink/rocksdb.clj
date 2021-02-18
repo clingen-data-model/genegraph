@@ -3,7 +3,8 @@
    for events supporting side-events. In general this will be of greatest
    utility during testing and development, as it will be possible to record
    and replay the outcomes of events."
-  (:require [genegraph.rocksdb :as rocksdb])
+  (:require [genegraph.rocksdb :as rocksdb]
+            [mount.core :refer [defstate]])
   (:import [java.nio ByteBuffer]))
 
 (defn open-for-topic! [topic]
@@ -18,4 +19,5 @@
   (let [k (-> (ByteBuffer/allocate Long/BYTES)
               (.putLong (:genegraph.sink.stream/offset event))
               .array)] 
-      (rocksdb/rocks-put-raw-key! db k event)))
+    (rocksdb/rocks-put-raw-key! db k event)))
+
