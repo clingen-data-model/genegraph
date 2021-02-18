@@ -78,7 +78,7 @@
   {:name ::log-result
    :leave (fn [e] (log/info
                    :fn :log-result-interceptor
-                   :event (select-keys e [::ann/iri ::ann/subjects])) e)})
+                   :event (select-keys e [::ann/iri ::ann/subjects :executed-interceptors])) e)})
 
 (def interceptor-chain [log-result-interceptor
                         write-tx-interceptor
@@ -102,10 +102,19 @@
   the :executed-interceptors vector in the event for tracking purposes."
   [interceptors]
   (reduce (fn [vec intercept]
-            (conj vec intercept 
-                  (helper/before (fn [e] (assoc e :executed-interceptors
-                                                (conj (get e :executed-interceptors [])
-                                                      (:name intercept)))))))
+            (conj vec 
+                  (helper/before (fn [e] (let [now-ms (inst-ms (java.util.Date.))]
+                                           (assoc e :executed-interceptors
+                                                  (conj (get e :executed-interceptors [])
+                                                        (:name intercept))
+                                                  :interceptor-start-ms now-ms))))
+                  intercept
+                  (helper/before (fn [e] (let [now-ms (inst-ms (java.util.Date.))
+                                               start-ms (:interceptor-start-ms e)]
+                                           (when start-ms
+                                             (assoc e :executed-interceptors
+                                                    (conj (:executed-interceptors e)
+                                                          (keyword (str (- now-ms start-ms) "ms"))))))))))
           []
           interceptors))
 
