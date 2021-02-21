@@ -22,12 +22,16 @@
 
 (def write-tx-interceptor
   {:name ::write-tx
-   :enter (fn [context] (begin-write-tx) context)
-   :leave (fn [context] 
-            (if (or (:exception context)
-                    (::spec/invalid context))
-              (close-write-tx :abort)
-              (close-write-tx :commit))
+   :enter (fn [context]
+            (when-not (::dont-open-tx context)
+              (begin-write-tx))
+            context)
+   :leave (fn [context]
+            (when-not (::dont-open-tx context)
+              (if (or (:exception context)
+                      (::spec/invalid context))
+                (close-write-tx :abort)
+                (close-write-tx :commit)))
             context)})
 
 (def context (atom {}))

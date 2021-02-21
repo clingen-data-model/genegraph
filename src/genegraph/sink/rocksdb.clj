@@ -4,7 +4,9 @@
    utility during testing and development, as it will be possible to record
    and replay the outcomes of events."
   (:require [genegraph.rocksdb :as rocksdb]
-            [mount.core :refer [defstate]])
+            [mount.core :refer [defstate]]
+            [genegraph.env :as env]
+            [clojure.string :as s])
   (:import [java.nio ByteBuffer]))
 
 (defn open-for-topic! [topic]
@@ -21,3 +23,6 @@
               .array)] 
     (rocksdb/rocks-put-raw-key! db k event)))
 
+(defstate topic-logs
+  :start (let [topics (map keyword (s/split env/dx-topics #";"))]
+           ))

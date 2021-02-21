@@ -3,7 +3,8 @@
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :as l]
             [genegraph.database.instance :as db-instance]
-            [genegraph.database.util :refer [tx]]
+            [genegraph.database.util :as db-util :refer
+             [tx begin-write-tx close-write-tx write-tx]]
             [genegraph.sink.stream :as stream]
             [genegraph.sink.event :as event]
             [genegraph.source.graphql.core :as gql]
