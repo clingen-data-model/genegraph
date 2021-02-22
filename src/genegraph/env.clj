@@ -15,6 +15,7 @@
 (def validate-events (System/getenv "GENEGRAPH_VALIDATE_EVENTS"))
 (def use-response-cache (System/getenv "GENEGRAPH_RESPONSE_CACHE"))
 (def genegraph-version (System/getenv "GENEGRAPH_IMAGE_VERSION"))
+(def database-build-mode (System/getenv "GENEGRAPH_DATABASE_BUILD_MODE"))
 
 (def dx-key-pass (System/getenv "SERVEUR_KEY_PASS"))
 

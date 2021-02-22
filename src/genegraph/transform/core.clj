@@ -25,7 +25,7 @@
   (try
     (xform-types/add-model event)
     (catch Exception e 
-      (assoc event :exception e))))
+      (assoc event :exception (str e)))))
 
 (defn transform-doc [doc]
   (xform-types/transform-doc doc))

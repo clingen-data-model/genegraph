@@ -14,7 +14,7 @@
             [genegraph.suggest.suggesters :as suggest :refer [update-suggesters-interceptor]]
             [mount.core :as mount :refer [defstate]]
             [io.pedestal.interceptor :as intercept]
-            [io.pedestal.interceptor.chain :as chain]
+            [io.pedestal.interceptor.chain :as chain :refer [terminate]]
             [io.pedestal.interceptor.helpers :as helper]
             [io.pedestal.log :as log]
             [clojure.spec.alpha :as spec]))
@@ -22,12 +22,16 @@
 
 (def write-tx-interceptor
   {:name ::write-tx
-   :enter (fn [context] (begin-write-tx) context)
-   :leave (fn [context] 
-            (if (or (:exception context)
-                    (::spec/invalid context))
-              (close-write-tx :abort)
-              (close-write-tx :commit))
+   :enter (fn [context]
+            (when-not (::dont-open-tx context)
+              (begin-write-tx))
+            context)
+   :leave (fn [context]
+            (when-not (::dont-open-tx context)
+              (if (or (:exception context)
+                      (::spec/invalid context))
+                (close-write-tx :abort)
+                (close-write-tx :commit)))
             context)})
 
 (def context (atom {}))
@@ -76,9 +80,16 @@
 
 (def log-result-interceptor
   {:name ::log-result
-   :leave (fn [e] (log/info
+   :leave (fn [e] (log/debug
                    :fn :log-result-interceptor
                    :event (select-keys e [::ann/iri ::ann/subjects :executed-interceptors])) e)})
+
+(def abort-on-dry-run-interceptor
+  {:name ::abort-on-dry-run
+   :enter (fn [e]
+            (if (::dry-run e)
+              (terminate e)
+              e))})
 
 (def interceptor-chain [log-result-interceptor
                         write-tx-interceptor
@@ -89,6 +100,7 @@
                         ann/add-subjects-interceptor
                         ann/add-action-interceptor
                         ann/add-replaces-interceptor
+                        abort-on-dry-run-interceptor
                         add-to-db-interceptor
                         unpublish-interceptor
                         replace-interceptor

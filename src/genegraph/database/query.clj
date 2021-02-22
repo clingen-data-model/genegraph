@@ -89,6 +89,11 @@
     (.write model os "TURTLE")
     (.toString os)))
 
+(defn to-binary [model]
+  (let [os (ByteArrayOutputStream.)]
+    (.write model os "RDFTHRIFT")
+    (.toByteArray os)))
+
 (defn union [& models]
   (let [union-model (ModelFactory/createDefaultModel)]
     (doseq [model models] (.add union-model model))
