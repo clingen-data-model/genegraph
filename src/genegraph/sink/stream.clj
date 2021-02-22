@@ -2,7 +2,6 @@
   (:require [genegraph.sink.event :as event]
             [genegraph.annotate :as annotate]
             [genegraph.env :as env]
-            [genegraph.database.util :refer [write-tx begin-write-tx close-write-tx]]
             [clojure.java.io :as io]
             [mount.core :refer [defstate]]
             [clojure.edn :as edn]
@@ -94,31 +93,22 @@
   [topic]
   (fn []
     (with-open [consumer (consumer-for-topic topic)]
-      
       (let [tp (topic-partitions consumer topic)
-            topic-name (-> config :topics topic :name)
-            options (if env/database-build-mode {::event/dont-open-tx true} {})]
+            topic-name (-> config :topics topic :name)]
         (.assign consumer tp)
         (doseq [part tp]
           (if-let [offset (get @current-offsets [topic-name (.partition part)])]
             (.seek consumer part offset)
             (.seekToBeginning consumer [part])))
         (read-end-offsets! consumer tp)
-        (when env/database-build-mode (begin-write-tx))
         (while @run-consumer
           (doseq [record (poll-once consumer)]
             (try
-              (-> record
-                  (consumer-record-to-clj topic)
-                  (merge options)
-                  event/process-event!)
+              (-> record (consumer-record-to-clj topic) event/process-event!)
               (catch Exception e
-                (log/info :fn :assign-topic!
-                          :topic topic
-                          :msg (str "Caught exception " (.getMessage e))
+                (log/info :fn :assign-topic! :topic topic :msg (str "Caught exception " (.getMessage e))
                           :exception e)))
             (update-offsets! consumer tp)))
-        (when env/database-build-mode (close-write-tx))
         (swap! topic-state assoc topic :stopped)))))
 
 (defn up-to-date? 
