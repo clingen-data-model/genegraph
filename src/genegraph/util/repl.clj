@@ -42,6 +42,13 @@
   (doseq [event event-seq]
     (event/process-event! event)))
 
+(defn process-event-seq-one-transaction
+  "Run event sequence through event processor"
+  [event-seq]
+  (write-tx
+   (doseq [event event-seq]
+     (event/process-event! (assoc event ::event/dont-open-tx true)))))
+
 (defn process-event-dry-run
   "Run event through event processor, do not create side effects"
   [event]
