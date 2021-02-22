@@ -27,7 +27,7 @@
   (let [iri (str disease)
         label (label disease)
         curie (q/curie disease)
-        curations (curation/activities {:disease disease})
+        curations (curation/disease-activities {:disease disease})
         weight 0 ;; (count curations)
         payload {:type :DISEASE
                  :iri iri

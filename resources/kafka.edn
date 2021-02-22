@@ -58,10 +58,7 @@
                                          :cluster :dx-prod}
             :gene-validity-events-dev {:name "gene_validity_events_dev"
                                        :cluster :dx-ccloud}
-            :clinvar-raw {:name "clinvar-raw"
-                          :cluster :dx-ccloud}
-            :clinvar-scv {:name "clinvar-scv"
-                          :cluster :dx-ccloud
-                          :format :clinvar-scv
-                          :root-type :sepio/VariantPathogenicityInterpretation}}}
+            :clinvar-combined {:name "clinvar-combined"
+                               :cluster :dx-ccloud
+                               :format :clinvar-combined}}}
 

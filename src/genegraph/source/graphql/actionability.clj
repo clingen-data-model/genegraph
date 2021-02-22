@@ -78,7 +78,22 @@
 (def score-counts (q/create-query (str "select ?s where { "
                        "?s a :sepio/ActionabilityReport . "
                        "?s :sepio/qualified-contribution ?qc . "
+                       "?qc :bfo/realizes :sepio/ApproverRole . "
                        "?qc :sepio/has-agent ?wg }") {::q/distinct false}))
+
+(defn score-counts-report [wg]
+  (let [records (score-counts {:wg wg})]
+    (doseq [rec records]
+      (let [scores (q/ld-> rec [ :cg/has-total-actionability-score])
+            contexts (q/ld-> rec [:sepio/qualified-contribution :sepio-has-agent :rdfs/label])
+            genes (into #{} (q/ld-> rec [:bfo/has-part :sepio/has-subject :skos/preferred-label]))
+            diseases (into #{} (q/ld-> rec [:sepio/is-about-condition :rdfs/label]))
+            dates (into #{} (q/ld-> rec [:sepio/qualified-contribution :sepio/activity-date]))]
+        (doseq [score scores]
+          (let [msg (str "iri:" (str rec) "\tscore:" score "\tcontexts:" wg "\tgenes:" (str/join "," genes) "\tdiseases:" diseases "\tdates:" (str/join "," dates) "\n")]
+            (spit "out.txt" msg :append true)))))))
+        
+        
 
 (defn tot-wg-score-counts [wg]
   (let [records (if (some? wg)

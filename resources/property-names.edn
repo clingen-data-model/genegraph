@@ -438,6 +438,7 @@
  [:geno/start-position "http://purl.obolibrary.org/obo/GENO_0000894"]
  [:geno/targets-gene "http://purl.obolibrary.org/obo/GENO_0000414"]
  [:geno/varies-with "http://purl.obolibrary.org/obo/GENO_0000683"]
+ [:geno/inheritance-pattern "http://purl.obolibrary.org/obo/GENO_0000141"]
  [:hp/abbreviation "http://purl.obolibrary.org/obo/HP_0045077"]
  [:hp/display-label "http://purl.obolibrary.org/obo/HP_0031940"]
  [:hp/obsolete "http://purl.obolibrary.org/obo/HP_0031859"]
