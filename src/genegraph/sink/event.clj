@@ -92,7 +92,6 @@
               e))})
 
 (def interceptor-chain [log-result-interceptor
-                        write-tx-interceptor
                         ann/add-metadata-interceptor
                         ann/add-model-interceptor
                         ann/add-iri-interceptor

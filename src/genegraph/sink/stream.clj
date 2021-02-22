@@ -2,6 +2,7 @@
   (:require [genegraph.sink.event :as event]
             [genegraph.annotate :as annotate]
             [genegraph.env :as env]
+            [genegraph.database.util :refer [write-tx]]
             [clojure.java.io :as io]
             [mount.core :refer [defstate]]
             [clojure.edn :as edn]
@@ -102,13 +103,15 @@
             (.seekToBeginning consumer [part])))
         (read-end-offsets! consumer tp)
         (while @run-consumer
-          (doseq [record (poll-once consumer)]
-            (try
-              (-> record (consumer-record-to-clj topic) event/process-event!)
-              (catch Exception e
-                (log/info :fn :assign-topic! :topic topic :msg (str "Caught exception " (.getMessage e))
-                          :exception e)))
-            (update-offsets! consumer tp)))
+          (let [records (poll-once consumer)]
+            (write-tx
+             (doseq [record records]
+               (try
+                 (-> record (consumer-record-to-clj topic) event/process-event!)
+                 (catch Exception e
+                   (log/info :fn :assign-topic! :topic topic :msg (str "Caught exception " (.getMessage e))
+                             :exception e)))
+               (update-offsets! consumer tp)))))
         (swap! topic-state assoc topic :stopped)))))
 
 (defn up-to-date? 
