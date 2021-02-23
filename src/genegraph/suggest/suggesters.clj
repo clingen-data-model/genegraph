@@ -7,7 +7,7 @@
             [genegraph.interceptor :as intercept :refer [interceptor-enter-def]]
             [genegraph.source.graphql.common.curation :as curation]
             [genegraph.source.graphql.drug :as drug]
-            [genegraph.suggest.serder :as serder]
+            [taoensso.nippy :as nippy :refer [thaw]]
             [genegraph.suggest.infix-suggester :as suggest]
             [io.pedestal.log :as log]))
 
@@ -155,7 +155,7 @@
         lookup-results (lookup suggester-key label #{:ALL} 20) ;; how to exact-match?
         lookup-result (first (filter #(= label (.key %)) lookup-results))]
     (if (some? lookup-result)
-      (let [payload (-> (.payload lookup-result) .bytes serder/deserialize)]
+      (let [payload (-> (.payload lookup-result) .bytes thaw)]
         (if (= resource-iri (:iri payload))
           {:lookup-result lookup-result :resource resource :payload payload}
           nil))

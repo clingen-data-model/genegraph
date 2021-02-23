@@ -7,7 +7,7 @@
             [genegraph.source.graphql.condition :as condition]
             [genegraph.source.graphql.common.curation :as curation]
             [genegraph.source.graphql.resource :as resource]
-            [genegraph.suggest.serder :as serder]
+            [taoensso.nippy :as nippy :refer [freeze thaw]]
             [io.pedestal.log :as log])
   (:import [java.io File FileInputStream FileOutputStream]
            [java.net URI]
@@ -47,9 +47,9 @@
 
 (defn add-to-suggestions [suggester text payload contexts weight]
   "Add terms and payloads to the suggester index"
-  (let [serialized-payload (-> payload serder/serialize BytesRef.)
+  (let [serialized-payload (-> payload freeze BytesRef.)
         serialized-text (BytesRef. (.getBytes text "UTF8"))
-        serialized-contexts (into #{} (map #(-> % serder/serialize BytesRef.) contexts))]
+        serialized-contexts (into #{} (map #(-> % freeze BytesRef.) contexts))]
     (.add suggester serialized-text serialized-contexts weight serialized-payload)))
 
 (defn commit-suggester [suggester]
@@ -79,13 +79,13 @@
 (defn lookup [suggester text contexts num]
   "Perform a suggester lookup"
   (let [serialized-contexts (if (> 0 (count contexts))
-                              (into #{} (map #(-> % serder/serialize BytesRef.) contexts))
+                              (into #{} (map #(-> % freeze BytesRef.) contexts))
                               #{})]
     (sort-by str/lower-case (.lookup suggester text serialized-contexts num true true))))
 
 (defn update-suggestion [suggester text payload contexts weight]
   "Update terms and payloads in a suggester index"
-  (let [serialized-payload (-> payload serder/serialize BytesRef.)
+  (let [serialized-payload (-> payload freeze BytesRef.)
         serialized-text (BytesRef. (.getBytes text "UTF8"))
-        serialized-contexts (into #{} (map #(-> % serder/serialize BytesRef.) contexts))]
+        serialized-contexts (into #{} (map #(-> % freeze BytesRef.) contexts))]
     (.update suggester serialized-text serialized-contexts weight serialized-payload)))
