@@ -16,34 +16,33 @@
                    (:id msg)
                    (:release_date msg))
         rdf-type (str iri/cgterms "VariantClinicalSignificanceAssertion")
-        context {"@context" {"@vocab"          iri/cgterms
-                             "clingen"         iri/cgterms
-                             "sepio"           "http://purl.obolibrary.org/obo/SEPIO_"
-                             "clinvar"         "https://www.ncbi.nlm.nih.gov/clinvar/"
-                             rdf-type          {"@type" "@id"}
-                             :cg/ClinVarObject {"@type" "@id"}
-                             ;"entity_type"        {"@id"   "@type"
-                             ;                      "@type" "@vocab"}
-                             ;"clinical_assertion" rdf-type
+        context {"@context" {"@vocab" iri/cgterms
+                             "clingen" iri/cgterms
+                             "sepio" "http://purl.obolibrary.org/obo/SEPIO_"
+                             "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"
+                             ;rdf-type          {"@type" "@id"}
+                             ;:cg/ClinVarObject {"@type" "@id"}
 
                              }
-                 "@id"      id}]
+                 "@id" id}]
     (genegraph-kw-to-iri
       (merge
         context
-        {:rdf/type                     [{"@id" :cg/ClinVarObject}
-                                        {"@id" rdf-type}]
-         :dc/is-version-of             (str iri/clinvar-assertion (:id msg))
-         :dc/has-version               (:version msg)
-         :dc/title                     (:title msg)
+        {"@type" [:cg/ClinVarObject
+                  rdf-type]
+         :dc/is-version-of (str iri/clinvar-assertion (:id msg))
+         :dc/has-version (:version msg)
+         :dc/title (:title msg)
 
-         :sepio/has-subject            (str iri/clinvar-variation (:variation_id msg))
-         :sepio/has-predicate          (:interpretation_description msg)
-         :sepio/has-object             (str iri/trait-set (:trait_set_id msg))
-         :sepio/date-created           (:date_created msg)
-         :sepio/date-modified          (:date_last_updated msg)
+         :sepio/has-subject (str iri/clinvar-variation (:variation_id msg))
+         :sepio/has-predicate (:interpretation_description msg)
+         :sepio/has-object (str iri/trait-set (:trait_set_id msg))
+         :sepio/date-created (:date_created msg)
+         :sepio/date-updated (:date_last_updated msg)
+         :sepio/date-validated (:release_date msg)
          :sepio/qualified-contribution {:sepio/activity-date (:interpretation_date_last_evaluated msg)
-                                        :sepio/has-role      "SubmitterRole"}
+                                        :sepio/has-role "SubmitterRole"
+                                        :sepio/has-agent {"@id" (str iri/submitter (:submitter_id msg))}}
 
          ; Reverse relation to parent variation archive
          ;"@reverse"                    {:sepio/has-evidence-line [{:sepio/has-evidence-item      id
@@ -51,12 +50,12 @@
          ;                                                          :sepio/evidence-line-strength (scv-review-status-to-evidence-strength-map
          ;                                                                                          (:review_status msg))}]}
 
-         ; ClinGen/ClinVar additional terms (namespaced to @vocab)
-         "hasReviewStatus"             (:review_status msg)
-         "submittedCondition"          (str iri/clinical-assertion-trait-set (:clinical_assertion_trait_set_id msg))
+         ; ClinGen/ClinVar additional renamed terms (namespaced to @vocab)
+         ;"hasReviewStatus"             (:review_status msg)
+         "submittedCondition" (str iri/clinical-assertion-trait-set (:clinical_assertion_trait_set_id msg))
          ; TODO add allele origin from observations to the submitted variation
          ; TODO update field name if change occurs here https://github.com/clingen-data-model/clinvar-streams/issues/3
-         "submittedVariation"          (:clinical_assertion_variations msg)
+         "submittedVariation" (:clinical_assertion_variations msg)
          ; "hasCollectionMethod" (get-in obs ...)
          }
         (-> msg
@@ -70,7 +69,6 @@
               :date_created
               :date_last_updated
               :interpretation_date_last_evaluated
-              :review_status
               :clinical_assertion_trait_set_id
               :clinical_assertion_variations))))))
 
