@@ -18,13 +18,13 @@
 (defn process-directory! 
   "Read and integrate a directory full of event records"
   [path]
-  (let  [dir (File. path)
-         files (filter #(re-find #".*\.edn$" (.getName %)) (file-seq dir))]
-    (doseq [f files]
-      (with-open [rdr (io/reader f)
-                  pushback-rdr (PushbackReader. rdr)]
-        (log/debug :fn :process-directory! :msg (str "processing: " f))
-        (event/process-event! (edn/read pushback-rdr))))))
+  (let [dir (File. path)
+        files (filter #(re-find #".*\.edn$" (.getName %)) (file-seq dir))
+        events (map #(with-open [rdr (io/reader %)
+                                 pushback-rdr (PushbackReader. rdr)]
+                       (edn/read pushback-rdr))
+                    files)]
+    (event/process-event-seq! events)))
 
 (defn process-compressed-event-file!
   "process a tarball containing multiple gzipped events"
@@ -44,9 +44,11 @@
   (let [path (target-path (:name descriptor))]
     (gcs/get-file-from-bucket! (:source descriptor) path)
     (with-open [r (io/reader path)]
-      (doseq [curation (json/parse-stream r true)]
-        (event/process-event! {:genegraph.annotate/format (:format descriptor)
-                               ::event/value curation})))))
+      (let [events (map (fn [json-evt]
+                          {:genegraph.annotate/format (:format descriptor)
+                           ::event/value json-evt})
+                        (json/parse-stream r true))]
+        (event/process-event-seq! events)))))
 
 (defn process-batched-events! 
   "Should be run during database initialization. Download and read events stored in batch format into database."
