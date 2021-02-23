@@ -122,10 +122,11 @@
                   intercept
                   (helper/before (fn [e] (let [now-ms (inst-ms (java.util.Date.))
                                                start-ms (:interceptor-start-ms e)]
-                                           (when start-ms
+                                           (if start-ms
                                              (assoc e :executed-interceptors
                                                     (conj (:executed-interceptors e)
-                                                          (keyword (str (- now-ms start-ms) "ms"))))))))))
+                                                          (keyword (str (- now-ms start-ms) "ms"))))
+                                             e))))))
           []
           interceptors))
 

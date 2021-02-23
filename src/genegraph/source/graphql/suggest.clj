@@ -1,7 +1,7 @@
 (ns genegraph.source.graphql.suggest
   (:require [genegraph.source.graphql.common.cache :refer [defresolver]]
             [genegraph.suggest.suggesters :refer [lookup]]
-            [genegraph.suggest.serder :as ser]
+            [taoensso.nippy :as nippy :refer [thaw]]
             [clojure.string :as str])
   (:import [org.apache.lucene.search.suggest Lookup$LookupResult]
            [org.apache.lucene.util BytesRef]))
@@ -18,7 +18,7 @@
 (defn payload [value]
   (-> (.payload value)
       .bytes
-      ser/deserialize))
+      thaw))
 
 (defn suggest-type [context args value]
   (:type (payload value)))
