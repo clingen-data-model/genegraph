@@ -13,7 +13,7 @@
   (q/create-query [:project ['affiliation]
                    (cons :bgp curation/gene-validity-with-sort-bgp)]))
 
-(defresolver affiliations [args value]
+(defresolver ^:expire-always affiliations [args value]
   (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
         query-params (if (:text args)
                        {:text (-> args :text s/lower-case) ::q/params params}
