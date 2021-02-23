@@ -23,6 +23,6 @@
               .array)] 
     (rocksdb/rocks-put-raw-key! db k event)))
 
-(defstate topic-logs
-  :start (let [topics (map keyword (s/split env/dx-topics #";"))]
-           ))
+;; (defstate topic-logs
+;;   :start (let [topics (map keyword (s/split env/dx-topics #";"))]
+;;            ))

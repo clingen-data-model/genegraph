@@ -1,7 +1,7 @@
 (ns genegraph.sink.event
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :refer [load-model remove-model]]
-            [genegraph.database.util :refer [begin-write-tx close-write-tx]]
+            [genegraph.database.util :refer [begin-write-tx close-write-tx write-tx]]
             [genegraph.source.graphql.common.cache :as cache]
             [genegraph.response-cache :as response-cache]
             [genegraph.database.validation :as v]
@@ -137,3 +137,10 @@
                           (inject-trace-into-interceptor-chain interceptor-chain)))
       chain/execute))
 
+(defn process-event-seq!
+  ([event-seq]
+   (process-event-seq! event-seq {}))
+  ([event-seq opts]
+   (write-tx 
+    (doseq [e event-seq]
+      (process-event! (merge e opts))))))
