@@ -1,0 +1,156 @@
+prefix gci: <http://gci.clinicalgenome.org/>
+
+construct {
+  ?classification a :sepio/GeneValidityEvidenceLevelAssertion ;
+  :sepio/has-subject ?proposition ;
+  :sepio/has-predicate :sepio/HasEvidenceLevel ;
+  :sepio/has-object ?evidencelevel ;
+  # :sepio/has-evidence-line ?experimentalEvidenceLine, ?geneticEvidenceLine ;
+  # :sepio/evidence-line-strength-score ?evidencePointsTotal .
+
+  # ?geneticEvidenceLine a :sepio/GeneticEvidenceLine ;
+  # :sepio/has-evidence-item ?geneticEvidenceCriterionAssessment ;
+  # :sepio/evidence-line-strength-score ?geneticEvidenceTotal .
+
+  # ?geneticEvidenceCriterionAssessment a :sepio/GeneticEvidenceCriterionAssessment ;
+  # :sepio/has-evidence-line ?autosomalDominantOtherVariantEvidenceLine ,
+  # ?autosomalDominantNullVariantEvidenceLine ,
+  # ?autosomalDominantDeNovoVariantEvidenceLine , 
+  # ?autosomalRecessiveVariantEvidenceLine ,
+  # ?caseControlEvidenceLine ,
+  # ?segregationEvidenceLine .
+
+  # ?autosomalDominantOtherVariantEvidenceLine a :sepio/AutosomalDominantOtherVariantEvidenceLine ;
+  # :sepio/has-evidence-item ?autosomalDominantOtherVariantCriterionAssessment ;
+  # :sepio/evidence-line-strength-score ?probandWithOtherVariantTypeWithGeneImpactTotal .
+
+  # ?autosomalDominantOtherVariantCriterionAssessment a :sepio/AutosomalDominantOtherVariantCriterionAssessment .
+
+  # ?autosomalDominantNullVariantEvidenceLine a :sepio/AutosomalDominantNullVariantEvidenceLine ;
+  # :sepio/has-evidence-item ?autosomalDominantNullVariantCriterionAssessment ;
+  # :sepio/evidence-line-strength-score ?probandWithPredictedOrProvenNullVariantTotal .
+
+  # ?autosomalDominantNullVariantCriterionAssessment a :sepio/AutosomalDominantNullVariantCriterionAssessment .
+
+  # ?autosomalDominantDeNovoVariantEvidenceLine a :sepio/AutosomalDominantDeNovoVariantEvidenceLine ;
+  # :sepio/has-evidence-item ?autosomalDominantDeNovoVariantCriterionAssessment ;
+  # :sepio/evidence-line-strength-score ?variantIsDeNovoTotal .
+
+  # ?autosomalDominantDeNovoVariantCriterionAssessment a :sepio/AutosomalDominantDeNovoVariantCriterionAssessment .
+
+  # ?autosomalRecessiveVariantEvidenceLine a :sepio/AutosomalRecessiveVariantEvidenceLine ;
+  # :sepio/has-evidence-item ?autosomalRecessiveVariantCriterionAssessment ;
+  # :sepio/evidence-line-strength-score ?autosomalRecessiveDisorderTotal .
+
+  # ?autosomalRecessiveVariantCriterionAssessment a :sepio/AutosomalRecessiveVariantCriterionAssessment .
+
+  # ?caseControlEvidenceLine a :sepio/CaseControlEvidenceLine ;
+  # :sepio/has-evidence-item ?caseControlEvidenceCriterionAssessment ;
+  # :sepio/evidence-line-strength-score ?caseControlTotal .
+
+  # ?caseControlEvidenceCriterionAssessment a :sepio/CaseControlEvidenceCriterionAssessment .
+
+  # ?segregationEvidenceLine a :sepio/SegregationEvidenceLine ;
+  # :sepio/has-evidence-item ?segregationCriterionAssessment ;
+  # :sepio/evidence-line-strength-score ?segregationTotal .
+
+  # ?segregationCriterionAssessment a :sepio/SegregationCriterionAssessment .
+
+  # ?experimentalEvidenceLine a :sepio/ExperimentalEvidenceLine ;
+  # :sepio/has-evidence-item ?experimentalEvidenceCriterionAssessment ;
+  # :sepio/evidence-line-strength-score ?experimentalEvidenceTotal .
+
+  # ?experimentalEvidenceCriterionAssessment a :sepio/ExperimentalEvidenceCriterionAssessment ;
+  # :sepio/has-evidence-line ?functionalEvidenceLine, ?functionalAlterationEvidenceLine, ?modelAndRescueEvidenceLine .
+
+  # ?functionalEvidenceLine a :sepio/FunctionalEvidenceLine ;
+  # :sepio/has-evidence-item ?functionalCriterionAssessment ;
+  # :sepio/evidence-line-strength-score ?functionTotal .
+
+  # ?functionalCriterionAssessment a :sepio/FunctionalCriterionAssessment .
+
+  # ?functionalAlterationEvidenceLine a :sepio/FunctionalAlterationEvidenceLine ;
+  # :sepio/has-evidence-item ?functionalAlterationCriterionAssessment ;
+  # :sepio/evidence-line-strength-score ?functionalAlterationTotal .
+
+  # ?functionalAlterationCriterionAssessment a :sepio/FunctionalAlterationCriterionAssessment .  
+
+  # ?modelAndRescueEvidenceLine a :sepio/ModelAndRescueEvidenceLine ;
+  # :sepio/has-evidence-item ?modelAndRescueCriterionAssessment ;
+  # :sepio/evidence-line-strength-score  ?modelsRescueTotal .
+
+  # ?modelAndRescueCriterionAssessment a :sepio/ModelAndRescueCriterionAssessment .
+
+
+}
+where {
+  
+  ?classification a gci:provisionalClassification .
+  ?proposition a gci:gdm .
+  
+  ?classification gci:autoClassification ?evidencelevel .
+
+  # ?classification gci:classificationPoints ?pointsTree .
+  
+  # ?pointsTree gci:evidencePointsTotal ?evidencePointsTotal .
+  # ?pointsTree gci:experimentalEvidenceTotal ?experimentalEvidenceTotal .
+  # ?pointsTree gci:geneticEvidenceTotal ?geneticEvidenceTotal .
+
+  # ?pointsTree gci:autosomalDominantOrXlinkedDisorder ?autosomalDominantOrXlinkedDisorderTree .
+
+  # ?autosomalDominantOrXlinkedDisorderTree gci:probandWithOtherVariantTypeWithGeneImpact ?probandWithOtherVariantTypeWithGeneImpactTree .
+  # ?probandWithOtherVariantTypeWithGeneImpactTree gci:pointsCounted ?probandWithOtherVariantTypeWithGeneImpactTotal .
+
+  # ?autosomalDominantOrXlinkedDisorderTree gci:probandWithPredictedOrProvenNullVariant ?probandWithPredictedOrProvenNullVariantTree .
+  # ?probandWithPredictedOrProvenNullVariantTree gci:pointsCounted ?probandWithPredictedOrProvenNullVariantTotal .
+
+  # ?autosomalDominantOrXlinkedDisorderTree gci:variantIsDeNovo ?variantIsDeNovoTree .
+  # ?variantIsDeNovoTree gci:pointsCounted ?variantIsDeNovoTotal .
+
+  # ?pointsTree gci:autosomalRecessiveDisorder ?autosomalRecessiveDisorderTree .
+  # ?autosomalRecessiveDisorderTree gci:pointsCounted  ?autosomalRecessiveDisorderTotal .
+
+  # ?pointsTree gci:caseControl ?caseControlTree .
+  # ?caseControlTree gci:pointsCounted ?caseControlTotal .
+
+  # ?pointsTree gci:function ?functionTree .
+  # ?functionTree gci:pointsCounted ?functionTotal .
+
+  # ?pointsTree gci:functionalAlteration ?functionalAlterationTree .
+  # ?functionalAlterationTree gci:pointsCounted ?functionalAlterationTotal .
+
+  # ?pointsTree gci:modelsRescue ?modelsRescueTree .
+  # ?modelsRescueTree gci:pointsCounted ?modelsRescueTotal .
+
+  # ?pointsTree gci:segregation ?segregationTree .
+  # ?segregationTree gci:pointsCounted ?segregationTotal .
+
+  # BIND (IRI(CONCAT(?gcibase, "assertion_", ?classificationuuid)) AS ?assertion) .
+  # ?gdm a gci:gdm . 
+  # ?gdm gci:uuid ?gdmuuid . 
+  # BIND (IRI(CONCAT(?gcibase, "proposition_", ?gdmuuid)) AS ?prop) .
+
+  # BIND (IRI(CONCAT(?gcibase, "segregation_criterion_assessment", ?gdmuuid)) AS ?segregationCriterionAssessment) .
+  # BIND (IRI(CONCAT(?gcibase, "experimental_evidence_criterion_assessment", ?gdmuuid)) AS ?experimentalEvidenceCriterionAssessment) .
+  # BIND (IRI(CONCAT(?gcibase, "autosomal_dominant_other_variant_criterion_assessment", ?gdmuuid)) AS ?autosomalDominantOtherVariantCriterionAssessment) .
+  # BIND (IRI(CONCAT(?gcibase, "genetic_evidence_criterion_assessment", ?gdmuuid)) AS ?geneticEvidenceCriterionAssessment) .
+  # BIND (IRI(CONCAT(?gcibase, "autosomal_dominant_null_variant_criterion_assessment", ?gdmuuid)) AS ?autosomalDominantNullVariantCriterionAssessment) .
+  # BIND (IRI(CONCAT(?gcibase, "autosomal_dominant_de_novo_variant_criterion_assessment", ?gdmuuid)) AS ?autosomalDominantDeNovoVariantCriterionAssessment) .
+  # BIND (IRI(CONCAT(?gcibase, "autosomal_recessive_variant_criterion_assessment", ?gdmuuid)) AS ?autosomalRecessiveVariantCriterionAssessment) .
+  # BIND (IRI(CONCAT(?gcibase, "model_and_rescue_criterion_assessment", ?gdmuuid)) AS ?modelAndRescueCriterionAssessment) .
+  # BIND (IRI(CONCAT(?gcibase, "case_control_evidence_criterion_assessment", ?gdmuuid)) AS ?caseControlEvidenceCriterionAssessment) .
+  # BIND (IRI(CONCAT(?gcibase, "functional_criterion_assessment", ?gdmuuid)) AS ?functionalCriterionAssessment) .
+
+  # BIND (IRI(CONCAT(?gcibase, "segregation_evidence_line", ?gdmuuid)) AS ?segregationEvidenceLine) .
+  # BIND (IRI(CONCAT(?gcibase, "autosomal_dominant_other_variant_evidence_line", ?gdmuuid)) AS ?autosomalDominantOtherVariantEvidenceLine) .
+  # BIND (IRI(CONCAT(?gcibase, "autosomal_dominant_de_novo_variant_evidence_line", ?gdmuuid)) AS ?autosomalDominantDeNovoVariantEvidenceLine) .
+  # BIND (IRI(CONCAT(?gcibase, "autosomal_dominant_null_variant_evidence_line", ?gdmuuid)) AS ?autosomalDominantNullVariantEvidenceLine) .
+  # BIND (IRI(CONCAT(?gcibase, "autosomal_recessive_variant_evidence_line", ?gdmuuid)) AS ?autosomalRecessiveVariantEvidenceLine) .
+  # BIND (IRI(CONCAT(?gcibase, "model_and_rescue_evidence_line", ?gdmuuid)) AS ?modelAndRescueEvidenceLine) .
+  # BIND (IRI(CONCAT(?gcibase, "case_control_evidence_line", ?gdmuuid)) AS ?caseControlEvidenceLine) .
+  # BIND (IRI(CONCAT(?gcibase, "functional_alteration_evidence_line", ?gdmuuid)) AS ?functionalAlterationEvidenceLine) .
+  # BIND (IRI(CONCAT(?gcibase, "experimental_evidence_line", ?gdmuuid)) AS ?experimentalEvidenceLine) .
+  # BIND (IRI(CONCAT(?gcibase, "functional_evidence_line", ?gdmuuid)) AS ?functionalEvidenceLine) .
+  # BIND (IRI(CONCAT(?gcibase, "genetic_evidence_line", ?gdmuuid)) AS ?geneticEvidenceLine) .
+
+}

@@ -12,6 +12,8 @@
             [genegraph.rocksdb :as rocks]
             [genegraph.migration :as migrate]
             [genegraph.sink.rocksdb :as rocks-sink]
+            [genegraph.transform.gene-validity :as gene-validity]
+            [genegraph.transform.gene-validity-refactor :as gene-validity-refactor]
             [cheshire.core :as json]
             [clojure.data.csv :as csv]
             [clojure.string :as s]
@@ -59,6 +61,15 @@
   [event-seq]
   (doseq [event event-seq]
     (event/process-event! (assoc event ::event/dry-run true))))
+
+(defn update-topic-db
+  "Run topic db through dry-run event processor, store result in db"
+  [event-db]
+  (doseq [event (pmap
+                 process-event-dry-run
+                 (rocks/entire-db-seq event-db))]
+    (rocks-sink/put! event-db event)))
+
 
 (defn get-graph-names []
   (tx
