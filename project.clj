@@ -23,11 +23,12 @@
                  [org.apache.jena/jena-core "3.14.0"]
                  [org.apache.jena/jena-iri "3.14.0"]
                  [org.apache.lucene/lucene-suggest "7.4.0"] ;; jena 3.14.0 includes lucene 7.4.0
-                 [org.topbraid/shacl "1.1.0"]
+                 ;; Dependency superceeded by antlr provided via lacinia dependency
+                 [org.topbraid/shacl "1.3.2" :exclusions [org.antlr/antlr4-runtime]]
                  [mount "0.1.16"]
                  [com.velisco/clj-ftp "0.3.9"] ;; For downloading ftp docs
                  [clj-http "3.9.1"] ;; For downloading 
-                 [com.walmartlabs/lacinia-pedestal "0.14.0"]
+                 [com.walmartlabs/lacinia-pedestal "0.15.0"]
                  [clj-commons/fs "1.5.2"]
                  ;; Dirwatch for updating base files in development
                  [juxt/dirwatch "0.2.5"]
