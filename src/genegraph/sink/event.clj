@@ -19,21 +19,6 @@
             [io.pedestal.log :as log]
             [clojure.spec.alpha :as spec]))
 
-
-(def write-tx-interceptor
-  {:name ::write-tx
-   :enter (fn [context]
-            (when-not (::dont-open-tx context)
-              (begin-write-tx))
-            context)
-   :leave (fn [context]
-            (when-not (::dont-open-tx context)
-              (if (or (:exception context)
-                      (::spec/invalid context))
-                (close-write-tx :abort)
-                (close-write-tx :commit)))
-            context)})
-
 (def context (atom {}))
 
 (defn add-to-db!
@@ -82,7 +67,7 @@
   {:name ::log-result
    :leave (fn [e] (log/debug
                    :fn :log-result-interceptor
-                   :event (select-keys e [::ann/iri ::ann/subjects :executed-interceptors])) e)})
+                   :event (select-keys e [::ann/iri ::ann/subjects ::ann/did-validate])) e)})
 
 (def abort-on-dry-run-interceptor
   {:name ::abort-on-dry-run
@@ -95,6 +80,7 @@
                         ann/add-metadata-interceptor
                         ann/add-model-interceptor
                         ann/add-iri-interceptor
+                        ann/add-validation-shape-interceptor
                         ann/add-validation-interceptor
                         ann/add-subjects-interceptor
                         ann/add-action-interceptor

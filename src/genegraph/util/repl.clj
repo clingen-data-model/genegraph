@@ -3,6 +3,7 @@
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :as l]
             [genegraph.database.instance :as db-instance]
+            [genegraph.env :as env]
             [genegraph.database.util :as db-util :refer
              [tx begin-write-tx close-write-tx write-tx]]
             [genegraph.sink.stream :as stream]
@@ -38,29 +39,24 @@
     (doseq [graph-name named-graphs]
       (l/remove-model graph-name))))
 
-(defn process-event-seq 
-  "Run event sequence through event processor"
-  [event-seq]
-  (doseq [event event-seq]
-    (event/process-event! event)))
-
-(defn process-event-seq-one-transaction
+(defn process-event-seq
   "Run event sequence through event processor"
   [event-seq]
   (write-tx
    (doseq [event event-seq]
-     (event/process-event! (assoc event ::event/dont-open-tx true)))))
+     (event/process-event! event))))
 
 (defn process-event-dry-run
   "Run event through event processor, do not create side effects"
   [event]
-  (event/process-event! (assoc event ::event/dry-run true)))
+  (tx (event/process-event! (assoc event ::event/dry-run true))))
 
 (defn process-event-seq-dry-run
   "Run event sequence through event processor; do not perform side effects"
   [event-seq]
-  (doseq [event event-seq]
-    (event/process-event! (assoc event ::event/dry-run true))))
+  (tx
+   (doseq [event event-seq]
+     (event/process-event! (assoc event ::event/dry-run true)))))
 
 (defn update-topic-db
   "Run topic db through dry-run event processor, store result in db"
@@ -70,6 +66,11 @@
                  (rocks/entire-db-seq event-db))]
     (rocks-sink/put! event-db event)))
 
+(defn write-events-to-db
+  "Simply store events in topic db"
+  [event-db events]
+  (doseq [event events]
+    (rocks-sink/put! event-db event)))
 
 (defn get-graph-names []
   (tx

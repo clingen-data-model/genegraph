@@ -63,25 +63,39 @@
   "Interceptor adding model annotation to stream events"
   (interceptor-enter-def ::add-model add-model))
 
+(defn add-validation-shape
+  "Annotate the event with the appropriate shape for validation
+  if it exists in the database and if a shape has not already been
+  added (during development, for example)."
+  [event]
+  (if (and env/validate-events
+           (not (::validation-shape event)))
+    (assoc event
+           ::validation-shape
+           (some-> event
+                   ::root-type
+                   shapes
+                   :graph-name
+                   q/get-named-graph))
+    event))
+
+(def add-validation-shape-interceptor
+  {:name ::add-validation-shape
+   :enter add-validation-shape})
+
 (defn add-validation
   "Annotate the event with the result of any configured Shacl validation"
   [event]
-  (log/debug :fn :add-validation :event event :msg :received-event)
-  (when (and (some? shapes)
-             (true? (Boolean/valueOf env/validate-events)))
-    (let [shape-doc-def (-> event ::root-type shapes)]
-      (when (some? shape-doc-def)
-        (tx
-         (let [shape-model (q/get-named-graph (:graph-name shape-doc-def))
-               data-model (::q/model event)
-               validation-result (validate/validate data-model shape-model)
-               did-validate (validate/did-validate? validation-result)
-               turtle (q/to-turtle validation-result)
-               iri (::iri event)
-               root-type (::root-type event)]
-           (log/debug :fn :add-validation :root-type root-type :iri iri :did-validate? did-validate :report turtle)
-           (assoc event ::validation validation-result ::did-validate did-validate))))))
-  event)
+  (if (::validation-shape event)
+    (let [shape-model (::validation-shape event)
+          data-model (::q/model event)
+          validation-result (validate/validate data-model shape-model)
+          did-validate (validate/did-validate? validation-result)
+          turtle (q/to-turtle validation-result)
+          iri (::iri event)
+          root-type (::root-type event)]
+      (assoc event ::validation validation-result ::did-validate did-validate))
+    event))
 
 (def add-validation-interceptor
   "Interceptor adding shacl validation to stream events.
@@ -89,8 +103,7 @@
  {:name ::add-validation
   :enter (fn [context] (let [evt (add-validation context)]
                          (if (false? (::did-validate evt))
-                           ;; TODO May want to take a different action here...
-                           (terminate context)
+                           (terminate evt)
                            evt)))})
 
 (defn add-subjects-to-event
