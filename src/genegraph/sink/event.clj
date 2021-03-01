@@ -81,6 +81,7 @@
                         ann/add-model-interceptor
                         ann/add-iri-interceptor
                         ann/add-validation-shape-interceptor
+                        ann/add-validation-context-interceptor
                         ann/add-validation-interceptor
                         ann/add-subjects-interceptor
                         ann/add-action-interceptor

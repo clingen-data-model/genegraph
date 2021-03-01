@@ -9,7 +9,7 @@
   (:import java.io.ByteArrayOutputStream
            org.apache.jena.graph.NodeFactory
            org.apache.jena.query.QueryFactory
-           org.apache.jena.rdf.model.ModelFactory
+           [org.apache.jena.rdf.model ModelFactory Model]
            org.apache.jena.sparql.algebra.Algebra))
 
 (defn get-all-graphs []
@@ -94,7 +94,9 @@
     (.write model os "RDFTHRIFT")
     (.toByteArray os)))
 
-(defn union [& models]
+(defn union
+  "Create a new model that is the union of models"
+  [& models]
   (let [union-model (ModelFactory/createDefaultModel)]
     (doseq [model models] (.add union-model model))
     union-model))

@@ -48,8 +48,30 @@
 
 (defn process-event-dry-run
   "Run event through event processor, do not create side effects"
-  [event]
-  (tx (event/process-event! (assoc event ::event/dry-run true))))
+  ([event]
+   (process-event-dry-run event {}))
+  ([event opts]
+   (tx (event/process-event! (-> event
+                                 (merge opts)
+                                 (assoc ::event/dry-run true))))))
+
+(defn test-events-with-shape
+  [shape-uri events]
+  (let [shape (l/read-rdf shape-uri {:format :turtle})]
+    (pmap #(process-event-dry-run % {::ann/validation-shape shape})
+          events)))
+
+(defn validation-frequencies
+  [shape-uri events]
+  (->> (test-events-with-shape shape-uri events)
+       (map ::ann/did-validate)
+       frequencies))
+
+(defn first-failing-event
+  [shape-uri events]
+  (->> (test-events-with-shape shape-uri events)
+       (filter #(= false (::ann/did-validate %)))
+       first))
 
 (defn process-event-seq-dry-run
   "Run event sequence through event processor; do not perform side effects"

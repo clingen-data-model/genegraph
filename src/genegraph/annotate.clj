@@ -83,11 +83,33 @@
   {:name ::add-validation-shape
    :enter add-validation-shape})
 
+(defn add-validation-context
+  "Annotate the event with a model to join to prior to validation.
+  This model should include any valuesets and data necessary for
+  the model and shape to pass validation"
+  [event]
+  (let [context-graph-list (some-> event ::root-type shapes :validation-context)]
+;;    (log/info :fn ::add-validation-context)
+    (if (and env/validate-events
+             (not (::validation-context event))
+             context-graph-list)
+      (assoc event
+             ::validation-context
+             (apply q/union (map q/get-named-graph context-graph-list)))
+      event)))
+
+(def add-validation-context-interceptor
+  {:name ::add-validation-context-interceptor
+   :enter add-validation-context})
+
 (defn add-validation
   "Annotate the event with the result of any configured Shacl validation"
   [event]
   (if (::validation-shape event)
-    (let [validation-result (validate/validate (::q/model event)
+    (let [validation-model (if (::validation-context event)
+                             (q/union (::q/model event) (::validation-context event))
+                             (::q/model event))
+          validation-result (validate/validate validation-model
                                                (::validation-shape event))
           did-validate (validate/did-validate? validation-result)]
       (assoc event ::validation validation-result ::did-validate did-validate))

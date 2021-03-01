@@ -4,5 +4,14 @@
 ;; The map value is itself a map, containing a :graph-name key which directly relates to
 ;; a :name key in base.edn - that is, a shacl model that has been previously loaded into the db.
 ;; To turn off validations, define an empty map here.
-{:sepio/GeneDosageReport {:graph-name "http://dataexchange.clinicalgenome.org/models/sepio-clingen-dosage-shapes.ttl"}}
+{:sepio/GeneDosageReport
+ {:graph-name "http://dataexchange.clinicalgenome.org/models/sepio-clingen-dosage-shapes.ttl"
+  :validation-context
+  ["http://purl.obolibrary.org/obo/sepio-clingen-dosage-valueset"
+   "http://purl.obolibrary.org/obo/sepio-clingen-dosage.owl"]}
+ :sepio/GeneValidityProposition
+ {:graph-name "http://purl.obolibrary.org/obo/sepio-clingen-gene-validity-shapes"
+  :validation-context
+  ["http://purl.obolibrary.org/obo/sepio-clingen-gene-validity"
+   "http://purl.obolibrary.org/obo/sepio-clingen-gene-validity-valueset"]}}
 
