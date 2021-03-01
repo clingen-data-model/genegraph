@@ -90,7 +90,7 @@
   ;; This seems to break the contract for ILookup
   clojure.lang.ILookup
   (valAt [this k] (step k this model))
-  (valAt [this k nf] nf)
+  (valAt [this k nf] nf) ;; TODO fix this
 
 
   ;; Conforms to the expectations for a sequence representation of a map. Includes only

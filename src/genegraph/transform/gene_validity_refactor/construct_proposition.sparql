@@ -1,0 +1,20 @@
+prefix gci: <http://gci.clinicalgenome.org/> 
+construct 
+{
+  ?gdm a :sepio/GeneValidityProposition . 
+  ?gdm :sepio/has-subject ?hgnc .
+  ?gdm :sepio/has-predicate :ro/IsCausalGermlineMutationIn .
+  ?gdm :sepio/has-object ?disease .
+  ?gdm :sepio/has-qualifier ?moi .
+}
+where
+{
+  ?gdm a gci:gdm . 
+  ?gdm gci:gene ?gene .
+  ?gene gci:hgncId ?hgnc . 
+  ?gdm gci:disease ?disease .
+  ?gdm gci:modeInheritance ?moistr .
+
+  # The HPO term is embedded in a string, extract the digit and wrap in an IRI
+  BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", REPLACE(?moistr, "[^0-9]", ""))) AS ?moi) .
+}

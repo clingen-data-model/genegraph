@@ -3,6 +3,7 @@
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :as l]
             [genegraph.database.instance :as db-instance]
+            [genegraph.env :as env]
             [genegraph.database.util :as db-util :refer
              [tx begin-write-tx close-write-tx write-tx]]
             [genegraph.sink.stream :as stream]
@@ -12,6 +13,8 @@
             [genegraph.rocksdb :as rocks]
             [genegraph.migration :as migrate]
             [genegraph.sink.rocksdb :as rocks-sink]
+            [genegraph.transform.gene-validity :as gene-validity]
+            [genegraph.transform.gene-validity-refactor :as gene-validity-refactor]
             [cheshire.core :as json]
             [clojure.data.csv :as csv]
             [clojure.string :as s]
@@ -36,29 +39,60 @@
     (doseq [graph-name named-graphs]
       (l/remove-model graph-name))))
 
-(defn process-event-seq 
-  "Run event sequence through event processor"
-  [event-seq]
-  (doseq [event event-seq]
-    (event/process-event! event)))
-
-(defn process-event-seq-one-transaction
+(defn process-event-seq
   "Run event sequence through event processor"
   [event-seq]
   (write-tx
    (doseq [event event-seq]
-     (event/process-event! (assoc event ::event/dont-open-tx true)))))
+     (event/process-event! event))))
 
 (defn process-event-dry-run
   "Run event through event processor, do not create side effects"
-  [event]
-  (event/process-event! (assoc event ::event/dry-run true)))
+  ([event]
+   (process-event-dry-run event {}))
+  ([event opts]
+   (tx (event/process-event! (-> event
+                                 (merge opts)
+                                 (assoc ::event/dry-run true))))))
+
+(defn test-events-with-shape
+  [shape-uri events]
+  (let [shape (l/read-rdf shape-uri {:format :turtle})]
+    (pmap #(process-event-dry-run % {::ann/validation-shape shape})
+          events)))
+
+(defn validation-frequencies
+  [shape-uri events]
+  (->> (test-events-with-shape shape-uri events)
+       (map ::ann/did-validate)
+       frequencies))
+
+(defn first-failing-event
+  [shape-uri events]
+  (->> (test-events-with-shape shape-uri events)
+       (filter #(= false (::ann/did-validate %)))
+       first))
 
 (defn process-event-seq-dry-run
   "Run event sequence through event processor; do not perform side effects"
   [event-seq]
-  (doseq [event event-seq]
-    (event/process-event! (assoc event ::event/dry-run true))))
+  (tx
+   (doseq [event event-seq]
+     (event/process-event! (assoc event ::event/dry-run true)))))
+
+(defn update-topic-db
+  "Run topic db through dry-run event processor, store result in db"
+  [event-db]
+  (doseq [event (pmap
+                 process-event-dry-run
+                 (rocks/entire-db-seq event-db))]
+    (rocks-sink/put! event-db event)))
+
+(defn write-events-to-db
+  "Simply store events in topic db"
+  [event-db events]
+  (doseq [event events]
+    (rocks-sink/put! event-db event)))
 
 (defn get-graph-names []
   (tx

@@ -1,0 +1,133 @@
+# This file maps terms used in the GCI GDM record to their related types in the sepio
+# model. It is intended to be merged into the GDM model and used as a source to derive
+# SEPIO types from information in the source model
+
+@prefix : <http://dataexchange.clinicalgenome.org/gcixform/> .
+@prefix gci:   <http://gci.clinicalgenome.org/> .
+@prefix sepio:   <http://purl.obolibrary.org/obo/SEPIO_> .
+@base <http://dataexchange.clinicalgenome.org/gcixform> .
+
+
+# Variant types
+gci:PREDICTED_OR_PROVEN_NULL_VARIANT :hasEvidenceLineType sepio:0004079 ;
+    :hasEvidenceItemType sepio:0004034 .
+    
+gci:VARIANT_IS_DE_NOVO :hasEvidenceLineType sepio:0004078 ;
+    :hasEvidenceItemType sepio:0004033 .
+    
+gci:OTHER_VARIANT_TYPE_WITH_GENE_IMPACT :hasEvidenceLineType sepio:0004080 ;
+    :hasEvidenceItemType sepio:0004035 .
+    
+gci:TWO_VARIANTS_WITH_GENE_IMPACT_IN_TRANS :hasEvidenceLineType sepio:0004019 ;
+    :hasEvidenceItemType sepio:0004037 .
+    
+gci:TWO_VARIANTS_IN_TRANS_WITH_ONE_DE_NOVO :hasEvidenceLineType sepio:0004018 ;
+    :hasEvidenceItemType sepio:0004038 .
+    
+
+# biochemical function
+sepio:0004022 :hasEvidenceItemType sepio:0004041 ;
+    :hasGCIType :BiochemicalFunction ;
+    :usedIn :Functional .
+    
+# protein interaction
+sepio:0004023 :hasEvidenceItemType sepio:0004042 ;
+    :hasGCIType :ProteinInteraction ;
+    :usedIn :Functional .
+    
+# gene expression
+sepio:0004024 :hasEvidenceItemType sepio:0004043 ;
+    :hasGCIType :Expression ;
+    :usedIn :Functional .
+
+# patient cell functional alteration
+sepio:0004025 :hasEvidenceItemType sepio:0004044 ;
+    :hasGCIType :PatientCells ;
+    :usedIn :FunctionalAlteration .
+
+# non-patient cell functional alteration
+sepio:0004026 :hasEvidenceItemType sepio:0004045 ;
+    :hasGCIType :NonPatientCells ;
+    :usedIn :FunctionalAlteration .
+    
+# non-human model
+sepio:0004027 :hasEvidenceItemType sepio:0004046 ;
+    :hasGCIType :NonHumanModel ;
+    :usedIn :ModelSystems .
+    
+# cell culture model
+sepio:0004028 :hasEvidenceItemType sepio:0004047 ;
+    :hasGCIType :CellCultureModel ;
+    :usedIn :ModelSystems .
+    
+# human rescue
+sepio:0004029 :hasEvidenceItemType sepio:0004048 ;
+    :hasGCIType :Human ;
+    :usedIn :Rescue .
+    
+# non-human model rescue
+sepio:0004030 :hasEvidenceItemType sepio:0004049 ;
+    :hasGCIType :NonHumanModel ;
+    :usedIn :Rescue .
+    
+# rescue in cell culture
+sepio:0004031 :hasEvidenceItemType sepio:0004050 ;
+    :hasGCIType :CellCulture ;
+    :usedIn :Rescue .
+    
+# rescue in patient cells
+sepio:0004032 :hasEvidenceItemType sepio:0004051 ;
+    :hasGCIType :PatientCells ;
+    :usedIn :Rescue .
+
+#### Case Control
+sepio:0004020 :hasEvidenceItemType sepio:0004039 ;
+    :hasGCIType :SingleVariantAnalysis .
+    
+sepio:0004021 :hasEvidenceItemType sepio:0004040 ;
+    :hasGCIType :AggregateVariantAnalysis .
+
+#### Segregation
+
+# single gene
+sepio:0004090 :hasEvidenceItemType sepio:0004085 ;
+    :hasGCIType :CandidateGeneSequencing .
+
+# multi-locus
+sepio:0004091 :hasEvidenceItemType sepio:0004086 ;
+    :hasGCIType :ExomeSequencing .
+    
+#### Connections to leaf-node evidence lines
+
+# :sepio/AutosomalDominantOtherVariantCriterionAssessment
+sepio:0004058 :hasEvidenceLineType sepio:0004080 .
+
+# :sepio/AutosomalDominantNullVariantCriterionAssessment
+sepio:0004057 :hasEvidenceLineType sepio:0004079 .
+
+# :sepio/AutosomalDominantDeNovoVariantCriterionAssessment
+sepio:0004056 :hasEvidenceLineType sepio:0004078 .
+
+# :sepio/AutosomalRecessiveVariantCriterionAssessment
+sepio:0004055 :hasEvidenceLineType sepio:0004019 , sepio:0004018 .
+
+# # :sepio/CaseControlEvidenceCriterionAssessment
+sepio:0004054 :hasEvidenceLineType sepio:0004020, sepio:0004021 .
+
+# # :sepio/SegregationCriterionAssessment
+sepio:0004059 :hasEvidenceLineType sepio:0004090, sepio:0004091 .
+
+# :sepio/FunctionalCriterionAssessment
+sepio:0004060 :hasEvidenceLineType sepio:0004022 , sepio:0004023 , sepio:0004024 .
+
+# :sepio/FunctionalAlterationCriterionAssessment
+sepio:0004061 :hasEvidenceLineType sepio:0004025 , sepio:0004026 .
+
+# :sepio/ModelAndRescueCriterionAssessment
+sepio:0004062 :hasEvidenceLineType sepio:0004027 ,
+        sepio:0004028 , 
+        sepio:0004029 , 
+        sepio:0004030 , 
+        sepio:0004031 , 
+        sepio:0004032 .
+    

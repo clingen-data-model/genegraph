@@ -12,7 +12,7 @@
 (def genegraph-bucket (System/getenv "GENEGRAPH_BUCKET"))
 (def use-gql-cache (System/getenv "GENEGRAPH_GQL_CACHE"))
 (def mode (System/getenv "GENEGRAPH_MODE"))
-(def validate-events (System/getenv "GENEGRAPH_VALIDATE_EVENTS"))
+(def validate-events (Boolean/valueOf (System/getenv "GENEGRAPH_VALIDATE_EVENTS")))
 (def use-response-cache (System/getenv "GENEGRAPH_RESPONSE_CACHE"))
 (def genegraph-version (System/getenv "GENEGRAPH_IMAGE_VERSION"))
 (def database-build-mode (System/getenv "GENEGRAPH_DATABASE_BUILD_MODE"))
