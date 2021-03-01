@@ -87,13 +87,9 @@
   "Annotate the event with the result of any configured Shacl validation"
   [event]
   (if (::validation-shape event)
-    (let [shape-model (::validation-shape event)
-          data-model (::q/model event)
-          validation-result (validate/validate data-model shape-model)
-          did-validate (validate/did-validate? validation-result)
-          turtle (q/to-turtle validation-result)
-          iri (::iri event)
-          root-type (::root-type event)]
+    (let [validation-result (validate/validate (::q/model event)
+                                               (::validation-shape event))
+          did-validate (validate/did-validate? validation-result)]
       (assoc event ::validation validation-result ::did-validate did-validate))
     event))
 
