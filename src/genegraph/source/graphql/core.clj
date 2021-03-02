@@ -117,6 +117,7 @@
    :gene/conditions gene/conditions
    :gene/curation-activities gene/curation-activities
    :gene/dosage-curation gene/dosage-curation
+   :gene/gene-validity-assertions gene/gene-validity-assertions
    :gene/gene-list gene/gene-list
    :gene/gene-query gene/gene-query
    :gene/genes gene/genes

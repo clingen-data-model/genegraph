@@ -89,7 +89,6 @@
   the model and shape to pass validation"
   [event]
   (let [context-graph-list (some-> event ::root-type shapes :validation-context)]
-;;    (log/info :fn ::add-validation-context)
     (if (and env/validate-events
              (not (::validation-context event))
              context-graph-list)

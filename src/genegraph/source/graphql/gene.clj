@@ -82,6 +82,9 @@
 (defresolver ^:expire-by-value conditions [args value]
   (curation/curated-genetic-conditions-for-gene {:gene value}))
 
+(defresolver ^:expire-by-value gene-validity-assertions [args value]
+  (curation/gene-validity-curations {:gene value}))
+
 (defresolver ^:expire-by-value dosage-curation [args value]
   (let [query (create-query [:project ['dosage_report] (cons :bgp curation/gene-dosage-bgp)])]
     (first (query {::q/params {:limit 1} :gene value}))))
