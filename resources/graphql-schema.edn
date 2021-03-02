@@ -159,6 +159,9 @@
               :genetic_conditions {:type (list :GeneticCondition)
                                    :resolve :gene/conditions
                                    :description "Genetic conditions associated with gene. These represent gene-disease pairs for which a curation exists associated with the given gene."}
+              :gene_validity_assertions {:type (list :GeneValidityAssertion)
+                                         :resolve :gene/gene-validity-assertions
+                                         :description "Gene validity assertions for a given gene"}
               :dosage_curation {:type :GeneDosageCuration
                                 :resolve :gene/dosage-curation
                                 :description "Gene Dosage curation associated with the gene or region."}}}
