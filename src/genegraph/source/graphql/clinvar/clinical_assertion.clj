@@ -54,6 +54,8 @@
 (defn predicate [context args value]
   (q/ld1-> value [:sepio/has-predicate]))
 
+(defn version-of [context args value]
+  (q/ld1-> value [:dc/is-version-of]))
 
 (defn contribution [context args value]
   (log/info :args args :value value)

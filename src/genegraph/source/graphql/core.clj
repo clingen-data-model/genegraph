@@ -42,6 +42,7 @@
    :clinvar/clinical-assertion-review-status cv-clinical-assertion/review-status
    :clinvar/clinical-assertion-date-updated cv-clinical-assertion/date-updated
    :clinvar/clinical-assertion-date-validated cv-clinical-assertion/date-validated
+   :clinvar/clinical-assertion-version-of cv-clinical-assertion/version-of
    :contribution/contribution-query cv-contribution/contribution-single
    :contribution/agent cv-contribution/agent
    :contribution/agent-role cv-contribution/agent-role

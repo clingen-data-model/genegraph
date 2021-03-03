@@ -103,6 +103,9 @@
      :fields {:iri {:type String
                     :resolve :resource/iri
                     :description "IRI of the assertion. Scheme based on where the assertion was originally submitted."}
+              :id {:type String
+                           :resolve :clinvar/clinical-assertion-version-of
+                           :description "Persistent identifier for the piece of knowledge (http://purl.org/dc/terms/isVersionOf)"}
               :version {:type String
                         :resolve :clinvar/clinical-assertion-version
                         :description "Version of the record. Record owner may increment when a change within the record was significant enough to change the meaning."}
