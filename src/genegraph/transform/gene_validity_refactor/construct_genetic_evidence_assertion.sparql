@@ -1,0 +1,21 @@
+prefix gci: <http://gci.clinicalgenome.org/>
+construct
+{
+  ?classification :sepio/has-evidence-line ?geneticEvidenceLine .
+  
+  ?geneticEvidenceLine a :sepio/GeneticEvidenceLine ;
+  :sepio/has-evidence-item ?geneticEvidenceCriterionAssessment ;
+  :sepio/evidence-line-strength-score ?geneticEvidenceTotal .
+
+  ?geneticEvidenceCriterionAssessment a :sepio/GeneticEvidenceCriterionAssessment ;
+}
+where
+{
+  ?classification a gci:provisionalClassification .
+  ?classification gci:classificationPoints ?pointsTree .
+
+  ?pointsTree gci:geneticEvidenceTotal ?geneticEvidenceTotal .
+
+  BIND (IRI(CONCAT(str(?classification), "_genetic_evidence_criterion_assessment")) AS ?geneticEvidenceCriterionAssessment) .
+  BIND (IRI(CONCAT(str(?classification), "_genetic_evidence_line")) AS ?geneticEvidenceLine) .
+}

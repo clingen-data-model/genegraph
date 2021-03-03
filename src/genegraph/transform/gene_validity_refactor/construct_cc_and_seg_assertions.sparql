@@ -1,0 +1,39 @@
+prefix gci: <http://gci.clinicalgenome.org/>
+
+construct
+{
+  ?geneticEvidenceCriterionAssessment :sepio/has-evidence-line ?caseControlEvidenceLine , ?segregationEvidenceLine .
+
+  ?caseControlEvidenceLine a :sepio/CaseControlEvidenceLine ;
+  :sepio/has-evidence-item ?caseControlEvidenceCriterionAssessment ;
+  :sepio/evidence-line-strength-score ?caseControlTotal .
+
+  ?caseControlEvidenceCriterionAssessment a :sepio/CaseControlEvidenceCriterionAssessment .
+
+  ?segregationEvidenceLine a :sepio/SegregationEvidenceLine ;
+  :sepio/has-evidence-item ?segregationCriterionAssessment ;
+  :sepio/evidence-line-strength-score ?segregationTotal .
+
+  ?segregationCriterionAssessment a :sepio/SegregationCriterionAssessment .
+  
+}
+where
+{
+
+  ?classification a gci:provisionalClassification .
+
+  BIND (IRI(CONCAT(str(?classification), "_genetic_evidence_criterion_assessment")) AS ?geneticEvidenceCriterionAssessment) .
+  
+  ?classification gci:classificationPoints ?pointsTree .
+
+  ?pointsTree gci:segregation ?segregationTree .
+  ?segregationTree gci:pointsCounted ?segregationTotal .
+
+  ?pointsTree gci:caseControl ?caseControlTree .
+  ?caseControlTree gci:pointsCounted ?caseControlTotal .
+
+  BIND (IRI(CONCAT(str(?classification), "_cc_el")) AS ?caseControlEvidenceLine) .
+  BIND (IRI(CONCAT(str(?classification), "_cc_ca")) AS ?caseControlEvidenceCriterionAssessment) .
+  BIND (IRI(CONCAT(str(?classification), "_seg_el")) AS ?segregationEvidenceLine) .
+  BIND (IRI(CONCAT(str(?classification), "_seg_ca")) AS ?segregationCriterionAssessment) .  
+}
