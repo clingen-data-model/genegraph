@@ -65,6 +65,7 @@
   (let [interceptor-chain
         (-> (lacinia-pedestal/default-interceptors (gql/schema) {})
             (lacinia/inject nil :replace ::lacinia-pedestal/body-data)
+            (lacinia/inject nil :replace ::lacinia-pedestal/enable-tracing)
             (lacinia/inject lacinia-pedestal/body-data-interceptor
                             :before
                             ::lacinia-pedestal/json-response)
@@ -102,6 +103,7 @@
 (defn prod-subscription-interceptors []
   (let [interceptor-chain 
         (-> (lacinia-subs/default-subscription-interceptors (gql/schema) {})
+            (lacinia/inject nil :replace ::lacinia-pedestal/enable-tracing)
             (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
                             :before
                             ::lacinia-subs/execute-operation)
