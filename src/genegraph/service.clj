@@ -103,7 +103,6 @@
 (defn prod-subscription-interceptors []
   (let [interceptor-chain 
         (-> (lacinia-subs/default-subscription-interceptors (gql/schema) {})
-            (lacinia/inject nil :replace ::lacinia-pedestal/enable-tracing)
             (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
                             :before
                             ::lacinia-subs/execute-operation)

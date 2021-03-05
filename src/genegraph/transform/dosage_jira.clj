@@ -214,11 +214,12 @@
    [iri :geno/has-location (subject-iri curation)]])
 
 (defn- proposition-predicate [curation dosage]
-  (if (and (= 1 dosage)
-           (= "40: Dosage sensitivity unlikely" 
-              (get-in curation [:fields :customfield-10165 :value])))
-    :geno/BenignForCondition
-    :geno/PathogenicForCondition))
+  (let [dosage-assertion-str (if (= 1 dosage)
+                               (get-in curation [:fields :customfield-10165 :value])
+                               (get-in curation [:fields :customfield-10166 :value]))]
+    (if (= "40: Dosage sensitivity unlikely" dosage-assertion-str)
+      :geno/BenignForCondition
+      :geno/PathogenicForCondition)))
 
 (defn- proposition [curation dosage]
   (let [iri (proposition-iri curation dosage)
