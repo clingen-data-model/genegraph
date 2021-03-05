@@ -1,6 +1,7 @@
 (ns genegraph.service
   (:require [hiccup.page :refer [html5]]
             [io.pedestal.interceptor :as pedestal-interceptor]
+            [io.pedestal.interceptor.chain :as pedestal-chain]
             [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.http.body-params :as body-params]
@@ -42,6 +43,44 @@
                          (merge (get-in context [:request :lacinia-app-context])
                                 user-info))))}))
 
+
+(def current-requests (atom {}))
+
+(def request-gate-interceptor
+  (pedestal-interceptor/interceptor
+   {:name ::request-gate
+    ;; If this is the first request of its kind, leave a promise
+    ;; associated with the request, to be satisfied when the request returns
+    :enter (fn [context]
+             (let [body (get-in context [:request :body])
+                   requests
+                   (swap! current-requests
+                          (fn [requests cx]
+                            (let [body (get-in cx [:request :body])]
+                              (if (get requests body)
+                                requests
+                                (assoc requests body
+                                       (assoc cx ::promise (promise))))))
+                          context)]
+               (if (= (::pedestal-chain/execution-id context)
+                      (get-in requests [body ::pedestal-chain/execution-id]))
+                 context
+                 (-> context
+                     (assoc :response (-> requests
+                                          (get-in [body ::promise])
+                                          deref))
+                     pedestal-chain/terminate))))
+    ;; Deliver the promise, if first request, and return.
+    :leave (fn [context]
+             (let [body (get-in context [:request :body])
+                   first-request (get @current-requests body)]
+               (when (= (::pedestal-chain/execution-id context)
+                        (::pedestal-chain/execution-id first-request))
+                 (deliver (::promise first-request) (:response context))
+                 (swap! current-requests dissoc body))
+               context))}))
+
+
 (defn dev-interceptors []
   (-> (lacinia-pedestal/default-interceptors gql/schema {})
       (lacinia/inject nil :replace ::lacinia-pedestal/body-data)
@@ -56,6 +95,9 @@
                       ::lacinia-pedestal/body-data)
       (lacinia/inject auth/auth-interceptor
                       :before
+                      ::lacinia-pedestal/body-data)
+      (lacinia/inject request-gate-interceptor
+                      :after
                       ::lacinia-pedestal/body-data)
       (lacinia/inject user-info-interceptor
                       :after
