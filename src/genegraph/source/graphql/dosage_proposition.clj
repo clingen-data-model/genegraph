@@ -1,7 +1,8 @@
 (ns genegraph.source.graphql.dosage-proposition
   (:require [genegraph.database.query :as q]
             [genegraph.source.graphql.common.cache :refer [defresolver]]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [io.pedestal.log :as log]))
 
 (defresolver wg-label [args value]
   "Gene Dosage Working Group")
