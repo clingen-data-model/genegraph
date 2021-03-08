@@ -132,6 +132,9 @@
 
 (defn dev-subscription-interceptors [gql-schema]
   (-> (lacinia-subs/default-subscription-interceptors gql-schema {})
+      (lacinia/inject request-gate-interceptor
+                      :before
+                      ::lacinia-subs/execute-operation)
       (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
                       :before
                       ::lacinia-subs/execute-operation)
@@ -148,6 +151,9 @@
 (defn prod-subscription-interceptors [gql-schema]
   (let [interceptor-chain 
         (-> (lacinia-subs/default-subscription-interceptors gql-schema {})
+            (lacinia/inject request-gate-interceptor
+                            :before
+                            ::lacinia-subs/execute-operation)
             (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
                             :before
                             ::lacinia-subs/execute-operation)
