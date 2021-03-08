@@ -31,7 +31,7 @@
                construct-ad-variant-assertions
                construct-ar-variant-assertions
                construct-cc-and-seg-assertions
-               ;; construct-proband-score
+               construct-proband-score
                ;; construct-model-systems-evidence
                ;; construct-functional-alteration-evidence
                ;; construct-functional-evidence
@@ -69,7 +69,7 @@
             "hgncId" {"@type" "@id"}
             "autoClassification" {"@type" "@vocab"}
             ;; "diseaseId" {"@type" "@id"}
-            ;; "caseInfoType" {"@type" "@id"}
+            "caseInfoType" {"@type" "@id"}
             ;; "experimental_scored" {"@type" "@id"}
             ;; "caseControl_scored" {"@type" "@id"}
             ;; "variants" {"@type" "@id"}
@@ -139,17 +139,18 @@
                 :cvbase "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
                 :pmbase "https://pubmed.ncbi.nlm.nih.gov/"}
         unlinked-model (q/union 
-                        (construct-proposition params)
-                        (construct-evidence-level-assertion params)
-                        (construct-experimental-evidence-assertions params)
-                        (construct-genetic-evidence-assertion params)
-                        (construct-ad-variant-assertions params)
-                        (construct-ar-variant-assertions params)
-                        (construct-cc-and-seg-assertions params)
+                        ;; (construct-proposition params)
+                        ;; (construct-evidence-level-assertion params)
+                        ;; (construct-experimental-evidence-assertions params)
+                        ;; (construct-genetic-evidence-assertion params)
+                        ;; (construct-ad-variant-assertions params)
+                        ;; (construct-ar-variant-assertions params)
+                        ;; (construct-cc-and-seg-assertions params)
+                        (construct-proband-score params)
+                        
                         ;; (construct-model-systems-evidence params)
                         ;; (construct-functional-alteration-evidence params)
                         ;; (construct-functional-evidence params)
-                        ;; (construct-proband-score params)
                         ;; (construct-rescue-evidence params)
                         ;; (construct-case-control-evidence params)
                         ;; (construct-segregation-evidence params)
