@@ -10,6 +10,7 @@
             [genegraph.sink.event :as event]
             [genegraph.source.graphql.core :as gql :refer [gql-query]]
             [genegraph.annotate :as ann]
+            [genegraph.suggest.suggesters :as suggest]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [me.raynes.fs :as fs]
@@ -145,6 +146,7 @@
         (event/process-event! base-event))
       (event/process-event! (:hgnc-genes events))
       (event/process-event! (:mondo-diseases events))
+      (suggest/build-all-suggestions)
       ;; (event/process-event! (:publish-gv-curation events))
       (testing "Test simple genes query"
         (let [response (query genes-query {})
@@ -165,8 +167,6 @@
               first-single-gene-query-response (query gene-query {:iri gene-iri})
               _ (event/process-event! (-> events :gene-validity-update-sequence second))
               second-single-gene-query-response (query gene-query {:iri gene-iri})]
-          (clojure.pprint/pprint first-single-gene-query-response)
-          (clojure.pprint/pprint second-single-gene-query-response)
           (is (not= first-genes-query-response second-genes-query-response))
           (is (not= first-single-gene-query-response second-single-gene-query-response))))
       (testing "Test absence of curation activities in uncurated gene"
@@ -174,11 +174,8 @@
               body (json/parse-string (:body response) true)]
           (is (= 0 (-> body :data :gene :curation_activities count)))))
       (testing "Test absence of curation activities in uncurated disease"
-        (println "Test absence of curation activities in uncurated disease")
-        (println (:random-uncurated-diseases events))
         (let [response (query disease-query {:iri (-> events :random-uncurated-diseases last)})
               body (json/parse-string (:body response) true)]
-          (clojure.pprint/pprint body)
           (is (= 0 (-> body :data :disease :curation_activities count)))))
       (testing "Test deletion of gene-validity curation"
         (let [gene (-> events 
@@ -197,32 +194,33 @@
           (is (= 0 
                  (count (get-in (query gene-query {:iri gene}) 
                                 [:json :data :gene :genetic_conditions]))))))
-      (testing "Test gci-express update sequence"
-        (let [gene (-> events 
-                       :gci-express-update-sequence
-                       first
-                       annotate-event
-                       ::ann/subjects
-                       :gene-iris
-                       first)]
-          (println gene)
-          (is (= 0 (count (get-in (query gene-query {:iri gene}) 
-                                  [:json :data :gene :genetic_conditions]))))
-          (event/process-event! (first (:gci-express-update-sequence events)))
-          (is (= 1 
-                 (count (:gene_validity_assertions
-                         (first 
-                          (get-in (query gene-query {:iri gene}) 
-                                  [:json
-                                   :data
-                                   :gene
-                                   :genetic_conditions]))))))
-          (event/process-event! (second (:gci-express-update-sequence events)))
-          (is (= 1 
-                 (count (:gene_validity_assertions
-                         (first 
-                          (get-in (query gene-query {:iri gene}) 
-                                  [:json
-                                   :data
-                                   :gene
-                                   :genetic_conditions])))))))))))
+      ;; (testing "Test gci-express update sequence"
+      ;;   (let [gene (-> events 
+      ;;                  :gci-express-update-sequence
+      ;;                  first
+      ;;                  annotate-event
+      ;;                  ::ann/subjects
+      ;;                  :gene-iris
+      ;;                  first)]
+      ;;     (println gene)
+      ;;     (is (= 0 (count (get-in (query gene-query {:iri gene}) 
+      ;;                             [:json :data :gene :genetic_conditions]))))
+      ;;     (event/process-event! (first (:gci-express-update-sequence events)))
+      ;;     (is (= 1 
+      ;;            (count (:gene_validity_assertions
+      ;;                    (first 
+      ;;                     (get-in (query gene-query {:iri gene}) 
+      ;;                             [:json
+      ;;                              :data
+      ;;                              :gene
+      ;;                              :genetic_conditions]))))))
+      ;;     (event/process-event! (second (:gci-express-update-sequence events)))
+      ;;     (is (= 1 
+      ;;            (count (:gene_validity_assertions
+      ;;                    (first 
+      ;;                     (get-in (query gene-query {:iri gene}) 
+      ;;                             [:json
+      ;;                              :data
+      ;;                              :gene
+      ;;                              :genetic_conditions]))))))
+          )))))

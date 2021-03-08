@@ -14,7 +14,6 @@
             [com.walmartlabs.lacinia.util :as util]
             [genegraph.source.graphql.core :as gql]
             [genegraph.auth :as auth]
-            [genegraph.source.graphql.gene :as gql-gene]
             [genegraph.response-cache :refer [response-cache-interceptor]]
             [genegraph.env :as env]
             [mount.core :refer [defstate]]
@@ -52,6 +51,7 @@
     ;; If this is the first request of its kind, leave a promise
     ;; associated with the request, to be satisfied when the request returns
     :enter (fn [context]
+             (log/info :fn ::request-gate :msg "In interceptor enter")
              (let [body (get-in context [:request :body])
                    requests
                    (swap! current-requests
@@ -81,8 +81,8 @@
                context))}))
 
 
-(defn dev-interceptors []
-  (-> (lacinia-pedestal/default-interceptors gql/schema {})
+(defn dev-interceptors [gql-schema]
+  (-> (lacinia-pedestal/default-interceptors gql-schema {})
       (lacinia/inject nil :replace ::lacinia-pedestal/body-data)
       (lacinia/inject lacinia-pedestal/body-data-interceptor
                       :before
@@ -103,9 +103,9 @@
                       :after
                       ::lacinia-pedestal/inject-app-context)))
 
-(defn prod-interceptors []
+(defn prod-interceptors [gql-schema]
   (let [interceptor-chain
-        (-> (lacinia-pedestal/default-interceptors (gql/schema) {})
+        (-> (lacinia-pedestal/default-interceptors gql-schema {})
             (lacinia/inject nil :replace ::lacinia-pedestal/body-data)
             (lacinia/inject nil :replace ::lacinia-pedestal/enable-tracing)
             (lacinia/inject lacinia-pedestal/body-data-interceptor
@@ -117,6 +117,9 @@
             (lacinia/inject auth/auth-interceptor
                             :before
                             ::lacinia-pedestal/body-data)
+            (lacinia/inject request-gate-interceptor
+                            :after
+                            ::lacinia-pedestal/body-data)
             (lacinia/inject user-info-interceptor
                             :after
                             ::lacinia-pedestal/inject-app-context))]
@@ -127,8 +130,8 @@
                               :after
                               ::lacinia-pedestal/body-data))))
 
-(defn dev-subscription-interceptors []
-  (-> (lacinia-subs/default-subscription-interceptors gql/schema {})
+(defn dev-subscription-interceptors [gql-schema]
+  (-> (lacinia-subs/default-subscription-interceptors gql-schema {})
       (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
                       :before
                       ::lacinia-subs/execute-operation)
@@ -142,9 +145,9 @@
                       :after
                       ::lacinia-subs/inject-app-context)))
 
-(defn prod-subscription-interceptors []
+(defn prod-subscription-interceptors [gql-schema]
   (let [interceptor-chain 
-        (-> (lacinia-subs/default-subscription-interceptors (gql/schema) {})
+        (-> (lacinia-subs/default-subscription-interceptors gql-schema {})
             (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
                             :before
                             ::lacinia-subs/execute-operation)
@@ -161,7 +164,7 @@
                               :before
                               ::lacinia-subs/send-operation-response))))
 
-(defn service-map [interceptors subscription-interceptors]
+(defn service-map [interceptors subscription-interceptors gql-schema]
   (-> {:env :dev,
        ::http/host "0.0.0.0"
        :io.pedestal.http/routes
@@ -185,14 +188,22 @@
        :io.pedestal.http/secure-headers nil}
       lacinia-pedestal/enable-graphiql
       (lacinia-pedestal/enable-subscriptions 
-       gql/schema 
+       gql-schema
        {:subscription-interceptors subscription-interceptors})))
 
 (defn dev-service 
   "Service map to be used for development mode."
-  []
-  (service-map (dev-interceptors) (dev-subscription-interceptors)))
+  ([] (dev-service gql/schema))
+  ([gql-schema]
+   (service-map (dev-interceptors gql-schema)
+                (dev-subscription-interceptors gql-schema)
+                gql-schema)))
 
-(defn service []
-  (service-map (prod-interceptors) (prod-subscription-interceptors)))
+(defn service
+  "Service map to be used for production mode"
+  ([] (service (gql/schema)))
+  ([gql-schema]
+   (service-map (prod-interceptors gql-schema)
+                (prod-subscription-interceptors gql-schema)
+                gql-schema)))
 
