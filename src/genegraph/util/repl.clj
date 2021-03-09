@@ -55,6 +55,11 @@
                                  (merge opts)
                                  (assoc ::event/dry-run true))))))
 
+(defn use-shape [event shape-uri]
+  (assoc event
+         ::ann/validation-shape
+         (l/read-rdf shape-uri {:format :turtle})))
+
 (defn test-events-with-shape
   [shape-uri events]
   (let [shape (l/read-rdf shape-uri {:format :turtle})]

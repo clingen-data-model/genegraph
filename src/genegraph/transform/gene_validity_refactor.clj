@@ -32,7 +32,7 @@
                construct-ar-variant-assertions
                construct-cc-and-seg-assertions
                construct-proband-score
-               ;; construct-model-systems-evidence
+               construct-model-systems-evidence
                ;; construct-functional-alteration-evidence
                ;; construct-functional-evidence
                ;; construct-rescue-evidence
@@ -67,6 +67,9 @@
             
             ;; ;; declare attributes with @id, @vocab types
             "hgncId" {"@type" "@id"}
+            "carId" {"@type" "@id"
+                     "@context"
+                     {"@base" "http://reg.genome.network/allele/"}}
             "autoClassification" {"@type" "@vocab"}
             ;; "diseaseId" {"@type" "@id"}
             "caseInfoType" {"@type" "@id"}
@@ -83,7 +86,7 @@
 
 
             ;; ;; Category names
-            ;; "Model Systems" "gcixform:ModelSystems"
+            "Model Systems" "gcixform:ModelSystems"
             ;; "Functional Alteration" "gcixform:FunctionalAlteration"
             ;; "Case control" "gcixform:CaseControl"
 
@@ -146,6 +149,7 @@
                         ;; (construct-ad-variant-assertions params)
                         ;; (construct-ar-variant-assertions params)
                         ;; (construct-cc-and-seg-assertions params)
+                        
                         (construct-proband-score params)
                         
                         ;; (construct-model-systems-evidence params)
