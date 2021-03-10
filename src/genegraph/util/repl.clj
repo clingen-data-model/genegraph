@@ -60,6 +60,10 @@
          ::ann/validation-shape
          (l/read-rdf shape-uri {:format :turtle})))
 
+(defn write-event-value-to-disk [path event]
+  (with-open  [w (io/writer path)]
+    (pprint (json/parse-string (::event/value event) true) w)))
+
 (defn test-events-with-shape
   [shape-uri events]
   (let [shape (l/read-rdf shape-uri {:format :turtle})]
