@@ -35,7 +35,7 @@ where {
   gcixform:hasEvidenceItemType ?evidenceItemType ;
   gcixform:usedIn gcixform:Rescue .
 
-  ?annotation gci:experimentalData ?gciEvidence ;
+  ?annotation gci:experimentalData ?evidenceItem ;
   gci:article ?publication .
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .  

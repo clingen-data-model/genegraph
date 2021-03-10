@@ -36,7 +36,7 @@
                construct-functional-alteration-evidence
                construct-functional-evidence
                construct-rescue-evidence
-               ;; construct-case-control-evidence
+               construct-case-control-evidence
                ;; construct-segregation-evidence
                construct-evidence-connections
                )
@@ -149,8 +149,8 @@
                         ;; (construct-model-systems-evidence params)
                         ;; (construct-functional-evidence params)
                         ;; (construct-functional-alteration-evidence params)
-                        (construct-rescue-evidence params)
-                        ;; (construct-case-control-evidence params)
+                        ;; (construct-rescue-evidence params)
+                        (construct-case-control-evidence params)
                         ;; (construct-segregation-evidence params)
                         )]
     (spit "/Users/tristan/Desktop/nbea-model.ttl" (-> params ::q/model q/to-turtle))
