@@ -12,26 +12,32 @@ construct {
 }
 where {
   ?evidenceLine a gci:evidenceScore ;
-  gci:calculatedScore ?calculatedScore ;
-  gci:scoreExplanation ?scoreDescription .
+  gci:calculatedScore ?calculatedScore .
 
-  BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
-
-  OPTIONAL  {
-    ?evidenceLine gci:score ?adjustedScore .
+  OPTIONAL {
+    ?evidenceLine gci:scoreExplanation ?scoreDescription .
   }
 
-  ?evidenceItem gci:scores ?evidenceLine ;
-  gci:label ?evidenceLabel ;
-  gci:evidenceType ?gciType .
+  OPTIONAL  {
+    ?gciScore gci:score ?adjustedScore .
+  }
   
+  BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
+  
+  ?evidenceItem gci:scores ?evidenceLine ;
+  gci:rescue ?gciRescue  ;
+  gci:label ?evidenceLabel .
+
+  ?gciRescue gci:rescueMethod ?evidenceDescription ;
+  gci:rescueType ?gciType .
+
   ?evidenceLineType gcixform:hasGCIType ?gciType ;
   gcixform:hasEvidenceItemType ?evidenceItemType ;
-  gcixform:usedIn gcixform:Functional .
+  gcixform:usedIn gcixform:Rescue .
 
-  ?annotation gci:experimentalData ?evidenceItem ;
+  ?annotation gci:experimentalData ?gciEvidence ;
   gci:article ?publication .
-  
   ?publication gci:pmid ?pmid .
-  BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
- }
+  BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .  
+ 
+}

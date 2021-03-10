@@ -33,9 +33,9 @@
                construct-cc-and-seg-assertions
                construct-proband-score
                construct-model-systems-evidence
-               ;; construct-functional-alteration-evidence
+               construct-functional-alteration-evidence
                construct-functional-evidence
-               ;; construct-rescue-evidence
+               construct-rescue-evidence
                ;; construct-case-control-evidence
                ;; construct-segregation-evidence
                construct-evidence-connections
@@ -147,11 +147,9 @@
                         ;; (construct-cc-and-seg-assertions params)
                         ;; (construct-proband-score params)                        
                         ;; (construct-model-systems-evidence params)
-                        
-                        (construct-functional-evidence params)
-
+                        ;; (construct-functional-evidence params)
                         ;; (construct-functional-alteration-evidence params)
-                        ;; (construct-rescue-evidence params)
+                        (construct-rescue-evidence params)
                         ;; (construct-case-control-evidence params)
                         ;; (construct-segregation-evidence params)
                         )]

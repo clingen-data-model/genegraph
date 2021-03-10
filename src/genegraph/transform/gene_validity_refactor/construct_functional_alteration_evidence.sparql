@@ -12,26 +12,33 @@ construct {
 }
 where {
   ?evidenceLine a gci:evidenceScore ;
-  gci:calculatedScore ?calculatedScore ;
-  gci:scoreExplanation ?scoreDescription .
+  gci:calculatedScore ?calculatedScore .
 
-  BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
+  OPTIONAL {
+    ?evidenceLine gci:scoreExplanation ?scoreDescription .
+  }
+  # gci:uuid ?scoreUUID ;
+  # gci:experimental_scored ?gciEvidence .
 
   OPTIONAL  {
-    ?evidenceLine gci:score ?adjustedScore .
+    ?gciScore gci:score ?adjustedScore .
   }
+  BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
 
   ?evidenceItem gci:scores ?evidenceLine ;
   gci:label ?evidenceLabel ;
-  gci:evidenceType ?gciType .
-  
+  gci:functionalAlteration ?functionalAlteration .
+
+  ?functionalAlteration gci:functionalAlterationType ?gciType ;
+  gci:evidenceForNormalFunction ?evidenceDescription .
+
   ?evidenceLineType gcixform:hasGCIType ?gciType ;
   gcixform:hasEvidenceItemType ?evidenceItemType ;
-  gcixform:usedIn gcixform:Functional .
+  gcixform:usedIn gcixform:FunctionalAlteration .
 
   ?annotation gci:experimentalData ?evidenceItem ;
   gci:article ?publication .
-  
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
- }
+   
+}
