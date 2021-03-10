@@ -1,20 +1,18 @@
 prefix gci: <http://gci.clinicalgenome.org/> 
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
-construct
-{
+construct {
   ?evidenceLine a ?evidenceLineType ;
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence-item ?evidenceItem ;
   :dc/description ?evidenceLineDescription .
 
   ?evidenceItem a ?evidenceItemType ;
-  :sepio/is-about-allele ?caId ;
+  :sepio/is-about-allele ?allele ;
   :dc/source ?article ;
   :rdfs/label ?individualLabel .
 
 }
-where
-{
+where {
   ?evidenceLine a gci:evidenceScore ;
   gci:caseInfoType ?gciCaseType ;
   gci:calculatedScore ?calculatedScore ;
@@ -29,30 +27,25 @@ where
   
   BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
 
-  ?evidenceItem gci:scores ?evidenceLine .
+  ?evidenceItem gci:scores ?evidenceLine ;
+  gci:variants ?variant ;
+  gci:label ?individualLabel .
 
-  OPTIONAL
-  {
-    # Variant Info
-    ?evidenceItem gci:variants ?variant ;
-    gci:label ?individualLabel .
-
-    ?variant gci:carId ?caId .
-  }
-
-  # IF(BOUND(?caId),
-  #    BIND(IRI(CONCAT(?arbase, ?caID)) AS ?allele) ,
-  #    UNDEF
-  #    ) .
-  
-  # Publication Info
   ?annotation gci:individuals ?evidenceItem ;
   gci:article ?publication .
-
+  
   ?publication gci:pmid ?pmid .
-  
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
-  
 
+  ?variant gci:carId ?caId .
   
+  BIND(IRI(CONCAT(?arbase, ?caID)) AS ?allele) .
+  
+  # gci:clinvarVariantId ?cvId ;
+  # gci:source ?variantSource .
+  # BIND(IF(?variantSource="ClinGen AR",
+  #         IRI(CONCAT(?arbase, ?caId)),
+  #         IRI(CONCAT(?cvbase, ?cvId)))
+  #      AS ?allele) .
+
 }

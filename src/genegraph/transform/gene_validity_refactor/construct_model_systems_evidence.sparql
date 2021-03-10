@@ -1,9 +1,11 @@
 prefix gci: <http://gci.clinicalgenome.org/> 
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+
 construct {
   ?evidenceLine  a ?evidenceLineType ;
   :dc/description ?scoreDescription ;
   :sepio/has-evidence-item ?evidenceItem ;
+  gci:type ?gciType ;
   :sepio/evidence-line-strength-score ?score .
 
   ?evidenceItem  a ?evidenceItemType ;
@@ -25,21 +27,20 @@ where {
   ?evidenceItem gci:scores ?evidenceLine ;
   gci:label ?evidenceLabel .
   
-  # ?gciEvidence gci:modelSystems ?gciModelSystem  ;
-  # gci:label ?evidenceLabel ;
-  # gci:uuid ?evidenceUUID .
+  ?gciEvidence gci:modelSystems ?gciModelSystem  ;
+  gci:label ?evidenceLabel .
 
-  # ?gciModelSystem gci:descriptionOfGeneAlteration ?evidenceDescription ;
-  # gci:modelSystemsType ?gciType .
+  ?gciModelSystem gci:descriptionOfGeneAlteration ?evidenceDescription ;
+  gci:modelSystemsType ?gciType .
 
-  # ?evidenceLineType gcixform:hasGCIType ?gciType ;
-  # gcixform:hasEvidenceItemType ?evidenceItemType ;
-  # gcixform:usedIn gcixform:ModelSystems .
+  ?evidenceLineType gcixform:hasGCIType ?gciType ;
+  gcixform:hasEvidenceItemType ?evidenceItemType ;
+  gcixform:usedIn gcixform:ModelSystems .
   
-  # ?annotation gci:experimentalData ?gciEvidence ;
-  # gci:article ?publication .
-  # ?publication gci:pmid ?pmid .
-  # BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
+  ?annotation gci:experimentalData ?gciEvidence ;
+  gci:article ?publication .
+  ?publication gci:pmid ?pmid .
+  BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
  
 
   # BIND(IRI(CONCAT(?gcibase, "evidence_item/", ?evidenceUUID)) AS ?evidenceItem) .

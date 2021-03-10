@@ -49,7 +49,6 @@
           {"@context" 
            {
             ;; frontmatter
-            "@version" "1.1"
             "@vocab" "http://gci.clinicalgenome.org/"
             "@base" "http://gci.clinicalgenome.org/"
 
@@ -57,8 +56,8 @@
             "item_type" "@type"
 
             
-            ;; "gci" "http://gci.clinicalgenome.org/"
-            ;; "gcixform" "http://dataexchange.clinicalgenome.org/gcixform/"
+            "gci" "http://gci.clinicalgenome.org/"
+            "gcixform" "http://dataexchange.clinicalgenome.org/gcixform/"
 
             ;; ;; common prefixes
             "HGNC" "https://identifiers.org/hgnc:"
@@ -67,9 +66,7 @@
             
             ;; ;; declare attributes with @id, @vocab types
             "hgncId" {"@type" "@id"}
-            "carId" {"@type" "@id"
-                     "@context"
-                     {"@base" "http://reg.genome.network/allele/"}}
+
             "autoClassification" {"@type" "@vocab"}
             ;; "diseaseId" {"@type" "@id"}
             "caseInfoType" {"@type" "@id"}
@@ -77,46 +74,45 @@
             ;; "caseControl_scored" {"@type" "@id"}
             ;; "variants" {"@type" "@id"}
 
-            ;; "modelSystemsType" {"@type" "@vocab"}
-            ;; "evidenceType" {"@type" "@vocab"}
-            ;; "functionalAlterationType" {"@type" "@vocab"}
-            ;; "rescueType" {"@type" "@vocab"}
-            ;; "studyType" {"@type" "@vocab"}
-            ;; "sequencingMethod" {"@type" "@vocab"}
+            "modelSystemsType" {"@type" "@vocab"}
+            "evidenceType" {"@type" "@vocab"}
+            "functionalAlterationType" {"@type" "@vocab"}
+            "rescueType" {"@type" "@vocab"}
+            "studyType" {"@type" "@vocab"}
+            "sequencingMethod" {"@type" "@vocab"}
 
 
             ;; ;; Category names
             "Model Systems" "gcixform:ModelSystems"
-            ;; "Functional Alteration" "gcixform:FunctionalAlteration"
-            ;; "Case control" "gcixform:CaseControl"
+            "Functional Alteration" "gcixform:FunctionalAlteration"
+            "Case control" "gcixform:CaseControl"
 
-            ;; ;; Case control
-            ;; "Aggregate variant analysis" "gcixform:AggregateVariantAnalysis"
-            ;; "Single variant analysis" "gcixform:SingleVariantAnalysis"
+            ;; Case control
+            "Aggregate variant analysis" "gcixform:AggregateVariantAnalysis"
+            "Single variant analysis" "gcixform:SingleVariantAnalysis"
 
-            ;; ;; segregation
-            ;; "Candidate gene sequencing" "gcixform:CandidateGeneSequencing"
-            ;; "Exome/genome or all genes sequenced in linkage region" "gcixform:ExomeSequencing"
+            ;; segregation
+            "Candidate gene sequencing" "gcixform:CandidateGeneSequencing"
+            "Exome/genome or all genes sequenced in linkage region" "gcixform:ExomeSequencing"
 
-            ;; ;; Experimental evidence types
-            ;; "Expression" "gcixform:Expression"
-            ;; "Biochemical Function" "gcixform:BiochemicalFunction"
-            ;; "Protein Interactions" "gcixform:ProteinInteraction"
+            ;; Experimental evidence types
+            "Expression" "gcixform:Expression"
+            "Biochemical Function" "gcixform:BiochemicalFunction"
+            "Protein Interactions" "gcixform:ProteinInteraction"
 
-            ;; ;; rescue
-            ;; "Cell culture" "gcixform:CellCulture"
-            ;; "Non-human model organism" "gcixform:NonHumanModel"
-            ;; "Patient cells" "gcixform:PatientCells"
-            ;; "Human" "gcixform:Human"
+            ;; rescue
+            "Cell culture" "gcixform:CellCulture"
+            "Non-human model organism" "gcixform:NonHumanModel"
+            "Patient cells" "gcixform:PatientCells"
+            "Human" "gcixform:Human"
 
-            ;; ;; model systems
-            ;; "Cell culture model" "gcixform:CellCultureModel"
+            ;; model systems
+            "Cell culture model" "gcixform:CellCultureModel"
 
-            ;; ;; functional alteration
-            ;; "Non-patient cells" "gcixform:NonPatientCells"
-            ;; "patient cells" "gcixform:PatientCells"
-;; #{"Definitive" "Limited" "No Known Disease Relationship" "Moderate"
-;;   "No Classification" "Strong"}
+            ;; functional alteration
+            "Non-patient cells" "gcixform:NonPatientCells"
+            "patient cells" "gcixform:PatientCells"
+
             ;; ;; evidence strength
             "Definitive" "SEPIO:0004504"
             "Strong" "SEPIO:0004505"
@@ -149,16 +145,17 @@
                         ;; (construct-ad-variant-assertions params)
                         ;; (construct-ar-variant-assertions params)
                         ;; (construct-cc-and-seg-assertions params)
+                        ;; (construct-proband-score params)                        
                         
-                        (construct-proband-score params)
+                        (construct-model-systems-evidence params)
                         
-                        ;; (construct-model-systems-evidence params)
                         ;; (construct-functional-alteration-evidence params)
                         ;; (construct-functional-evidence params)
                         ;; (construct-rescue-evidence params)
                         ;; (construct-case-control-evidence params)
                         ;; (construct-segregation-evidence params)
                         )]
+    (spit "/Users/tristan/Desktop/nbea-model.ttl" (-> params ::q/model q/to-turtle))
     (q/union unlinked-model
              (construct-evidence-connections 
               {::q/model
