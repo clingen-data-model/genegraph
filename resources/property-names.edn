@@ -215,6 +215,8 @@
  [:cg/has-total-actionability-outcome-intervention-pairs "http://dataexchange.clinicalgenome.org/terms/has_total_actionability_outcome_intervention_pairs"]
  [:cg/website-display-label "http://dataexchange.clinicalgenome.org/terms/website_display_label"]
  [:cg/review-status "http://dataexchange.clinicalgenome.org/terms/review_status"]
+ [:cg/allele-origin "http://dataexchange.clinicalgenome.org/terms/allele_origin"]
+ [:cg/collection-method "http://dataexchange.clinicalgenome.org/terms/collection_method"]
  [:cnt/chars "http://www.w3.org/2011/content#chars"]
  [:data/genome-build-identifier "http://edamontology.org/data_2340"]
  [:dc/abstract "http://purl.org/dc/terms/abstract"]

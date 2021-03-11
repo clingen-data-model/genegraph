@@ -50,8 +50,7 @@
          :sepio/date-modified (:date_last_updated msg)
 
          ; ClinGen/ClinVar additional terms (namespaced to @vocab)
-         "hasReviewStatus"    (:review_status msg)
-         "inSpecies"          (:species msg)
+         ;"in_species"          (:species msg)
          ;"submittedCondition"          (str iri/clinical-assertion-trait-set (:clinical_assertion_trait_set_id msg))
 
          }
