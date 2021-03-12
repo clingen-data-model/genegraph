@@ -37,7 +37,7 @@
                construct-functional-evidence
                construct-rescue-evidence
                construct-case-control-evidence
-               ;; construct-segregation-evidence
+               construct-segregation-evidence
                construct-evidence-connections
                )
 
@@ -138,22 +138,20 @@
                 :cvbase "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
                 :pmbase "https://pubmed.ncbi.nlm.nih.gov/"}
         unlinked-model (q/union 
-                        ;; (construct-proposition params)
-                        ;; (construct-evidence-level-assertion params)
-                        ;; (construct-experimental-evidence-assertions params)
-                        ;; (construct-genetic-evidence-assertion params)
-                        ;; (construct-ad-variant-assertions params)
-                        ;; (construct-ar-variant-assertions params)
-                        ;; (construct-cc-and-seg-assertions params)
-                        ;; (construct-proband-score params)                        
-                        ;; (construct-model-systems-evidence params)
-                        ;; (construct-functional-evidence params)
-                        ;; (construct-functional-alteration-evidence params)
-                        ;; (construct-rescue-evidence params)
+                        (construct-proposition params)
+                        (construct-evidence-level-assertion params)
+                        (construct-experimental-evidence-assertions params)
+                        (construct-genetic-evidence-assertion params)
+                        (construct-ad-variant-assertions params)
+                        (construct-ar-variant-assertions params)
+                        (construct-cc-and-seg-assertions params)
+                        (construct-proband-score params)                        
+                        (construct-model-systems-evidence params)
+                        (construct-functional-evidence params)
+                        (construct-functional-alteration-evidence params)
+                        (construct-rescue-evidence params)
                         (construct-case-control-evidence params)
-                        ;; (construct-segregation-evidence params)
-                        )]
-    (spit "/Users/tristan/Desktop/nbea-model.ttl" (-> params ::q/model q/to-turtle))
+                        (construct-segregation-evidence params))]
     (q/union unlinked-model
              (construct-evidence-connections 
               {::q/model
