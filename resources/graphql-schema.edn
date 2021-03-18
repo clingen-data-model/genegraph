@@ -103,6 +103,9 @@
      :fields {:iri {:type String
                     :resolve :resource/iri
                     :description "IRI of the assertion. Scheme based on where the assertion was originally submitted."}
+              :id {:type String
+                           :resolve :clinvar/clinical-assertion-version-of
+                           :description "Persistent identifier for the piece of knowledge (http://purl.org/dc/terms/isVersionOf)"}
               :version {:type String
                         :resolve :clinvar/clinical-assertion-version
                         :description "Version of the record. Record owner may increment when a change within the record was significant enough to change the meaning."}
@@ -123,8 +126,14 @@
                                :description "Date upstream knowledge base validated the submitted data. (Date ClinVar incorporated into a release.)"}
               :date_updated {:type String
                              :resolve :clinvar/clinical-assertion-date-updated
-                             :description "Date the record was last updated. This is a record level timestamp, not about the assertion, but the record as it exists in the knowledge base."}}
-     }
+                             :description "Date the record was last updated. This is a record level timestamp, not about the assertion, but the record as it exists in the knowledge base."}
+              :allele_origins {:type (list String)
+                               :resolve :clinvar/clinical-assertion-allele-origin
+                               :description "Assertion submitter specified origin for their observation of the variation."}
+              :collection_methods {:type (list String)
+                                   :resolve :clinvar/clinical-assertion-collection-method
+                                   :description "Assertion submitted specified method used to collect the information included in the assertion."}
+              }}
 
     :Gene
     {:description "A genomic feature (a gene or a region). Along with conditions, one of the basic units of curation."
