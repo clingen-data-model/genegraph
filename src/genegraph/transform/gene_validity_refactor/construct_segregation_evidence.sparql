@@ -5,7 +5,7 @@ construct {
   :dc/description ?scoreDescription ;
   :sepio/evidence-line-strength-score ?lodScore .
 
-  ?segregation  a ?evidenceItemType ;
+  ?segregationIRI  a ?evidenceItemType ;
   :dc/description ?evidenceDescription ;
   :dc/source ?article ;
   :rdfs/label ?evidenceLabel .
@@ -35,5 +35,7 @@ where {
   }
 
   BIND(COALESCE(?estimatedLodScore, ?publishedLodScore) AS ?lodScore) .
+
+  BIND(CONCAT(STR(?family), "seg") AS ?segregationIRI) .
 
 }

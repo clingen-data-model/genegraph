@@ -136,7 +136,8 @@
                 :gcibase base
                 :arbase "http://reg.genome.network/allele/"
                 :cvbase "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
-                :pmbase "https://pubmed.ncbi.nlm.nih.gov/"}
+                :pmbase "https://pubmed.ncbi.nlm.nih.gov/"
+                :affbase "http://dataexchange.clinicalgenome.org/agent/"}
         unlinked-model (q/union 
                         (construct-proposition params)
                         (construct-evidence-level-assertion params)

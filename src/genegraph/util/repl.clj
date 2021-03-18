@@ -206,8 +206,6 @@
 (defn events-with-value [re-to-match events]
   (filter #(re-find re-to-match (::event/value %)) events))
 
-;; (count (set/difference (original-validity-genes "/Users/thnelson/Desktop/cg-data/gene-validity.csv") (hgnc-id-set-for-curation-type "GENE_VALIDITY")))
-
 (defn construct-csv-for-manual-gene-review 
   "Contruct a CSV out of a set of gene IDs. Created to faciliate testing of
   newly included dosage genes in new release"
@@ -222,7 +220,4 @@
          (cons ["symbol" "entrez gene" "ISCA id"])
          (csv/write-csv w))))
 
-;; (->> gd-stream-with-model (remove ::spec/invalid) annotate-stream-with-full-data first ::ann/iri)
-;; (def gv-neo (->> "/Users/tristan/data/genegraph/2021-01-26T1745/events/gci-neo4j-archive" io/file file-seq (filter #(.isFile %)) (map #(-> % slurp edn/read-string))))
 
-;; (-> "/Users/tristan/data/genegraph/2021-01-26T2232/events/gci-neo4j-archive/98cb808e-02d3-4378-8e6b-9b1b2883cc65.edn" slurp edn/read-string event/process-event!)

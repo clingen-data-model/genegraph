@@ -7,17 +7,27 @@ construct {
   :sepio/has-predicate :sepio/HasEvidenceLevel ;
   :sepio/has-object ?evidencelevel ;
   :sepio/has-evidence-line ?experimentalEvidenceLine, ?geneticEvidenceLine ;
+  :sepio/qualified-contribution ?contribution ;
   :sepio/evidence-line-strength-score ?evidencePointsTotal .
+
+  ?contribution :sepio/has-agent ?affiliation ;
+  :sepio/activity-date ?classificationDate .
 
 }
 where {
 
-  ?classification a gci:provisionalClassification .
-  ?proposition a gci:gdm .
-  
-  ?classification gci:autoClassification ?evidencelevel .
 
-  ?classification gci:classificationPoints ?pointsTree .
+  ?proposition a gci:gdm ;
+  gci:affiliation ?affiliationID .
+
+  BIND(IRI(CONCAT(?affbase, ?affiliationID)) AS ?affiliation) .
+  
+  ?classification a gci:provisionalClassification ;
+  gci:autoClassification ?evidencelevel ;
+  gci:classificationDate ?classificationDate ;
+  gci:classificationPoints ?pointsTree .
+
+  BIND(IRI(CONCAT(STR(?classification), "_contrib")) AS ?contribution ) .
   
   ?pointsTree gci:evidencePointsTotal ?evidencePointsTotal .
   
