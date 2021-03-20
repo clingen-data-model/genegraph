@@ -198,15 +198,37 @@
                  [finding-iri :dc/description (or description "")]]))
             findings)))
 
+;; MONDO id
+;; "customfield_11631"
+
+;;
+
+
+
+(defn- omim-str-to-mondo [omim-str]
+  (when-let [omim (some->> omim-str
+                         (re-find "^\d*$")
+                         (str "OMIM:")
+                         q/resource)]
+    (-> ))
+  ;; (map #(vector iri :sepio/has-object %)
+  ;;      (->> (s/split phenotype-str #",")
+  ;;           (map #(q/resource (str "http://identifiers.org/omim/" (s/trim %))))))
+  )
+
 (defn- dosage-proposition-object [curation dosage]
-  (let [object-field (if (= 1 dosage) :customfield-10200 :customfield-10201)
+  (let [mondo (some->> curation :customfield-11631 (re-find #"MONDO:\d*") q/resource)
+        object-field (if (= 1 dosage) :customfield-10200 :customfield-10201)
         phenotype-str (get-in curation [:fields object-field])
         iri (proposition-iri curation dosage)]
-    (if phenotype-str
-      (map #(vector iri :sepio/has-object %)
-           (->> (s/split phenotype-str #",")
-                (map #(q/resource (str "http://identifiers.org/omim/" (s/trim %))))))
-      [[iri :sepio/has-object (q/resource "http://purl.obolibrary.org/obo/MONDO_0000001")]])))
+    (cond
+      mondo [[iri :sepio/has-object mondo]]
+      phenotype-str (map #(vector iri :sepio/has-object %)
+                         (->> (s/split phenotype-str #",")
+                              (map #(q/resource (str "http://identifiers.org/omim/" (s/trim %))))))
+      :else [[iri
+              :sepio/has-object
+              (q/resource "http://purl.obolibrary.org/obo/MONDO_0000001")]])))
 
 (defn- gene-dosage-variant [iri curation dosage]
   [[iri :rdf/type :geno/FunctionalCopyNumberComplement]
