@@ -207,7 +207,7 @@
 
 ;; TODO find triplo mondo id field
 (defn- dosage-proposition-object [curation dosage]
-  (let [mondo-field (if (= 1 dosage) :customfield-11631 :customfield-???)
+  (let [mondo-field (if (= 1 dosage) :customfield-11631 :customfield-11633)
         mondo (some->> curation :fields mondo-field (re-find #"MONDO:\d*") q/resource)
         omim-field (if (= 1 dosage) :customfield-10200 :customfield-10201)
         omim (omim-str-to-mondo (get-in curation [:fields omim-field]))
