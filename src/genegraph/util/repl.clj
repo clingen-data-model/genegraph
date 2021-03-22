@@ -55,6 +55,15 @@
                                  (merge opts)
                                  (assoc ::event/dry-run true))))))
 
+(defn use-shape [event shape-uri]
+  (assoc event
+         ::ann/validation-shape
+         (l/read-rdf shape-uri {:format :turtle})))
+
+(defn write-event-value-to-disk [path event]
+  (with-open  [w (io/writer path)]
+    (pprint (json/parse-string (::event/value event) true) w)))
+
 (defn test-events-with-shape
   [shape-uri events]
   (let [shape (l/read-rdf shape-uri {:format :turtle})]
@@ -197,8 +206,6 @@
 (defn events-with-value [re-to-match events]
   (filter #(re-find re-to-match (::event/value %)) events))
 
-;; (count (set/difference (original-validity-genes "/Users/thnelson/Desktop/cg-data/gene-validity.csv") (hgnc-id-set-for-curation-type "GENE_VALIDITY")))
-
 (defn construct-csv-for-manual-gene-review 
   "Contruct a CSV out of a set of gene IDs. Created to faciliate testing of
   newly included dosage genes in new release"
@@ -213,7 +220,4 @@
          (cons ["symbol" "entrez gene" "ISCA id"])
          (csv/write-csv w))))
 
-;; (->> gd-stream-with-model (remove ::spec/invalid) annotate-stream-with-full-data first ::ann/iri)
-;; (def gv-neo (->> "/Users/tristan/data/genegraph/2021-01-26T1745/events/gci-neo4j-archive" io/file file-seq (filter #(.isFile %)) (map #(-> % slurp edn/read-string))))
 
-;; (-> "/Users/tristan/data/genegraph/2021-01-26T2232/events/gci-neo4j-archive/98cb808e-02d3-4378-8e6b-9b1b2883cc65.edn" slurp edn/read-string event/process-event!)
