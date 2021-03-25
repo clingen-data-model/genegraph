@@ -94,24 +94,26 @@
                               :resolve :contribution/activity-date
                               :description "When the contribution was made."}}}
 
-    ; TODO
-    ;Collection Method (from .content)
-    ;Allele Origin (from .content)
-    ;Submitter (TODO: expanded Name, Org ID, Abbreviation from submitter record)
+    :Variant
+    {:description "An instance of variation in a genomic sequence."
+     :fields {:name {:type String
+                     :resolve :variant/name
+                     :description "The preferred label of the variant. Not necessarily a stable identifier."}}}
+
     :ClinicalAssertion
     {:description "A single assertion about clinical or phenotypic significance of a genomic feature."
      :fields {:iri {:type String
                     :resolve :resource/iri
                     :description "IRI of the assertion. Scheme based on where the assertion was originally submitted."}
               :id {:type String
-                           :resolve :clinvar/clinical-assertion-version-of
-                           :description "Persistent identifier for the piece of knowledge (http://purl.org/dc/terms/isVersionOf)"}
+                   :resolve :clinvar/clinical-assertion-version-of
+                   :description "Persistent identifier for the piece of knowledge (http://purl.org/dc/terms/isVersionOf)"}
               :version {:type String
                         :resolve :clinvar/clinical-assertion-version
                         :description "Version of the record. Record owner may increment when a change within the record was significant enough to change the meaning."}
-              :subject {:type String
+              :subject {:type Variant
                         :resolve :clinvar/clinical-assertion-subject
-                        :description "Subject of the assertion. For variant assertions this will be the IRI of the variant."}
+                        :description "Subject of the assertion. For variant assertions this will be a variant."}
               :predicate {:type String
                           :resolve :clinvar/clinical-assertion-predicate
                           :description "Predicate of the assertion. What is being asserted about the subject."}
@@ -121,8 +123,8 @@
               :review_status {:type String
                               :resolve :clinvar/clinical-assertion-review-status
                               :description "ClinVar review status field. Interpretable as the inferred confidence in the assertion by the knowledge base, not the assertion creator."}
-              :date_validated {:type String
-                               :resolve :clinvar/clinical-assertion-date-validated
+              :release_date {:type String
+                               :resolve :clinvar/clinical-assertion-release-date
                                :description "Date upstream knowledge base validated the submitted data. (Date ClinVar incorporated into a release.)"}
               :date_updated {:type String
                              :resolve :clinvar/clinical-assertion-date-updated
@@ -135,11 +137,32 @@
                                    :description "Assertion submitted specified method used to collect the information included in the assertion."}
               }}
 
+
+
+    :AggregateVariantAssertion
+    {:description "An aggregation of assertion information about a variation"
+     :fields {:iri {:type String
+                    :resolve :resource/iri
+                    :description "Unique identifier for a version of the piece of knowledge."}
+              :id {:type String
+                   :resolve :clinvar/aggregate-assertion-version-of
+                   :description "Persistent identifier for the piece of knowledge, not a version of it."}
+              :release_date {:type String
+                             :resolve :clinvar/aggregate-assertion-release-date
+                             :description "Date upstream knowledge base validated the submitted data. (Date ClinVar incorporated into a release.)"}
+              :review_status {:type String
+                              :resolve :clinvar/aggregate-assertion-review-status
+                              :description "ClinVar review status field. Interpretable as the inferred confidence in the assertion by the knowledge base, not the assertion creator."}
+              :subject {:type :Variant
+                        :resolve :clinvar/aggregate-assertion-subject
+                        :description "Subject of the assertion. For variant assertions this will be a variant."}
+              }}
+
     :Gene
     {:description "A genomic feature (a gene or a region). Along with conditions, one of the basic units of curation."
      :implements [:Resource]
      :fields {:iri {:type String
-                   :resolve :resource/iri
+                    :resolve :resource/iri
                     :description "IRI representing the gene. Uses NCBI gene identifiers"}
               :curie {:type String
                       :resolve :resource/curie
@@ -788,8 +811,22 @@
                          :args {:iri {:type String}}
                          :resolve :clinvar/clinical-assertion-query}
     :clinical_assertions {:type (list :ClinicalAssertion)
-                         :args {:subject {:type String}}
-                         :resolve :clinvar/clinical-assertion-list}
+                          :args {:subject {:type String}
+                                 :limit {:type Int
+                                         :default-value 10}
+                                 :offset {:type Int
+                                          :default-value 0}}
+                          :resolve :clinvar/clinical-assertion-list}
+    :aggregate_assertions {:type (list :AggregateVariantAssertion)
+                           :args {:id {:type String}
+                                  :subject {:type String}
+                                  :limit {:type Int}
+                                  :offset {:type Int}
+                                  :timeframe {:type String
+                                              :default-value "LATEST"
+                                              :description "ALL, LATEST (coming soon: or an ISO8601 interval string specifying datetime range to return values from)."}}
+                           :resolve :clinvar/aggregate-assertion-list}
+
     :gene {:type (non-null :Gene)
            :args {:iri {:type String}}
            :resolve :gene/gene-query}

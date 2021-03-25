@@ -50,8 +50,8 @@
 (defn date-updated [context args value]
   (q/ld1-> value [:sepio/date-updated]))
 
-(defn date-validated [context args value]
-  (q/ld1-> value [:sepio/date-validated]))
+(defn release-date [context args value]
+  (q/ld1-> value [:cg/release-date]))
 
 (defn predicate [context args value]
   (q/ld1-> value [:sepio/has-predicate]))

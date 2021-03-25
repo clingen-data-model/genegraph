@@ -17,8 +17,6 @@
  "hp" "http://purl.obolibrary.org/obo/HP_",
  "iao" "http://purl.obolibrary.org/obo/IAO_",
  "sepio" "http://purl.obolibrary.org/obo/SEPIO_",
- "cgterms" "http://dataexchange.clinicalgenome.org/terms/"
- "cg" "https://search.clinicalgenome.org/r/cg_"
  "eco" "http://purl.obolibrary.org/obo/eco/",
  "rdfs" "http://www.w3.org/2000/01/rdf-schema#",
  "oboinowl" "http://www.geneontology.org/formats/oboInOwl#",
@@ -49,6 +47,8 @@
  "text" "http://jena.apache.org/text#"
  "uberon" "http://purl.obolibrary.org/obo/uberon/core#"
  "gci" "http://gci.clinicalgenome.org/"
+ "cgterms" "http://dataexchange.clinicalgenome.org/terms/"
+ "cg" "https://search.clinicalgenome.org/r/cg_"
  "cggciex" "http://dataexchange.clinicalgenome.org/gci-express/"
  "cggv" "http://dataexchange.clinicalgenome.org/gci/"
  "cgacta" "https://actionability.clinicalgenome.org/ac/Adult/api/sepio/doc/"

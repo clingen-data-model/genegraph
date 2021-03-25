@@ -11,7 +11,8 @@
 
             [genegraph.transform.clinvar.jsonld.clinical-assertion]
             ;[genegraph.transform.clinvar.jsonld.submission]
-            ;[genegraph.transform.clinvar.jsonld.variation-archive]
+            [genegraph.transform.clinvar.jsonld.variation-archive]
+            [genegraph.transform.clinvar.jsonld.variation]
             )
   (:import (java.io StringReader)))
 

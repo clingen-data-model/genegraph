@@ -4,6 +4,7 @@
             [genegraph.transform.clinvar.util :refer :all]))
 
 (def clinvar-variation "https://identifiers.org/clinvar:")
+(def clinvar-vcv "https://www.ncbi.nlm.nih.gov/clinvar/variation/")
 (def clinvar-assertion "https://identifiers.org/clinvar.submission:")
 
 ; clingen terms
