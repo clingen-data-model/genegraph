@@ -73,6 +73,10 @@
        (filter #(= false (::ann/did-validate %)))
        first))
 
+(defn print-model
+  [event]
+  (println (some-> event ::q/model q/to-turtle)))
+
 (defn process-event-seq-dry-run
   "Run event sequence through event processor; do not perform side effects"
   [event-seq]

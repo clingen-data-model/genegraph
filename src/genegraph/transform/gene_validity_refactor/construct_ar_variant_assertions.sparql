@@ -1,0 +1,25 @@
+prefix gci: <http://gci.clinicalgenome.org/>
+construct
+{
+  ?geneticEvidenceCriterionAssessment :sepio/has-evidence-line ?autosomalRecessiveVariantEvidenceLine .
+  
+  ?autosomalRecessiveVariantEvidenceLine a :sepio/AutosomalRecessiveVariantEvidenceLine ;
+  :sepio/has-evidence-item ?autosomalRecessiveVariantCriterionAssessment ;
+  :sepio/evidence-line-strength-score ?autosomalRecessiveDisorderTotal .  
+
+  ?autosomalRecessiveVariantCriterionAssessment a :sepio/AutosomalRecessiveVariantCriterionAssessment .
+}
+where
+{
+  ?classification a gci:provisionalClassification .
+
+  BIND (IRI(CONCAT(str(?classification), "_genetic_evidence_criterion_assessment")) AS ?geneticEvidenceCriterionAssessment) .
+
+  ?classification gci:classificationPoints ?pointsTree .
+
+  ?pointsTree gci:autosomalRecessiveDisorder ?autosomalRecessiveDisorderTree .
+  ?autosomalRecessiveDisorderTree gci:pointsCounted  ?autosomalRecessiveDisorderTotal .
+
+  BIND (IRI(CONCAT(str(?classification), "_ar_ca")) AS ?autosomalRecessiveVariantCriterionAssessment) .
+  BIND (IRI(CONCAT(str(?classification), "_ar_el")) AS ?autosomalRecessiveVariantEvidenceLine ) .
+}
