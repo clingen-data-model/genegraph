@@ -12,7 +12,7 @@
             (let [new-context (event-fn context)]
               (if (or (:exception new-context)
                       (::spec/invalid new-context))
-                (ic/terminate context)
+                (ic/terminate new-context)
                 new-context)))})
 
 (defn interceptor-leave-def [name event-fn]

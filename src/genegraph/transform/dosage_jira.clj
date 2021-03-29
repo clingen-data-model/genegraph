@@ -203,9 +203,9 @@
                            (re-find #"^\d*$")
                            (str "OMIM:")
                            q/resource)]
-    (q/ld1-> omim [[:< :skos/has-exact-match]])))
+    (q/ld1-> omim [[:skos/has-exact-match :<]])))
 
-;; TODO find triplo mondo id field
+
 (defn- dosage-proposition-object [curation dosage]
   (let [mondo-field (if (= 1 dosage) :customfield-11631 :customfield-11633)
         mondo (some->> curation :fields mondo-field (re-find #"MONDO:\d*") q/resource)
@@ -306,7 +306,6 @@
 
 (defmethod add-model :gene-dosage-jira [event]
   (let [jira-json (json/parse-string (:genegraph.sink.event/value event) ->kebab-case-keyword)]
-    ;; (clojure.pprint/pprint (gene-dosage-report jira-json))
     (if (spec/invalid? (spec/conform ::fields (:fields jira-json)))
       (assoc event ::spec/invalid true)
       (assoc event ::q/model (-> jira-json gene-dosage-report l/statements-to-model)))))

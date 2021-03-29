@@ -44,7 +44,7 @@
  "ncbigene" "https://www.ncbi.nlm.nih.gov/gene/"
  "sparql" "http://www.w3.org/ns/sparql-service-description#"
  "shacl" "http://www.w3.org/ns/shacl#"
- "omim" "http://purl.obolibrary.org/obo/OMIM_"
+ "omim" "http://identifiers.org/omim/"
  "pubmed" "https://www.ncbi.nlm.nih.gov/pubmed/"
  "text" "http://jena.apache.org/text#"
  "uberon" "http://purl.obolibrary.org/obo/uberon/core#"
