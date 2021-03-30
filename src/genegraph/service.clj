@@ -21,7 +21,9 @@
             [clojure.edn :as edn]
             [clojure.set :as set]
             [genegraph.database.util :refer [begin-read-tx close-read-tx]]
-            [io.pedestal.log :as log]))
+            [io.pedestal.log :as log])
+  (:import java.net.InetAddress
+           (javax.servlet.http HttpServletRequest HttpServletResponse)))
 
 (def open-tx-interceptor
   {:name ::open-tx
@@ -80,10 +82,32 @@
                  (swap! current-requests dissoc body))
                context))}))
 
+(def host (InetAddress/getLocalHost))
 
+(def request-logging-interceptor
+  (pedestal-interceptor/interceptor
+   {:name ::request-logging-interceptor
+    :enter (fn [ctx]
+             (assoc-in ctx [:request :start-time] (System/currentTimeMillis)))
+    :leave (fn [ctx]
+             (let [{:keys [uri start-time request-method]} (:request ctx)
+                   finish (System/currentTimeMillis)
+                   total (- finish start-time)]
+               (log/info :fn :request-logging-interceptor
+                            :uri uri
+                            :request-method request-method
+                            :time (str total "ms")
+                            :hostname (.getHostName host) 
+                            :request-ip-addr (get-in ctx [:request :remote-addr])
+                            :servlet-request (.toString (.getRequestURL (get-in ctx [:request :servlet-request])))
+                            :servlet-request-body (get-in ctx [:request :body])
+                            :reponse-status (.getStatus (get-in ctx [:request :servlet-response])))
+               ctx))}))
+    
 (defn dev-interceptors [gql-schema]
   (-> (lacinia-pedestal/default-interceptors gql-schema {})
       (lacinia/inject nil :replace ::lacinia-pedestal/body-data)
+      (lacinia/inject nil :replace ::lacinia-pedestal/enable-tracing)
       (lacinia/inject lacinia-pedestal/body-data-interceptor
                       :before
                       ::lacinia-pedestal/json-response)
@@ -122,7 +146,10 @@
                             ::lacinia-pedestal/body-data)
             (lacinia/inject user-info-interceptor
                             :after
-                            ::lacinia-pedestal/inject-app-context))]
+                            ::lacinia-pedestal/inject-app-context)
+            (lacinia/inject request-logging-interceptor
+                      :before
+                      ::lacinia-pedestal/initialize-tracing))]
     (cond-> interceptor-chain
       env/use-response-cache (lacinia/inject 
                               (pedestal-interceptor/interceptor

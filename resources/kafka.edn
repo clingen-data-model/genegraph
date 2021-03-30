@@ -6,7 +6,7 @@
                         "security.protocol" "SASL_SSL"
                         "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
                         "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
-                        "sasl.jaas.config" genegraph.env/dx-stage-jaas}
+                        "sasl.jaas.config" genegraph.env/dx-jaas-config}
             :dx-prod {"bootstrap.servers" "exchange.clinicalgenome.org:9093"
                       "enable.auto.commit" "false"
                       "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"

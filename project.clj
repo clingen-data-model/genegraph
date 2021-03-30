@@ -13,6 +13,7 @@
                  [org.slf4j/jul-to-slf4j "1.7.26"]
                  [org.slf4j/jcl-over-slf4j "1.7.26"]
                  [org.slf4j/log4j-over-slf4j "1.7.26"]
+                 [com.github.danielwegener/logback-kafka-appender "0.2.0-RC2"]
                  [org.apache.kafka/kafka-clients "2.5.0"]
                  [cheshire "5.8.1"]
                  [org.clojure/data.csv "0.1.4"]
@@ -51,7 +52,8 @@
                  [com.taoensso/nippy "3.1.1"]
                  [com.taoensso/timbre "4.10.0"]
                  [digest "1.4.9"]
-                 [com.google.firebase/firebase-admin "7.0.1"]]
+                 [com.google.firebase/firebase-admin "7.0.1"]
+                 [org.codehaus.janino/janino "3.1.3"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources", "jars/REBL-0.9.220.jar"]
   ;; If you use HTTP/2 or ALPN, use the java-agent to pull in the correct alpn-boot dependency
