@@ -35,9 +35,10 @@
             [genegraph.source.graphql.common.curation :as curation]))
 
 (defn resolver-map []
-  {:clinvar/clinical-assertion-query cv-clinical-assertion/clinical-assertion-query
+  {:clinvar/clinical-assertion-single cv-clinical-assertion/clinical-assertion-single
    :clinvar/clinical-assertion-subject cv-clinical-assertion/subject
    :clinvar/clinical-assertion-predicate cv-clinical-assertion/predicate
+   :clinvar/clinical-assertion-object cv-clinical-assertion/object
    :clinvar/clinical-assertion-version cv-clinical-assertion/version
    :clinvar/clinical-assertion-list cv-clinical-assertion/clinical-assertion-list
    :clinvar/clinical-assertion-contribution cv-clinical-assertion/contribution
@@ -52,6 +53,10 @@
    :clinvar/aggregate-assertion-release-date cv-aggregate-assertion/release-date
    :clinvar/aggregate-assertion-review-status cv-aggregate-assertion/review-status
    :clinvar/aggregate-assertion-subject cv-aggregate-assertion/subject
+   :clinvar/aggregate-assertion-predicate cv-aggregate-assertion/predicate
+   :clinvar/aggregate-assertion-object cv-aggregate-assertion/object
+   :clinvar/aggregate-assertion-version cv-aggregate-assertion/version
+   :clinvar/aggregate-assertion-members cv-aggregate-assertion/members
    :contribution/contribution-query cv-contribution/contribution-single
    :contribution/agent cv-contribution/agent
    :contribution/agent-role cv-contribution/agent-role

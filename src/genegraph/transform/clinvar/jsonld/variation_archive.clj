@@ -41,7 +41,7 @@
         context
         {"@type" [:cg/ClinVarObject
                   (str iri/cgterms "AggregateVariantClinicalSignificanceAssertion")]
-         :dc/is-version-of (str iri/variation-archive (:id msg))
+         :dc/is-version-of {"@id" (str iri/variation-archive (:id msg))}
          :dc/has-version (:version msg)
 
 
@@ -66,7 +66,8 @@
                         :interp_description
                         :date_created
                         :date_last_updated
-                        ))))))
+                        )
+            )))))
 
 (defmethod clinvar-to-jsonld :variation_archive [msg]
   (variation-archive-to-jsonld msg))

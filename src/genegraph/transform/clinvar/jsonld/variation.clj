@@ -8,6 +8,19 @@
             [genegraph.transform.clinvar.iri :as iri]
             [taoensso.timbre :as log]))
 
+[::id
+ ::name
+ ::protein_change
+ ::subclass_type                                            ;For SimpleAllele, no child_ids or descendant_ids, for Genotype/Haplotype, must have child+descendant
+ ::variation_type
+ ]
+[::allele_id                                                ; TODO 0.0864% null (this is okay)
+ ::child_ids
+ ::content
+ ::descendant_ids
+ ::num_chromosomes
+ ::num_copies
+ ]
 (defn variation-to-jsonld [msg]
   (let [id-unversioned (str iri/clinvar-variation (:id msg))
         id (str id-unversioned "." (:release_date msg))

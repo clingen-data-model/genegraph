@@ -24,7 +24,8 @@
                              ;rdf-type          {"@type" "@id"}
                              ;:cg/ClinVarObject {"@type" "@id"}
                              }
-                 "@id" id}
+                 ;"@id" id
+                 }
         ]
     (genegraph-kw-to-iri
       (merge
@@ -42,7 +43,8 @@
          (merge
            {"@type" [:cg/ClinVarObject
                      rdf-type]
-            :dc/is-version-of (str iri/clinvar-assertion (:id msg))
+            "@id" id
+            :dc/is-version-of {"@id" (str iri/clinvar-assertion (:id msg))}
             :dc/has-version (:version msg)
             :dc/title (:title msg)
 
@@ -84,7 +86,7 @@
          ; Reverse relation to parent variation archive
          "@reverse" {:sepio/has-evidence-line
                      [{"@id" (format (str iri/variation-archive "%s")
-                                     (:variation_archive))
+                                     (:variation_archive_id msg))
 
                        }]}
          }

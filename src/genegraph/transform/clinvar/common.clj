@@ -73,7 +73,7 @@
                     ; v against local-class-names. If keyword not in those maps, convert keyword to string (name)
                     (let [k2 (resolve-key k)
                           v2 (resolve-value v)]
-                      (log/infof "%s -> %s, %s -> %s" k k2 v v2)
+                      (log/debugf "%s -> %s, %s -> %s" k k2 v v2)
                       [k2 v2]))
                   m)))
   )
