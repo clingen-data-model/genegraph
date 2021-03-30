@@ -138,7 +138,7 @@
     (add-subjects-to-event event genes [])))
 
 (defmethod add-subjects :sepio/ActionabilityReport [event]
-  (log/debug :fn :add-subjects :root-type :sepio/ActionabilityReport :event event :msg :received-event)
+  (log/debug :fn :add-subjects :root-type :sepio/ActionabilityReport :msg :received-event)
   (if-let [act-condition (first (q/select "select ?s where { ?s a :cg/ActionabilityGeneticCondition }" {}
                                           (::q/model event)))]
     (let [genes (q/ld-> act-condition [:sepio/is-about-gene])
@@ -147,7 +147,23 @@
     event))
 
 (defmethod add-subjects :sepio/GeneValidityReport [event]
-  (log/debug :fn :add-subjects :root-type :sepio/GeneValidityReport :event event :msg :received-event)
+  (log/debug :fn :add-subjects :root-type :sepio/GeneValidityReport :msg :received-event)
+  (if-let [gv-prop (first (q/select "select ?s where { ?s a :sepio/GeneValidityProposition }" {}
+                                    (::q/model event)))]
+    (let [genes (q/ld-> gv-prop [:sepio/has-subject])
+          diseases (q/ld-> gv-prop [:sepio/has-object])
+          modes-of-inheritance (q/ld-> gv-prop [:sepio/has-qualifier])
+          affiliations (q/ld-> gv-prop [[:sepio/has-subject :<]
+                                        :sepio/qualified-contribution
+                                        :sepio/has-agent])]
+      (assoc event ::subjects {:gene-iris (mapv str genes)
+                               :disease-iris (mapv str diseases)
+                               :moi-iris (mapv str modes-of-inheritance)
+                               :agent-iris (mapv str affiliations)}))
+    event))
+
+(defmethod add-subjects :sepio/GeneValidityProposition [event]
+  (log/debug :fn :add-subjects :root-type :sepio/GeneValidityProposition :msg :received-event)
   (if-let [gv-prop (first (q/select "select ?s where { ?s a :sepio/GeneValidityProposition }" {}
                                     (::q/model event)))]
     (let [genes (q/ld-> gv-prop [:sepio/has-subject])
@@ -163,7 +179,7 @@
     event))
 
 (defmethod add-subjects :default [event]
-  (log/debug :fn :add-subjects :root-type :default :event event :msg :received-event)
+  (log/debug :fn :add-subjects :root-type :default :msg :received-event)
   event)
   
 (def add-subjects-interceptor

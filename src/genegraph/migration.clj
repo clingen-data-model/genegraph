@@ -49,7 +49,7 @@
     (fs/mkdirs env/data-vol)
     (start #'db/db)
     (base/initialize-db!)
-    (batch/process-batched-events!)
+    ;; (batch/process-batched-events!)
     (start #'suggest/suggestions)
     (suggest/build-all-suggestions)
     (stop #'suggest/suggestions)
