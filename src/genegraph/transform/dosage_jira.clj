@@ -198,15 +198,24 @@
                  [finding-iri :dc/description (or description "")]]))
             findings)))
 
+(defn- omim-str-to-mondo [omim-str]
+  (when-let [omim (some->> omim-str
+                           (re-find #"^\d*$")
+                           (str "OMIM:")
+                           q/resource)]
+    (q/ld1-> omim [[:skos/has-exact-match :<]])))
+
+
 (defn- dosage-proposition-object [curation dosage]
-  (let [object-field (if (= 1 dosage) :customfield-10200 :customfield-10201)
-        phenotype-str (get-in curation [:fields object-field])
+  (let [mondo-field (if (= 1 dosage) :customfield-11631 :customfield-11633)
+        mondo (some->> curation :fields mondo-field (re-find #"MONDO:\d*") q/resource)
+        omim-field (if (= 1 dosage) :customfield-10200 :customfield-10201)
+        omim (omim-str-to-mondo (get-in curation [:fields omim-field]))
+        object (or mondo
+                   omim
+                   (q/resource "http://purl.obolibrary.org/obo/MONDO_0000001"))
         iri (proposition-iri curation dosage)]
-    (if phenotype-str
-      (map #(vector iri :sepio/has-object %)
-           (->> (s/split phenotype-str #",")
-                (map #(q/resource (str "http://identifiers.org/omim/" (s/trim %))))))
-      [[iri :sepio/has-object (q/resource "http://purl.obolibrary.org/obo/MONDO_0000001")]])))
+    [[iri :sepio/has-object object]]))
 
 (defn- gene-dosage-variant [iri curation dosage]
   [[iri :rdf/type :geno/FunctionalCopyNumberComplement]
@@ -297,7 +306,6 @@
 
 (defmethod add-model :gene-dosage-jira [event]
   (let [jira-json (json/parse-string (:genegraph.sink.event/value event) ->kebab-case-keyword)]
-    ;; (clojure.pprint/pprint (gene-dosage-report jira-json))
     (if (spec/invalid? (spec/conform ::fields (:fields jira-json)))
       (assoc event ::spec/invalid true)
       (assoc event ::q/model (-> jira-json gene-dosage-report l/statements-to-model)))))

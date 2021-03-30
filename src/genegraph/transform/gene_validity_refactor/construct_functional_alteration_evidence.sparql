@@ -1,0 +1,44 @@
+prefix gci: <http://gci.clinicalgenome.org/> 
+prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+construct {
+  ?evidenceLine  a ?evidenceLineType ;
+  :dc/description ?scoreDescription ;
+  :sepio/evidence-line-strength-score ?score .
+
+  ?evidenceItem  a ?evidenceItemType ;
+  :dc/description ?evidenceDescription ;
+  :dc/source ?article ;
+  :rdfs/label ?evidenceLabel .
+}
+where {
+  ?evidenceLine a gci:evidenceScore ;
+  gci:calculatedScore ?calculatedScore .
+
+  OPTIONAL {
+    ?evidenceLine gci:scoreExplanation ?scoreDescription .
+  }
+  # gci:uuid ?scoreUUID ;
+  # gci:experimental_scored ?gciEvidence .
+
+  OPTIONAL  {
+    ?gciScore gci:score ?adjustedScore .
+  }
+  BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
+
+  ?evidenceItem gci:scores ?evidenceLine ;
+  gci:label ?evidenceLabel ;
+  gci:functionalAlteration ?functionalAlteration .
+
+  ?functionalAlteration gci:functionalAlterationType ?gciType ;
+  gci:evidenceForNormalFunction ?evidenceDescription .
+
+  ?evidenceLineType gcixform:hasGCIType ?gciType ;
+  gcixform:hasEvidenceItemType ?evidenceItemType ;
+  gcixform:usedIn gcixform:FunctionalAlteration .
+
+  ?annotation gci:experimentalData ?evidenceItem ;
+  gci:article ?publication .
+  ?publication gci:pmid ?pmid .
+  BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
+   
+}

@@ -2,6 +2,7 @@
   (:require [cheshire.core :as json]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
+            [clojure.string :as s]
             [io.pedestal.log :as log]
             [genegraph.database.load :as db]
             [genegraph.transform.types :refer [transform-doc add-model src-path]]
@@ -41,6 +42,9 @@
 (defn gene-as-triple [gene]
   (let [uri (str "https://www.ncbi.nlm.nih.gov/gene/" (:entrez_id gene))
         hgnc-id (:hgnc_id gene)
+        hgnc-iri (s/replace (:hgnc_id gene)
+                            "HGNC"
+                            "https://identifiers.org/hgnc")
         ensembl-iri (str "http://rdf.ebi.ac.uk/resource/ensembl/"
                                     (:ensembl_gene_id gene))]
     (remove nil?
@@ -53,6 +57,7 @@
                      ^{:object :Resource} [uri :owl/same-as hgnc-id]
                      [hgnc-id :dc/source (resource hgnc)]
                      ^{:object :Resource} [uri :owl/same-as ensembl-iri]
+                     ^{:object :Resource} [uri :owl/same-as hgnc-iri]
                      [ensembl-iri :dc/source (resource ensembl)]]
                     (map #(vector uri :skos/hidden-label %)
                          (:alias_symbol gene))

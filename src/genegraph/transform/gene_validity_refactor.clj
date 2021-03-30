@@ -31,13 +31,13 @@
                construct-ad-variant-assertions
                construct-ar-variant-assertions
                construct-cc-and-seg-assertions
-               ;; construct-proband-score
-               ;; construct-model-systems-evidence
-               ;; construct-functional-alteration-evidence
-               ;; construct-functional-evidence
-               ;; construct-rescue-evidence
-               ;; construct-case-control-evidence
-               ;; construct-segregation-evidence
+               construct-proband-score
+               construct-model-systems-evidence
+               construct-functional-alteration-evidence
+               construct-functional-evidence
+               construct-rescue-evidence
+               construct-case-control-evidence
+               construct-segregation-evidence
                construct-evidence-connections
                )
 
@@ -49,7 +49,6 @@
           {"@context" 
            {
             ;; frontmatter
-            "@version" "1.1"
             "@vocab" "http://gci.clinicalgenome.org/"
             "@base" "http://gci.clinicalgenome.org/"
 
@@ -57,8 +56,8 @@
             "item_type" "@type"
 
             
-            ;; "gci" "http://gci.clinicalgenome.org/"
-            ;; "gcixform" "http://dataexchange.clinicalgenome.org/gcixform/"
+            "gci" "http://gci.clinicalgenome.org/"
+            "gcixform" "http://dataexchange.clinicalgenome.org/gcixform/"
 
             ;; ;; common prefixes
             "HGNC" "https://identifiers.org/hgnc:"
@@ -67,53 +66,53 @@
             
             ;; ;; declare attributes with @id, @vocab types
             "hgncId" {"@type" "@id"}
+
             "autoClassification" {"@type" "@vocab"}
             ;; "diseaseId" {"@type" "@id"}
-            ;; "caseInfoType" {"@type" "@id"}
+            "caseInfoType" {"@type" "@id"}
             ;; "experimental_scored" {"@type" "@id"}
             ;; "caseControl_scored" {"@type" "@id"}
             ;; "variants" {"@type" "@id"}
 
-            ;; "modelSystemsType" {"@type" "@vocab"}
-            ;; "evidenceType" {"@type" "@vocab"}
-            ;; "functionalAlterationType" {"@type" "@vocab"}
-            ;; "rescueType" {"@type" "@vocab"}
-            ;; "studyType" {"@type" "@vocab"}
-            ;; "sequencingMethod" {"@type" "@vocab"}
+            "modelSystemsType" {"@type" "@vocab"}
+            "evidenceType" {"@type" "@vocab"}
+            "functionalAlterationType" {"@type" "@vocab"}
+            "rescueType" {"@type" "@vocab"}
+            "studyType" {"@type" "@vocab"}
+            "sequencingMethod" {"@type" "@vocab"}
 
 
             ;; ;; Category names
-            ;; "Model Systems" "gcixform:ModelSystems"
-            ;; "Functional Alteration" "gcixform:FunctionalAlteration"
-            ;; "Case control" "gcixform:CaseControl"
+            "Model Systems" "gcixform:ModelSystems"
+            "Functional Alteration" "gcixform:FunctionalAlteration"
+            "Case control" "gcixform:CaseControl"
 
-            ;; ;; Case control
-            ;; "Aggregate variant analysis" "gcixform:AggregateVariantAnalysis"
-            ;; "Single variant analysis" "gcixform:SingleVariantAnalysis"
+            ;; Case control
+            "Aggregate variant analysis" "gcixform:AggregateVariantAnalysis"
+            "Single variant analysis" "gcixform:SingleVariantAnalysis"
 
-            ;; ;; segregation
-            ;; "Candidate gene sequencing" "gcixform:CandidateGeneSequencing"
-            ;; "Exome/genome or all genes sequenced in linkage region" "gcixform:ExomeSequencing"
+            ;; segregation
+            "Candidate gene sequencing" "gcixform:CandidateGeneSequencing"
+            "Exome/genome or all genes sequenced in linkage region" "gcixform:ExomeSequencing"
 
-            ;; ;; Experimental evidence types
-            ;; "Expression" "gcixform:Expression"
-            ;; "Biochemical Function" "gcixform:BiochemicalFunction"
-            ;; "Protein Interactions" "gcixform:ProteinInteraction"
+            ;; Experimental evidence types
+            "Expression" "gcixform:Expression"
+            "Biochemical Function" "gcixform:BiochemicalFunction"
+            "Protein Interactions" "gcixform:ProteinInteraction"
 
-            ;; ;; rescue
-            ;; "Cell culture" "gcixform:CellCulture"
-            ;; "Non-human model organism" "gcixform:NonHumanModel"
-            ;; "Patient cells" "gcixform:PatientCells"
-            ;; "Human" "gcixform:Human"
+            ;; rescue
+            "Cell culture" "gcixform:CellCulture"
+            "Non-human model organism" "gcixform:NonHumanModel"
+            "Patient cells" "gcixform:PatientCells"
+            "Human" "gcixform:Human"
 
-            ;; ;; model systems
-            ;; "Cell culture model" "gcixform:CellCultureModel"
+            ;; model systems
+            "Cell culture model" "gcixform:CellCultureModel"
 
-            ;; ;; functional alteration
-            ;; "Non-patient cells" "gcixform:NonPatientCells"
-            ;; "patient cells" "gcixform:PatientCells"
-;; #{"Definitive" "Limited" "No Known Disease Relationship" "Moderate"
-;;   "No Classification" "Strong"}
+            ;; functional alteration
+            "Non-patient cells" "gcixform:NonPatientCells"
+            "patient cells" "gcixform:PatientCells"
+
             ;; ;; evidence strength
             "Definitive" "SEPIO:0004504"
             "Strong" "SEPIO:0004505"
@@ -137,7 +136,8 @@
                 :gcibase base
                 :arbase "http://reg.genome.network/allele/"
                 :cvbase "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
-                :pmbase "https://pubmed.ncbi.nlm.nih.gov/"}
+                :pmbase "https://pubmed.ncbi.nlm.nih.gov/"
+                :affbase "http://dataexchange.clinicalgenome.org/agent/"}
         unlinked-model (q/union 
                         (construct-proposition params)
                         (construct-evidence-level-assertion params)
@@ -146,14 +146,13 @@
                         (construct-ad-variant-assertions params)
                         (construct-ar-variant-assertions params)
                         (construct-cc-and-seg-assertions params)
-                        ;; (construct-model-systems-evidence params)
-                        ;; (construct-functional-alteration-evidence params)
-                        ;; (construct-functional-evidence params)
-                        ;; (construct-proband-score params)
-                        ;; (construct-rescue-evidence params)
-                        ;; (construct-case-control-evidence params)
-                        ;; (construct-segregation-evidence params)
-                        )]
+                        (construct-proband-score params)                        
+                        (construct-model-systems-evidence params)
+                        (construct-functional-evidence params)
+                        (construct-functional-alteration-evidence params)
+                        (construct-rescue-evidence params)
+                        (construct-case-control-evidence params)
+                        (construct-segregation-evidence params))]
     (q/union unlinked-model
              (construct-evidence-connections 
               {::q/model

@@ -1,0 +1,37 @@
+prefix gci: <http://gci.clinicalgenome.org/> 
+prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+construct {
+  ?evidenceLine  a ?evidenceLineType ;
+  :dc/description ?scoreDescription ;
+  :sepio/evidence-line-strength-score ?score .
+
+  ?evidenceItem  a ?evidenceItemType ;
+  :dc/description ?evidenceDescription ;
+  :dc/source ?article ;
+  :rdfs/label ?evidenceLabel .
+}
+where {
+  ?evidenceLine a gci:evidenceScore ;
+  gci:calculatedScore ?calculatedScore ;
+  gci:scoreExplanation ?scoreDescription .
+
+  BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
+
+  OPTIONAL  {
+    ?evidenceLine gci:score ?adjustedScore .
+  }
+
+  ?evidenceItem gci:scores ?evidenceLine ;
+  gci:label ?evidenceLabel ;
+  gci:evidenceType ?gciType .
+  
+  ?evidenceLineType gcixform:hasGCIType ?gciType ;
+  gcixform:hasEvidenceItemType ?evidenceItemType ;
+  gcixform:usedIn gcixform:Functional .
+
+  ?annotation gci:experimentalData ?evidenceItem ;
+  gci:article ?publication .
+  
+  ?publication gci:pmid ?pmid .
+  BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
+ }
