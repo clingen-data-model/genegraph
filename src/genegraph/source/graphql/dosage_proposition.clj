@@ -68,4 +68,4 @@
   (q/ld1-> value [:sepio/has-subject :sepio/has-subject :geno/has-location]))
 
 (defresolver disease [args value]
-  (q/ld1-> value [:sepio/has-subject :sepio/has-object [:skos/has-exact-match :<]]))
+  (q/ld1-> value [:sepio/has-subject :sepio/has-object]))
