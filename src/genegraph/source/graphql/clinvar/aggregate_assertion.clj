@@ -57,8 +57,8 @@
       (not (nil? (:subject args)))
       (let [subject (resolve-curie-namespace (:subject args))
             ;query "SELECT ?iri WHERE { ?iri :sepio/has-subject ?subject }"
-            query-args (merge {:subject (q/resource subject)}
-                              (select-keys args [:limit :offset]))]
+            query-args {:subject (q/resource subject)
+                        ::q/params (select-keys args [:limit :offset])}]
         (q/select date-filtered-query query-args))
 
       :default (log/error :msg (str "Unknown query args: " args)))))
