@@ -22,7 +22,6 @@
                              "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"
                              ;rdf-type          {"@type" "@id"}
                              ;:cg/ClinVarObject {"@type" "@id"}
-
                              }
                  "@id" id}]
     (genegraph-kw-to-iri
@@ -39,6 +38,7 @@
          :sepio/has-object (str iri/trait-set (:trait_set_id msg))
          :sepio/date-created (:date_created msg)
          :sepio/date-updated (:date_last_updated msg)
+
          :sepio/date-validated (:release_date msg)
          :sepio/qualified-contribution {:sepio/activity-date (:interpretation_date_last_evaluated msg)
                                         :sepio/has-role "SubmitterRole"
@@ -51,12 +51,12 @@
          ;                                                                                          (:review_status msg))}]}
 
          ; ClinGen/ClinVar additional renamed terms (namespaced to @vocab)
-         ;"hasReviewStatus"             (:review_status msg)
-         "submittedCondition" (str iri/clinical-assertion-trait-set (:clinical_assertion_trait_set_id msg))
+         "allele_origin" (:allele_origins msg)
+         "collection_method" (:collection_methods msg)
+         "submitted_condition" (str iri/clinical-assertion-trait-set (:clinical_assertion_trait_set_id msg))
          ; TODO add allele origin from observations to the submitted variation
          ; TODO update field name if change occurs here https://github.com/clingen-data-model/clinvar-streams/issues/3
-         "submittedVariation" (:clinical_assertion_variations msg)
-         ; "hasCollectionMethod" (get-in obs ...)
+         "submitted_variation" (:clinical_assertion_variations msg)
          }
         (-> msg
             (dissoc
@@ -69,6 +69,9 @@
               :date_created
               :date_last_updated
               :interpretation_date_last_evaluated
+              :submitter_id
+              :allele_origins
+              :collection_methods
               :clinical_assertion_trait_set_id
               :clinical_assertion_variations))))))
 
