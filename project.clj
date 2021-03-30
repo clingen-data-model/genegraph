@@ -17,12 +17,13 @@
                  [cheshire "5.8.1"]
                  [org.clojure/data.csv "0.1.4"]
                  [camel-snake-kebab "0.4.0"]
-                 [org.apache.jena/jena-text "3.14.0" :exclusions [org.apache.jena/jena-cmds]]
-                 [org.apache.jena/jena-tdb2 "3.14.0"]
-                 [org.apache.jena/jena-arq "3.14.0"]
-                 [org.apache.jena/jena-core "3.14.0"]
-                 [org.apache.jena/jena-iri "3.14.0"]
-                 [org.apache.lucene/lucene-suggest "7.4.0"] ;; jena 3.14.0 includes lucene 7.4.0
+                 [org.apache.jena/jena-text "3.17.0" :exclusions [org.apache.jena/jena-cmds]]
+                 [org.apache.jena/jena-tdb2 "3.17.0"]
+                 [org.apache.jena/jena-arq "3.17.0"]
+                 [org.apache.jena/jena-core "3.17.0"]
+                 [org.apache.jena/jena-iri "3.17.0"]
+                 [org.apache.lucene/lucene-suggest "7.7.3"] ;; jena 3.14.0 includes lucene 7.4.0
+                 [commons-codec "1.15"] ;; Need Apache commons codec to be explicity named
                  ;; Dependency superceeded by antlr provided via lacinia dependency
                  [org.topbraid/shacl "1.3.2" :exclusions [org.antlr/antlr4-runtime]]
                  [mount "0.1.16"]
