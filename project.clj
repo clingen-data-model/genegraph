@@ -23,7 +23,7 @@
                  [org.apache.jena/jena-core "3.17.0"]
                  [org.apache.jena/jena-iri "3.17.0"]
                  [org.apache.lucene/lucene-suggest "7.7.3"] ;; jena 3.14.0 includes lucene 7.4.0
-                 [commons-codec "1.15"] ;; Need Apache commons codec to be explicity named
+                 [commons-codec/commons-codec "1.15"] ;; Req by Jena--not in deps
                  ;; Dependency superceeded by antlr provided via lacinia dependency
                  [org.topbraid/shacl "1.3.2" :exclusions [org.antlr/antlr4-runtime]]
                  [mount "0.1.16"]
