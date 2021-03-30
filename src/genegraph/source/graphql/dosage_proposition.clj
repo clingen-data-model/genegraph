@@ -68,4 +68,6 @@
   (q/ld1-> value [:sepio/has-subject :sepio/has-subject :geno/has-location]))
 
 (defresolver disease [args value]
-  (q/ld1-> value [:sepio/has-subject :sepio/has-object]))
+  (let [disease  (q/ld1-> value [:sepio/has-subject :sepio/has-object])]
+    (when-not (= (q/resource :mondo/Disease) disease)
+      disease)))
