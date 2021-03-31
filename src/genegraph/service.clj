@@ -96,12 +96,12 @@
                (log/info :fn :request-logging-interceptor
                             :uri uri
                             :request-method request-method
-                            :time (str total "ms")
                             :hostname (.getHostName host) 
                             :request-ip-addr (get-in ctx [:request :remote-addr])
                             :servlet-request (.toString (.getRequestURL (get-in ctx [:request :servlet-request])))
                             :servlet-request-body (get-in ctx [:request :body])
-                            :reponse-status (.getStatus (get-in ctx [:request :servlet-response])))
+                            :reponse-status (.getStatus (get-in ctx [:request :servlet-response]))
+                            :response-time (str total "ms"))
                ctx))}))
     
 (defn dev-interceptors [gql-schema]
