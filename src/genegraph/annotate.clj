@@ -69,7 +69,7 @@
   added (during development, for example)."
   [event]
   (if (and env/validate-events
-           (not (::validation-shape event)))
+           (not (contains? event ::validation-shape)))
     (assoc event
            ::validation-shape
            (some-> event
@@ -111,6 +111,8 @@
           validation-result (validate/validate validation-model
                                                (::validation-shape event))
           did-validate (validate/did-validate? validation-result)]
+      ;; (println (type (::validation-shape event)))
+      ;; (println "validating")
       (assoc event ::validation validation-result ::did-validate did-validate))
     event))
 
@@ -163,8 +165,7 @@
     event))
 
 (defmethod add-subjects :sepio/GeneValidityProposition [event]
-  (println "in add-subjects")
-  (log/info :fn :add-subjects :root-type :sepio/GeneValidityProposition :msg :received-event)
+  (log/debug :fn :add-subjects :root-type :sepio/GeneValidityProposition :msg :received-event)
   (if-let [gv-prop (first (q/select "select ?s where { ?s a :sepio/GeneValidityProposition }" {}
                                     (::q/model event)))]
     (let [genes (q/ld-> gv-prop [:sepio/has-subject])

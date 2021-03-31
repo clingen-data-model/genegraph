@@ -117,7 +117,7 @@
             "Definitive" "SEPIO:0004504"
             "Strong" "SEPIO:0004505"
             "Moderate" "SEPIO:0004506"
-            "Limited" "sepio:0004507"
+            "Limited" "SEPIO:0004507"
             "No Known Disease Relationship" "SEPIO:0004508"
             "No Classification" "SEPIO:0004508" ;; Maybe this should not exist in published records?
             ;; "No Classification" "SEPIO:0004508"

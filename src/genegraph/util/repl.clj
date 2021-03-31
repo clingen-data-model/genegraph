@@ -41,10 +41,12 @@
 
 (defn process-event-seq
   "Run event sequence through event processor"
-  [event-seq]
-  (write-tx
-   (doseq [event event-seq]
-     (event/process-event! event))))
+  ([event-seq]
+   (process-event-seq event-seq {}))
+  ([opts event-seq]
+   (write-tx
+    (doseq [event event-seq]
+      (event/process-event! (merge opts event))))))
 
 (defn process-event-dry-run
   "Run event through event processor, do not create side effects"
