@@ -1,4 +1,4 @@
-(ns genegraph.transform.clinvar.jsonld.variation-archive
+(ns genegraph.transform.clinvar.jsonld.variation
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q]
             [genegraph.transform.clinvar.common :refer [transform-clinvar
@@ -8,28 +8,22 @@
             [genegraph.transform.clinvar.iri :as iri]
             [taoensso.timbre :as log]))
 
-[:date_created
- :date_last_updated
- :id
- :interp_content
- :interp_description
- :interp_type
- :num_submissions
- :num_submitters
- :record_status
- :review_status
- :species
- :variation_id
- :version
+[::id
+ ::name
+ ::protein_change
+ ::subclass_type                                            ;For SimpleAllele, no child_ids or descendant_ids, for Genotype/Haplotype, must have child+descendant
+ ::variation_type
  ]
-[:content
- :interp_date_last_evaluated
- :interp_explanation
+[::allele_id                                                ; TODO 0.0864% null (this is okay)
+ ::child_ids
+ ::content
+ ::descendant_ids
+ ::num_chromosomes
+ ::num_copies
  ]
-(defn variation-archive-to-jsonld [msg]
-  (let [id (format (str iri/variation-archive "%s.%s")
-                   (:id msg)
-                   (:release_date msg))
+(defn variation-to-jsonld [msg]
+  (let [id-unversioned (str iri/clinvar-variation (:id msg))
+        id (str id-unversioned "." (:release_date msg))
         context {"@context" {"@vocab" iri/cgterms
                              "clingen" iri/cgterms
                              "sepio" "http://purl.obolibrary.org/obo/SEPIO_"
@@ -40,34 +34,22 @@
       (merge
         context
         {"@type" [:cg/ClinVarObject
-                  (str iri/cgterms "AggregateVariantClinicalSignificanceAssertion")]
-         :dc/is-version-of {"@id" (str iri/variation-archive (:id msg))}
+                  (str iri/cgterms "Variant")]
+         :dc/is-version-of {"@id" id-unversioned}
          :dc/has-version (:version msg)
 
-
-         :sepio/has-subject {"@id" (str iri/clinvar-variation (:variation_id msg))}
-         :sepio/has-predicate (:interp_description msg)
-         :sepio/has-object "http://purl.obolibrary.org/obo/MONDO_0000001"
          :sepio/date-created (:date_created msg)
          :sepio/date-modified (:date_last_updated msg)
 
          :sepio/qualified-contribution {:sepio/activity-date (:release_date msg)
                                         :sepio/has-role "ArchiverRole"
                                         :sepio/has-agent {"@id" (str iri/submitter "clinvar")}}
-
-         ; ClinGen/ClinVar additional terms (namespaced to @vocab)
-         ;"in_species"          (:species msg)
-         ;"submittedCondition"          (str iri/clinical-assertion-trait-set (:clinical_assertion_trait_set_id msg))
-
          }
         (-> msg (dissoc :id
                         :version
-                        :variation_id
-                        :interp_description
                         :date_created
                         :date_last_updated
-                        )
-            )))))
+                        ))))))
 
-(defmethod clinvar-to-jsonld :variation_archive [msg]
-  (variation-archive-to-jsonld msg))
+(defmethod clinvar-to-jsonld :variation [msg]
+  (variation-to-jsonld msg))

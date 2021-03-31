@@ -15,6 +15,7 @@
   (let [id (format (str iri/clinvar-assertion "%s.%s")
                    (:id msg)
                    (:release_date msg))
+        evidence-line-id (str iri/cgterms "evidence_line/" (:id msg))
         rdf-type (str iri/cgterms "VariantClinicalSignificanceAssertion")
         context {"@context" {"@vocab" iri/cgterms
                              "clingen" iri/cgterms
@@ -23,57 +24,73 @@
                              ;rdf-type          {"@type" "@id"}
                              ;:cg/ClinVarObject {"@type" "@id"}
                              }
-                 "@id" id}]
+                 ;"@id" id
+                 }
+        ]
     (genegraph-kw-to-iri
       (merge
         context
+        ; TODO Add @base
         {"@type" [:cg/ClinVarObject
-                  rdf-type]
-         :dc/is-version-of (str iri/clinvar-assertion (:id msg))
-         :dc/has-version (:version msg)
-         :dc/title (:title msg)
+                  (str iri/cgterms "EvidenceLine")],
+         "@id" evidence-line-id,
 
-         :sepio/has-subject (str iri/clinvar-variation (:variation_id msg))
-         :sepio/has-predicate (:interpretation_description msg)
-         :sepio/has-object (str iri/trait-set (:trait_set_id msg))
-         :sepio/date-created (:date_created msg)
-         :sepio/date-updated (:date_last_updated msg)
+         :sepio/has-evidence-direction "supports"
+         :sepio/evidence-line-strength (scv-review-status-to-evidence-strength-map
+                                         (:review_status msg))
+         ; The SCV itself is an evidence item within an evidence line that pertains to a variant assertion
+         :sepio/has-evidence-item
+         (merge
+           {"@type" [:cg/ClinVarObject
+                     rdf-type]
+            "@id" id
+            :dc/is-version-of {"@id" (str iri/clinvar-assertion (:id msg))}
+            :dc/has-version (:version msg)
+            :dc/title (:title msg)
 
-         :sepio/date-validated (:release_date msg)
-         :sepio/qualified-contribution {:sepio/activity-date (:interpretation_date_last_evaluated msg)
-                                        :sepio/has-role "SubmitterRole"
-                                        :sepio/has-agent {"@id" (str iri/submitter (:submitter_id msg))}}
+            :sepio/has-subject {"@id" (str iri/clinvar-variation (:variation_id msg))}
+            :sepio/has-predicate (:interpretation_description msg)
+            :sepio/has-object (str iri/trait-set (:trait_set_id msg))
+            :sepio/date-created (:date_created msg)
+            :sepio/date-updated (:date_last_updated msg)
+
+            ;:sepio/date-validated (:release_date msg)
+            :sepio/qualified-contribution {:sepio/activity-date (:interpretation_date_last_evaluated msg)
+                                           :sepio/has-role "SubmitterRole"
+                                           :sepio/has-agent {"@id" (str iri/submitter (:submitter_id msg))}}
+
+            ; ClinGen/ClinVar additional renamed terms (namespaced to @vocab)
+            "allele_origin" (:allele_origins msg)
+            "collection_method" (:collection_methods msg)
+            "submitted_condition" (str iri/clinical-assertion-trait-set (:clinical_assertion_trait_set_id msg))
+            ; TODO add allele origin from observations to the submitted variation
+            ; TODO update field name if change occurs here https://github.com/clingen-data-model/clinvar-streams/issues/3
+            "submitted_variation" (:clinical_assertion_variations msg)
+            }
+           (-> msg (dissoc
+                     :id
+                     :version
+                     :title
+                     :variation_id
+                     :interpretation_description
+                     :trait_set_id
+                     :date_created
+                     :date_last_updated
+                     :interpretation_date_last_evaluated
+                     :submitter_id
+                     :allele_origins
+                     :collection_methods
+                     :clinical_assertion_trait_set_id
+                     :clinical_assertion_variations))),
 
          ; Reverse relation to parent variation archive
-         ;"@reverse"                    {:sepio/has-evidence-line [{:sepio/has-evidence-item      id
-         ;                                                          :sepio/has-evidence-direction "supports"
-         ;                                                          :sepio/evidence-line-strength (scv-review-status-to-evidence-strength-map
-         ;                                                                                          (:review_status msg))}]}
+         "@reverse" {:sepio/has-evidence-line
+                     [{"@id" (format (str iri/variation-archive "%s")
+                                     (:variation_archive_id msg))
 
-         ; ClinGen/ClinVar additional renamed terms (namespaced to @vocab)
-         "allele_origin" (:allele_origins msg)
-         "collection_method" (:collection_methods msg)
-         "submitted_condition" (str iri/clinical-assertion-trait-set (:clinical_assertion_trait_set_id msg))
-         ; TODO add allele origin from observations to the submitted variation
-         ; TODO update field name if change occurs here https://github.com/clingen-data-model/clinvar-streams/issues/3
-         "submitted_variation" (:clinical_assertion_variations msg)
+                       }]}
          }
-        (-> msg
-            (dissoc
-              :id
-              :version
-              :title
-              :variation_id
-              :interpretation_description
-              :trait_set_id
-              :date_created
-              :date_last_updated
-              :interpretation_date_last_evaluated
-              :submitter_id
-              :allele_origins
-              :collection_methods
-              :clinical_assertion_trait_set_id
-              :clinical_assertion_variations))))))
+        ))))
 
 (defmethod clinvar-to-jsonld :clinical_assertion [msg]
   (clinical-assertion-to-jsonld msg))

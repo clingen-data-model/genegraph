@@ -25,7 +25,7 @@
     (genegraph-kw-to-iri
       (merge
         context
-        {:rdf/type (str iri/cgterms "AssertionSet")}
+        {"@type" (str iri/cgterms "AssertionSet")}
         msg))))
 
 (defmethod clinvar-to-jsonld :submission [msg]
