@@ -24,7 +24,9 @@
             [genegraph.source.graphql.user :as user]
             [genegraph.source.graphql.group :as group]
             [genegraph.source.graphql.clinvar.clinical_assertion :as cv-clinical-assertion]
+            [genegraph.source.graphql.clinvar.aggregate_assertion :as cv-aggregate-assertion]
             [genegraph.source.graphql.clinvar.contribution :as cv-contribution]
+            [genegraph.source.graphql.clinvar.variant :as cv-variant]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]
@@ -33,22 +35,34 @@
             [genegraph.source.graphql.common.curation :as curation]))
 
 (defn resolver-map []
-  {:clinvar/clinical-assertion-query cv-clinical-assertion/clinical-assertion-query
+  {:clinvar/clinical-assertion-single cv-clinical-assertion/clinical-assertion-single
    :clinvar/clinical-assertion-subject cv-clinical-assertion/subject
    :clinvar/clinical-assertion-predicate cv-clinical-assertion/predicate
+   :clinvar/clinical-assertion-object cv-clinical-assertion/object
    :clinvar/clinical-assertion-version cv-clinical-assertion/version
    :clinvar/clinical-assertion-list cv-clinical-assertion/clinical-assertion-list
    :clinvar/clinical-assertion-contribution cv-clinical-assertion/contribution
    :clinvar/clinical-assertion-review-status cv-clinical-assertion/review-status
    :clinvar/clinical-assertion-date-updated cv-clinical-assertion/date-updated
-   :clinvar/clinical-assertion-date-validated cv-clinical-assertion/date-validated
+   :clinvar/clinical-assertion-release-date cv-clinical-assertion/release-date
    :clinvar/clinical-assertion-version-of cv-clinical-assertion/version-of
    :clinvar/clinical-assertion-allele-origin cv-clinical-assertion/allele-origin
    :clinvar/clinical-assertion-collection-method cv-clinical-assertion/collection-method
+   :clinvar/aggregate-assertion-list cv-aggregate-assertion/aggregate-assertion-list
+   :clinvar/aggregate-assertion-version-of cv-aggregate-assertion/version-of
+   :clinvar/aggregate-assertion-release-date cv-aggregate-assertion/release-date
+   :clinvar/aggregate-assertion-review-status cv-aggregate-assertion/review-status
+   :clinvar/aggregate-assertion-subject cv-aggregate-assertion/subject
+   :clinvar/aggregate-assertion-predicate cv-aggregate-assertion/predicate
+   :clinvar/aggregate-assertion-object cv-aggregate-assertion/object
+   :clinvar/aggregate-assertion-version cv-aggregate-assertion/version
+   :clinvar/aggregate-assertion-members cv-aggregate-assertion/members
    :contribution/contribution-query cv-contribution/contribution-single
    :contribution/agent cv-contribution/agent
    :contribution/agent-role cv-contribution/agent-role
    :contribution/activity-date cv-contribution/activity-date
+   :variant/variant-single cv-variant/variant-single
+   :variant/name cv-variant/variant-name
 
 
    :actionability/actionability-query actionability/actionability-query
