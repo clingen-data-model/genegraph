@@ -163,7 +163,8 @@
     event))
 
 (defmethod add-subjects :sepio/GeneValidityProposition [event]
-  (log/debug :fn :add-subjects :root-type :sepio/GeneValidityProposition :msg :received-event)
+  (println "in add-subjects")
+  (log/info :fn :add-subjects :root-type :sepio/GeneValidityProposition :msg :received-event)
   (if-let [gv-prop (first (q/select "select ?s where { ?s a :sepio/GeneValidityProposition }" {}
                                     (::q/model event)))]
     (let [genes (q/ld-> gv-prop [:sepio/has-subject])

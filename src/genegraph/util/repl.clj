@@ -115,7 +115,7 @@
              iterator-seq))))
 
 (def genes-for-curation-type-query
-"query ($activity: CurationActivity){
+  "query ($activity: CurationActivity){
   genes(curation_activity: $activity, limit: null) {
     gene_list {
       curie
@@ -158,13 +158,13 @@
        (into #{})))
 
 (defn original-dosage-genes [ftp-dosage-list-path]
-   (->> (-> ftp-dosage-list-path
-            slurp
-            (csv/read-csv :separator \tab)
-            (nthrest 6))
-        (map second)
-        (map #(str "NCBIGENE:" %))
-        (into #{})))
+  (->> (-> ftp-dosage-list-path
+           slurp
+           (csv/read-csv :separator \tab)
+           (nthrest 6))
+       (map second)
+       (map #(str "NCBIGENE:" %))
+       (into #{})))
 
 (defn original-validity-genes [validity-list-path]
   (->> (-> validity-list-path

@@ -130,14 +130,27 @@
                ByteArrayInputStream.)]
     (l/read-rdf is {:format :json-ld})))
 
+(def gdm-is-about-gene-query
+  (q/create-query "prefix gci: <http://gci.clinicalgenome.org/>
+  select ?hgnc where { 
+ ?gdm a gci:gdm .
+ ?gdm gci:gene ?gene .
+ ?gene gci:hgncId ?hgnc }"))
+
+(def hgnc-has-equiv-entrez-gene-query
+  (q/create-query "select ?gene where { ?gene :owl/same-as ?hgnc_gene }"))
+
 (defn transform-gdm [gdm]
   (.setNsPrefixes gdm ns-prefixes)
-  (let [params {::q/model (q/union gdm gdm-sepio-relationships)
+  (let [gdm-is-about-gene (first (gdm-is-about-gene-query {::q/model gdm}))
+        entrez-gene (first (hgnc-has-equiv-entrez-gene-query {:hgnc_gene gdm-is-about-gene}))
+        params {::q/model (q/union gdm gdm-sepio-relationships)
                 :gcibase base
                 :arbase "http://reg.genome.network/allele/"
                 :cvbase "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
                 :pmbase "https://pubmed.ncbi.nlm.nih.gov/"
-                :affbase "http://dataexchange.clinicalgenome.org/agent/"}
+                :affbase "http://dataexchange.clinicalgenome.org/agent/"
+                :entrez_gene entrez-gene}
         unlinked-model (q/union 
                         (construct-proposition params)
                         (construct-evidence-level-assertion params)
