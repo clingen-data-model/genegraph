@@ -1,6 +1,7 @@
 (ns genegraph.transform.clinvar.common
   (:require [genegraph.database.names :refer [local-property-names local-class-names prefix-ns-map]]
-            [genegraph.transform.clinvar.iri :as iri]))
+            [genegraph.transform.clinvar.iri :as iri]
+            [io.pedestal.log :as log]))
 
 (defmulti transform-clinvar :genegraph.transform.clinvar/format)
 
@@ -20,7 +21,7 @@
         :geno/Haplotype
         (= "Genotype" variation-type)
         :geno/Genotype
-        :default (do (log/error "Unknown variation type")
+        :default (do (log/error :msg "Unknown variation type")
                      :geno/Allele)))
 
 (defn contribution-role
@@ -81,7 +82,7 @@
                     ; v against local-class-names. If keyword not in those maps, convert keyword to string (name)
                     (let [k2 (resolve-key k)
                           v2 (resolve-value v)]
-                      (log/debugf "%s -> %s, %s -> %s" k k2 v v2)
+                      (log/debug :mapped-values (format "%s -> %s, %s -> %s" k k2 v v2))
                       [k2 v2]))
                   m)))
   )
