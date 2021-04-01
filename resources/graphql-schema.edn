@@ -42,19 +42,36 @@
      }
     :Chromosome
     {:description "Chromosomes."
-     :values [:CHR1 :CHR2 :CHR3 :CHR4 :CHR5 :CHR6 :CHR7 :CHR8 :CHR9 :CHR10 :CHR11 :CHR12 :CHR13 :CHR14 :CHR15
-              :CHR16 :CHR17 :CHR18 :CHR19 :CHR20 :CHR21 :CHR22 :CHRX :CHRY]
-     }
+     :values [:CHR1 :CHR2 :CHR3 :CHR4 :CHR5 :CHR6 :CHR7 :CHR8 :CHR9
+              :CHR10 :CHR11 :CHR12 :CHR13 :CHR14 :CHR15 :CHR16 :CHR17
+              :CHR18 :CHR19 :CHR20 :CHR21 :CHR22 :CHRX :CHRY]}
     :Suggester
     {:description "Suggesters."
-     :values [:GENE :DISEASE :DRUG]
-     }}
+     :values [:GENE :DISEASE :DRUG]}}
 
    :interfaces
    {:Resource
      {:description "An RDF Resource; generic type suitable for return when a variety of resources may be returned as the result of a function all"
      :fields {:iri {:type String}
               :label {:type String}}}
+
+    :EvidenceLine
+    {:description "A SEPIO evidence line"
+     :fields {:evidence_items {:description "Evidence items in support of a given evidence line"
+                               :type (list :EvidenceItem)}
+              :iri {:description "IRI of this evidence line"
+                    :type String}
+              :type {:description "Type of this evidence line"
+                     :type :Class}}}
+    
+    :EvidenceItem
+    {:description "A SEPIO evidence item"
+     :fields {:evidence_lines {:description "Evidence lines supporting the assertion"
+                               :type (list :EvidenceLine)}
+              :iri {:description "IRI of this evidence item"
+                    :type String}
+              :type {:description "Type of this evidence item"
+                     :type :Class}}}
 
      :GenomicCoordinate
      {:description "Genomic coordinate of a Gene or Region"
@@ -501,7 +518,7 @@
                       :resolve :ac-assertion/attributed-to}}}
 
     :GeneValidityAssertion
-    {:implements [:Resource :Curation]
+    {:implements [:Resource :Curation :EvidenceItem]
      :fields
      {:iri {:type String
             :resolve :resource/iri
@@ -512,6 +529,8 @@
       :label {:type String
               :resolve :resource/label
               :description "Label identifying this gene validity curation."}
+      :type {:type :Class
+             :resolve :resource/type}
       :report_date {:type String
                     :resolve :gene-validity/report-date
                     :description "Date gene validity report was issued."}
@@ -533,12 +552,35 @@
       :specified_by {:type :Criteria
                      :description "Criteria used by the curators to create the gene validity assertion"
                      :resolve :gene-validity/specified-by}
+      :evidence_lines {:type (list :EvidenceLine)
+                       :description "Direct evidence lines used in support of the assertion."
+                       :resolve :evidence-item/evidence-lines}
       :has_format {:type String
                    :description "Format of the Legacy JSON from the GCI."
                    :resolve :gene-validity/has-format}
       :legacy_json {:type String
                     :description "Legacy JSON from the GCI."
                     :resolve :gene-validity/legacy-json}}}
+
+    :GenericEvidenceLine {:description "A SEPIO evidence line without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
+                          :implements [:EvidenceLine]
+                          :fields
+                          {:evidence_items {:type (list :EvidenceItem)
+                                            :resolve :evidence-line/evidence-items}
+                           :iri {:type String
+                                 :resolve :resource/iri}
+                           :type {:type :Class
+                                  :resolve :resource/type}}}
+
+    :GenericEvidenceItem {:description "A SEPIO evidence item without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
+                          :implements [:EvidenceItem]
+                          :fields
+                          {:evidence_lines {:type (list :EvidenceLine)
+                                            :resolve :evidence-item/evidence-lines}
+                           :iri {:type String
+                                 :resolve :resource/iri}
+                           :type {:type :Class
+                                  :resolve :resource/type}}}
 
     :GeneValidityAssertions
     {:description "A collection of gene validity curations."

@@ -2,6 +2,8 @@
   (:require [genegraph.database.query :as q]
             [genegraph.database.util :refer [tx]]
             [genegraph.source.graphql.gene :as gene]
+            [genegraph.source.graphql.evidence-line :as evidence-line]
+            [genegraph.source.graphql.evidence-item :as evidence-item]
             [genegraph.source.graphql.resource :as resource]
             [genegraph.source.graphql.actionability :as actionability]
             [genegraph.source.graphql.actionability-assertion :as ac-assertion]
@@ -116,6 +118,8 @@
    :drug/drugs drug/drugs
    :evidence/description evidence/description
    :evidence/source evidence/source
+   :evidence-line/evidence-items evidence-line/evidence-items
+   :evidence-item/evidence-lines evidence-item/evidence-lines
    :gene/chromosome-band gene/chromosome-band
    :gene/conditions gene/conditions
    :gene/curation-activities gene/curation-activities
