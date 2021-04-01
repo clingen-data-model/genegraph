@@ -1,10 +1,16 @@
 (ns genegraph.transform.clinvar.common
-  (:require [clojure.tools.logging :as log]
-            [genegraph.database.names :refer [local-property-names local-class-names prefix-ns-map]]))
+  (:require [genegraph.database.names :refer [local-property-names local-class-names prefix-ns-map]]
+            [genegraph.transform.clinvar.iri :as iri]))
 
 (defmulti transform-clinvar :genegraph.transform.clinvar/format)
 
 (defmulti clinvar-to-jsonld :genegraph.transform.clinvar/format)
+
+(def clinvar-jsonld-context {"@context" {"@vocab" iri/cgterms
+                                         "clingen" iri/cgterms
+                                         "sepio" "http://purl.obolibrary.org/obo/SEPIO_"
+                                         "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"
+                                         }})
 
 (defn variation-geno-type
   [variation-type]
@@ -23,25 +29,27 @@
   (throw (UnsupportedOperationException. "Not yet implemented")))
 
 (def vcv-review-status-to-evidence-strength-map
-  "Converts clinvar textual VCV review status to a numerical evidence strength
+  "Maps clinvar textual VCV review status to a numerical evidence strength.
+  Any value not contained here should default to a strength of 0.
   https://www.ncbi.nlm.nih.gov/clinvar/docs/review_status/"
-  {"practice guideline"                                   4
-   "reviewed by expert panel"                             3
+  {"practice guideline" 4
+   "reviewed by expert panel" 3
    "criteria provided, multiple submitters, no conflicts" 2
-   "criteria provided, single submitter"                  1
-   "criteria provided, conflicting interpretations"       1
-   "no assertion criteria provided"                       0
-   "no assertion for the individual variant"              0
-   "no assertion provided"                                0})
+   "criteria provided, single submitter" 1
+   "criteria provided, conflicting interpretations" 1
+   "no assertion criteria provided" 0
+   "no assertion for the individual variant" 0
+   "no assertion provided" 0})
 (def scv-review-status-to-evidence-strength-map
   "Maps clinvar textual SCV review status to a numerical evidence strength.
+  Any value not contained here should default to a strength of 0.
   https://www.ncbi.nlm.nih.gov/clinvar/docs/review_status/"
-  {"practice guideline"                      4
-   "reviewed by expert panel"                3
-   "criteria provided, single submitter"     1
-   "no assertion criteria provided"          0
+  {"practice guideline" 4
+   "reviewed by expert panel" 3
+   "criteria provided, single submitter" 1
+   "no assertion criteria provided" 0
    "no assertion for the individual variant" 0
-   "no assertion provided"                   0})
+   "no assertion provided" 0})
 
 (defn genegraph-kw-to-iri
   "Uses property-names and class-names to try to resolve keywords in `m`.

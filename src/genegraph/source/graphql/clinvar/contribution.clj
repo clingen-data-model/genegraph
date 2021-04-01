@@ -4,7 +4,7 @@
             [io.pedestal.log :as log]))
 
 (defn contribution-single [context args value]
-  (log/info :args args :value value)
+  (log/debug :fn ::contribution-single :args args :value value)
   (q/resource (:iri args)))
 
 ;(defn contribution-list [context args value]
@@ -16,15 +16,15 @@
 ;  )
 
 (defn agent [context args value]
-  (log/info :args args :value value)
+  (log/debug :fn ::agent :args args :value value)
   (q/ld1-> value [:sepio/has-agent]))
 
 (defn agent-role [context args value]
-  (log/info :args args :value value)
+  (log/debug :fn ::agent-role :args args :value value)
   (q/ld1-> value [:sepio/has-role]))
 
 (defn activity-date [context args value]
-  (log/info :args args :value value)
+  (log/debug :fn ::activity-date :args args :value value)
   (q/ld1-> value [:sepio/activity-date]))
 
 
