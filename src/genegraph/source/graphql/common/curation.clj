@@ -119,7 +119,8 @@
 
 (defn curated-genetic-conditions-for-gene [query-params]
   (map #(array-map :gene (:gene query-params) :disease %) 
-       (curated-diseases-for-gene query-params)))
+       (remove #(= (q/resource :mondo/Disease) %)
+               (curated-diseases-for-gene query-params))))
 
 (def curated-genes-for-disease
   (create-query [:project ['gene]
