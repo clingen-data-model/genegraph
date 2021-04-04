@@ -10,8 +10,9 @@
             [genegraph.transform.clinvar.common :refer [transform-clinvar clinvar-to-jsonld]]
 
             [genegraph.transform.clinvar.jsonld.clinical-assertion]
-            ;[genegraph.transform.clinvar.jsonld.submission]
-            ;[genegraph.transform.clinvar.jsonld.variation-archive]
+    ;[genegraph.transform.clinvar.jsonld.submission]
+            [genegraph.transform.clinvar.jsonld.variation-archive]
+            [genegraph.transform.clinvar.jsonld.variation]
             )
   (:import (java.io StringReader)))
 
@@ -68,24 +69,38 @@
     (log/info jsonld)
     (assoc msg ::clinvar-jsonld jsonld)))
 
+(defn select-other-keys
+  "Inverse of select-keys in that it selects all the keys other than those specified."
+  [m exclude-ks]
+  (select-keys m (filter
+                   ; Return true if key from m is not in keys to exclude
+                   (fn [m-key] (nil? (some #(= m-key %) exclude-ks)))
+                   (keys m))))
 
 ; add-model with json-ld based triples
 (defmethod add-model :clinvar-combined [event]
   "Construct an Apache Jena Model for the message contained in event under :genegraph.sink.event/value.
   Add it to :genegraph.database.query/model.
   This function uses a json-ld intermediary translation from add-clinvar-jsonld"
-  (log/info "add-model" :clinvar-combined event)
+
+  (let [info-keys [:genegraph.transform.core/format
+                   :genegraph.sink.stream/topic
+                   :genegraph.sink.stream/partition
+                   :genegraph.sink.stream/offset]]
+    (log/info "add-model" :clinvar-combined (select-keys event info-keys))
+    (log/debug "add-model" :clinvar-combined (select-other-keys event info-keys)))
+
   (let [model (-> event
                   :genegraph.sink.event/value
                   (json/parse-string true)
-                  add-clinvar-format
+                  ;add-clinvar-format
                   add-clinvar-jsonld
                   :genegraph.transform.clinvar.core/clinvar-jsonld
                   ; TODO convert ::clinvar-jsonld to model using l/read-rdf
                   (#(l/read-rdf (StringReader. (json/generate-string %)) {:format :json-ld}))
                   )
         event (assoc event ::q/model model)]
-    (log/info event)
+    ;(log/info event)
     event))
 
 ; add-model with manually construct triples
