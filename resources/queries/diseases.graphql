@@ -13,28 +13,28 @@
         iri
         curie
         label
-        aliases
+        synonyms
         description
       }
       direct_superclasses {
         iri
         curie
         label
-        aliases
+        synonyms
         description
       }
       subclasses {
         iri
         curie
         label
-        aliases
+        synonyms
         description
       }
       superclasses {
         iri
         curie
         label
-        aliases
+        synonyms
         description
       }
     }

@@ -38,7 +38,10 @@
   (let [gql-file-names (-> "resolver-cache-warm.edn" io/resource slurp edn/read-string)]
     (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache..." :resources gql-file-names)
     (doseq [query-file gql-file-names]
-      (-> query-file io/resource slurp core/gql-query))
+      (let [results (-> query-file io/resource slurp core/gql-query)]
+        (when-let [errors (:errors results)]
+          (log/error :fn :warm-resolver-cache :msg (str "Resolver cache warmer script has errors: " query-file)
+                     :errors errors))))
 ;;    (doall (pmap #(-> % io/resource slurp core/gql-query) gql-file-names))
     (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache...complete.")))
 
