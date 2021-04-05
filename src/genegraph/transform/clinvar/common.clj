@@ -1,7 +1,9 @@
 (ns genegraph.transform.clinvar.common
   (:require [genegraph.database.names :refer [local-property-names local-class-names prefix-ns-map]]
             [genegraph.transform.clinvar.iri :as iri]
-            [io.pedestal.log :as log]))
+            [io.pedestal.log :as log]
+            [clojure.data.csv :as csv]
+            [clojure.java.io :as io]))
 
 (defmulti transform-clinvar :genegraph.transform.clinvar/format)
 
@@ -12,6 +14,17 @@
                                          "sepio" "http://purl.obolibrary.org/obo/SEPIO_"
                                          "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"
                                          }})
+
+(def consensus-cancer-genes-list
+  (map (fn [row] {:gene_id (nth row 0)
+                  :gene_symbol (nth row 1)
+                  :num (nth row 2)})
+       (rest (csv/read-csv (io/reader "resources/consensus_cancer_genes.csv")))))
+
+(def consensus-cancer-genes-by-symbol
+  (into {} (map (fn [{:keys [gene_id gene_symbol num]}]
+                  [gene_symbol {:gene_id gene_id :num num}])
+                consensus-cancer-genes-list)))
 
 (defn variation-geno-type
   [variation-type]
