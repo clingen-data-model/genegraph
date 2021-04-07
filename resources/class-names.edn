@@ -71,6 +71,8 @@
  [:sepio/InterpreterRole "http://purl.obolibrary.org/obo/SEPIO_0000331"]
  [:sepio/GeneticCondition "http://purl.obolibrary.org/obo/SEPIO_0000219"]
  [:sepio/EvidenceRole "http://purl.obolibrary.org/obo/SEPIO_0000148"]
+ [:sepio/EvidenceItem "http://purl.obolibrary.org/obo/SEPIO_0000149"]
+ [:sepio/EvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0000002"]
  [:cg/DomainModel "http://dataexchange.clinicalgenome.org/terms/DomainModel"]
  [:cg/ActionabilityGeneticCondition "http://dataexchange.clinicalgenome.org/terms/ActionabilityGeneticCondition"]
  [:cg/ActionabilityAssertionForPreferredCondition "http://dataexchange.clinicalgenome.org/terms/ActionabilityAssertionForPreferredCondition"]
@@ -280,6 +282,7 @@
   "http://purl.obolibrary.org/obo/SEPIO_0004078"]
  [:sepio/ProbandWithVariantEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004081"]
+ [:sepio/ProbandEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004097"]
  [:sepio/GeneValidityEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004082"]
  [:sepio/GeneValidityGeneticEvidenceLine

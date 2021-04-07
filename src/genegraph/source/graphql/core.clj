@@ -133,6 +133,7 @@
    :evidence/description evidence/description
    :evidence/source evidence/source
    :evidence-line/evidence-items evidence-line/evidence-items
+   :evidence-line/score evidence-line/score
    :evidence-item/evidence-lines evidence-item/evidence-lines
    :gene/chromosome-band gene/chromosome-band
    :gene/conditions gene/conditions

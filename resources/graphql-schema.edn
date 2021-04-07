@@ -47,8 +47,12 @@
    }
   :Suggester
   {:description "Suggesters."
-   :values [:GENE :DISEASE :DRUG]
-   }}
+   :values [:GENE :DISEASE :DRUG]}
+
+  :SEPIOClass
+  {:description "Classes in SEPIO; will typically be used to filter results of a field listing items with a SEPIO type."
+   :values [:ProbandWithVariantEvidenceItem
+            :ProbandEvidenceLine]}}
 
  :interfaces
  {:Resource
@@ -63,16 +67,27 @@
             :iri {:description "IRI of this evidence line"
                   :type String}
             :type {:description "Type of this evidence line"
-                   :type :Class}}}
+                   :type (list :Class)}
+            :score {:description "Numeric score of this evidence line; usually exists within
+the context of a formal evalutation framework"
+                    :type Float}
+            :description {:descripiton "Usually provides the reasoning behind the contribution of a given evidence item to a proposition or assertion"
+                          :type String}}}
   
   :EvidenceItem
   {:description "A SEPIO evidence item"
    :fields {:evidence_lines {:description "Evidence lines supporting the assertion"
-                             :type (list :EvidenceLine)}
+                             :type (list :EvidenceLine)
+                             :args {:recursive {:description "Recurse through SEPIO has-evidence-line, has-evidence-item associations to find deeper evidence lines"
+                                                :type Boolean}
+                                    :class {:description "When recursive is true, filter selection to instances of a given class. Include subclass hierarchy."
+                                            :type :SEPIOClass}}}
             :iri {:description "IRI of this evidence item"
                   :type String}
             :type {:description "Type of this evidence item"
-                   :type :Class}}}
+                   :type (list :Class)}
+            :description {:descripiton "A description of the evidence item"
+                          :type String}}}
 
   :GenomicCoordinate
   {:description "Genomic coordinate of a Gene or Region"
@@ -568,7 +583,7 @@
     :label {:type String
             :resolve :resource/label
             :description "Label identifying this gene validity curation."}
-    :type {:type :Class
+    :type {:type (list :Class)
            :resolve :resource/type}
     :report_date {:type String
                   :resolve :gene-validity/report-date
@@ -592,14 +607,18 @@
                    :description "Criteria used by the curators to create the gene validity assertion"
                    :resolve :gene-validity/specified-by}
     :evidence_lines {:type (list :EvidenceLine)
-                     :description "Direct evidence lines used in support of the assertion."
+                     :args {:recursive {:type Boolean}
+                            :class {:type :SEPIOClass}}
+                     :description "Evidence lines used in support of the assertion."
                      :resolve :evidence-item/evidence-lines}
     :has_format {:type String
                  :description "Format of the Legacy JSON from the GCI."
                  :resolve :gene-validity/has-format}
     :legacy_json {:type String
                   :description "Legacy JSON from the GCI."
-                  :resolve :gene-validity/legacy-json}}}
+                  :resolve :gene-validity/legacy-json}
+    :description {:type String
+                  :resolve :evidence/description}}}
 
   :GenericEvidenceLine {:description "A SEPIO evidence line without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
                         :implements [:EvidenceLine]
@@ -608,18 +627,26 @@
                                           :resolve :evidence-line/evidence-items}
                          :iri {:type String
                                :resolve :resource/iri}
-                         :type {:type :Class
-                                :resolve :resource/type}}}
+                         :type {:type (list :Class)
+                                :resolve :resource/type}
+                         :score {:type Float
+                                 :resolve :evidence-line/score}
+                         :description {:type String
+                                       :resolve :evidence/description}}}
 
   :GenericEvidenceItem {:description "A SEPIO evidence item without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
                         :implements [:EvidenceItem]
                         :fields
                         {:evidence_lines {:type (list :EvidenceLine)
+                                          :args {:recursive {:type Boolean}
+                                                 :class {:type :SEPIOClass}}
                                           :resolve :evidence-item/evidence-lines}
                          :iri {:type String
                                :resolve :resource/iri}
-                         :type {:type :Class
-                                :resolve :resource/type}}}
+                         :type {:type (list :Class)
+                                :resolve :resource/type}
+                         :description {:type String
+                                       :resolve :evidence/description}}}
 
   :GeneValidityAssertions
   {:description "A collection of gene validity curations."
