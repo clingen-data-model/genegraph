@@ -102,7 +102,7 @@
             (.seekToBeginning consumer [part])))
         (read-end-offsets! consumer tp)
         (while @run-consumer
-          (let [records (poll-once consumer)]
+          (when-let [records (poll-once consumer)]
             (->> records
                  (map #(consumer-record-to-clj % topic))
                  event/process-event-seq!)
