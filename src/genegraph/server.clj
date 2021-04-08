@@ -63,7 +63,6 @@
       (mount.core/start)
       (log/info :fn :-main :message "All services started")
       (migration/warm-resolver-cache)
-      (log/info :fn :-main :message "Resolver cache warm")
       (reset! initialized? true)
       (log/info :fn :-main :message "Genegraph fully initialized, all systems go"))
     (do
