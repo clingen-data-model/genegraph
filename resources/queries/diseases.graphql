@@ -5,38 +5,9 @@
       iri
       curie
       label
-      curation_activities
       description
       synonyms
       last_curated_date
-      direct_subclasses {
-        iri
-        curie
-        label
-        synonyms
-        description
-      }
-      direct_superclasses {
-        iri
-        curie
-        label
-        synonyms
-        description
-      }
-      subclasses {
-        iri
-        curie
-        label
-        synonyms
-        description
-      }
-      superclasses {
-        iri
-        curie
-        label
-        synonyms
-        description
-      }
     }
   }
 }

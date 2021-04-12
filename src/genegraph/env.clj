@@ -8,7 +8,7 @@
                           (str base-dir "/" data-version)
                           base-dir))
 (def dx-topics (System/getenv "CG_SEARCH_TOPICS"))
-(def dx-stage-jaas (System/getenv "DX_STAGE_JAAS"))
+(def dx-jaas-config (System/getenv "DX_JAAS_CONFIG"))
 (def genegraph-bucket (System/getenv "GENEGRAPH_BUCKET"))
 (def use-gql-cache (System/getenv "GENEGRAPH_GQL_CACHE"))
 (def mode (System/getenv "GENEGRAPH_MODE"))
@@ -16,6 +16,7 @@
 (def use-response-cache (System/getenv "GENEGRAPH_RESPONSE_CACHE"))
 (def genegraph-version (System/getenv "GENEGRAPH_IMAGE_VERSION"))
 (def database-build-mode (System/getenv "GENEGRAPH_DATABASE_BUILD_MODE"))
+(def graphql-logging-topic (System/getenv "GENEGRAPH_GQL_LOGGING_TOPIC"))
 
 (def dx-key-pass (System/getenv "SERVEUR_KEY_PASS"))
 
@@ -27,8 +28,8 @@
                   :genegraph-response-cache use-response-cache
                   :genegraph-mode mode
                   :genegraph-validate-events validate-events
-                  :genegraph-version genegraph-version})
-  
+                  :genegraph-version genegraph-version
+                  :graphql-logging-topic graphql-logging-topic})
 
 (defn log-environment []
   (log/info :fn :log-environment
