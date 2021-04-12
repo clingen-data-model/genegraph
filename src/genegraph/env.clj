@@ -16,7 +16,7 @@
 (def use-response-cache (System/getenv "GENEGRAPH_RESPONSE_CACHE"))
 (def genegraph-version (System/getenv "GENEGRAPH_IMAGE_VERSION"))
 (def database-build-mode (System/getenv "GENEGRAPH_DATABASE_BUILD_MODE"))
-(def graphql-logging-topic (System/getenv "GRAPHQL_LOGGING_TOPIC"))
+(def graphql-logging-topic (System/getenv "GENEGRAPH_GQL_LOGGING_TOPIC"))
 
 (def dx-key-pass (System/getenv "SERVEUR_KEY_PASS"))
 

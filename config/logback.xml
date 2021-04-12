@@ -40,7 +40,7 @@
        Janino is "a super-small, super-fast Java compiler." This allows us to log to Kafka when it is
        properly configured in production and not in dev.
   -->
-  <if condition='isDefined("GRAPHQL_LOGGING_TOPIC") &amp;&amp; p("GENEGRAPH_MODE").equals("production")'>
+  <if condition='isDefined("GENEGRAPH_GQL_LOGGING_TOPIC") &amp;&amp; p("GENEGRAPH_MODE").equals("production")'>
     <then>
       <appender name="ccloud-kafka" class="com.github.danielwegener.logback.kafka.KafkaAppender">
 	<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
@@ -53,7 +53,7 @@
 	<!-- block the logging application thread if the kafka appender cannot keep up with sending the log messages -->
 	<deliveryStrategy class="com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy" />
 	
-	<topic>${GRAPHQL_LOGGING_TOPIC}</topic>
+	<topic>${GENEGRAPH_GQL_LOGGING_TOPIC}</topic>
 
 	<!-- each <producerConfig> translates to regular kafka-client config (format: key=value) -->
 	<!-- producer configs are documented here: https://kafka.apache.org/documentation.html#newproducerconfigs -->
@@ -96,7 +96,7 @@
     <appender-ref ref="FILE" />
     <appender-ref ref="STDOUT" />
     
-    <if condition='isDefined("GRAPHQL_LOGGING_TOPIC") &amp;&amp; p("GENEGRAPH_MODE").equals("production")'>
+    <if condition='isDefined("GENEGRAPH_GQL_LOGGING_TOPIC") &amp;&amp; p("GENEGRAPH_MODE").equals("production")'>
       <then>
 	<appender-ref ref="ccloud-kafka" />
       </then>
