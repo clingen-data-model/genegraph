@@ -109,6 +109,5 @@
     <logger name="io.pedestal" level="ALL" />
   -->
   <logger name="genegraph" level="INFO" />
-  <logger name="org.apache.kafka.client.producer" level="INFO" />
 
 </configuration>

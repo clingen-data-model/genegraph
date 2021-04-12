@@ -13,12 +13,7 @@
       dosage_curation {
         curie
         iri
-        genomic_feature {
-          __typename
-        }
         haplo_index
-        location_relationship
-        omim
         pli_score
         report_date
         haploinsufficiency_assertion {
@@ -68,49 +63,20 @@
           synonyms
           curation_activities
           description
-          direct_subclasses {
-            iri
-            curie
-            label
-            synonyms
-            description
-          }
-          direct_superclasses {
-            iri
-            curie
-            label
-            synonyms
-            description
-          }
-          subclasses {
-            iri
-            curie
-            label
-            synonyms
-            description
-          }
-          superclasses {
-            iri
-            curie
-            label
-            synonyms
-            description
-          }
         }
         mode_of_inheritance {
           iri
           curie
           label
         }
-        actionability_curations {
-          iri
-          curie
-          label
-          classification_description
+        actionability_assertions {
+          classification {
+            curie
+            iri
+            label
+          }
           report_date
-          report_id
           source
-          wg_label
         }
         gene_dosage_assertions {
           iri

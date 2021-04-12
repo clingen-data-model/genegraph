@@ -20,6 +20,7 @@
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.set :as set]
+            [clojure.string :as str]
             [genegraph.database.util :refer [begin-read-tx close-read-tx]]
             [io.pedestal.log :as log])
   (:import java.net.InetAddress
@@ -95,7 +96,7 @@
                    total (- finish start-time)]
                (log/info :fn :request-logging-interceptor
                             :uri uri
-                            :request-method request-method
+                            :request-method (str/upper-case request-method)
                             :hostname (.getHostName host) 
                             :request-ip-addr (get-in ctx [:request :remote-addr])
                             :servlet-request (.toString (.getRequestURL (get-in ctx [:request :servlet-request])))
