@@ -12,12 +12,12 @@
   When lacinia serializes the resource to a string it receives the iri used to construct the
   resource initially, which in our case is the assertion record iri."
   [context args value]
-  (log/info :fn ::aggregate-assertion-list :args args :value value)
+  (log/debug :fn ::aggregate-assertion-list :args args :value value)
 
   (let [timeframe (let [tf-arg (:timeframe args "LATEST")]
                     (if (some #(= tf-arg %) ["ALL" "LATEST"])
                       tf-arg
-                      (do (log/info :msg "Parsing interval string")
+                      (do (log/debug :msg "Parsing interval string")
                           (log/error :msg "Not yet implemented")
                           (throw (ex-info "Intervals not supported yet, use timeframe ALL or LATEST" {:cause args})))))
         query "PREFIX dc: <http://purl.org/dc/terms/>
@@ -65,7 +65,7 @@
 
 (defn aggregate-assertion-single
   [context args value]
-  (log/info :fn ::aggregate-assertion-single :args args :value value)
+  (log/debug :fn ::aggregate-assertion-single :args args :value value)
   (let [id (resolve-curie-namespace (:id args))
         query "SELECT ?iri WHERE { ?iri :dc/is-version-of ?id }"
         query-args {:id id}]
@@ -73,43 +73,43 @@
 
 (defn version-of
   [context args value]
-  (log/info :fn ::version-of :args args :value value)
+  (log/debug :fn ::version-of :args args :value value)
   (q/ld1-> value [:dc/is-version-of]))
 
 (defn release-date
   [context args value]
-  (log/info :fn ::release-date :args args :value value)
+  (log/debug :fn ::release-date :args args :value value)
   (q/ld1-> value [:cg/release-date]))
 
 (defn subject
   [context args value]
-  (log/info :fn ::subject :args args :value value)
+  (log/debug :fn ::subject :args args :value value)
   (variant/variant-single nil nil (q/ld1-> value [:sepio/has-subject])))
 
 (defn predicate
   [context args value]
-  (log/info :fn ::predicate :args args :value value)
+  (log/debug :fn ::predicate :args args :value value)
   (q/ld1-> value [:sepio/has-predicate]))
 
 (defn object
   [context args value]
-  (log/info :fn ::object :args args :value value)
+  (log/debug :fn ::object :args args :value value)
   (q/ld1-> value [:sepio/has-object]))
 
 (defn review-status
   [context args value]
-  (log/info :fn ::review-status :args args :value value)
+  (log/debug :fn ::review-status :args args :value value)
   (q/ld1-> value [:cg/review-status]))
 
 (defn version
   [context args value]
-  (log/info :fn ::version :args args :value value)
+  (log/debug :fn ::version :args args :value value)
   (q/ld1-> value [:dc/has-version]))
 
 (defn members
   "Expects value to be a RDFResource of the vcv iri."
   [context args value]
-  (log/info :fn ::members :args args :value value)
+  (log/debug :fn ::members :args args :value value)
   (let [query "PREFIX dc: <http://purl.org/dc/terms/>
               PREFIX cg: <http://dataexchange.clinicalgenome.org/terms/>
               PREFIX sepio: <http://purl.obolibrary.org/obo/SEPIO_>
