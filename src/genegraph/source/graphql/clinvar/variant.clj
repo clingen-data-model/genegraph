@@ -56,6 +56,10 @@
   (log/debug :fn ::variant-release-date :args args :value value)
   (q/ld1-> value [:cg/release-date]))
 
+(defn variant-id [context args value]
+  (log/debug :fn ::variant-id :args args :value value)
+  (q/ld1-> value [:dc/is-version-of]))
+
 (defn variant-genes [context args value]
   "Expects value to be passed as an IRI to a variant"
   (log/debug :fn ::variant-genes :args args :value value)

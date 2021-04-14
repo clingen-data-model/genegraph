@@ -66,6 +66,7 @@
    :variant/variant-single cv-variant/variant-single
    :variant/name cv-variant/variant-name
    :variant/genes cv-variant/variant-genes
+   :variant/id cv-variant/variant-id
    :clinvar/gene-list cv-gene/gene-list
    :clinvar/gene-preferred-label cv-gene/gene-preferred-label
    :clinvar/gene-symbol cv-gene/gene-symbol

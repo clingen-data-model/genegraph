@@ -96,11 +96,18 @@
 
   :Variant
   {:description "An instance of variation in a genomic sequence."
-   :fields {:name {:type String
+   :fields {:iri {:type String
+                  :resolve :resource/iri
+                  :description "IRI of the variant record."}
+            :id {:type String
+                 :resolve :variant/id
+                 :description "Persistent identifier for the piece of knowledge (http://purl.org/dc/terms/isVersionOf)"}
+            :name {:type String
                    :resolve :variant/name
                    :description "The preferred label of the variant. Not necessarily a stable identifier."}
             :genes {:type (list :ClinVarGene)
-                    :resolve :variant/genes}}}
+                    :resolve :variant/genes
+                    :description "Genes in which this variant occurs."}}}
 
   :ClinicalAssertion
   {:description "A single assertion about clinical or phenotypic significance of a genomic feature."
