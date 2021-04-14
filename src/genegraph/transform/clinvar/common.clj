@@ -19,7 +19,7 @@
   (map (fn [row] {:gene_id (nth row 0)
                   :gene_symbol (nth row 1)
                   :num (nth row 2)})
-       (rest (csv/read-csv (io/reader "resources/consensus_cancer_genes.csv")))))
+       (rest (csv/read-csv (io/reader (io/resource "consensus_cancer_genes.csv"))))))
 
 (def consensus-cancer-genes-by-symbol
   (into {} (map (fn [{:keys [gene_id gene_symbol num]}]
