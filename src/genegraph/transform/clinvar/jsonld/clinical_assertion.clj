@@ -8,18 +8,69 @@
                                                         genegraph-kw-to-iri
                                                         vcv-review-status-to-evidence-strength-map
                                                         scv-review-status-to-evidence-strength-map
-                                                        consensus-cancer-genes-by-symbol]]
+                                                        consensus-cancer-genes-by-id]]
             [genegraph.transform.clinvar.iri :as iri]
-            [io.pedestal.log :as log]))
+            [genegraph.transform.clinvar.util :refer [in?]]
+            [io.pedestal.log :as log]
+            ;[clojure.set :as set]
+            [clojure.string :as s]))
 
-(defn add-clingen-classification-context
+(def genes-for-variation-byversion-query "
+PREFIX dc: <http://purl.org/dc/terms/>
+PREFIX cg: <http://dataexchange.clinicalgenome.org/terms/>
+PREFIX sepio: <http://purl.obolibrary.org/obo/SEPIO_>
+PREFIX so: <http://purl.obolibrary.org/obo/SO_>
+SELECT ?gene_iri ?gene_id ?gene_symbol ?gene_release_date ?variation_id ?variant_release_date
+WHERE {
+  ?s_variant a cg:Variant .
+  ?s_variant cg:gene_associations ?gene_association_iri .
+  ?s_variant dc:isVersionOf ?variation_id .
+  ?s_variant cg:release_date ?variant_release_date .
+  ?gene_association_iri cg:gene_id ?gene_id .
+  {
+    SELECT ?gene_iri ?gene_id ?gene_release_date WHERE {
+      ?gene_iri a so:0000704 . # :so/Gene
+      ?gene_iri a cg:ClinVarObject .
+      ?gene_iri cg:release_date ?gene_release_date .
+      ?gene_iri cg:id ?gene_id .
+    }
+  }
+  # Filter to latest version of gene no later than each variant
+  FILTER(?gene_release_date <= ?variant_release_date)
+  FILTER NOT EXISTS {
+    ?other_gene_iri cg:id ?gene_id .
+    ?other_gene_iri cg:release_date ?other_gene_release_date .
+    FILTER(?other_gene_release_date <= ?variant_release_date)
+    FILTER(?other_gene_release_date > ?gene_release_date)
+  }
+  ?gene_iri cg:symbol ?gene_symbol .
+  ?gene_iri cg:hgnc_id ?hgnc_id .
+
+  # Filter to latest vcv no later than specified date
+  FILTER(?variant_release_date <= \"{{release_date_limit}}\")
+  FILTER NOT EXISTS {
+    ?other_variant dc:isVersionOf ?variation_id .
+    ?other_variant cg:release_date ?other_variant_release_date .
+    FILTER(?other_variant_release_date <= \"{{release_date_limit}}\")
+    FILTER(?other_variant_release_date > ?variant_release_date)
+  }
+}
+ORDER BY ?s_variant ?gene_id"
+  )
+
+(defn get-genes-for-clinical-assertion
+  "Returns the genes associated with this clinical assertion through the variation"
+  [clinical-assertion]
+  (let [variation-id (q/resource (str iri/clinvar-variation (:variation_id clinical-assertion)))
+        query (s/replace genes-for-variation-byversion-query
+                         "{{release_date_limit}}"
+                         (:release_date clinical-assertion))]
+    (q/select query {:variation_id variation-id})))
+
+(defn compute-clingen-classification-context
   "Expects clinical-assertion to be a message passed in from clinvar-streams.
 
-   or the JSON-LD representation of the assertion with fields as transformed by
-   genegraph.transform.clinvar.jsonld.clinical-assertion/clinical-assertion-to-jsonld.
-   as long as required fields here are present.
-
-  Returns the object with key :cg/classification-context added, which maps into property-names.edn
+  ; Returns the object with key :cg/classification-context added, which maps into property-names.edn
 
   Classification Context Binning Rules are Applied in the Following Order:
   Somatic Cancer Classification Context Binning Rule Requirements
@@ -28,7 +79,7 @@
       For multiple gene SCVs, - clarify with Heidi
   Pharmacogenomic Classification Context Binning Rule Requirements
     Clinsig must be [drug response]
-      Note: As Somatic Cancer rule was already applied, SCVs with clinsig of drug response that meet requirements above will be binned as Somatic Cancer. “Classification Context”
+      Note: As Somatic Cancer rule was already applied, SCVs with clinsig of drug response that meet requirements above will be binned as Somatic Cancer. 'Classification Context'
   Germline Disease Classification Context Binning Rule Requirements
     When allele origin is anything but somatic only AND clinsig is [Path-Benign OR risk factor]
   Other Classification Context Binning Rule Requirements
@@ -38,16 +89,26 @@
 
   "
   [clinical-assertion]
-  (letfn [(in? [coll e]
-            (some #(= % e) coll))
-          (compute-classification-context [clinical-assertion]
-            (let [allele-origins (:allele_origins clinical-assertion)
-                  clinsig (:interpretation_description clinical-assertion)]
-              (cond (in? (keys consensus-cancer-genes-by-symbol) (:genes clinical-assertion))
-                    (log/info :msg "Is somatic cancer variant")
-
-                    )))]
-    clinical-assertion))
+  (let [cancer-gene-minimum-evidence-score 2
+        filtered-cancer-gene-ids (keys (filter #(<= cancer-gene-minimum-evidence-score (:num (second %)))
+                                               consensus-cancer-genes-by-id))
+        allele-origins (:allele_origins clinical-assertion)
+        clinsig (:interpretation_description clinical-assertion)
+        gene-resources (get-genes-for-clinical-assertion clinical-assertion)
+        gene-hgnc-ids (map #(q/ld1-> % [:cg/hgnc_id])
+                           gene-resources)]
+    (cond (not-empty (let [cancer-genes (clojure.set/intersection (set filtered-cancer-gene-ids)
+                                                (set gene-hgnc-ids))]
+                       (if (not-empty cancer-genes) (log/debug :msg (format "assertion %s is somatic cancer through genes %s"
+                                                                            (:id clinical-assertion) (into [] cancer-genes))))
+                       cancer-genes))
+          (do (log/info :msg "Is somatic cancer variant")
+              :SOMATIC_CANCER)
+          ; TODO pharmacogenomic
+          ; TODO germline
+          :default :OTHER
+          ))
+  )
 
 (defn clinical-assertion-to-jsonld [msg]
   (let [id (format (str iri/clinvar-assertion "%s.%s")
@@ -63,7 +124,7 @@
                              ;:cg/ClinVarObject {"@type" "@id"}
                              }
                  }
-        msg (add-clingen-classification-context msg)
+        msg (assoc msg :cg/classification-context (compute-clingen-classification-context msg))
         ]
     (genegraph-kw-to-iri
       (merge
@@ -118,7 +179,7 @@
                      :allele_origins
                      :collection_methods
                      :clinical_assertion_trait_set_id
-                     :clinical_assertion_variations))), ; End assertion
+                     :clinical_assertion_variations))),     ; End assertion
 
          ; Reverse relation from evidence line to parent variation archive
          "@reverse" {:sepio/has-evidence-line

@@ -44,3 +44,6 @@
   "Concatenates the string b to a, adding '/' between if not a suffix of a nor a prefix of b"
   [a b]
   (conditional-join a b "/"))
+
+(defn in? [coll e]
+  (some #(= % e) coll))

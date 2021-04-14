@@ -18,13 +18,19 @@
 (def consensus-cancer-genes-list
   (map (fn [row] {:gene_id (nth row 0)
                   :gene_symbol (nth row 1)
-                  :num (nth row 2)})
+                  :num (Integer/parseInt (nth row 2))})
        (rest (csv/read-csv (io/reader (io/resource "consensus_cancer_genes.csv"))))))
 
 (def consensus-cancer-genes-by-symbol
   (into {} (map (fn [{:keys [gene_id gene_symbol num]}]
                   [gene_symbol {:gene_id gene_id :num num}])
                 consensus-cancer-genes-list)))
+
+(def consensus-cancer-genes-by-id
+  (into {} (map (fn [{:keys [gene_id gene_symbol num]}]
+                  [gene_id {:gene_symbol gene_symbol :num num}])
+                consensus-cancer-genes-list)))
+
 
 (defn variation-geno-type
   [variation-type]
