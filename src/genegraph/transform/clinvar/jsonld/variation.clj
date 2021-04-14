@@ -35,19 +35,12 @@
         {"@type" [:cg/ClinVarObject
                   (str iri/cgterms "Variant")]
          :dc/is-version-of {"@id" id-unversioned}
-         :dc/has-version (:version msg)
-
-         :sepio/date-created (:date_created msg)
-         :sepio/date-modified (:date_last_updated msg)
-
+         :skos/preferred-label (:name msg)
          :sepio/qualified-contribution {:sepio/activity-date (:release_date msg)
                                         :sepio/has-role "ArchiverRole"
                                         :sepio/has-agent {"@id" (str iri/submitter "clinvar")}}
          }
         (-> msg (dissoc :id
-                        :version
-                        :date_created
-                        :date_last_updated
                         ))))))
 
 (defmethod clinvar-to-jsonld :variation [msg]

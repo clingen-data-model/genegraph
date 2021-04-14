@@ -7,15 +7,53 @@
                                                         variation-geno-type
                                                         genegraph-kw-to-iri
                                                         vcv-review-status-to-evidence-strength-map
-                                                        scv-review-status-to-evidence-strength-map]]
-            [genegraph.transform.clinvar.iri :as iri]))
+                                                        scv-review-status-to-evidence-strength-map
+                                                        consensus-cancer-genes-by-symbol]]
+            [genegraph.transform.clinvar.iri :as iri]
+            [io.pedestal.log :as log]))
+
+(defn add-clingen-classification-context
+  "Expects clinical-assertion to be a message passed in from clinvar-streams.
+
+   or the JSON-LD representation of the assertion with fields as transformed by
+   genegraph.transform.clinvar.jsonld.clinical-assertion/clinical-assertion-to-jsonld.
+   as long as required fields here are present.
+
+  Returns the object with key :cg/classification-context added, which maps into property-names.edn
+
+  Classification Context Binning Rules are Applied in the Following Order:
+  Somatic Cancer Classification Context Binning Rule Requirements
+    Allele origin must be exclusively [somatic] (regardless of clinsig).
+      For single gene SCVs, must be associated to a gene on the “somatic cancer” list provided by Alex Wagner
+      For multiple gene SCVs, - clarify with Heidi
+  Pharmacogenomic Classification Context Binning Rule Requirements
+    Clinsig must be [drug response]
+      Note: As Somatic Cancer rule was already applied, SCVs with clinsig of drug response that meet requirements above will be binned as Somatic Cancer. “Classification Context”
+  Germline Disease Classification Context Binning Rule Requirements
+    When allele origin is anything but somatic only AND clinsig is [Path-Benign OR risk factor]
+  Other Classification Context Binning Rule Requirements
+    A record not meeting any of the above rules, will be binned as other for the purpose of this exercise. This includes:
+      Allele origin germline, with clinsig other than Path-Benign/risk factor
+      Any allele origin not listed above
+
+  "
+  [clinical-assertion]
+  (letfn [(in? [coll e]
+            (some #(= % e) coll))
+          (compute-classification-context [clinical-assertion]
+            (let [allele-origins (:allele_origins clinical-assertion)
+                  clinsig (:interpretation_description clinical-assertion)]
+              (cond (in? (keys consensus-cancer-genes-by-symbol) (:genes clinical-assertion))
+                    (log/info :msg "Is somatic cancer variant")
+
+                    )))]))
 
 (defn clinical-assertion-to-jsonld [msg]
   (let [id (format (str iri/clinvar-assertion "%s.%s")
                    (:id msg)
                    (:release_date msg))
         evidence-line-id (str iri/cgterms "evidence_line/" (:id msg))
-        rdf-type (str iri/cgterms "VariantClinicalSignificanceAssertion")
+        assertion-rdf-type (str iri/cgterms "VariantClinicalSignificanceAssertion")
         context {"@context" {"@vocab" iri/cgterms
                              "clingen" iri/cgterms
                              "sepio" "http://purl.obolibrary.org/obo/SEPIO_"
@@ -23,8 +61,8 @@
                              ;rdf-type          {"@type" "@id"}
                              ;:cg/ClinVarObject {"@type" "@id"}
                              }
-                 ;"@id" id
                  }
+        msg (add-clingen-classification-context msg)
         ]
     (genegraph-kw-to-iri
       (merge
@@ -41,7 +79,7 @@
          :sepio/has-evidence-item
          (merge
            {"@type" [:cg/ClinVarObject
-                     rdf-type]
+                     assertion-rdf-type]
             "@id" id
             :dc/is-version-of {"@id" (str iri/clinvar-assertion (:id msg))}
             :dc/has-version (:version msg)
@@ -53,7 +91,6 @@
             :sepio/date-created (:date_created msg)
             :sepio/date-updated (:date_last_updated msg)
 
-            ;:sepio/date-validated (:release_date msg)
             :sepio/qualified-contribution {:sepio/activity-date (:interpretation_date_last_evaluated msg)
                                            :sepio/has-role "SubmitterRole"
                                            :sepio/has-agent {"@id" (str iri/submitter (:submitter_id msg))}}
@@ -85,9 +122,7 @@
          ; Reverse relation to parent variation archive
          "@reverse" {:sepio/has-evidence-line
                      [{"@id" (format (str iri/variation-archive "%s")
-                                     (:variation_archive_id msg))
-
-                       }]}
+                                     (:variation_archive_id msg))}]}
          }
         ))))
 

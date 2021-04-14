@@ -18,6 +18,7 @@
 (def rcv (path-join cgterms "clinvar.rcv_accession/"))
 (def variation-archive (path-join cgterms "clinvar.variation_archive/"))
 (def release-sentinel (path-join cgterms "clinvar_release/"))
+(def clinvar-gene (path-join cgterms "clinvar.gene/"))
 
 ; Submitted assertion sub-nodes
 (def clinical-assertion-observation (path-join cgterms "clinvar.clinical_assertion_observation/"))

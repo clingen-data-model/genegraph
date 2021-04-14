@@ -98,7 +98,9 @@
   {:description "An instance of variation in a genomic sequence."
    :fields {:name {:type String
                    :resolve :variant/name
-                   :description "The preferred label of the variant. Not necessarily a stable identifier."}}}
+                   :description "The preferred label of the variant. Not necessarily a stable identifier."}
+            :genes {:type (list String)
+                    :resolve :variant/genes}}}
 
   :ClinicalAssertion
   {:description "A single assertion about clinical or phenotypic significance of a genomic feature."
@@ -169,9 +171,17 @@
                      :resolve :clinvar/aggregate-assertion-object
                      :description "Object of the aggregate assertion. Given arbitrary objects of member assertions, the aggregate object may not be useful."}
             :members {:type (list :ClinicalAssertion)
-                         :resolve :clinvar/aggregate-assertion-members
-                         :description "List of member assertions of the aggregate assertion."}
+                      :resolve :clinvar/aggregate-assertion-members
+                      :description "List of member assertions of the aggregate assertion."}
             }}
+
+  :ClinVarGene
+  {:description "A Gene, but within the context of ClinVar Curation efforts."
+   :fields {:iri {:type String
+                  :resolve :resource/iri}
+            :name {:type String
+                   :resolve :clinvar/gene-preferred-label}}
+   }
 
   :Gene
   {:description "A genomic feature (a gene or a region). Along with conditions, one of the basic units of curation."
@@ -844,6 +854,16 @@
                                 :limit {:type Int}
                                 :offset {:type Int}}
                          :resolve :clinvar/aggregate-assertion-list}
+
+  :clinvar_genes {:type (list :ClinVarGene)
+                  :args {:id {:type Int}
+                         :symbol {:type String}
+                         :limit {:type Int
+                                 :default-value 10}
+                         :offset {:type Int
+                                  :default-value 0}}
+                  :resolve :clinvar/gene-list}
+
 
   :gene {:type (non-null :Gene)
          :args {:iri {:type String}}
