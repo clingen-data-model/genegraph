@@ -7,6 +7,7 @@
                                                         variation-geno-type
                                                         genegraph-kw-to-iri
                                                         vcv-review-status-to-evidence-strength-map
+                                                        scv-review-status-to-evidence-strength-map
                                                         consensus-cancer-genes-by-symbol]]
             [genegraph.transform.clinvar.iri :as iri]
             [io.pedestal.log :as log]))
@@ -45,7 +46,8 @@
               (cond (in? (keys consensus-cancer-genes-by-symbol) (:genes clinical-assertion))
                     (log/info :msg "Is somatic cancer variant")
 
-                    )))]))
+                    )))]
+    clinical-assertion))
 
 (defn clinical-assertion-to-jsonld [msg]
   (let [id (format (str iri/clinvar-assertion "%s.%s")
@@ -122,7 +124,10 @@
          "@reverse" {:sepio/has-evidence-line
                      [{"@id" (let [variation-archive-iri (format (str iri/variation-archive "%s")
                                                                  (:variation_archive_id msg))]
-                               (log/debug :msg (str "Reverse relation to " variation-archive-iri))
+                               (if (empty? (:variation_archive_id msg))
+                                 (throw (ex-info "Variation archive id was null" {:cause msg})))
+                               (log/debug :msg (format "Evidence line %s has reverse relation to %s"
+                                                       evidence-line-id variation-archive-iri))
                                variation-archive-iri)}]}
          }
         ))))
