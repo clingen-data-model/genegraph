@@ -49,6 +49,7 @@
    :clinvar/clinical-assertion-version-of cv-clinical-assertion/version-of
    :clinvar/clinical-assertion-allele-origin cv-clinical-assertion/allele-origin
    :clinvar/clinical-assertion-collection-method cv-clinical-assertion/collection-method
+   :clinvar/clinical-assertion-classification-context cv-clinical-assertion/classification-context
    :clinvar/aggregate-assertion-list cv-aggregate-assertion/aggregate-assertion-list
    :clinvar/aggregate-assertion-version-of cv-aggregate-assertion/version-of
    :clinvar/aggregate-assertion-release-date cv-aggregate-assertion/release-date

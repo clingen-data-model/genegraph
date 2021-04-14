@@ -140,6 +140,9 @@
             :collection_methods {:type (list String)
                                  :resolve :clinvar/clinical-assertion-collection-method
                                  :description "Assertion submitted specified method used to collect the information included in the assertion."}
+            :classification_context {:type String
+                                     :resolve :clinvar/clinical-assertion-classification-context
+                                     :description "ClinGen Classification Context"}
             }}
 
 
