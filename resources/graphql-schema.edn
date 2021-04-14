@@ -99,7 +99,7 @@
    :fields {:name {:type String
                    :resolve :variant/name
                    :description "The preferred label of the variant. Not necessarily a stable identifier."}
-            :genes {:type (list String)
+            :genes {:type (list :ClinVarGene)
                     :resolve :variant/genes}}}
 
   :ClinicalAssertion
@@ -180,7 +180,9 @@
    :fields {:iri {:type String
                   :resolve :resource/iri}
             :name {:type String
-                   :resolve :clinvar/gene-preferred-label}}
+                   :resolve :clinvar/gene-preferred-label}
+            :symbol {:type String
+                     :resolve :clinvar/gene-symbol}}
    }
 
   :Gene

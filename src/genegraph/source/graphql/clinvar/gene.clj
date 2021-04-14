@@ -121,6 +121,10 @@
   (log/debug :fn ::gene-preferred-label :args args :value value)
   (q/ld1-> value [:skos/preferred-label]))
 
+(defn gene-symbol [context args value]
+  (log/debug :fn ::gene-symbol :args args :value value)
+  (q/ld1-> value [:cg/symbol]))
+
 (defn gene-release-date [context args value]
   (log/debug :fn ::gene-release-date :args args :value value)
   (q/ld1-> value [:cg/release-date]))

@@ -67,7 +67,7 @@
    :variant/genes cv-variant/variant-genes
    :clinvar/gene-list cv-gene/gene-list
    :clinvar/gene-preferred-label cv-gene/gene-preferred-label
-
+   :clinvar/gene-symbol cv-gene/gene-symbol
 
    :actionability/actionability-query actionability/actionability-query
    :actionability/classification-description actionability/classification-description

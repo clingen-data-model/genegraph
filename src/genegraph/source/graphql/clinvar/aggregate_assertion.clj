@@ -194,11 +194,52 @@ WHERE {
 }
 ORDER BY ASC(?vcv_iri) ASC(?vcv_release_date)")
 
+(def aggregate-members-timeseries
+  "Note that without any initial bindings, this query takes a very significant
+  amount of time as it lists every single aggregate assertion and member assertion"
+  "
+PREFIX dc: <http://purl.org/dc/terms/>
+PREFIX cg: <http://dataexchange.clinicalgenome.org/terms/>
+PREFIX sepio: <http://purl.obolibrary.org/obo/SEPIO_>
+PREFIX scv: <https://identifiers.org/clinvar.submission:>
+# NOTE order matters, currently only gets the first element (column)
+SELECT
+  ?evidence_item_iri
+  ?evidence_item_assertion_id
+  ?evidence_item_assertion_release_date
+  ?vcv_iri
+  ?r_vcv_id
+  ?vcv_release_date
+WHERE {
+  # Take all versions of all VCVs
+  ?vcv_iri a cg:AggregateVariantClinicalSignificanceAssertion .
+  ?vcv_iri dc:isVersionOf ?r_vcv_id .
+  ?vcv_iri cg:release_date ?vcv_release_date .
+
+  # Attach SCVs to each
+  ?r_vcv_id sepio:0000006 ?evidence_line_iri . # :sepio/evidence-line
+  ?evidence_line_iri sepio:0000084 ?evidence_item_iri . # :sepio/evidence-item
+  ?evidence_item_iri dc:isVersionOf ?evidence_item_assertion_id .
+  ?evidence_item_iri cg:release_date ?evidence_item_assertion_release_date .
+  # Filter to evidence item_assertion_release_date no later than vcv_release_date
+  FILTER(?evidence_item_assertion_release_date <= ?vcv_release_date)
+  # Filter to the latest evidence_item_assertion_release_date among the other
+  # release dates for evidence item iris that are versions of the same assertion id
+  # and are also no newer than the vcv version
+  FILTER NOT EXISTS {
+    ?other_evidence_item_iri_version dc:isVersionOf ?evidence_item_assertion_id .
+    ?other_evidence_item_iri_version cg:release_date ?other_evidence_item_release_date .
+    FILTER(?other_evidence_item_release_date <= ?vcv_release_date)
+    FILTER(?other_evidence_item_release_date > ?evidence_item_assertion_release_date)
+  }
+}
+ORDER BY ASC(?r_vcv_id) ASC(?vcv_release_date) ASC(?evidence_item_assertion_id) ")
+
 (defn members
   "Expects value to be a RDFResource of the vcv iri."
   [context args value]
   (log/debug :fn ::members :args args :value value)
-  (let [query aggregate-members-query
+  (let [query aggregate-members-timeseries
         ; #FILTER(?vcv_iri = <http://dataexchange.clinicalgenome.org/terms/clinvar.variation_archive/VCV000000628.2020-10-10>)
         query-args {:vcv_iri value}]
     (q/select query query-args)))

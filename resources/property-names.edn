@@ -219,6 +219,7 @@
  [:cg/collection-method "http://dataexchange.clinicalgenome.org/terms/collection_method"]
  [:cg/release-date "http://dataexchange.clinicalgenome.org/terms/release_date"]
  [:cg/name "http://dataexchange.clinicalgenome.org/terms/name"]
+ [:cg/symbol "http://dataexchange.clinicalgenome.org/terms/symbol"]
  [:cg/classification-context "http://dataexchange.clinicalgenome.org/terms/classification_context"]
  [:cnt/chars "http://www.w3.org/2011/content#chars"]
  [:data/genome-build-identifier "http://edamontology.org/data_2340"]
