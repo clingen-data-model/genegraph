@@ -1,6 +1,6 @@
 <!-- Logback configuration. See http://logback.qos.ch/manual/index.html -->
 <!-- Scanning is currently turned on; This will impact performance! -->
-<configuration scan="true" scanPeriod="10 seconds">
+<configuration scan="true" scanPeriod="60 seconds"> <!--  debug="true" -->
   <!-- Silence Logback's own status messages about config parsing
   <statusListener class="ch.qos.logback.core.status.NopStatusListener" /> -->
 
@@ -35,12 +35,72 @@
     </filter>
   </appender>
 
+  <!-- The following appender is from https://github.com/danielwegener/logback-kafka-appender
+       It utilizes Janino (http://janino-compiler.github.io/janino/ )for the in-line conditional logic.
+       Janino is "a super-small, super-fast Java compiler." This allows us to log to Kafka when it is
+       properly configured in production and not in dev.
+  -->
+  <if condition='isDefined("GENEGRAPH_GQL_LOGGING_TOPIC") &amp;&amp; p("GENEGRAPH_MODE").equals("production")'>
+    <then>
+      <appender name="ccloud-kafka" class="com.github.danielwegener.logback.kafka.KafkaAppender">
+	<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+          <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+	</encoder>
+
+	<!-- ensure that every message sent by the executing host is partitioned to the same partition strategy -->
+	<!-- keyingStrategy class="com.github.danielwegener.logback.kafka.keying.HostNameKeyingStrategy" /-->
+	<keyingStrategy class="com.github.danielwegener.logback.kafka.keying.LoggerNameKeyingStrategy"/>
+	<!-- block the logging application thread if the kafka appender cannot keep up with sending the log messages -->
+	<deliveryStrategy class="com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy" />
+	
+	<topic>${GENEGRAPH_GQL_LOGGING_TOPIC}</topic>
+
+	<!-- each <producerConfig> translates to regular kafka-client config (format: key=value) -->
+	<!-- producer configs are documented here: https://kafka.apache.org/documentation.html#newproducerconfigs -->
+	<!-- bootstrap.servers is the only mandatory producerConfig -->
+	<producerConfig>bootstrap.servers=pkc-4yyd6.us-east1.gcp.confluent.cloud:9092</producerConfig>
+	<!-- don't wait for a broker to ack the reception of a batch.  -->
+	<producerConfig>acks=0</producerConfig>
+	<!-- wait up to 1000ms and collect log messages before sending them as a batch -->
+	<!-- <producerConfig>linger.ms=2000</producerConfig -->
+	<!-- even if the producer buffer runs full, do not block the application but start to drop messages -->
+	<producerConfig>max.block.ms=0</producerConfig>
+	<!-- define a client-id that you use to identify yourself against the kafka broker -->
+	<producerConfig>client.id="${HOSTNAME}-${CONTEXT_NAME}-logback"</producerConfig>
+
+	<!-- confluent cloud -->
+	<producerConfig>ssl.endpoint.identification.algorithm=https</producerConfig>
+	<producerConfig>sasl.mechanism=PLAIN</producerConfig>
+	<producerConfig>request.timeout.ms=20000</producerConfig>
+	<producerConfig>retry.backoff.ms=500</producerConfig>
+	<producerConfig>security.protocol=SASL_SSL</producerConfig>
+	<producerConfig>sasl.jaas.config=${DX_JAAS_CONFIG}</producerConfig>
+	<producerConfig>compression.type=gzip</producerConfig>
+	<!--producerConfig>key.serializer=org.apache.kafka.common.serialization.StringSerializer</producerConfig-->
+	<!--producerConfig>value.serializer=org.apache.kafka.common.serialization.StringSerializer</producerConfig-->
+			
+	<filter class="ch.qos.logback.core.filter.EvaluatorFilter">      
+	  <evaluator> <!-- defaults to type ch.qos.logback.classic.boolex.JaninoEventEvaluator -->
+            <expression>return message.contains(":request-logging-interceptor");</expression>
+	  </evaluator>
+	  <OnMismatch>DENY</OnMismatch>
+	  <OnMatch>ACCEPT</OnMatch>
+	</filter>
+      </appender>
+    </then>
+  </if>
 
   <!-- Enable FILE and STDOUT appenders for all log messages.
        By default, only log at level INFO and above. -->
   <root level="INFO">
     <appender-ref ref="FILE" />
     <appender-ref ref="STDOUT" />
+    
+    <if condition='isDefined("GENEGRAPH_GQL_LOGGING_TOPIC") &amp;&amp; p("GENEGRAPH_MODE").equals("production")'>
+      <then>
+	<appender-ref ref="ccloud-kafka" />
+      </then>
+    </if>
   </root>
 
   <!-- For loggers in the these namespaces, log at all levels. -->

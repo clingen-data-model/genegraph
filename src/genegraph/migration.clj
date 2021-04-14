@@ -35,12 +35,16 @@
            (DateTimeFormatter/ofPattern "yyyy-MM-dd'T'HHmm")))
 
 (defn warm-resolver-cache []
-  (let [gql-file-names (-> "resolver-cache-warm.edn" io/resource slurp edn/read-string)]
-    (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache..." :resources gql-file-names)
-    (doseq [query-file gql-file-names]
-      (-> query-file io/resource slurp core/gql-query))
-;;    (doall (pmap #(-> % io/resource slurp core/gql-query) gql-file-names))
-    (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache...complete.")))
+  (when env/use-gql-cache
+    (let [gql-file-names (-> "resolver-cache-warm.edn" io/resource slurp edn/read-string)]
+      (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache..." :resources gql-file-names)
+      (doseq [query-file gql-file-names]
+        (let [results (-> query-file io/resource slurp core/gql-query)]
+          (when-let [errors (:errors results)]
+            (log/error :fn :warm-resolver-cache
+                       :msg (str "Resolver cache warmer script has errors: " query-file)
+                       :errors errors))))
+      (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache...complete."))))
 
 (defn build-base-database
   "Build the database with base data only (no curations from streaming service"
