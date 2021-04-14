@@ -7,7 +7,6 @@
                                                         variation-geno-type
                                                         genegraph-kw-to-iri
                                                         vcv-review-status-to-evidence-strength-map
-                                                        scv-review-status-to-evidence-strength-map
                                                         consensus-cancer-genes-by-symbol]]
             [genegraph.transform.clinvar.iri :as iri]
             [io.pedestal.log :as log]))
@@ -117,12 +116,14 @@
                      :allele_origins
                      :collection_methods
                      :clinical_assertion_trait_set_id
-                     :clinical_assertion_variations))),
+                     :clinical_assertion_variations))), ; End assertion
 
-         ; Reverse relation to parent variation archive
+         ; Reverse relation from evidence line to parent variation archive
          "@reverse" {:sepio/has-evidence-line
-                     [{"@id" (format (str iri/variation-archive "%s")
-                                     (:variation_archive_id msg))}]}
+                     [{"@id" (let [variation-archive-iri (format (str iri/variation-archive "%s")
+                                                                 (:variation_archive_id msg))]
+                               (log/debug :msg (str "Reverse relation to " variation-archive-iri))
+                               variation-archive-iri)}]}
          }
         ))))
 
