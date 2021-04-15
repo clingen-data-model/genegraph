@@ -12,7 +12,7 @@
             [genegraph.transform.clinvar.iri :as iri]
             [genegraph.transform.clinvar.util :refer [in?]]
             [io.pedestal.log :as log]
-            ;[clojure.set :as set]
+    ;[clojure.set :as set]
             [clojure.string :as s]))
 
 (def genes-for-variation-byversion-query "
@@ -94,18 +94,29 @@ ORDER BY ?s_variant ?gene_id"
                                                consensus-cancer-genes-by-id))
         allele-origins (:allele_origins clinical-assertion)
         clinsig (:interpretation_description clinical-assertion)
+        review-status (:review_status clinical-assertion)
         gene-resources (get-genes-for-clinical-assertion clinical-assertion)
         gene-hgnc-ids (map #(q/ld1-> % [:cg/hgnc_id])
                            gene-resources)]
-    (cond (not-empty (let [cancer-genes (clojure.set/intersection (set filtered-cancer-gene-ids)
-                                                (set gene-hgnc-ids))]
-                       (if (not-empty cancer-genes) (log/debug :msg (format "assertion %s is somatic cancer through genes %s"
-                                                                            (:id clinical-assertion) (into [] cancer-genes))))
-                       cancer-genes))
-          (do (log/info :msg "Is somatic cancer variant")
+    (cond (and (= #{"somatic"} (set allele-origins))
+               (not-empty (let [cancer-genes (clojure.set/intersection (set filtered-cancer-gene-ids)
+                                                                       (set gene-hgnc-ids))]
+                            (if (not-empty cancer-genes) (log/debug :msg (format "assertion %s is somatic cancer through genes %s"
+                                                                                 (:id clinical-assertion) (into [] cancer-genes))))
+                            cancer-genes))
+               (not= "risk factor" (s/lower-case clinsig)))
+          (do (log/info :msg "Assertion classification context is :SOMATIC_CANCER")
               :SOMATIC_CANCER)
-          ; TODO pharmacogenomic
+
+          (= "drug response" (s/lower-case clinsig))
+          (do (log/info :msg "Assertion classification context is :PHARMACOGENOMIC")
+              :PHARMACOGENOMIC)
           ; TODO germline
+          ;(or (in? ["practice guideline" "reviewed by expert panel"] review-status)
+          ;    ; TODO check clinsig (assertion predicate)
+          ;    )
+          ;(do (log/info :msg "Assertion classification context is :GERMLINE_DISEASE"))
+
           :default :OTHER
           ))
   )
@@ -161,7 +172,6 @@ ORDER BY ?s_variant ?gene_id"
             "allele_origin" (:allele_origins msg)
             "collection_method" (:collection_methods msg)
             "submitted_condition" (str iri/clinical-assertion-trait-set (:clinical_assertion_trait_set_id msg))
-            ; TODO add allele origin from observations to the submitted variation
             ; TODO update field name if change occurs here https://github.com/clingen-data-model/clinvar-streams/issues/3
             "submitted_variation" (:clinical_assertion_variations msg)
             }
