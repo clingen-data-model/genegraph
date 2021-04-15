@@ -48,6 +48,7 @@
  [:sepio/VariantInterpretationCriterionScoringRules "http://purl.obolibrary.org/obo/SEPIO_0000224"]
  [:sepio/VariantInterpretationCriterion2015AcmgGuidelinesV1 "http://purl.obolibrary.org/obo/SEPIO_0000195"]
  [:sepio/PropositionScopeAssertion "http://purl.obolibrary.org/obo/SEPIO_0002014"]
+ [:sepio/Proposition "http://purl.obolibrary.org/obo/SEPIO_0000000"]
  [:shacl/Parameter "http://www.w3.org/ns/shacl#Parameter"]
  [:shacl/Severity "http://www.w3.org/ns/shacl#Severity"]
  [:shacl/ConstraintComponent "http://www.w3.org/ns/shacl#ConstraintComponent"]
