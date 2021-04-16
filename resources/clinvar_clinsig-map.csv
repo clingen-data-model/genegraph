@@ -30,7 +30,7 @@ probable-pathogenic,likely pathogenic,path
 probably not pathogenic,likely benign,path
 probably pathogenic,likely pathogenic,path
 protective,protective,protect
-risk factor,risk factor,rf
+risk factor,risk factor,path
 suspected benign,likely benign,path
 suspected pathogenic,likely pathogenic,path
 uncertain,uncertain significance,path
