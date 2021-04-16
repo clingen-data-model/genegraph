@@ -1,0 +1,41 @@
+clinsig,normalized,group
+affects,affects,aff
+associated with leiomyomas,not provided,np
+association,association,assoc
+association not found,association not found,assocnf
+benign,benign,path
+benign/likely benign,benign/likely benign,path
+cancer,other,oth
+conflicting data from submitters,conflicting data from submitters,cdfs
+drug response,drug response,dr
+drug-response,drug response,dr
+likely benign,likely benign,path
+likely pathogenic,likely pathogenic,path
+likely pathogenic - adrenal bilateral pheochromocy,likely pathogenic,path
+likely pathogenic - adrenal pheochromocytoma,likely pathogenic,path
+moderate,pathogenic,path
+mut,pathogenic,path
+no known pathogenicity,benign,path
+non-pathogenic,benign,path
+not provided,not provided,np
+null,not provided,np
+other,other,oth
+pathogenic,pathogenic,path
+pathogenic variant for bardet-biedl syndrome,pathogenic,path
+pathogenic/likely pathogenic,pathogenic/likely pathogenic,path
+pathologic,pathogenic,path
+poly,benign,path
+probable-non-pathogenic,likely benign,path
+probable-pathogenic,likely pathogenic,path
+probably not pathogenic,likely benign,path
+probably pathogenic,likely pathogenic,path
+protective,protective,protect
+risk factor,risk factor,rf
+suspected benign,likely benign,path
+suspected pathogenic,likely pathogenic,path
+uncertain,uncertain significance,path
+uncertain significance,uncertain significance,path
+unknown,uncertain significance,path
+unknown significance,uncertain significance,path
+untested,not provided,np
+variant of unknown significance,uncertain significance,path
