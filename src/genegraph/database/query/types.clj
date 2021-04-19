@@ -74,7 +74,9 @@
 (defn get-all-graphs []
   (or @util/current-union-model (.getUnionModel db)))
 
-(deftype RDFResource [resource model]
+
+
+(deftype RDFResource [resource model local-bindings]
 
   AsJenaResource
   (as-jena-resource [_] resource)
@@ -89,7 +91,7 @@
   ;; TODO, returns all properties when k does not map to a known symbol,
   ;; This seems to break the contract for ILookup
   clojure.lang.ILookup
-  (valAt [this k] (step k this model))
+  (valAt [this k] (or (get local-bindings k) (step k this model)))
   (valAt [this k nf] nf) ;; TODO fix this
 
 
@@ -152,11 +154,17 @@
                   id (subs uri (count full-ns))]
               (str "/r/" short-ns "_" id))))
 
+(defn create-resource
+  "Create an RDF resource, optionally bound to model, or containing stored values (generally extra variables projected from a query result)."
+  ([jena-resource] (create-resource jena-resource (get-all-graphs) {}))
+  ([jena-resource model] (create-resource jena-resource model {}))
+  ([jena-resource model local-bindings] (->RDFResource jena-resource model local-bindings)))
+
 (defn- navize [model]
   (fn [coll k v]
     (let [target (:genegraph.database.query/value (meta v))]
       (if (instance? Resource target)
-        (->RDFResource target model)
+        (create-resource target model)
         target))))
 
 (extend-protocol AsResource
@@ -165,25 +173,21 @@
   (resource 
     ([r] (let [[_ curie-prefix rest] (re-find #"^([a-zA-Z]+)[:_](.*)$" r)]
            (if curie-prefix
-             (->RDFResource 
+             (create-resource 
               (ResourceFactory/createResource             
                (if-let [iri-prefix (-> curie-prefix s/lower-case prefix-ns-map)]
                  (str iri-prefix rest)
-                 r))
-              (get-all-graphs))
-             (->RDFResource 
-              (ResourceFactory/createResource r)
-              (get-all-graphs)))))
+                 r)))
+             (create-resource (ResourceFactory/createResource r)))))
     ([ns-prefix r] (when-let [prefix (prefix-ns-map ns-prefix)]
-                     (->RDFResource (ResourceFactory/createResource (str prefix r))
-                                    (get-all-graphs)))))
+                     (create-resource (ResourceFactory/createResource (str prefix r))))))
   
   clojure.lang.Keyword
   (resource [r] (when-let [res (local-names r)]
-                  (->RDFResource res (get-all-graphs))))
+                  (create-resource res)))
 
   org.apache.jena.rdf.model.Resource
-  (resource [r] (->RDFResource r (get-all-graphs))))
+  (resource [r] (create-resource r)))
 
 (nippy/extend-freeze 
  RDFResource ::rdf-resource
@@ -287,7 +291,7 @@
   Resource
   (to-clj [x model] (if (.hasProperty x first-property)
                       (rdf-list-to-vector x model)
-                      (->RDFResource x model)))
+                      (create-resource x model)))
   
   Literal
   (to-clj [x model] (.getValue x)))
