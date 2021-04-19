@@ -8,8 +8,7 @@
                                                         genegraph-kw-to-iri
                                                         vcv-review-status-to-evidence-strength-map
                                                         scv-review-status-to-evidence-strength-map]]
-            [genegraph.transform.clinvar.iri :as iri]
-            [taoensso.timbre :as log]))
+            [genegraph.transform.clinvar.iri :as iri]))
 
 
 (defn submission-to-jsonld [msg]

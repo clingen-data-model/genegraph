@@ -5,8 +5,7 @@
                                                         clinvar-to-jsonld
                                                         variation-geno-type
                                                         genegraph-kw-to-iri]]
-            [genegraph.transform.clinvar.iri :as iri]
-            [taoensso.timbre :as log]))
+            [genegraph.transform.clinvar.iri :as iri]))
 
 [::id
  ::name

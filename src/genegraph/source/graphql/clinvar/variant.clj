@@ -17,7 +17,7 @@
   TODO
   - :before iso8601 datetime to set cutoff to (will retrieve latest at or before this datetime)"
   [context args value]
-  (log/info :fn ::variant-single :args args :value value)
+  (log/debug :fn ::variant-single :args args :value value)
   (let [value (if (q/resource? value)
                 value
                 (q/resource (resolve-curie-namespace value)))
@@ -45,9 +45,9 @@
                                     (q/resource value))})]
       (if (< 1 (count rs))
         (throw (ex-info "Single variant query returned more than 1 response" {:args args :value value :rs rs})))
-      (log/info :result (first rs))
+      (log/debug :result (first rs))
       (first rs))))
 
 (defn variant-name [context args value]
-  (log/info :fn ::variant-name :args args :value value)
+  (log/debug :fn ::variant-name :args args :value value)
   (q/ld1-> value [:cg/name]))
