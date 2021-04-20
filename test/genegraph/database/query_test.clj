@@ -8,6 +8,12 @@
                                        ["http://test/resource1" :rdfs/label "TestClass"]]))
 
 
+(deftest test-query-with-local-bindings
+  (let [q (create-query "select ?class ?label where
+ { ?class a :owl/Class ;
+ :rdfs/label ?label }
+ limit 1")]
+    (is (= "TestClass" (-> (q {::q/model sample-data}) first :label)))))
 
 (deftest test-resource-creation
   (let [iri "http://test/resource1"
