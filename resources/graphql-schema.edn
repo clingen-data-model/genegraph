@@ -47,14 +47,87 @@
    }
   :Suggester
   {:description "Suggesters."
-   :values [:GENE :DISEASE :DRUG]
-   }}
+   :values [:GENE :DISEASE :DRUG]}
+
+  :SEPIOClass
+  {:description "Classes in SEPIO; will typically be used to filter results of a field listing items with a SEPIO type."
+   :values [:ProbandWithVariantEvidenceItem
+            :ProbandEvidenceLine]}}
 
  :interfaces
  {:Resource
   {:description "An RDF Resource; generic type suitable for return when a variety of resources may be returned as the result of a function all"
-   :fields {:iri {:type String}
-            :label {:type String}}}
+   :fields {:iri {:type String
+                  :description "The IRI for this resource."}
+            :curie {:type String
+                    :description "The CURIE internal to Genegraph for this resource."}
+            :label {:type String
+                    :description "The label for this resouce."}}}
+
+  :Proposition
+  {:description "An abstract entity representing the sharable meaning of what is expressed in a particular assertion."
+   :fields {:iri {:description "IRI of this proposition"
+                  :type String}
+            :curie {:description "CURIE of this proposition"
+                    :type String}
+            :type {:description "Type of this proposition"
+                   :type (list :Class)}
+            :subject {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the entity that representing the subject of this relationship."
+                      :type :Resource}
+            :predicate {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the property serving as the predicate in this relationship."
+                        :type :Resource}
+            :object {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the entity that representing the object or value of this relationship."
+                     :type :Resource}
+            :subject_of {:description "Entities that have this proposition as their subject"
+                         :type (list :Assertion)}}}
+  
+  :Assertion
+  {:description "A statement made by a particular agent on a particular occasion that a particular proposition is true, based on the evaluation of one or more lines of evidence."
+   :fields {:subject {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the entity that representing the subject of this relationship."
+                      :type :Resource}
+            :predicate {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the property serving as the predicate in this relationship."
+                        :type :Resource}
+            :object {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the entity that representing the object or value of this relationship."
+                     :type :Resource}
+            :evidence_lines {:description "Evidence lines contributing to this assertion"
+                             :type (list :EvidenceLine)}
+            :iri {:description "IRI of this assertion"
+                  :type String}
+            :curie {:descirption "CURIE of this assertion"
+                    :type String}
+            :type {:description "Type of this assertion"
+                   :type (list :Class)}
+            :description {:descripiton "Description of this assertion"
+                          :type String}}}
+
+  :EvidenceLine
+  {:description "A SEPIO evidence line"
+   :fields {:evidence_items {:description "Evidence items in support of a given evidence line"
+                             :type (list :EvidenceItem)}
+            :iri {:description "IRI of this evidence line"
+                  :type String}
+            :type {:description "Type of this evidence line"
+                   :type (list :Class)}
+            :score {:description "Numeric score of this evidence line; usually exists within
+the context of a formal evalutation framework"
+                    :type Float}
+            :description {:descripiton "Usually provides the reasoning behind the contribution of a given evidence item to a proposition or assertion"
+                          :type String}}}
+  
+  :EvidenceItem
+  {:description "A SEPIO evidence item"
+   :fields {:evidence_lines {:description "Evidence lines supporting the assertion"
+                             :type (list :EvidenceLine)
+                             :args {:recursive {:description "Recurse through SEPIO has-evidence-line, has-evidence-item associations to find deeper evidence lines"
+                                                :type Boolean}
+                                    :class {:description "When recursive is true, filter selection to instances of a given class. Include subclass hierarchy."
+                                            :type :SEPIOClass}}}
+            :iri {:description "IRI of this evidence item"
+                  :type String}
+            :type {:description "Type of this evidence item"
+                   :type (list :Class)}
+            :description {:descripiton "A description of the evidence item"
+                          :type String}}}
 
   :GenomicCoordinate
   {:description "Genomic coordinate of a Gene or Region"
@@ -271,6 +344,8 @@
    :fields {:iri {:type String
                   :resolve :resource/iri
                   :description "IRI representing the gene. Uses NCBI gene identifiers"}
+            :curie {:type String
+                    :resolve :resource/curie}
             :label {:type String
                     :resolve :resource/label
                     :description "Gene symbol"}
@@ -305,6 +380,8 @@
    :fields {:iri {:type String
                   :resolve :resource/iri
                   :description "IRI representing the region"}
+            :curie {:type String
+                    :resolve :resource/curie}
             :label {:type String
                     :resolve :resource/label
                     :description "Region symbol"}
@@ -353,6 +430,9 @@
             :last_curated_date {:type String
                                 :resolve :condition/last-curated-date
                                 :description "Most recent date a curation (of any kind) has been performed on this condition."}
+            :propositions {:type (list :Proposition)
+                           :descriptions "Propositions about this disease."
+                           :resolve :condition/propositions}
             :curation_activities {:type (list :CurationActivity)
                                   :description "The curation activities that have published reports on the disease"
                                   :resolve :condition/curation-activities}
@@ -370,7 +450,9 @@
                                 :description "direct subclasses of this disease only."}
             :direct_superclasses {:type (list :Disease)
                                   :resolve :condition/direct-superclasses
-                                  :description "direct superclasses of this disease only."}}}
+                                  :description "direct superclasses of this disease only."}
+            :assertions {:type (list :Assertion)
+                         :description "assertions made about this disease"}}}
 
   :Diseases
   {:description "A collection of diseases."
@@ -539,7 +621,7 @@
                     :resolve :ac-assertion/attributed-to}}}
 
   :GeneValidityAssertion
-  {:implements [:Resource :Curation]
+  {:implements [:Resource :Curation :EvidenceItem]
    :fields
    {:iri {:type String
           :resolve :resource/iri
@@ -550,6 +632,8 @@
     :label {:type String
             :resolve :resource/label
             :description "Label identifying this gene validity curation."}
+    :type {:type (list :Class)
+           :resolve :resource/type}
     :report_date {:type String
                   :resolve :gene-validity/report-date
                   :description "Date gene validity report was issued."}
@@ -571,12 +655,107 @@
     :specified_by {:type :Criteria
                    :description "Criteria used by the curators to create the gene validity assertion"
                    :resolve :gene-validity/specified-by}
+    :evidence_lines {:type (list :EvidenceLine)
+                     :args {:recursive {:type Boolean}
+                            :class {:type :SEPIOClass}}
+                     :description "Evidence lines used in support of the assertion."
+                     :resolve :evidence-item/evidence-lines}
     :has_format {:type String
                  :description "Format of the Legacy JSON from the GCI."
                  :resolve :gene-validity/has-format}
     :legacy_json {:type String
                   :description "Legacy JSON from the GCI."
-                  :resolve :gene-validity/legacy-json}}}
+                  :resolve :gene-validity/legacy-json}
+    :description {:type String
+                  :resolve :evidence/description}}}
+
+  :GenericEvidenceLine {:description "A SEPIO evidence line without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
+                        :implements [:EvidenceLine]
+                        :fields
+                        {:evidence_items {:type (list :EvidenceItem)
+                                          :resolve :evidence-line/evidence-items}
+                         :iri {:type String
+                               :resolve :resource/iri}
+                         :curie {:type String
+                               :resolve :resource/curie}
+                         :type {:type (list :Class)
+                                :resolve :resource/type}
+                         :score {:type Float
+                                 :resolve :evidence-line/score}
+                         :description {:type String
+                                       :resolve :evidence/description}}}
+
+  :GenericEvidenceItem {:description "A SEPIO evidence item without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
+                        :implements [:EvidenceItem]
+                        :fields
+                        {:evidence_lines {:type (list :EvidenceLine)
+                                          :args {:recursive {:type Boolean}
+                                                 :class {:type :SEPIOClass}}
+                                          :resolve :evidence-item/evidence-lines}
+                         :iri {:type String
+                               :resolve :resource/iri}
+                         :curie {:type String
+                               :resolve :resource/curie}
+                         :type {:type (list :Class)
+                                :resolve :resource/type}
+                         :description {:type String
+                                       :resolve :evidence/description}}}
+
+  :GenericAssertion {:description "A SEPIO assertion without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
+                     :implements [:EvidenceItem :Assertion]
+                     :fields
+                     {:subject {:type :Resource
+                                :resolve :assertion/subject}
+                      :predicate {:type :Resource
+                                  :resolve :assertion/predicate}
+                      :object {:type :Resource
+                               :resolve :assertion/object}
+                      :evidence_lines {:type (list :EvidenceLine)
+                                       :args {:recursive {:type Boolean}
+                                              :class {:type :SEPIOClass}}
+                                       :resolve :assertion/evidence-lines}
+                      :iri {:type String
+                            :resolve :resource/iri}
+                      :curie {:type String
+                               :resolve :resource/curie}
+                      :type {:type (list :Class)
+                             :resolve :resource/type}
+                      :description {:type String
+                                    :resolve :evidence/description}}}
+
+    :GenericProposition {:description "A SEPIO proposition without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
+                     :implements [:EvidenceItem :Proposition]
+                     :fields
+                     {:subject {:type :Resource
+                                :resolve :assertion/subject}
+                      :predicate {:type :Resource
+                                  :resolve :assertion/predicate}
+                      :object {:type :Resource
+                               :resolve :assertion/object}
+                      :evidence_lines {:type (list :EvidenceLine)
+                                       :args {:recursive {:type Boolean}
+                                              :class {:type :SEPIOClass}}
+                                       :resolve :assertion/evidence-lines}
+                      :subject_of {:type (list :Assertion)
+                                   :resolve :assertion/subject-of}
+                      :iri {:type String
+                            :resolve :resource/iri}
+                      :curie {:type String
+                               :resolve :resource/curie}
+                      :type {:type (list :Class)
+                             :resolve :resource/type}
+                      :description {:type String
+                                    :resolve :evidence/description}}}
+
+  :GenericResource {:description "An RDF resource without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
+                    :implements [:Resource]
+                    :fields
+                    {:iri {:type String
+                           :resolve :resource/iri}
+                     :curie {:type String
+                             :resolve :resource/curie}
+                     :label {:type String
+                             :resolve :resource/label}}}
 
   :GeneValidityAssertions
   {:description "A collection of gene validity curations."

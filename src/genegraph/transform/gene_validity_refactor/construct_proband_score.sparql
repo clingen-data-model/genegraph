@@ -13,10 +13,14 @@ construct {
 
 }
 where {
+
   ?evidenceLine a gci:evidenceScore ;
   gci:caseInfoType ?gciCaseType ;
-  gci:calculatedScore ?calculatedScore ;
-  gci:scoreExplanation ?evidenceLineDescription .
+  gci:calculatedScore ?calculatedScore .
+
+  OPTIONAL {
+    ?evidenceLine gci:scoreExplanation ?evidenceLineDescription .
+  }
   
   ?gciCaseType gcixform:hasEvidenceLineType ?evidenceLineType ;
   gcixform:hasEvidenceItemType ?evidenceItemType .
@@ -41,11 +45,4 @@ where {
   
   BIND(IRI(CONCAT(?arbase, ?caID)) AS ?allele) .
   
-  # gci:clinvarVariantId ?cvId ;
-  # gci:source ?variantSource .
-  # BIND(IF(?variantSource="ClinGen AR",
-  #         IRI(CONCAT(?arbase, ?caId)),
-  #         IRI(CONCAT(?cvbase, ?cvId)))
-  #      AS ?allele) .
-
 }

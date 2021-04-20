@@ -12,8 +12,11 @@ construct {
 }
 where {
   ?evidenceLine a gci:evidenceScore ;
-  gci:calculatedScore ?calculatedScore ;
-  gci:scoreExplanation ?scoreDescription .
+  gci:calculatedScore ?calculatedScore .
+
+  OPTIONAL {
+    ?evidenceLine gci:scoreExplanation ?scoreDescription .
+  }
 
   BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
 

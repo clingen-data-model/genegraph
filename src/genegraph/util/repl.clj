@@ -41,10 +41,12 @@
 
 (defn process-event-seq
   "Run event sequence through event processor"
-  [event-seq]
-  (write-tx
-   (doseq [event event-seq]
-     (event/process-event! event))))
+  ([event-seq]
+   (process-event-seq event-seq {}))
+  ([opts event-seq]
+   (write-tx
+    (doseq [event event-seq]
+      (event/process-event! (merge opts event))))))
 
 (defn process-event-dry-run
   "Run event through event processor, do not create side effects"
@@ -115,7 +117,7 @@
              iterator-seq))))
 
 (def genes-for-curation-type-query
-"query ($activity: CurationActivity){
+  "query ($activity: CurationActivity){
   genes(curation_activity: $activity, limit: null) {
     gene_list {
       curie
@@ -158,13 +160,13 @@
        (into #{})))
 
 (defn original-dosage-genes [ftp-dosage-list-path]
-   (->> (-> ftp-dosage-list-path
-            slurp
-            (csv/read-csv :separator \tab)
-            (nthrest 6))
-        (map second)
-        (map #(str "NCBIGENE:" %))
-        (into #{})))
+  (->> (-> ftp-dosage-list-path
+           slurp
+           (csv/read-csv :separator \tab)
+           (nthrest 6))
+       (map second)
+       (map #(str "NCBIGENE:" %))
+       (into #{})))
 
 (defn original-validity-genes [validity-list-path]
   (->> (-> validity-list-path

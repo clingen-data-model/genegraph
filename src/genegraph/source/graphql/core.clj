@@ -2,6 +2,9 @@
   (:require [genegraph.database.query :as q]
             [genegraph.database.util :refer [tx]]
             [genegraph.source.graphql.gene :as gene]
+            [genegraph.source.graphql.evidence-line :as evidence-line]
+            [genegraph.source.graphql.evidence-item :as evidence-item]
+            [genegraph.source.graphql.assertion :as assertion]
             [genegraph.source.graphql.resource :as resource]
             [genegraph.source.graphql.actionability :as actionability]
             [genegraph.source.graphql.actionability-assertion :as ac-assertion]
@@ -94,6 +97,11 @@
    :affiliation/curated-diseases affiliation/curated-diseases
    :affiliation/curated-genes affiliation/curated-genes
    :affiliation/gene-validity-assertions affiliation/gene-validity-assertions
+   :assertion/subject assertion/subject
+   :assertion/predicate assertion/predicate
+   :assertion/object assertion/object
+   :assertion/evidence-lines assertion/evidence-lines
+   :assertion/subject-of assertion/subject-of
    :classification/classifications classification/classifications
    :condition/condition-query condition/condition-query
    :condition/curation-activities condition/curation-activities
@@ -107,6 +115,7 @@
    :condition/subclasses condition/subclasses
    :condition/superclasses condition/superclasses
    :condition/synonyms condition/synonyms
+   :condition/propositions condition/propositions
    :coordinate/assembly coordinate/assembly
    :coordinate/build coordinate/build
    :coordinate/chromosome coordinate/chromosome
@@ -130,6 +139,9 @@
    :drug/drugs drug/drugs
    :evidence/description evidence/description
    :evidence/source evidence/source
+   :evidence-line/evidence-items evidence-line/evidence-items
+   :evidence-line/score evidence-line/score
+   :evidence-item/evidence-lines evidence-item/evidence-lines
    :gene/chromosome-band gene/chromosome-band
    :gene/conditions gene/conditions
    :gene/curation-activities gene/curation-activities
