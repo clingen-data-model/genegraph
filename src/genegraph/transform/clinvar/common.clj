@@ -3,7 +3,8 @@
             [genegraph.transform.clinvar.iri :as iri]
             [io.pedestal.log :as log]
             [clojure.data.csv :as csv]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.string :as s]))
 
 (defmulti transform-clinvar :genegraph.transform.clinvar/format)
 
@@ -14,6 +15,18 @@
                                          "sepio" "http://purl.obolibrary.org/obo/SEPIO_"
                                          "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"
                                          }})
+
+(defn read-csv-with-header
+  "Reads a CSV file, using the first line as headers, converting each remaining
+  line to a map of the headers (as keywords) to the corresponding values in each line.
+
+  Loads whole file into memory."
+  [reader]
+  (let [lines (csv/read-csv reader)
+        headers (map #(keyword %) (first lines))]
+    (doall (map #(into {} %)
+                (map (fn [line] (map vector headers line))
+                     (rest lines))))))
 
 (def consensus-cancer-genes-list
   (map (fn [row] {:gene_id (nth row 0)
@@ -30,6 +43,19 @@
   (into {} (map (fn [{:keys [gene_id gene_symbol num]}]
                   [gene_id {:gene_symbol gene_symbol :num num}])
                 consensus-cancer-genes-list)))
+
+(def clinvar-clinsig-map
+  (read-csv-with-header (io/reader (io/resource "clinvar_clinsig-map.csv"))))
+
+(def clinvar-clinsig-map-by-clinsig
+  (into {} (map (fn [{:keys [clinsig normalized group]}]
+                  [clinsig {:normalized normalized :group group}])
+                clinvar-clinsig-map)))
+
+(defn normalize-clinvar-clinsig [clinsig]
+  (or (get clinvar-clinsig-map-by-clinsig (s/lower-case clinsig))
+      "other"))
+
 
 
 (defn variation-geno-type

@@ -8,7 +8,9 @@
                                                         genegraph-kw-to-iri
                                                         vcv-review-status-to-evidence-strength-map
                                                         scv-review-status-to-evidence-strength-map
-                                                        consensus-cancer-genes-by-id]]
+                                                        consensus-cancer-genes-by-id
+                                                        clinvar-clinsig-map
+                                                        normalize-clinvar-clinsig]]
             [genegraph.transform.clinvar.iri :as iri]
             [genegraph.transform.clinvar.util :refer [in?]]
             [io.pedestal.log :as log]
@@ -67,6 +69,7 @@ ORDER BY ?s_variant ?gene_id"
                          (:release_date clinical-assertion))]
     (q/select query {:variation_id variation-id})))
 
+
 (defn compute-clingen-classification-context
   "Expects clinical-assertion to be a message passed in from clinvar-streams.
 
@@ -111,11 +114,13 @@ ORDER BY ?s_variant ?gene_id"
           (= "drug response" (s/lower-case clinsig))
           (do (log/info :msg "Assertion classification context is :PHARMACOGENOMIC")
               :PHARMACOGENOMIC)
-          ; TODO germline
-          ;(or (in? ["practice guideline" "reviewed by expert panel"] review-status)
-          ;    ; TODO check clinsig (assertion predicate)
-          ;    )
-          ;(do (log/info :msg "Assertion classification context is :GERMLINE_DISEASE"))
+
+          (or (in? ["practice guideline" "reviewed by expert panel"] review-status)
+              (let [{normalized-clinsig :normalized normalized-group :group} (normalize-clinvar-clinsig clinsig)]
+                (log/debug :msg (format "Normalized clinsig %s to %s" clinsig normalized-clinsig))
+                (= "path" normalized-group)))
+          (do (log/info :msg "Assertion classification context is :GERMLINE_DISEASE")
+              :GERMLINE_DISEASE)
 
           :default :OTHER
           ))
