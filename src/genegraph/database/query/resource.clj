@@ -62,7 +62,7 @@
   (fn [coll k v]
     (let [target (:genegraph.database.query/value (meta v))]
       (if (instance? Resource target)
-        (types/->RDFResource target model)
+        (types/create-resource target model)
         target))))
 
 (defn- substitute-known-iri-short-name [k-ns k]
@@ -123,7 +123,7 @@
                   model (if (instance? org.apache.jena.query.Dataset db-or-model)
                           (.getUnionModel db-or-model)
                           db-or-model)]
-              (mapv #(types/->RDFResource (.getResource % result-var) model) result-seq))))))))
+              (mapv #(types/create-resource (.getResource % result-var) model) result-seq))))))))
   
   java.lang.String
   (select 
@@ -140,14 +140,13 @@
                iri (if-let [iri-prefix (-> curie-prefix s/lower-case prefix-ns-map)]
                      (str iri-prefix rest)
                      r)]
-           (types/->RDFResource (ResourceFactory/createResource iri) (get-all-graphs))))
+           (types/create-resource (ResourceFactory/createResource iri))))
     ([ns-prefix r] (when-let [prefix (prefix-ns-map ns-prefix)]
-                     (types/->RDFResource (ResourceFactory/createResource (str prefix r))
-                                    (get-all-graphs)))))
+                     (types/create-resource (ResourceFactory/createResource (str prefix r))))))
   
   clojure.lang.Keyword
   (resource [r] (when-let [res (local-names r)]
-                  (types/->RDFResource res (get-all-graphs)))))
+                  (types/create-resource res))))
 
 (defn construct 
   ([query-string] (construct query-string {}))
@@ -175,14 +174,29 @@
     (doseq [model models] (.add union-model model))
     union-model))
 
+(defn- local-bindings-for-select [var-names result model]
+  (println "adding local bindings for select " result)
+  (println var-names)
+  (reduce #(assoc %1 (keyword %2)
+                  (types/to-clj (.get result %2) model))
+          {}
+          var-names))
+
 (defn- compose-select-result [qexec model]
   (when-let [result (-> qexec .execSelect)]
-    (let [result-var (-> result .getResultVars first)
+    (let [result-vars (-> result .getResultVars)
+          result-var (first result-vars)
           result-seq (iterator-seq result)
           node-model (if (instance? Dataset model)
                        (get-all-graphs)
                        model)]
-      (mapv #(types/->RDFResource (.getResource % result-var) node-model) result-seq))))
+      (if (< 1 (count result-vars))
+        (mapv #(types/create-resource
+                (.getResource % result-var)
+                node-model
+                (local-bindings-for-select result-vars % node-model))
+              result-seq)
+        (mapv #(types/create-resource (.getResource % result-var) node-model) result-seq)))))
 
 (defn- exec [query-def params]
   (let [qs-map (construct-query-solution-map (medley/filter-keys #(nil? (namespace %)) params))

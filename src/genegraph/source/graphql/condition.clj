@@ -2,6 +2,7 @@
   (:require [genegraph.database.query :as q :refer [declare-query create-query ld-> ld1->]]
             [genegraph.source.graphql.common.cache :refer [defresolver]]
             [genegraph.source.graphql.common.curation :as curation]
+            [com.walmartlabs.lacinia.schema :refer [tag-with-type]]
             [clojure.string :as str]))
 
 ;; DEPRECATED -- genetic condition concept used instead
@@ -10,6 +11,15 @@
 
 (defresolver condition-query [args value]
   (q/resource (:iri args)))
+
+(def propositions-query
+  (create-query "select ?prop where 
+{ ?prop :sepio/has-object ?disease .
+  ?prop ( a / :rdfs/sub-class-of * ) :sepio/Proposition }"))
+
+(defresolver ^:expire-by-value propositions [args value]
+  (map #(tag-with-type % :GenericProposition)
+       (propositions-query {:disease value})))
 
 ;; DEPRECATED -- use actionability curations under genetic conditions
 (defresolver actionability-curations [args value]
