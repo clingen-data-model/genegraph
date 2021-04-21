@@ -4,11 +4,12 @@
             [genegraph.source.graphql.clinvar.common :refer [cgterm resolve-curie-namespace]]
             [genegraph.source.graphql.clinvar.variant :as variant]
             [io.pedestal.log :as log]
-            [clojure.string :as s])
+            [clojure.string :as s]
+            [genegraph.transform.clinvar.iri :as iri])
   (:import (genegraph.database.query.types RDFResource)))
 
 (defn aggregate-assertion-list
-  "Top level lookup for aggregate assertions. Returns a list of records in the form of a RDFResource.
+  "Top level lookup for aggregate assertions. Returns a list of records in the form of RDFResources.
   When lacinia serializes the resource to a string it receives the iri used to construct the
   resource initially, which in our case is the assertion record iri."
   [context args value]
@@ -50,15 +51,19 @@
     (cond
       (not (nil? (:id args)))
       (let [id (resolve-curie-namespace (:id args))
-            query-args (merge {:id id}
-                              (select-keys args [:limit :offset]))]
+            query-args {:id id
+                        ::q/params (select-keys args [:limit :offset])}]
+        (log/debug :query-args query-args)
         (q/select date-filtered-query query-args))
 
       (not (nil? (:subject args)))
-      (let [subject (resolve-curie-namespace (:subject args))
+      (let [subject (if (.startsWith (:subject args) "clinvar:")
+                      (str iri/clinvar-variation (.substring (:subject args) (count "clinvar:")))
+                      (resolve-curie-namespace (:subject args)))
             ;query "SELECT ?iri WHERE { ?iri :sepio/has-subject ?subject }"
             query-args {:subject (q/resource subject)
                         ::q/params (select-keys args [:limit :offset])}]
+        (log/debug :query-args query-args)
         (q/select date-filtered-query query-args))
 
       :default (log/error :msg (str "Unknown query args: " args)))))
