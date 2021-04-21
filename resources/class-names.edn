@@ -104,6 +104,7 @@
  [:sepio/Contribution "http://purl.obolibrary.org/obo/SEPIO_0000158"]
  [:cnt/ContentAsText "http://www.w3.org/2011/content#ContentAsText"]
  [:sepio/GeneValidityEvidenceLevelAssertion "http://purl.obolibrary.org/obo/SEPIO_0004002"]
+ [:sepio/GeneValidityEvidenceLevelAutoClassification "http://purl.obolibrary.org/obo/SEPIO_0004098"]
  [:sepio/GeneValidityProposition "http://purl.obolibrary.org/obo/SEPIO_0004001"]
  [:ro/IsCausalGermlineMutationIn "http://purl.obolibrary.org/obo/RO_0004013"]
  [:sepio/DosageNoEvidence "http://purl.obolibrary.org/obo/SEPIO_0002008"]

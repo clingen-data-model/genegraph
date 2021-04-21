@@ -119,6 +119,7 @@
             "Moderate" "SEPIO:0004506"
             "Limited" "SEPIO:0004507"
             "No Known Disease Relationship" "SEPIO:0004508"
+            "Refuted" "SEPIO:0004510"
             "No Classification" "SEPIO:0004508" ;; Maybe this should not exist in published records?
             ;; "No Classification" "SEPIO:0004508"
             }}))))
@@ -154,18 +155,19 @@
         unlinked-model (q/union 
                         (construct-proposition params)
                         (construct-evidence-level-assertion params)
-                        (construct-experimental-evidence-assertions params)
-                        (construct-genetic-evidence-assertion params)
-                        (construct-ad-variant-assertions params)
-                        (construct-ar-variant-assertions params)
-                        (construct-cc-and-seg-assertions params)
-                        (construct-proband-score params)                        
-                        (construct-model-systems-evidence params)
-                        (construct-functional-evidence params)
-                        (construct-functional-alteration-evidence params)
-                        (construct-rescue-evidence params)
-                        (construct-case-control-evidence params)
-                        (construct-segregation-evidence params))]
+                        ;; (construct-experimental-evidence-assertions params)
+                        ;; (construct-genetic-evidence-assertion params)
+                        ;; (construct-ad-variant-assertions params)
+                        ;; (construct-ar-variant-assertions params)
+                        ;; (construct-cc-and-seg-assertions params)
+                        ;; (construct-proband-score params)
+                        ;; (construct-model-systems-evidence params)
+                        ;; (construct-functional-evidence params)
+                        ;; (construct-functional-alteration-evidence params)
+                        ;; (construct-rescue-evidence params)
+                        ;; (construct-case-control-evidence params)
+                        ;; (construct-segregation-evidence params)
+                        )]
     (q/union unlinked-model
              (construct-evidence-connections 
               {::q/model

@@ -126,6 +126,8 @@ the context of a formal evalutation framework"
                   :type String}
             :type {:description "Type of this evidence item"
                    :type (list :Class)}
+            :label {:description "Label for this evidence item"
+                    :type String}
             :description {:descripiton "A description of the evidence item"
                           :type String}}}
 
@@ -621,7 +623,7 @@ the context of a formal evalutation framework"
                     :resolve :ac-assertion/attributed-to}}}
 
   :GeneValidityAssertion
-  {:implements [:Resource :Curation :EvidenceItem]
+  {:implements [:Resource :Curation :EvidenceItem :Assertion]
    :fields
    {:iri {:type String
           :resolve :resource/iri
@@ -632,6 +634,12 @@ the context of a formal evalutation framework"
     :label {:type String
             :resolve :resource/label
             :description "Label identifying this gene validity curation."}
+    :subject {:type :Resource
+              :resolve :assertion/subject}
+    :predicate {:type :Resource
+                :resolve :assertion/predicate}
+    :object {:type :Resource
+             :resolve :assertion/object}
     :type {:type (list :Class)
            :resolve :resource/type}
     :report_date {:type String
@@ -695,7 +703,9 @@ the context of a formal evalutation framework"
                          :iri {:type String
                                :resolve :resource/iri}
                          :curie {:type String
-                               :resolve :resource/curie}
+                                 :resolve :resource/curie}
+                         :label {:type String
+                                 :resolve :resource/label}
                          :type {:type (list :Class)
                                 :resolve :resource/type}
                          :description {:type String
@@ -710,6 +720,8 @@ the context of a formal evalutation framework"
                                   :resolve :assertion/predicate}
                       :object {:type :Resource
                                :resolve :assertion/object}
+                      :label {:type String
+                                 :resolve :resource/label}
                       :evidence_lines {:type (list :EvidenceLine)
                                        :args {:recursive {:type Boolean}
                                               :class {:type :SEPIOClass}}
@@ -741,7 +753,9 @@ the context of a formal evalutation framework"
                       :iri {:type String
                             :resolve :resource/iri}
                       :curie {:type String
-                               :resolve :resource/curie}
+                              :resolve :resource/curie}
+                      :label {:type String
+                              :resolve :resource/label}
                       :type {:type (list :Class)
                              :resolve :resource/type}
                       :description {:type String
