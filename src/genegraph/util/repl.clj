@@ -42,7 +42,7 @@
 (defn process-event-seq
   "Run event sequence through event processor"
   ([event-seq]
-   (process-event-seq event-seq {}))
+   (process-event-seq {} event-seq))
   ([opts event-seq]
    (write-tx
     (doseq [event event-seq]
