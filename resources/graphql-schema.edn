@@ -52,7 +52,8 @@
   :SEPIOClass
   {:description "Classes in SEPIO; will typically be used to filter results of a field listing items with a SEPIO type."
    :values [:ProbandWithVariantEvidenceItem
-            :ProbandEvidenceLine]}}
+            :ProbandEvidenceLine
+            :ExperimentalEvidenceLine]}}
 
  :interfaces
  {:Resource
@@ -712,7 +713,7 @@ the context of a formal evalutation framework"
                                        :resolve :evidence/description}}}
 
   :GenericAssertion {:description "A SEPIO assertion without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
-                     :implements [:EvidenceItem :Assertion]
+                     :implements [:EvidenceItem :Assertion :Resource]
                      :fields
                      {:subject {:type :Resource
                                 :resolve :assertion/subject}
@@ -736,7 +737,7 @@ the context of a formal evalutation framework"
                                     :resolve :evidence/description}}}
 
     :GenericProposition {:description "A SEPIO proposition without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
-                     :implements [:EvidenceItem :Proposition]
+                     :implements [:EvidenceItem :Proposition :Resource]
                      :fields
                      {:subject {:type :Resource
                                 :resolve :assertion/subject}

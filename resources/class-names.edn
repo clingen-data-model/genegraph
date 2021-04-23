@@ -248,8 +248,10 @@
   "http://purl.obolibrary.org/obo/SEPIO_0004062"]
  [:sepio/ProbandWithNullVariantEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004034"]
- [:sepio/ExperimentalEvidenceLine
+ [:sepio/OverallExperimentalEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004006"]
+ [:sepio/ExperimentalEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004105"]
  [:sepio/ClinGenFunctionalAlterationEvidenceCriteria
   "http://purl.obolibrary.org/obo/SEPIO_0004075"]
  [:sepio/CellCultureModelEvidenceItem

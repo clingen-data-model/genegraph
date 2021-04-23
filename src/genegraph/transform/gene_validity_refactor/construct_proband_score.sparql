@@ -41,8 +41,14 @@ where {
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
 
-  ?variant gci:carId ?caId .
-  
-  BIND(IRI(CONCAT(?arbase, ?caID)) AS ?allele) .
+  OPTIONAL {
+    ?variant gci:carId ?caId .
+    BIND(IRI(CONCAT(?arbase, ?caID)) AS ?allele) .
+  }
+
+  OPTIONAL {
+    ?variant gci:clinvarVariantId ?cvId .
+    BIND(IRI(CONCAT(?cvbase, ?cvId)) AS ?allele) .
+  }
   
 }

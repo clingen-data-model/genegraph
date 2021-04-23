@@ -166,7 +166,8 @@
                         (construct-functional-alteration-evidence params)
                         (construct-rescue-evidence params)
                         (construct-case-control-evidence params)
-                        (construct-segregation-evidence params))]
+                        (construct-segregation-evidence params)
+                        )]
     (q/union unlinked-model
              (construct-evidence-connections 
               {::q/model

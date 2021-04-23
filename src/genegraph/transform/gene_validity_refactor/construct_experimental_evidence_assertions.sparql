@@ -4,7 +4,7 @@ construct
 {
   ?classification :sepio/has-evidence-line ?experimentalEvidenceLine .
   
-  ?experimentalEvidenceLine a :sepio/ExperimentalEvidenceLine ;
+  ?experimentalEvidenceLine a :sepio/OverallExperimentalEvidenceLine ;
   :sepio/has-evidence-item ?experimentalEvidenceCriterionAssessment ;
   :sepio/evidence-line-strength-score ?experimentalEvidenceTotal .
 
@@ -12,10 +12,10 @@ construct
   :sepio/has-evidence-line ?functionalEvidenceLine, ?functionalAlterationEvidenceLine, ?modelAndRescueEvidenceLine .
 
   ?functionalEvidenceLine a :sepio/FunctionalEvidenceLine ;
-  :sepio/has-evidence-item ?functionalCriterionAssessment ;
+  :sepio/has-evidence-item ?functionalEvidenceCriterionAssessment ;
   :sepio/evidence-line-strength-score ?functionTotal .
 
-  ?functionalCriterionAssessment a :sepio/FunctionalCriterionAssessment .
+  ?functionalEvidenceCriterionAssessment a :sepio/FunctionalCriterionAssessment .
 
   ?functionalAlterationEvidenceLine a :sepio/FunctionalAlterationEvidenceLine ;
   :sepio/has-evidence-item ?functionalAlterationCriterionAssessment ;
