@@ -129,6 +129,8 @@ the context of a formal evalutation framework"
                    :type (list :Class)}
             :label {:description "Label for this evidence item"
                     :type String}
+            :source {:type :Resource
+                     :description "Journal article or other resource that is the source for this evidence item."}
             :description {:descripiton "A description of the evidence item"
                           :type String}}}
 
@@ -676,7 +678,10 @@ the context of a formal evalutation framework"
                   :description "Legacy JSON from the GCI."
                   :resolve :gene-validity/legacy-json}
     :description {:type String
-                  :resolve :evidence/description}}}
+                  :resolve :evidence/description}
+    :source {:type :Resource
+             :resolve :evidence/source
+             :description "Currently not used, included to satisfy EvidenceItem contract. May consider using GCI reference for this one in future"}}}
 
   :GenericEvidenceLine {:description "A SEPIO evidence line without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
                         :implements [:EvidenceLine]
@@ -710,7 +715,9 @@ the context of a formal evalutation framework"
                          :type {:type (list :Class)
                                 :resolve :resource/type}
                          :description {:type String
-                                       :resolve :evidence/description}}}
+                                       :resolve :evidence/description}
+                         :source {:type :Resource
+                                  :resolve :evidence/source}}}
 
   :GenericAssertion {:description "A SEPIO assertion without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
                      :implements [:EvidenceItem :Assertion :Resource]
@@ -733,6 +740,8 @@ the context of a formal evalutation framework"
                                :resolve :resource/curie}
                       :type {:type (list :Class)
                              :resolve :resource/type}
+                      :source {:type :Resource
+                               :resolve :evidence/source}
                       :description {:type String
                                     :resolve :evidence/description}}}
 
@@ -759,6 +768,8 @@ the context of a formal evalutation framework"
                               :resolve :resource/label}
                       :type {:type (list :Class)
                              :resolve :resource/type}
+                      :source {:type :Resource
+                               :resolve :evidence/source}
                       :description {:type String
                                     :resolve :evidence/description}}}
 

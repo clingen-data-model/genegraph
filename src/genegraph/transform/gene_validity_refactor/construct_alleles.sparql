@@ -1,0 +1,49 @@
+prefix gci: <http://gci.clinicalgenome.org/> 
+prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+prefix ga4gh: <https://terms.ga4gh.org/>
+
+construct
+{
+
+  ?vd a ga4gh:VariationDescriptor ;
+  ga4gh:CanonicalReference ?caid ;
+  :skos/preferred-label ?preferred_label . 
+
+}
+where
+{
+  
+  ?vd a gci:variant ;
+
+
+  OPTIONAL {
+    ?vd gci:canonicalTranscriptTitle ?canonicalTranscriptTitle .
+  }
+
+  OPTIONAL {
+    ?vd gci:maneTranscriptTitle ?maneTranscriptTitle .
+  }
+
+  OPTIONAL {
+    ?vd gci:preferredTitle ?preferredTitle .
+  }
+
+  OPTIONAL {
+    ?vd gci:clinvarVariantTitle ?clinvarVariantTitle .
+  }
+  
+  OPTIONAL {
+    ?vd gci:carId ?caIdstr .
+
+    BIND(IRI(CONCAT(?arbase, ?caIdstr)) AS ?caid) .
+  }
+
+  OPTIONAL {
+    ?vd gci:clinvarVariantId ?cvId .
+  }
+
+  BIND(COALESCE(?canonicalTranscriptTitle,
+		?maneTranscriptTitle,
+		?preferredTitle,
+		?clinvarVariantTitle) AS ?preferred_label ) .
+}

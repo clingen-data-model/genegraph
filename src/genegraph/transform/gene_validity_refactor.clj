@@ -39,6 +39,7 @@
                construct-case-control-evidence
                construct-segregation-evidence
                construct-evidence-connections
+               construct-alleles
                )
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -153,20 +154,21 @@
                 :affbase "http://dataexchange.clinicalgenome.org/agent/"
                 :entrez_gene entrez-gene}
         unlinked-model (q/union 
-                        (construct-proposition params)
-                        (construct-evidence-level-assertion params)
-                        (construct-experimental-evidence-assertions params)
-                        (construct-genetic-evidence-assertion params)
-                        (construct-ad-variant-assertions params)
-                        (construct-ar-variant-assertions params)
-                        (construct-cc-and-seg-assertions params)
+                        ;; (construct-proposition params)
+                        ;; (construct-evidence-level-assertion params)
+                        ;; (construct-experimental-evidence-assertions params)
+                        ;; (construct-genetic-evidence-assertion params)
+                        ;; (construct-ad-variant-assertions params)
+                        ;; (construct-ar-variant-assertions params)
+                        ;; (construct-cc-and-seg-assertions params)
                         (construct-proband-score params)
-                        (construct-model-systems-evidence params)
-                        (construct-functional-evidence params)
-                        (construct-functional-alteration-evidence params)
-                        (construct-rescue-evidence params)
-                        (construct-case-control-evidence params)
-                        (construct-segregation-evidence params)
+                        ;; (construct-model-systems-evidence params)
+                        ;; (construct-functional-evidence params)
+                        ;; (construct-functional-alteration-evidence params)
+                        ;; (construct-rescue-evidence params)
+                        ;; (construct-case-control-evidence params)
+                        ;; (construct-segregation-evidence params)
+                        (construct-alleles params)
                         )]
     (q/union unlinked-model
              (construct-evidence-connections 

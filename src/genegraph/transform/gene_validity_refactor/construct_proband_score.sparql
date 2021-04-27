@@ -7,7 +7,7 @@ construct {
   :dc/description ?evidenceLineDescription .
 
   ?evidenceItem a ?evidenceItemType ;
-  :sepio/is-about-allele ?allele ;
+  :sepio/is-about-allele ?variant ;
   :dc/source ?article ;
   :rdfs/label ?individualLabel .
 
@@ -41,14 +41,14 @@ where {
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
 
-  OPTIONAL {
-    ?variant gci:carId ?caId .
-    BIND(IRI(CONCAT(?arbase, ?caID)) AS ?allele) .
-  }
+  # OPTIONAL {
+  #   ?variant gci:carId ?caId .
+  #   BIND(IRI(CONCAT(?arbase, ?caID)) AS ?allele) .
+  # }
 
-  OPTIONAL {
-    ?variant gci:clinvarVariantId ?cvId .
-    BIND(IRI(CONCAT(?cvbase, ?cvId)) AS ?allele) .
-  }
+  # OPTIONAL {
+  #   ?variant gci:clinvarVariantId ?cvId .
+  #   BIND(IRI(CONCAT(?cvbase, ?cvId)) AS ?allele) .
+  # }
   
 }
