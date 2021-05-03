@@ -42,6 +42,7 @@
  [:foaf/Agent "http://xmlns.com/foaf/0.1/Agent"]
  [:foaf/Group "http://xmlns.com/foaf/0.1/Group"]
  [:foaf/Organization "http://xmlns.com/foaf/0.1/Organization"]
+ [:prov/Agent "http://www.w3.org/ns/prov#Agent"]
  [:sepio/StudyFinding "http://purl.obolibrary.org/obo/SEPIO_0000173"]
  [:sepio/PopulationAscertainmentMethod "http://purl.obolibrary.org/obo/SEPIO_0000260"]
  [:sepio/Acmg2015EvidenceStrength "http://purl.obolibrary.org/obo/SEPIO_0000408"]

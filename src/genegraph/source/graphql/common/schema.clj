@@ -32,13 +32,9 @@
   (if (:path field)
     (let [resolver-fn (if (is-list? field)
                         (fn [_ _ value]
-                          (println "in path resolver nary")
                           (q/ld-> value (:path field)))
                         (fn [_ _ value]
-                          (println "in path resolver unary")
                           (q/ld1-> value (:path field))))]
-      ;; (println "in construct-resolver from path ")
-      ;; (println field " : " (is-list? field))
       (assoc field :resolve resolver-fn))
     field))
 
@@ -49,15 +45,12 @@
         (assoc field
                :resolve
                (fn [context args value]
-                 (println "in type resolver nary")
                  (map #(schema/tag-with-type % (resolve-type % schema))
                       (resolver-fn context args value))))
         (assoc field
                :resolve
                (fn [context args value]
-                 (println "in type resolver unary")
                  (let [res (resolver-fn context args value)]
-                   (println res)
                    (schema/tag-with-type res (resolve-type res schema))))))
       field)))
 
@@ -73,11 +66,12 @@
 
 (defn- compose-object [entity schema]
   (let [interfaces (-> schema :interfaces (select-keys (:implements entity)) vals)
-        interface-defined-fields (reduce merge (map :fields interfaces))]
-    (assoc (select-keys (update-fields entity schema)
+        interface-defined-fields (reduce merge (map :fields interfaces))
+        updated-fields (update-fields entity schema)]
+    (assoc (select-keys entity 
                         [:description :fields :implements])
            :fields
-           (merge interface-defined-fields (:fields entity)))))
+           (merge interface-defined-fields (:fields updated-fields)))))
 
 (defn- compose-interface [entity schema]
   (select-keys (update-fields entity schema)

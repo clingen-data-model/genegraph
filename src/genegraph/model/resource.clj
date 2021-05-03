@@ -1,7 +1,6 @@
 (ns genegraph.model.resource
   "Definitions for model of RDFResource objects"
-  (:require [genegraph.database.query :as q]
-            [com.walmartlabs.lacinia.schema :refer [tag-with-type]]))
+  (:require [genegraph.database.query :as q]))
 
 (def resource-interface
   {:name :Resource

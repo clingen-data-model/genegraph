@@ -5,6 +5,8 @@
             [genegraph.model.resource :as model-resource]
             [genegraph.model.assertion :as model-assertion]
             [genegraph.model.types :as model-types]
+            [genegraph.model.agent :as model-agent]
+            [genegraph.model.contribution :as model-contribution]
             [genegraph.source.graphql.common.schema :as schema-builder]
             [genegraph.database.instance :as db-instance]
             [genegraph.env :as env]
