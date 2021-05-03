@@ -175,8 +175,6 @@
     union-model))
 
 (defn- local-bindings-for-select [var-names result model]
-  (println "adding local bindings for select " result)
-  (println var-names)
   (reduce #(assoc %1 (keyword %2)
                   (types/to-clj (.get result %2) model))
           {}

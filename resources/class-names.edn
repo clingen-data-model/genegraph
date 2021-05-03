@@ -335,5 +335,7 @@
  [:cg/PediatricActionabilityWorkingGroup "http://dataexchange.clinicalgenome.org/terms/PediatricActionabilityWorkingGroup"]
  [:void/Dataset "http://rdfs.org/ns/void#Dataset"]
  [:mondo/Disease "http://purl.obolibrary.org/obo/MONDO_0000001"]
+ [:sepio/Assertion
+   "http://purl.obolibrary.org/obo/SEPIO_0000001"]
  [:chebi/Drug "http://purl.obolibrary.org/obo/CHEBI_23888"]]
 
