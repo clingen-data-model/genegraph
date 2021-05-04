@@ -39,7 +39,7 @@
     field))
 
 (defn- attach-type-to-resolver-result [field schema]
-  (let [resolver-fn (:resolve field)]
+  (if-let [resolver-fn (:resolve field)]
     (if (is-object? field)
       (if (is-list? field)
         (assoc field
@@ -52,14 +52,29 @@
                (fn [context args value]
                  (let [res (resolver-fn context args value)]
                    (schema/tag-with-type res (resolve-type res schema))))))
+      field)
+    (if (is-object? field)
+      (if (is-list? field)
+        (assoc field
+               :resolve
+               (fn [context args value]
+                 (map #(schema/tag-with-type % (resolve-type % schema))
+                      (get value (:name field)))))
+        (assoc field
+               :resolve
+               (fn [context args value]
+                 (let [res (get value (:name field))]
+                   (schema/tag-with-type res (resolve-type res schema))))))
       field)))
 
 (defn- update-fields [entity schema]
   (let [fields (reduce (fn [new-fields [field-name field]]
                          (assoc new-fields
                                 field-name
-                                (attach-type-to-resolver-result
-                                 (construct-resolver-from-path field) schema)))
+                                (if (:skip-type-resolution entity)
+                                  (construct-resolver-from-path field)
+                                  (attach-type-to-resolver-result
+                                   (construct-resolver-from-path field) schema))))
                        {}
                        (:fields entity))]
     (assoc entity :fields fields)))
@@ -78,7 +93,13 @@
                [:description :fields]))
 
 (defn- compose-query [entity schema]
-  (attach-type-to-resolver-result (select-keys entity [:type :args :resolve :description]) schema))
+  (let [query (select-keys entity [:type :args :resolve :description])]
+    (if (:skip-type-resolution entity)
+      query
+      (attach-type-to-resolver-result query schema))))
+
+(defn- compose-enum [entity]
+  (select-keys entity [:description :values]))
 
 (defn- add-entity-to-schema [schema entity]
   (case (:graphql-type entity)
@@ -91,6 +112,9 @@
     :query (assoc-in schema
                      [:queries (:name entity)]
                      (compose-query entity schema))
+    :enum (assoc-in schema
+                    [:enums (:name entity)]
+                    (compose-enum entity))
     (merge schema entity)))
 
 (defn schema-description [entities]

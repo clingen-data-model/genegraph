@@ -7,6 +7,7 @@
             [genegraph.model.types :as model-types]
             [genegraph.model.agent :as model-agent]
             [genegraph.model.contribution :as model-contribution]
+            [genegraph.model.find :as model-find]
             [genegraph.source.graphql.common.schema :as schema-builder]
             [genegraph.database.instance :as db-instance]
             [genegraph.env :as env]
