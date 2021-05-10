@@ -6,17 +6,7 @@
                         "security.protocol" "SASL_SSL"
                         "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
                         "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
-                        "sasl.jaas.config" genegraph.env/dx-jaas-config}
-            :dx-prod {"bootstrap.servers" "exchange.clinicalgenome.org:9093"
-                      "enable.auto.commit" "false"
-                      "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
-                      "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
-                      "security.protocol" "SSL"
-                      "ssl.truststore.location" "keys/serveur.truststore.jks"
-                      "ssl.truststore.password" genegraph.env/dx-key-pass
-                      "ssl.keystore.location" "keys/dev.serveur.keystore.jks"
-                      "ssl.keystore.password" genegraph.env/dx-key-pass
-                      "ssl.key.password" genegraph.env/dx-key-pass}}
+                        "sasl.jaas.config" genegraph.env/dx-jaas-config}}
  :topics   {:actionability {:name "actionability"
                             :format :actionability-v1
                             :root-type :sepio/ActionabilityReport
@@ -48,14 +38,6 @@
                           :name "gene_validity"
                           :root-type :sepio/GeneValidityReport
                           :cluster :dx-ccloud}
-            :gci-legacy-old-cluster  {:format :gci-legacy
-                                      :name "gene_validity"
-                                      :root-type :sepio/GeneValidityReport
-                                      :cluster :dx-prod}
-            :gci-legacy-devold-cluster  {:format :gci-legacy
-                                         :name "gene_validity_dev"
-                                         :root-type :sepio/GeneValidityReport
-                                         :cluster :dx-prod}
             :gene-validity-events-dev {:name "gene_validity_events_dev"
                                        :cluster :dx-ccloud}
             :clinvar-combined {:name "clinvar-combined"
