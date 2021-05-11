@@ -1,96 +1,30 @@
 {
-  genes(limit: null) {
+  genes(limit: null, curation_activity: ALL) {
     count
     gene_list {
-      curie
-      iri
       label
-      alternative_label
-      chromosome_band
-      curation_activities
       hgnc_id
       last_curated_date
+      curation_activities
       dosage_curation {
-        curie
-        iri
-        haplo_index
-        pli_score
-        report_date
-        haploinsufficiency_assertion {
-          curie
-          iri
-          label
-          assertion_type
-          classification_description
-          comments
-          disease {
-            iri
-            curie
-            label
-            description
-          }
-          dosage_classification {
-            enum_value
-            label
-            ordinal
-          }
-        }
         triplosensitivity_assertion {
-          curie
-          iri
-          label
-          assertion_type
-          classification_description
-          comments
           disease {
-            iri
-            curie
             label
-            description
+            curie
           }
           dosage_classification {
-            enum_value
-            label
             ordinal
           }
         }
-      }
-      genetic_conditions {
-        disease {
-          iri
-          curie
-          label
-          synonyms
-          curation_activities
-          description
-        }
-        mode_of_inheritance {
-          iri
-          curie
-          label
-        }
-        actionability_assertions {
-          classification {
-            curie
-            iri
+        haploinsufficiency_assertion {
+          disease {
             label
+            description
+            curie
           }
-          report_date
-          source
-        }
-        gene_dosage_assertions {
-          iri
-          curie
-          label
-          assertion_type
-          classification_description
-          comments
-        }
-        gene_validity_assertions {
-          iri
-          curie
-          label
-          report_date
+          dosage_classification {
+            ordinal
+          }
         }
       }
     }
