@@ -1,0 +1,16 @@
+{
+  statistics {
+    actionability_tot_reports
+    actionability_tot_updated_reports
+    actionability_tot_gene_disease_pairs
+    actionability_tot_adult_gene_disease_pairs
+    actionability_tot_pediatric_gene_disease_pairs
+    actionability_tot_adult_outcome_intervention_pairs
+    actionability_tot_outcome_intervention_pairs
+    actionability_tot_pediatric_outcome_intervention_pairs
+    actionability_tot_adult_score_counts
+    actionability_tot_pediatric_score_counts
+    actionability_tot_adult_failed_early_rule_out
+    actionability_tot_pediatric_failed_early_rule_out
+  }
+}

@@ -1,13 +1,13 @@
 {
-  diseases(limit: null) {
+  diseases(limit: null, curation_activity: ALL) {
     count
     disease_list {
-      iri
-      curie
       label
+      curie
       description
       synonyms
       last_curated_date
+      curation_activities
     }
   }
 }

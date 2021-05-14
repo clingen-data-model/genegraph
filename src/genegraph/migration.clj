@@ -38,12 +38,13 @@
   (when env/use-gql-cache
     (let [gql-file-names (-> "resolver-cache-warm.edn" io/resource slurp edn/read-string)]
       (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache..." :resources gql-file-names)
-      (doseq [query-file gql-file-names]
-        (let [results (-> query-file io/resource slurp core/gql-query)]
-          (when-let [errors (:errors results)]
-            (log/error :fn :warm-resolver-cache
-                       :msg (str "Resolver cache warmer script has errors: " query-file)
-                       :errors errors))))
+      (doall (pmap (fn [query-file] 
+                     (let [results (-> query-file io/resource slurp core/gql-query)]
+                       (when-let [errors (:errors results)]
+                         (log/error :fn :warm-resolver-cache
+                                    :msg (str "Resolver cache warmer script has errors: " query-file)
+                                    :errors errors)))
+                     (log/debug :fn :warm-resolver-cache :msg (str query-file " complete.")))  gql-file-names))
       (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache...complete."))))
 
 (defn build-base-database

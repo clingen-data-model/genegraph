@@ -133,10 +133,10 @@
                                     
 (defn build-all-suggestions []
   "Build all of the suggester indices for all configured suggesters"
-  (doseq [suggester-key (keys @suggesters)]
-      (let [suggester (build-suggestions suggester-key)]
-        (suggest/commit-suggester suggester)
-        (suggest/refresh-suggester suggester))))
+  (doall (pmap (fn [suggester-key]
+                 (let [suggester (build-suggestions suggester-key)]
+                   (suggest/commit-suggester suggester)
+                   (suggest/refresh-suggester suggester))) (keys @suggesters))))
 
 (defn get-suggester [key]
   "Retreive a suggester from the suggester atom" 

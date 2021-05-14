@@ -1,16 +1,47 @@
 {
-  genes(curation_activity: GENE_DOSAGE, limit: null) {
+  genes(limit: null, curation_activity: GENE_DOSAGE) {
+    count
     gene_list {
+      label
+      hgnc_id
       dosage_curation {
+        curie
+        report_date
         triplosensitivity_assertion {
-          score
+          report_date
+          disease {
+            label
+            curie
+          }
+          dosage_classification {
+            ordinal
+          }
         }
         haploinsufficiency_assertion {
-          score
+          report_date
+          disease {
+            label
+            curie
+          }
+          dosage_classification {
+            ordinal
+          }
         }
-        report_date
+      }
+      genetic_conditions {
+        disease {
+          label
+          curie
+        }
+        gene_dosage_assertions {
+          report_date
+          assertion_type
+          curie
+          dosage_classification {
+            ordinal
+          }
+        }
       }
     }
-    count
   }
 }
