@@ -9,7 +9,7 @@
         "   ?report :sepio/qualified-contribution ?contribution . "
         "   ?contribution :bfo/realizes :sepio/EvidenceRole . "
         "   ?contribution :sepio/activity-date ?date } "
-        " order by desc(?date) "
+        " order by ?date "
         " limit 1 ")))
 
 (defresolver report-date [args value]
