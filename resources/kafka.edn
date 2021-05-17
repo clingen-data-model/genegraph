@@ -38,6 +38,10 @@
                              :name "gene_validity"
                              :root-type :sepio/GeneValidityReport
                              :cluster :dx-ccloud}
+            :gene-validity-dev  {:format :gene-validity-v1
+                                 :name "gene_validity_dev"
+                                 :root-type :sepio/GeneValidityReport
+                                 :cluster :dx-ccloud}
             :gene-validity-raw {:format :gene-validity-v1
                                 :name "gene_validity_raw"
                                 :cluster :dx-ccloud}

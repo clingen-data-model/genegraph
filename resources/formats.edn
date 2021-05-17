@@ -13,6 +13,9 @@
  :gene-validity  {:genegraph.transform.core/format :gci-legacy
                   :genegraph.annotate/root-type :sepio/GeneValidityReport
                   :genegraph.annotate/graph-name :sepio/GeneValidityProposition}
+ :gene-validity-dev  {:genegraph.transform.core/format :gci-legacy
+                      :genegraph.annotate/root-type :sepio/GeneValidityReport
+                      :genegraph.annotate/graph-name :sepio/GeneValidityProposition}
  :gene-validity-raw {:genegraph.transform.core/format :gci-refactor
                      :genegraph.annotate/root-type :sepio/GeneValidityProposition
                      :genegraph.annotate/graph-name :sepio/GeneValidityProposition}
