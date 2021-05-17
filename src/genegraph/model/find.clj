@@ -4,13 +4,17 @@
 
 (def query-without-text-search
   (create-query
-   "select ?x where { ?x a? | :rdfs/sub-class-of * ?type }"))
+   "select ?x where {
+ ?x a? | :rdfs/sub-class-of * ?type ;
+ ^ :sepio/has-subject  |  ^ :sepio/has-object | ^ :sepio/has-agent  ?subject .
+}"))
 
 (def query-with-text-search
   (create-query
    "select ?x where {
       ?x :jena/query ( :cg/resource ?text ) ;
-      a? | :rdfs/sub-class-of * ?type 
+      a? | :rdfs/sub-class-of * ?type ;
+      ^ :sepio/has-subject  |  ^ :sepio/has-object | ^ :sepio/has-agent  ?subject .
     }"))
 
 (def graphql-type-to-rdf-type
@@ -25,7 +29,8 @@
         query-params (-> (if (string? (:text args))
                            {:text (s/lower-case (:text args))}
                            {})
-                         (assoc ::q/params limit-offset-sort-params))
+                         (assoc :type (graphql-type-to-rdf-type (:type args))
+                                ::q/params limit-offset-sort-params))
         query (if (:text args)
                 query-with-text-search
                 query-without-text-search)
@@ -56,7 +61,7 @@
    :description "Query useable to find any kind of resource in Genegraph, including genes, dieseases, affiliation groups."
    :type :QueryResult
    :skip-type-resolution true
-   :args {:type {:type 'String}
+   :args {:type {:type :Type}
           :text {:type 'String}
           :limit {:type 'Int
                   :default-value 10

@@ -2,6 +2,9 @@
   "Definitions for model of RDFResource objects"
   (:require [genegraph.database.query :as q]))
 
+;; (def type-query
+;;   (q/create-query "select ?type where {"))
+
 (def resource-interface
   {:name :Resource
    :graphql-type :interface
@@ -18,6 +21,9 @@
                                (first (concat (:skos/preferred-label value)
                                               (:rdfs/label value)
                                               (:foaf/name value))))}
+            :type {:type '(list :Resource)
+                   :description "The types for this resource."
+                   :path [:rdf/type]}
             :subject_of {:type '(list :Assertion)
                          :description "Assertions (or propositions) that have this resource as a subject (or object)."
                          ;; TODO implement as path when inverse; optional paths are done

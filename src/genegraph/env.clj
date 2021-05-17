@@ -17,6 +17,7 @@
 (def genegraph-version (System/getenv "GENEGRAPH_IMAGE_VERSION"))
 (def database-build-mode (System/getenv "GENEGRAPH_DATABASE_BUILD_MODE"))
 (def graphql-logging-topic (System/getenv "GENEGRAPH_GQL_LOGGING_TOPIC"))
+(def use-experimental-schema (System/getenv "GENEGRAPH_EXPERIMENTAL_SCHEMA"))
 
 (def dx-key-pass (System/getenv "SERVEUR_KEY_PASS"))
 
