@@ -31,6 +31,9 @@
             :object {:type :Resource
                      :description "The object of this assertion"
                      :path [:sepio/has-object]}
+            :qualifier {:type '(list :Resource)
+                        :description "Additional elements limiting the scope of the assertion"
+                        :path [:sepio/has-qualifier]}
             :has_evidence_item {:type :Resource
                                 :description "Evidence used in in support of the assertion"
                                 :args {:class {:type :Type}
