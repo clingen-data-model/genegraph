@@ -22,6 +22,9 @@
  :gci-legacy  {:genegraph.transform.core/format :gci-legacy
                :genegraph.annotate/root-type :sepio/GeneValidityReport
                :genegraph.annotate/graph-name :sepio/GeneValidityProposition}
+ :gci-legacy-dev  {:genegraph.transform.core/format :gci-legacy
+                   :genegraph.annotate/root-type :sepio/GeneValidityReport
+                   :genegraph.annotate/graph-name :sepio/GeneValidityProposition}
  :gci-express  {:genegraph.transform.core/format :gci-express
                 :genegraph.annotate/root-type :sepio/GeneValidityReport
                 :genegraph.annotate/graph-name :sepio/GeneValidityProposition}
