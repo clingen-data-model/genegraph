@@ -1,0 +1,30 @@
+{
+  genes(limit: null, curation_activity: ACTIONABILITY) {
+    gene_list {
+      label
+      hgnc_id
+      genetic_conditions {
+        disease {
+          label
+          curie
+        }
+        mode_of_inheritance {
+          label
+          website_display_label
+          curie
+        }
+        actionability_assertions {
+          report_date
+          source
+          attributed_to {
+            label
+          }
+          classification {
+            label
+            curie
+          }
+        }
+      }
+    }
+  }
+}

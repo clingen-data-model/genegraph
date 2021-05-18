@@ -37,15 +37,16 @@
   (read-edn base-resources-edn))
 
 (defn retrieve-base-data! [resources]
-  (doseq [{uri-str :source, target-file :target, opts :fetch-opts, name :name} resources]
-    (let [path (str (target-base) target-file)]
-      (io/make-parents path)
-      (fetch/fetch-data uri-str path opts))))
+  (doall (pmap (fn [resource]
+                 (let [{uri-str :source, target-file :target, opts :fetch-opts, name :name} resource
+                      path (str (target-base) target-file)]
+                   (io/make-parents path)
+                   (fetch/fetch-data uri-str path opts))) resources)))
 
 (defn import-documents! [documents]
-  (doseq [d documents]
-    (log/debug :fn :import-documents! :msg :importing :name (:name d))
-    (db/load-model (transform-doc d) (:name d))))
+  (doall (pmap (fn [d]
+                 (log/debug :fn :import-documents! :msg :importing :name (:name d))
+                 (db/load-model (transform-doc d) (:name d))) documents)))
 
 (defn initialize-db! []
   (let [res (read-base-resources)]

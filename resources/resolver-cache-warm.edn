@@ -3,8 +3,12 @@
 ;; resolvers cache. The names are jar resource
 ;; path names relative to resources
 ;;
-[ "queries/affiliations.graphql"
-  "queries/diseases.graphql"
-  "queries/drugs.graphql"
-  "queries/gene-validity-assertions.graphql"
-  "queries/genes.graphql"]
+[
+ "queries/genes.graphql"
+ "queries/actionability-genes.graphql"
+ "queries/dosage-genes.graphql"
+ "queries/gene-validity-assertions.graphql"
+ "queries/diseases.graphql"
+ "queries/affiliations.graphql"
+ "queries/statistics.graphql"
+ ]
