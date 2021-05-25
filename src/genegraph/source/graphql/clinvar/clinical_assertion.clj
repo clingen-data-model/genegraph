@@ -119,5 +119,8 @@
 
 (defn collection-method [context args value]
   (log/debug :fn ::collection-method :args args :value value)
-  (q/ld-> value [:cg/collection-method])
-  )
+  (q/ld-> value [:cg/collection-method]))
+
+(defn classification-context [context args value]
+  (log/debug :fn ::classification-context :args args :value value)
+  (q/ld1-> value [:cg/classification-context]))

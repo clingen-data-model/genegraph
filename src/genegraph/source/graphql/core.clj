@@ -30,6 +30,7 @@
             [genegraph.source.graphql.clinvar.aggregate_assertion :as cv-aggregate-assertion]
             [genegraph.source.graphql.clinvar.contribution :as cv-contribution]
             [genegraph.source.graphql.clinvar.variant :as cv-variant]
+            [genegraph.source.graphql.clinvar.gene :as cv-gene]
             [com.walmartlabs.lacinia :as lacinia]
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]
@@ -51,6 +52,7 @@
    :clinvar/clinical-assertion-version-of cv-clinical-assertion/version-of
    :clinvar/clinical-assertion-allele-origin cv-clinical-assertion/allele-origin
    :clinvar/clinical-assertion-collection-method cv-clinical-assertion/collection-method
+   :clinvar/clinical-assertion-classification-context cv-clinical-assertion/classification-context
    :clinvar/aggregate-assertion-list cv-aggregate-assertion/aggregate-assertion-list
    :clinvar/aggregate-assertion-version-of cv-aggregate-assertion/version-of
    :clinvar/aggregate-assertion-release-date cv-aggregate-assertion/release-date
@@ -66,7 +68,11 @@
    :contribution/activity-date cv-contribution/activity-date
    :variant/variant-single cv-variant/variant-single
    :variant/name cv-variant/variant-name
-
+   :variant/genes cv-variant/variant-genes
+   :variant/id cv-variant/variant-id
+   :clinvar/gene-list cv-gene/gene-list
+   :clinvar/gene-preferred-label cv-gene/gene-preferred-label
+   :clinvar/gene-symbol cv-gene/gene-symbol
 
    :actionability/actionability-query actionability/actionability-query
    :actionability/classification-description actionability/classification-description

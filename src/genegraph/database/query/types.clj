@@ -20,7 +20,9 @@
             ModelFactory]
            [java.io
             ByteArrayOutputStream
-            ByteArrayInputStream]))
+            ByteArrayInputStream]
+           [org.apache.jena.datatypes.xsd.impl
+            XSDBaseNumericType]))
 
 (def first-property (ResourceFactory/createProperty "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"))
 
@@ -275,7 +277,11 @@
 
   java.lang.String
   (to-rdf-node [x] (ResourceFactory/createPlainLiteral x))
-  
+
+  ; Accept integers as node literals. RDF still stores it as a string, but just with a type metadata
+  java.lang.Integer
+  (to-rdf-node [x] (ResourceFactory/createTypedLiteral (str x) XSDBaseNumericType/XSDinteger))
+
   clojure.lang.Keyword
   (to-rdf-node [x] (local-names x))
   

@@ -11,7 +11,8 @@
   If the string contains multiple colons (:), the prefix is taken to be the first
   non-empty substring before a colon."
   [^String text]
-  (re-matches #"(^[\S]+):(\S+)" text))
+  (if text
+    (re-matches #"(^[\S]+):(\S+)" text)))
 
 (defn is-curie
   "Returns true if `parse-curie` returns non-nil (matches pattern)."
