@@ -13,6 +13,7 @@
     ;[genegraph.transform.clinvar.jsonld.submission]
             [genegraph.transform.clinvar.jsonld.variation-archive]
             [genegraph.transform.clinvar.jsonld.variation]
+            [genegraph.transform.clinvar.jsonld.gene]
             )
   (:import (java.io StringReader)))
 

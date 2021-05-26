@@ -1,4 +1,4 @@
-(ns genegraph.transform.clinvar.jsonld.variation
+(ns genegraph.transform.clinvar.jsonld.gene
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q]
             [genegraph.transform.clinvar.common :refer [transform-clinvar
@@ -7,21 +7,14 @@
                                                         genegraph-kw-to-iri]]
             [genegraph.transform.clinvar.iri :as iri]))
 
-[::id
- ::name
- ::protein_change
- ::subclass_type                                            ;For SimpleAllele, no child_ids or descendant_ids, for Genotype/Haplotype, must have child+descendant
- ::variation_type
+[::full_name
+ ::id
+ ::symbol
  ]
-[::allele_id                                                ; TODO 0.0864% null (this is okay)
- ::child_ids
- ::content
- ::descendant_ids
- ::num_chromosomes
- ::num_copies
+[::hgnc_id
  ]
-(defn variation-to-jsonld [msg]
-  (let [id-unversioned (str iri/clinvar-variation (:id msg))
+(defn gene-to-jsonld [msg]
+  (let [id-unversioned (str iri/clinvar-gene (:id msg))
         id (str id-unversioned "." (:release_date msg))
         context {"@context" {"@vocab" iri/cgterms
                              "clingen" iri/cgterms
@@ -33,15 +26,15 @@
       (merge
         context
         {"@type" [:cg/ClinVarObject
-                  (str iri/cgterms "Variant")]
+                  :so/Gene]
          :dc/is-version-of {"@id" id-unversioned}
-         :skos/preferred-label (:name msg)
+         :skos/preferred-label (:full_name msg)
          :sepio/qualified-contribution {:sepio/activity-date (:release_date msg)
                                         :sepio/has-role "ArchiverRole"
                                         :sepio/has-agent {"@id" (str iri/submitter "clinvar")}}
          }
-        (-> msg (dissoc :id
-                        ))))))
+        (-> msg (dissoc
+                  :full_name))))))
 
-(defmethod clinvar-to-jsonld :variation [msg]
-  (variation-to-jsonld msg))
+(defmethod clinvar-to-jsonld :gene [msg]
+  (gene-to-jsonld msg))

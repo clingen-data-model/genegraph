@@ -51,3 +51,50 @@
 (defn variant-name [context args value]
   (log/debug :fn ::variant-name :args args :value value)
   (q/ld1-> value [:cg/name]))
+
+(defn variant-release-date [context args value]
+  (log/debug :fn ::variant-release-date :args args :value value)
+  (q/ld1-> value [:cg/release-date]))
+
+(defn variant-id [context args value]
+  (log/debug :fn ::variant-id :args args :value value)
+  (q/ld1-> value [:dc/is-version-of]))
+
+(defn variant-genes [context args value]
+  "Expects value to be passed as an IRI to a variant"
+  (log/debug :fn ::variant-genes :args args :value value)
+  (let [gene-iri-query (str "PREFIX dc: <http://purl.org/dc/terms/>
+                            PREFIX cg: <http://dataexchange.clinicalgenome.org/terms/>
+                            PREFIX sepio: <http://purl.obolibrary.org/obo/SEPIO_>
+                            PREFIX so: <http://purl.obolibrary.org/obo/SO_>
+                            # NOTE order matters, currently only gets the first element (column)
+                            SELECT ?gene_iri ?gene_id ?gene_release_date ?s
+                            WHERE {
+                              ?s a cg:Variant .
+                              ?s cg:gene_associations ?gene_association_iri .
+                              ?s cg:release_date ?variant_release_date .
+                              ?gene_association_iri cg:gene_id ?gene_id .
+                              {
+                                SELECT ?gene_id (MAX(?gene_release_date) AS ?max_gene_release_date) WHERE {
+                                  ?g a so:0000704 . # so/Gene
+                                  ?g a cg:ClinVarObject .
+                                  ?g cg:release_date ?gene_release_date .
+                                  ?g cg:id ?gene_id .
+                                }
+                                GROUP BY ?gene_id
+                              }
+                              {
+                                SELECT ?gene_iri ?gene_id ?gene_release_date WHERE {
+                                  ?gene_iri a so:0000704 . # so/Gene
+                                  ?gene_iri a cg:ClinVarObject .
+                                  ?gene_iri cg:release_date ?gene_release_date .
+                                  ?gene_iri cg:id ?gene_id .
+                                }
+                              }
+                              FILTER(?gene_release_date = ?max_gene_release_date)
+                            }
+                            ORDER BY ?s ?gene_id")
+        variant-iri (if (q/resource? value) value (q/resource value))
+        rs (q/select gene-iri-query {:s variant-iri})]
+    rs
+    ))
