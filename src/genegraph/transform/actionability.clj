@@ -41,6 +41,7 @@
    "Insufficient Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003539"
    "Insufficient Evidence" "http://purl.obolibrary.org/obo/SEPIO_0003539"
    "N/A - Insufficient evidence: expert review" "http://purl.obolibrary.org/obo/SEPIO_0003542"
+   "N/A - Insufficient evidence: early rule-out" "http://purl.obolibrary.org/obo/SEPIO_0003539"
    "No Actionability" "http://purl.obolibrary.org/obo/SEPIO_0003540"
    "Assertion Pending" "http://purl.obolibrary.org/obo/SEPIO_0003541"
    "Pediatric AWG" "http://dataexchange.clinicalgenome.org/terms/PediatricActionabilityWorkingGroup"
