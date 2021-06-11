@@ -14,7 +14,7 @@
             [genegraph.migration :as migrate]
             [genegraph.sink.rocksdb :as rocks-sink]
             [genegraph.transform.gene-validity :as gene-validity]
-            [genegraph.transform.gene-validity-refactor :as gene-validity-refactor]
+            [genegraph.transform.gci-legacy :as gci-legacy]
             [cheshire.core :as json]
             [clojure.data.csv :as csv]
             [clojure.string :as s]
