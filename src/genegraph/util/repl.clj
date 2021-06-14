@@ -14,7 +14,7 @@
             [genegraph.migration :as migrate]
             [genegraph.sink.rocksdb :as rocks-sink]
             [genegraph.transform.gene-validity :as gene-validity]
-            [genegraph.transform.gene-validity-refactor :as gene-validity-refactor]
+            [genegraph.transform.gci-legacy :as gci-legacy]
             [cheshire.core :as json]
             [clojure.data.csv :as csv]
             [clojure.string :as s]
@@ -223,3 +223,14 @@
          (csv/write-csv w))))
 
 
+(defn keys-in [m]
+  (if (map? m)
+    (vec 
+     (mapcat (fn [[k v]]
+               (let [sub (keys-in v)
+                     nested (map #(into [k] %) (filter (comp not empty?) sub))]
+                 (if (seq nested)
+                   nested
+                   [[k]])))
+             m))
+    []))

@@ -66,8 +66,23 @@
 (defresolver mode-of-inheritance [args value]
   (ld1-> value [:sepio/has-subject :sepio/has-qualifier]))
 
+;; (defresolver attributed-to [args value]
+  
+;;   (ld1-> value [:sepio/qualified-contribution :sepio/has-agent]))
+
+(def primary-attribution-query
+  (q/create-query
+   "select ?agent where {
+    ?assertion :sepio/qualified-contribution ?contribution . 
+    ?contribution :bfo/realizes :sepio/ApproverRole ;
+    :sepio/has-agent ?agent . } 
+   limit 1 "))
+
 (defresolver attributed-to [args value]
-  (ld1-> value [:sepio/qualified-contribution :sepio/has-agent]))
+  (first (primary-attribution-query {:assertion value})))
+
+(defresolver contributions [args value]
+  (:sepio/qualified-contribution value))
 
 (defresolver specified-by [args value]
   (ld1-> value [:sepio/is-specified-by]))
