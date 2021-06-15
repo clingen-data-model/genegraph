@@ -14,6 +14,7 @@
             [genegraph.source.graphql.region-feature :as region-feature]
             [genegraph.source.graphql.coordinate :as coordinate]
             [genegraph.source.graphql.dosage-proposition :as dosage-proposition]
+            [genegraph.source.graphql.contribution :as contribution]
             [genegraph.source.graphql.condition :as condition]
             [genegraph.source.graphql.server-status :as server-status]
             [genegraph.source.graphql.evidence :as evidence]
@@ -122,6 +123,9 @@
    :condition/superclasses condition/superclasses
    :condition/synonyms condition/synonyms
    :condition/propositions condition/propositions
+   :gv-contribution/agent contribution/agent
+   :gv-contribution/realizes contribution/realizes
+   :gv-contribution/date contribution/date
    :coordinate/assembly coordinate/assembly
    :coordinate/build coordinate/build
    :coordinate/chromosome coordinate/chromosome
@@ -186,6 +190,7 @@
    :gene-feature/previous-symbols gene-feature/previous-symbols
    :gene-validity/attributed-to gene-validity/attributed-to
    :gene-validity/classification gene-validity/classification
+   :gene-validity/contributions  gene-validity/contributions
    :gene-validity/disease gene-validity/disease
    :gene-validity/gene gene-validity/gene
    :gene-validity/gene-validity-assertion-query gene-validity/gene-validity-assertion-query

@@ -502,6 +502,15 @@
     :attributed_to {:type :Agent
                     :resolve :ac-assertion/attributed-to}}}
 
+  :ValidityContribution
+  {:fields
+   {:agent {:type :Agent
+            :resolve :gv-contribution/agent}
+    :realizes {:type :Class
+               :resolve :gv-contribution/realizes}
+    :date {:type String
+           :resolve :gv-contribution/date}}}
+  
   :GeneValidityAssertion
   {:implements [:Resource :Curation :EvidenceItem]
    :fields
@@ -522,6 +531,9 @@
     :classification {:type :Classification
                      :description "Final classification of this gene validity curation."
                      :resolve :gene-validity/classification}
+    :contributions {:type (list :ValidityContribution)
+                    :resolve :gene-validity/contributions
+                    :description "All contributions related to this gene validity curation."}
     :gene {:type :Gene
            :description "Gene associated with this curation"
            :resolve :gene-validity/gene}

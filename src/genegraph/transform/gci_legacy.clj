@@ -59,6 +59,29 @@
                                          (-> report :affiliation :id)))]
    [iri :sepio/activity-date (report-date report)]])
 
+(def contributor-roles
+  {"secondary contributor" :sepio/SecondaryContributorRole
+   "secondary approver" :sepio/SecondaryApproverRole})
+
+(defn secondary-contributions [report assertion-iri]
+  (let [roles (set (keys contributor-roles))
+        secondary-contributions (filter
+                                 #(roles (:role %))
+                                 (get-in report
+                                         [:scoreJson :summary :contributors]))]
+    (mapcat (fn [contribution]
+              (let [contribution-iri (l/blank-node)
+                    role (contributor-roles (:role contribution))]
+                [[assertion-iri
+                  :sepio/qualified-contribution
+                  contribution-iri]
+                 [contribution-iri :bfo/realizes role]
+                 [contribution-iri
+                  :sepio/has-agent
+                  (resource (str affiliation-root (:id contribution)))]
+                 ]))
+            secondary-contributions)))
+
 (defn evidence-level-assertion [report iri id]
   (let [prop-iri (resource (str gci-root "proposition_" (:iri report)))
         contribution-iri (l/blank-node)]
@@ -71,9 +94,9 @@
              [iri :sepio/is-specified-by (gci-sop-version (or (:selectedSOPVersion report)
                                                               (:sopVersion report)))]
              [iri :dc/has-format (gci-sop-version (:sopVersion report))]]
+            (secondary-contributions report iri)
             (validity-proposition report prop-iri)
-             (contribution report contribution-iri)
-            )))
+            (contribution report contribution-iri))))
 
 (defn json-content-node [report iri]
   [[iri :rdf/type :cnt/ContentAsText]
