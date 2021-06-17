@@ -5,17 +5,17 @@
 (def transitive-evidence-items
   (q/create-query
    "select ?evidence_line where {
-    ?assertion ( :sepio/has-evidence-line | :sepio/has-evidence-item ) + ?evidence_line .
+    ?assertion ( :sepio/has-evidence-line | :sepio/has-evidence-item | :sepio/has-evidence | ( ^ :sepio/has-subject )  ) + ?evidence_line .
     ?evidence_line ( a / :rdfs/sub-class-of * ) ?class }"))
 
 (defn evidence-items [_ args value]
-  (let [result (cond
-                 (and (:transitive args) (:class args))
-                 (transitive-evidence-items {:assertion value
-                                             :class (:class args)})
-                 (:transitive args)
-                 (transitive-evidence-items {:assertion value})
-                 :else (:sepio/has-evidence-line value))]))
+  (cond
+    (and (:transitive args) (:class args))
+    (transitive-evidence-items {:assertion value
+                                :class (:class args)})
+    (:transitive args)
+    (transitive-evidence-items {:assertion value})
+    :else (:sepio/has-evidence-line value)))
 
 (def assertion
   {:name :Assertion
@@ -34,8 +34,8 @@
             :qualifier {:type '(list :Resource)
                         :description "Additional elements limiting the scope of the assertion"
                         :path [:sepio/has-qualifier]}
-            :has_evidence_item {:type :Resource
-                                :description "Evidence used in in support of the assertion"
-                                :args {:class {:type :Type}
-                                       :transitive {:type 'Boolean}}
-                                :resolve evidence-items}}})
+            :evidence {:type '(list :Resource)
+                       :description "Evidence used in in support of the assertion"
+                       :args {:class {:type :Type}
+                              :transitive {:type 'Boolean}}
+                       :resolve evidence-items}}})
