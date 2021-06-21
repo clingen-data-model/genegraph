@@ -14,7 +14,7 @@ RUN lein uberjar
 
 # Using image without lein for deployment.
 FROM openjdk:11
-MAINTAINER Tristan Nelson <thnelson@geisinger.edu>
+LABEL maintainer="Tristan Nelson <thnelson@geisinger.edu>"
 
 COPY --from=builder /usr/src/app/target/app.jar /app/app.jar
 COPY keys/dev.serveur.keystore.jks /keys/dev.serveur.keystore.jks
