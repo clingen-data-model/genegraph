@@ -9,7 +9,8 @@
             [clojure.string :as s]
             [clojure.walk :refer [postwalk]]
             [taoensso.nippy :as nippy]
-            [genegraph.rocksdb :as rocksdb])
+            [genegraph.rocksdb :as rocksdb]
+            [clojure.core.async :as async :refer [>! <! >!! <!! chan pub sub go-loop close!]])
   (:import java.util.Properties
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
             ConsumerRecords]
@@ -23,10 +24,12 @@
   (str env/data-vol "/partition_offsets.edn"))
 
 (def current-offsets (atom {}))
-
 (def end-offsets (atom {}))
-
+(def offsets-up-to-date (atom {}))
 (def topic-state (atom {}))
+
+(def in-chan (chan))
+(def notify-pub (pub in-chan :msg-type))
 
 (defn consumer-record-to-clj [consumer-record spec]
   {::annotate/format spec 
@@ -75,6 +78,7 @@
     (swap! end-offsets merge end-offset-map)))
 
 (defn update-offsets! [consumer tps]
+  (read-end-offsets! consumer tps)
   (doseq [tp tps]
     (swap! current-offsets assoc [(.topic tp) (.partition tp)] (.position consumer tp)))
   (spit (offset-file) (pr-str @current-offsets)))
@@ -100,7 +104,7 @@
           (if-let [offset (get @current-offsets [topic-name (.partition part)])]
             (.seek consumer part offset)
             (.seekToBeginning consumer [part])))
-        (read-end-offsets! consumer tp)
+        (update-offsets! consumer tp)
         (while @run-consumer
           (when-let [records (poll-once consumer)]
             (->> records
@@ -109,26 +113,92 @@
             (update-offsets! consumer tp)))
         (swap! topic-state assoc topic :stopped)))))
 
-(defn up-to-date? 
+(defn up-to-date? []
+  (every? true? (vals @offsets-up-to-date)))
+
+(defn set-up-to-date-status!
   "Returns true if all partitions of all topics subscribed to have had messages
   consumed up to the latest offset when the consumer was started."
   []
-  (log/debug :fn :up-to-date? :current-offsets @current-offsets :end-offsets @end-offsets)
   (when (= (set (keys @current-offsets)) (set (keys @end-offsets)))
-    (let [partition-is-up-to-date? (merge-with <= @end-offsets @current-offsets)]
-      (if (some false? (vals partition-is-up-to-date?))
-        false
-        true))))
+    (let [partitions-up-to-date? (merge-with <= @end-offsets @current-offsets)]
+      (reset! offsets-up-to-date partitions-up-to-date?)))
+  (log/info :fn :set-up-to-date-status? :current-offsets @current-offsets :end-offsets @end-offsets :offsets-up-to-date @offsets-up-to-date))
+
+(defn wait-for-topics-up-to-date []
+  (let [out-chan (chan)]
+    (sub notify-pub :topics-up-to-date out-chan)
+    (loop []
+      (log/info :fn :wait-for-topics-up-to-date :msg "Looping...")
+      (let [{:keys [text]} (<!! out-chan)]
+        (log/info :fn :wait-for-topics-up-to-date :text text :type (type text))
+        (if (true? text)
+          (close! out-chan)
+          (recur))))))
+
+(defn wait-for-topics-closed []
+  (let [out-chan (chan)]
+    (sub notify-pub :topics-closed out-chan)
+    (loop []
+      (log/info :fn :wait-for-topics-closed :msg "Looping...")
+      (let [{:keys [text]} (<!! out-chan)]
+        (log/info :fn :wait-for-topics-closed :text text :type (type text))
+        (when (true? text)
+          (close! out-chan)
+          (recur))))))
 
 (defn consumers-closed?  []
   (if (some #(= :running %) (vals @topic-state))
     false
     true))
 
+(defn add-watchers! []
+  (add-watch end-offsets :end-offsets
+             (fn [key atom old new]
+               (log/info :fn :end-offsets
+                          :msg "-- Atom Changed --" 
+                          :key key 
+                          :atom atom 
+                          :old-state old
+                          :new-state new)
+               (set-up-to-date-status!)))
+  (add-watch current-offsets :current-offsets
+             (fn [key atom old new]
+               (log/info :fn :current-offsets
+                          :msg "-- Atom Changed --" 
+                          :key key 
+                          :atom atom 
+                          :old-state old
+                          :new-state new)
+               (set-up-to-date-status!)))
+  (add-watch offsets-up-to-date :offsets-up-to-date
+             (fn [key atom old new]
+               (log/info :fn :offsets-up-to-date
+                          :msg "-- Atom Changed --" 
+                          :key key 
+                          :atom atom 
+                          :old-state old
+                          :new-state new)
+               (when (not= old new)
+                 (>!! in-chan {:msg-type :topics-up-to-date
+                               :text (up-to-date?)}))))
+  (add-watch topic-state :topic-state
+             (fn [key atom old new]
+               (log/info :fn :topic-state
+                          :msg "-- Atom Changed --" 
+                          :key key 
+                          :atom atom 
+                          :old-state old
+                          :new-state new)
+               (when (not= old new)
+                 (>!! in-chan {:msg-type :topic-state
+                               :text (consumers-closed?)})))))
+
 (defn subscribe!
   "Start a Kafka consumer listening to topics in topic-list
   Messages are transformed to RDF, if needed, and imported into triplestore"
   [topic-list]
+  (add-watchers!)
   (read-offsets!)
   (doseq [topic topic-list]
     (let [thread (-> topic assign-topic! Thread.)]
@@ -202,7 +272,4 @@
              (rocksdb/rocks-put-multipart-key! db k annotated-record)))
          (when (< (.position c (first tps)) end)
            (recur (poll-once c))))))))
-
-
-
 

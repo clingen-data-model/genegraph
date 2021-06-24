@@ -49,6 +49,7 @@
   []
   (mount.core/start-without #'genegraph.sink.stream/consumer-thread))
 
+
 (defn -main
   "The entry-point for 'lein run'"
   [& args]
@@ -62,7 +63,12 @@
       (log/info :fn :-main :message "Data volume exists")
       (mount.core/start)
       (log/info :fn :-main :message "All services started")
+      (log/info :fn :-main :message "Waiting for topics up to date....")
+      (stream/wait-for-topics-up-to-date)
+      (log/info :fn :-main :message "Topics up to date.")
+      (mount/stop #'genegraph.sink.stream/consumer-thread)
       (migration/warm-resolver-cache)
+      (mount/start #'genegraph.sink.stream/consumer-thread)
       (reset! initialized? true)
       (log/info :fn :-main :message "Genegraph fully initialized, all systems go"))
     (do
