@@ -1,5 +1,9 @@
 # Changelog
 
+## 2021-06-30
+
+Fix startup race condition in genegraph between stream event processing and resolver cache warming
+
 ## 2021-06-14
 
 Incorporate secondary approvers and contributions from GCI data
