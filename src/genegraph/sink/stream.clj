@@ -26,7 +26,9 @@
 (def current-offsets (atom {}))
 (def end-offsets (atom {}))
 (def offsets-up-to-date (atom {}))
+(def all-offsets-up-to-date (promise))
 (def topic-state (atom {}))
+(def all-topics-closed (promise))
 
 (def in-chan (chan (sliding-buffer 64)))
 (def notify-pub (pub in-chan :msg-type))
@@ -91,6 +93,29 @@
     (reset! current-offsets (-> (offset-file) slurp edn/read-string))
     (reset! current-offsets {})))
 
+(defn up-to-date? []
+  (every? true? (vals @offsets-up-to-date)))
+
+(defn set-up-to-date-status!
+  "Returns true if all partitions of all topics subscribed to have had messages
+  consumed up to the latest offset when the consumer was started."
+  []
+  (when (= (set (keys @current-offsets)) (set (keys @end-offsets)))
+    (let [partitions-up-to-date? (merge-with <= @end-offsets @current-offsets)]
+      (reset! offsets-up-to-date partitions-up-to-date?)
+      (when (up-to-date?)
+        (deliver all-offsets-up-to-date true))))
+  (log/debug :fn :set-up-to-date-status?
+             :current-offsets @current-offsets
+             :end-offsets @end-offsets
+             :offsets-up-to-date @offsets-up-to-date))
+
+(defn consumers-closed?  []
+  (every? #(= :stopped %) (vals @topic-state)))
+
+(defn wait-for-topics-closed []
+  @all-topics-closed)
+
 (defn- assign-topic!
   "Return a function that creates a consumer, sets it to listen to all partitions available
   for that topic, assigns the most recently read offsets for those partitions, and keeps them
@@ -111,89 +136,22 @@
             (->> records
                  (map #(consumer-record-to-clj % topic))
                  event/process-event-seq!)
-            (update-offsets! consumer tp)))
-        (swap! topic-state assoc topic :stopped)))))
-
-(defn up-to-date? []
-  (every? true? (vals @offsets-up-to-date)))
-
-(defn set-up-to-date-status!
-  "Returns true if all partitions of all topics subscribed to have had messages
-  consumed up to the latest offset when the consumer was started."
-  []
-  (when (= (set (keys @current-offsets)) (set (keys @end-offsets)))
-    (let [partitions-up-to-date? (merge-with <= @end-offsets @current-offsets)]
-      (reset! offsets-up-to-date partitions-up-to-date?)))
-  (log/info :fn :set-up-to-date-status? :current-offsets @current-offsets :end-offsets @end-offsets :offsets-up-to-date @offsets-up-to-date))
+            (update-offsets! consumer tp)
+            (set-up-to-date-status!)))
+        (swap! topic-state assoc topic :stopped)
+        (log/debug :fn :assign-topic!
+                   :topic-state @topic-state
+                   :consumers-closed? (consumers-closed?))
+        (when (consumers-closed?)
+          (deliver all-topics-closed true))))))
 
 (defn wait-for-topics-up-to-date []
-  (sub notify-pub :topics-up-to-date out-chan)
-  (loop []
-    (let [{:keys [text]} (<!! out-chan)]
-      (log/info :fn :wait-for-topics-up-to-date :text text :type (type text))
-      (if (true? text)
-        (unsub notify-pub :topics-up-to-date out-chan)
-        (recur)))))
-
-(defn wait-for-topics-closed []
-  (sub notify-pub :topics-closed-state out-chan)
-  (loop []
-    (let [{:keys [text]} (<!! out-chan)]
-      (log/info :fn :wait-for-topics-closed :text text :type (type text))
-      (when (true? text)
-        (unsub notify-pub :topics-closed-state out-chan)
-        (recur)))))
-
-(defn consumers-closed?  []
-  (every? #(= :stopped %) (vals @topic-state)))
-
-(defn add-watchers! []
-  (add-watch end-offsets :end-offsets
-             (fn [key atom old new]
-               (log/debug :fn :end-offsets
-                          :msg "-- Atom Changed --" 
-                          :key key 
-                          :atom atom 
-                          :old-state old
-                          :new-state new)
-               (set-up-to-date-status!)))
-  (add-watch current-offsets :current-offsets
-             (fn [key atom old new]
-               (log/debug :fn :current-offsets
-                          :msg "-- Atom Changed --" 
-                          :key key 
-                          :atom atom 
-                          :old-state old
-                          :new-state new)
-               (set-up-to-date-status!)))
-  (add-watch offsets-up-to-date :offsets-up-to-date
-             (fn [key atom old new]
-               (log/debug :fn :offsets-up-to-date
-                          :msg "-- Atom Changed --" 
-                          :key key 
-                          :atom atom 
-                          :old-state old
-                          :new-state new)
-               (when (not= old new)
-                 (>!! in-chan {:msg-type :topics-up-to-date
-                               :text (up-to-date?)}))))
-  (add-watch topic-state :topic-state
-             (fn [key atom old new]
-               (log/debug :fn :topic-state
-                          :msg "-- Atom Changed --" 
-                          :key key 
-                          :atom atom 
-                          :old-state old
-                          :new-state new)
-               (when (not= old new)
-                 (>!! in-chan {:msg-type :topics-closed-state
-                               :text (consumers-closed?)})))))
+  @all-offsets-up-to-date)
 
 (defn subscribe!
   "Start a Kafka consumer listening to topics in topic-list
   Messages are transformed to RDF, if needed, and imported into triplestore"
   [topic-list]
-  (add-watchers!)
   (read-offsets!)
   (doseq [topic topic-list]
     (let [thread (-> topic assign-topic! Thread.)]
