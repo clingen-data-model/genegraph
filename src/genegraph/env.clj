@@ -2,7 +2,7 @@
   (:require [io.pedestal.log :as log]))
 (def base-dir (or (System/getenv "GENEGRAPH_DATA_PATH")
                   (System/getenv "CG_SEARCH_DATA_VOL")))
-(def data-version "2021-06-14T1532");; (System/getenv "GENEGRAPH_DATA_VERSION"))
+(def data-version (System/getenv "GENEGRAPH_DATA_VERSION"))
 ;; May be rebound in the course of a migration
 (def ^:dynamic data-vol (if data-version
                           (str base-dir "/" data-version)
