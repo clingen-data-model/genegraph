@@ -62,6 +62,8 @@
       (log/info :fn :-main :message "Data volume exists")
       (mount.core/start)
       (log/info :fn :-main :message "All services started")
+      (stream/wait-for-topics-up-to-date)
+      (log/info :fn :-main :message "Topics up to date.")
       (migration/warm-resolver-cache)
       (reset! initialized? true)
       (log/info :fn :-main :message "Genegraph fully initialized, all systems go"))
