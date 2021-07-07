@@ -2,32 +2,24 @@ prefix gci: <http://gci.clinicalgenome.org/>
 
 construct
 {
-  ?classification :sepio/has-evidence-line ?experimentalEvidenceLine .
+  ?classification :sepio/has-evidence ?experimentalEvidenceCriterionAssessment .
   
   ?experimentalEvidenceLine a :sepio/OverallExperimentalEvidenceLine ;
   :sepio/has-evidence-item ?experimentalEvidenceCriterionAssessment ;
-  :sepio/evidence-line-strength-score ?experimentalEvidenceTotal .
 
   ?experimentalEvidenceCriterionAssessment a :sepio/ExperimentalEvidenceCriterionAssessment ;
-  :sepio/has-evidence-line ?functionalEvidenceLine, ?functionalAlterationEvidenceLine, ?modelAndRescueEvidenceLine .
+  :sepio/evidence-line-strength-score ?experimentalEvidenceTotal .
+  :sepio/has-evidence ?functionalEvidenceCriterionAssessment, ?functionalAlterationCriterionAssessment, ?modelAndRescueCriterionAssessment .
 
-  ?functionalEvidenceLine a :sepio/FunctionalEvidenceLine ;
-  :sepio/has-evidence-item ?functionalEvidenceCriterionAssessment ;
+  ?functionalEvidenceCriterionAssessment a :sepio/FunctionalCriterionAssessment ;
   :sepio/evidence-line-strength-score ?functionTotal .
 
-  ?functionalEvidenceCriterionAssessment a :sepio/FunctionalCriterionAssessment .
+  ?functionalAlterationCriterionAssessment a :sepio/FunctionalAlterationCriterionAssessment ;
+  :sepio/evidence-line-strength-score ?functionalAlterationTotal .  
 
-  ?functionalAlterationEvidenceLine a :sepio/FunctionalAlterationEvidenceLine ;
-  :sepio/has-evidence-item ?functionalAlterationCriterionAssessment ;
-  :sepio/evidence-line-strength-score ?functionalAlterationTotal .
-
-  ?functionalAlterationCriterionAssessment a :sepio/FunctionalAlterationCriterionAssessment .  
-
-  ?modelAndRescueEvidenceLine a :sepio/ModelAndRescueEvidenceLine ;
-  :sepio/has-evidence-item ?modelAndRescueCriterionAssessment ;
+  ?modelAndRescueCriterionAssessment a :sepio/ModelAndRescueCriterionAssessment ;
   :sepio/evidence-line-strength-score  ?modelsRescueTotal .
 
-  ?modelAndRescueCriterionAssessment a :sepio/ModelAndRescueCriterionAssessment .
 }
 where
 {

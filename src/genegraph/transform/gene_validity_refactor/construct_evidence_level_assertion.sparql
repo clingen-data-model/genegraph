@@ -6,7 +6,6 @@ construct {
   :sepio/has-subject ?proposition ;
   :sepio/has-predicate :sepio/HasEvidenceLevel ;
   :sepio/has-object ?evidencelevel ;
-  :sepio/has-evidence-line ?experimentalEvidenceLine, ?geneticEvidenceLine ;
   :sepio/qualified-contribution ?contribution ;
   :dc/description ?description ;
   :sepio/evidence-line-strength-score ?evidencePointsTotal .
