@@ -87,8 +87,10 @@
         ['gene :skos/preferred-label 'gene_label]
         ['disease :rdfs/label 'disease_label]
         ['validity_assertion :sepio/qualified-contribution 'gv_contrib]
-        ['gv_contrib :sepio/activity-date 'report_date]
-        ['gv_contrib :sepio/has-agent 'affiliation]))
+        ['gv_contrib :bfo/realizes 'role]
+        ;;['gv_contrib :sepio/activity-date 'report_date]
+        ['gv_contrib :sepio/has-agent 'affiliation]
+        ))
 
 (def gene-validity-text-search-bgp
   (cons :union (map #(cons :bgp (concat (q/text-search-bgp % :cg/resource 'text)
@@ -130,18 +132,35 @@
   (map #(array-map :disease (:disease query-params) :gene %)
        (curated-genes-for-disease query-params)))
 
+(def role-map
+  {:APPROVER (q/resource :sepio/ApproverRole)
+   :SECONDARY_CONTRIBUTOR (q/resource :sepio/SecondaryContributorRole)})
+
+(defn- add-role-to-params [params]
+  (case (:role params)
+    :ANY (dissoc params :role)
+    nil (assoc params :role (q/resource :sepio/ApproverRole))
+    (assoc params :role (role-map (:role params)))))
+
+(defn- add-text-to-params [params]
+  (if (string? (:text params))
+    (assoc params :text (s/lower-case (:text params)))
+    (dissoc params :text)))
+
 (defn gene-validity-curations-for-resolver
   "Method to be called by resolvers desiring a list of gene validity curations
   with limit, sort and offset, including a total count field. Value should be a map and
   will be merged into the query parameters, limiting the result to curations that match
   the given argument"
   [args value]
-  (let [params (-> args (select-keys [:limit :offset :sort]) (assoc :distinct true))
-        query-params (-> (if (string? (:text args))
-                           {:text (s/lower-case (:text args))}
-                           {})
-                         (assoc ::q/params params)
-                         (merge value))
+  (let [params (-> args
+                   (select-keys [:limit :offset :sort])
+                   (assoc :distinct true))
+        query-params (-> (select-keys args [:role])
+                         (merge value)
+                         add-role-to-params
+                         add-text-to-params
+                         (assoc ::q/params params))
         query (if (:text args)
                 gene-validity-curations-text-search
                 gene-validity-curations)
