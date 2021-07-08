@@ -133,14 +133,14 @@
        (curated-genes-for-disease query-params)))
 
 (def role-map
-  {:APPROVER (q/resource :sepio/ApproverRole)
-   :SECONDARY_CONTRIBUTOR (q/resource :sepio/SecondaryContributorRole)})
+  {:APPROVER :sepio/ApproverRole
+   :SECONDARY_CONTRIBUTOR :sepio/SecondaryContributorRole})
 
 (defn- add-role-to-params [params]
   (case (:role params)
     :ANY (dissoc params :role)
     nil (assoc params :role (q/resource :sepio/ApproverRole))
-    (assoc params :role (role-map (:role params)))))
+    (assoc params :role (q/resource (role-map (:role params))))))
 
 (defn- add-text-to-params [params]
   (if (string? (:text params))
