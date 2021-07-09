@@ -2,6 +2,9 @@
  {:CurationActivity
   {:description "The curation activities within ClinGen. Each curation is associated with a curation activity."
    :values [:ALL :ACTIONABILITY :GENE_VALIDITY :GENE_DOSAGE]}
+  :Role
+  {:description "Role an agent realizes in the context of a qualified contribution"
+   :values [:ANY :APPROVER :SECONDARY_CONTRIBUTOR]}
   :GeneDosageScore
   {:description "The score assigned to a Gene Dosage curation."
    :values [:ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE
@@ -865,7 +868,10 @@ the context of a formal evalutation framework"
             :text {:type String
                    :description "Filter list including text in gene, disease and synonyms."}
             :sort {:type :Sort
-                   :description "Order in which to sort genes. Supported fields: GENE_LABEL"}}}
+                   :description "Order in which to sort genes. Supported fields: GENE_LABEL"}
+            :role {:type :Role
+                   :description "Filter assertions by role played by agent"
+                   :default-value :APPROVER}}}
 
     :genes
     {:type :Genes
