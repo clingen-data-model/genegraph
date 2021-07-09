@@ -160,7 +160,7 @@
   :target "Deciher_HI_Predictions_Version3.bed.gz"
   :format :hi-index}
  {:name "https://storage.googleapis.com/gnomad-public/lof_metrics.by_gene"
-  :source "https://storage.googleapis.com/gnomad-public/release/2.1.1/constraint/gnomad.v2.1.1.lof_metrics.by_gene.txt.bgz"
+  :source "https://storage.googleapis.com/gcp-public-data--gnomad/release/2.1.1/constraint/gnomad.v2.1.1.lof_metrics.by_gene.txt.bgz"
   :target "gnomad_v2.1.1.lof_metrics_by_gene.txt.gz"
   :format :loss-intolerance}
  {:name "http://dataexchange.clinicalgenome.org/affiliations"

@@ -9,7 +9,8 @@
             [clojure.string :as s]
             [clojure.walk :refer [postwalk]]
             [taoensso.nippy :as nippy]
-            [genegraph.rocksdb :as rocksdb])
+            [genegraph.rocksdb :as rocksdb]
+            [clojure.core.async :refer [>! <! >!! <!! chan pub sub unsub go-loop close! sliding-buffer]])
   (:import java.util.Properties
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
             ConsumerRecords]
@@ -23,10 +24,15 @@
   (str env/data-vol "/partition_offsets.edn"))
 
 (def current-offsets (atom {}))
-
 (def end-offsets (atom {}))
-
+(def offsets-up-to-date (atom {}))
+(def all-offsets-up-to-date (promise))
 (def topic-state (atom {}))
+(def all-topics-closed (promise))
+
+(def in-chan (chan (sliding-buffer 64)))
+(def notify-pub (pub in-chan :msg-type))
+(def out-chan (chan))
 
 (defn consumer-record-to-clj [consumer-record spec]
   {::annotate/format spec 
@@ -75,6 +81,7 @@
     (swap! end-offsets merge end-offset-map)))
 
 (defn update-offsets! [consumer tps]
+  (read-end-offsets! consumer tps)
   (doseq [tp tps]
     (swap! current-offsets assoc [(.topic tp) (.partition tp)] (.position consumer tp)))
   (spit (offset-file) (pr-str @current-offsets)))
@@ -85,6 +92,29 @@
   (if (.exists (io/as-file (offset-file)))
     (reset! current-offsets (-> (offset-file) slurp edn/read-string))
     (reset! current-offsets {})))
+
+(defn up-to-date? []
+  (every? true? (vals @offsets-up-to-date)))
+
+(defn set-up-to-date-status!
+  "Returns true if all partitions of all topics subscribed to have had messages
+  consumed up to the latest offset when the consumer was started."
+  []
+  (when (= (set (keys @current-offsets)) (set (keys @end-offsets)))
+    (let [partitions-up-to-date? (merge-with <= @end-offsets @current-offsets)]
+      (reset! offsets-up-to-date partitions-up-to-date?)
+      (when (up-to-date?)
+        (deliver all-offsets-up-to-date true))))
+  (log/debug :fn :set-up-to-date-status?
+             :current-offsets @current-offsets
+             :end-offsets @end-offsets
+             :offsets-up-to-date @offsets-up-to-date))
+
+(defn consumers-closed?  []
+  (every? #(= :stopped %) (vals @topic-state)))
+
+(defn wait-for-topics-closed []
+  @all-topics-closed)
 
 (defn- assign-topic!
   "Return a function that creates a consumer, sets it to listen to all partitions available
@@ -100,30 +130,23 @@
           (if-let [offset (get @current-offsets [topic-name (.partition part)])]
             (.seek consumer part offset)
             (.seekToBeginning consumer [part])))
-        (read-end-offsets! consumer tp)
+        (update-offsets! consumer tp)
         (while @run-consumer
           (when-let [records (poll-once consumer)]
             (->> records
                  (map #(consumer-record-to-clj % topic))
                  event/process-event-seq!)
-            (update-offsets! consumer tp)))
-        (swap! topic-state assoc topic :stopped)))))
+            (update-offsets! consumer tp)
+            (set-up-to-date-status!)))
+        (swap! topic-state assoc topic :stopped)
+        (log/debug :fn :assign-topic!
+                   :topic-state @topic-state
+                   :consumers-closed? (consumers-closed?))
+        (when (consumers-closed?)
+          (deliver all-topics-closed true))))))
 
-(defn up-to-date? 
-  "Returns true if all partitions of all topics subscribed to have had messages
-  consumed up to the latest offset when the consumer was started."
-  []
-  (log/debug :fn :up-to-date? :current-offsets @current-offsets :end-offsets @end-offsets)
-  (when (= (set (keys @current-offsets)) (set (keys @end-offsets)))
-    (let [partition-is-up-to-date? (merge-with <= @end-offsets @current-offsets)]
-      (if (some false? (vals partition-is-up-to-date?))
-        false
-        true))))
-
-(defn consumers-closed?  []
-  (if (some #(= :running %) (vals @topic-state))
-    false
-    true))
+(defn wait-for-topics-up-to-date []
+  @all-offsets-up-to-date)
 
 (defn subscribe!
   "Start a Kafka consumer listening to topics in topic-list
@@ -202,7 +225,4 @@
              (rocksdb/rocks-put-multipart-key! db k annotated-record)))
          (when (< (.position c (first tps)) end)
            (recur (poll-once c))))))))
-
-
-
 

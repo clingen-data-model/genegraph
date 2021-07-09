@@ -1,16 +1,159 @@
-{:interfaces
- {:Resource {:description "An RDF Resource; type common to all addressable entities in Genegraph"
-             :fields {:iri {:type 'String
-                            :description "The IRI for this resource."}
-                      ;; :curie {:type 'String
-                      ;;         :description "The CURIE internal to Genegraph for this resource."}
-                      ;; :label {:type 'String
-                      ;;         :description "The label for this resouce."}
-                      ;; :type {:type '(list :Resource)
-                      ;;        :description "The types for this resource."}
-                      ;; :subject_of {:type '(list :Assertion)
-                      ;;              :description "Assertions (or propositions) that have this resource as a subject (or object)."}
-                      }}}
+{:enums
+ {:CurationActivity
+  {:description "The curation activities within ClinGen. Each curation is associated with a curation activity."
+   :values [:ALL :ACTIONABILITY :GENE_VALIDITY :GENE_DOSAGE]}
+  :Role
+  {:description "Role an agent realizes in the context of a qualified contribution"
+   :values [:ANY :APPROVER :SECONDARY_CONTRIBUTOR]}
+  :GeneDosageScore
+  {:description "The score assigned to a Gene Dosage curation."
+   :values [:ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE
+            :MINIMAL_EVIDENCE
+            :MODERATE_EVIDENCE
+            :NO_EVIDENCE
+            :SUFFICIENT_EVIDENCE
+            :DOSAGE_SENSITIVITY_UNLIKELY]}
+  :GeneValidityClassification
+  {:description "The final classification given to a Gene Validity assertion."
+   :values [:DEFINITIVE
+            :LIMITED
+            :MODERATE
+            :NO_KNOWN_DISEASE_RELATIONSHIP
+            :STRONG
+            :DISPUTED
+            :REFUTED]}
+  :GeneDosageAssertionType
+  {:description "The type of gene dosage assertion, either haploinsufficiency or triplosensitivity"
+   :values [:HAPLOINSUFFICIENCY_ASSERTION :TRIPLOSENSITIVITY_ASSERTION]}
+  :Direction
+  {
+   :description "Sort direction."
+   :values [:ASC :DESC]
+   }
+  :SortField
+  {:description "Sort fields for gene, disease lists and search results."
+   :values [:GENE_LABEL :DISEASE_LABEL :REPORT_DATE]}
+  :GeneDosageSortField
+  {
+   :description "Gene dosage sort fields."
+   :values [:GENE_REGION :LOCATION :MORBID :OMIM :HAPLO_EVIDENCE :TRIPLO_EVIDENCE :HI_PCT :PLI :REVIEWED_DATE]
+   }
+  :Build
+  {
+   :description "Genomic build identifier."
+   :values [:GRCH37 :GRCH38]
+   }
+  :Chromosome
+  {:description "Chromosomes."
+   :values [:CHR1 :CHR2 :CHR3 :CHR4 :CHR5 :CHR6 :CHR7 :CHR8 :CHR9 :CHR10 :CHR11 :CHR12 :CHR13 :CHR14 :CHR15
+            :CHR16 :CHR17 :CHR18 :CHR19 :CHR20 :CHR21 :CHR22 :CHRX :CHRY]
+   }
+  :Suggester
+  {:description "Suggesters."
+   :values [:GENE :DISEASE :DRUG]}
+
+  :SEPIOClass
+  {:description "Classes in SEPIO; will typically be used to filter results of a field listing items with a SEPIO type."
+   :values [:ProbandWithVariantEvidenceItem
+            :ProbandEvidenceLine]}}
+
+ :interfaces
+ {:Resource
+  {:description "An RDF Resource; generic type suitable for return when a variety of resources may be returned as the result of a function all"
+   :fields {:iri {:type String
+                  :description "The IRI for this resource."}
+            :curie {:type String
+                    :description "The CURIE internal to Genegraph for this resource."}
+            :label {:type String
+                    :description "The label for this resouce."}}}
+
+  :Proposition
+  {:description "An abstract entity representing the sharable meaning of what is expressed in a particular assertion."
+   :fields {:iri {:description "IRI of this proposition"
+                  :type String}
+            :curie {:description "CURIE of this proposition"
+                    :type String}
+            :type {:description "Type of this proposition"
+                   :type (list :Class)}
+            :subject {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the entity that representing the subject of this relationship."
+                      :type :Resource}
+            :predicate {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the property serving as the predicate in this relationship."
+                        :type :Resource}
+            :object {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the entity that representing the object or value of this relationship."
+                     :type :Resource}
+            :subject_of {:description "Entities that have this proposition as their subject"
+                         :type (list :Assertion)}}}
+  
+  :Assertion
+  {:description "A statement made by a particular agent on a particular occasion that a particular proposition is true, based on the evaluation of one or more lines of evidence."
+   :fields {:subject {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the entity that representing the subject of this relationship."
+                      :type :Resource}
+            :predicate {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the property serving as the predicate in this relationship."
+                        :type :Resource}
+            :object {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the entity that representing the object or value of this relationship."
+                     :type :Resource}
+            :evidence_lines {:description "Evidence lines contributing to this assertion"
+                             :type (list :EvidenceLine)}
+            :iri {:description "IRI of this assertion"
+                  :type String}
+            :curie {:descirption "CURIE of this assertion"
+                    :type String}
+            :type {:description "Type of this assertion"
+                   :type (list :Class)}
+            :description {:descripiton "Description of this assertion"
+                          :type String}}}
+
+  :EvidenceLine
+  {:description "A SEPIO evidence line"
+   :fields {:evidence_items {:description "Evidence items in support of a given evidence line"
+                             :type (list :EvidenceItem)}
+            :iri {:description "IRI of this evidence line"
+                  :type String}
+            :type {:description "Type of this evidence line"
+                   :type (list :Class)}
+            :score {:description "Numeric score of this evidence line; usually exists within
+the context of a formal evalutation framework"
+                    :type Float}
+            :description {:descripiton "Usually provides the reasoning behind the contribution of a given evidence item to a proposition or assertion"
+                          :type String}}}
+  
+  :EvidenceItem
+  {:description "A SEPIO evidence item"
+   :fields {:evidence_lines {:description "Evidence lines supporting the assertion"
+                             :type (list :EvidenceLine)
+                             :args {:recursive {:description "Recurse through SEPIO has-evidence-line, has-evidence-item associations to find deeper evidence lines"
+                                                :type Boolean}
+                                    :class {:description "When recursive is true, filter selection to instances of a given class. Include subclass hierarchy."
+                                            :type :SEPIOClass}}}
+            :iri {:description "IRI of this evidence item"
+                  :type String}
+            :type {:description "Type of this evidence item"
+                   :type (list :Class)}
+            :description {:descripiton "A description of the evidence item"
+                          :type String}}}
+
+  :GenomicCoordinate
+  {:description "Genomic coordinate of a Gene or Region"
+   :fields {:build {:type String
+                    :description "The build name"}
+            :assembly {:type String
+                       :description "The assembly name"}
+            :chromosome {:type String
+                         :description "The chromosome name"}
+            :start_pos {:type Int
+                        :description "Start coordinate"}
+            :end_pos {:type Int
+                      :description "End coordinate"}
+            :strand {:type String
+                     :description "Strand the feature appears on."}}}
+
+  :GenomicFeature
+  {:description "Genomic feature represented by a Gene or Region"
+   :fields {:coordinates {:type (list :GenomicCoordinate)}}}
+
+  :Curation
+  {:fields {:report_date {:type String}}}}
+
  :objects
  {:Contribution
   {:description "A container describing an act of contribution to a piece of data"
@@ -725,7 +868,10 @@
             :text {:type String
                    :description "Filter list including text in gene, disease and synonyms."}
             :sort {:type :Sort
-                   :description "Order in which to sort genes. Supported fields: GENE_LABEL"}}}
+                   :description "Order in which to sort genes. Supported fields: GENE_LABEL"}
+            :role {:type :Role
+                   :description "Filter assertions by role played by agent"
+                   :default-value :APPROVER}}}
 
     :genes
     {:type :Genes
