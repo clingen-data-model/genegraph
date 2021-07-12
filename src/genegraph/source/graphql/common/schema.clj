@@ -17,7 +17,6 @@
 
 (def type-query (q/create-query "select ?type where {?resource a / :rdfs/subClassOf * ?type}"))
 
-;; TODO, this fn sometimes recieves nil, why?
 (defn resolve-type [resource schema]
   (if resource
     (let [resource-types (->> (type-query {:resource resource})
