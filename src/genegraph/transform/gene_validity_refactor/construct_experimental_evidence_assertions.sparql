@@ -5,10 +5,10 @@ construct
   ?classification :sepio/has-evidence ?experimentalEvidenceCriterionAssessment .
   
   ?experimentalEvidenceLine a :sepio/OverallExperimentalEvidenceLine ;
-  :sepio/has-evidence-item ?experimentalEvidenceCriterionAssessment ;
+  :sepio/has-evidence-item ?experimentalEvidenceCriterionAssessment .
 
   ?experimentalEvidenceCriterionAssessment a :sepio/ExperimentalEvidenceCriterionAssessment ;
-  :sepio/evidence-line-strength-score ?experimentalEvidenceTotal .
+  :sepio/evidence-line-strength-score ?experimentalEvidenceTotal ;
   :sepio/has-evidence ?functionalEvidenceCriterionAssessment, ?functionalAlterationCriterionAssessment, ?modelAndRescueCriterionAssessment .
 
   ?functionalEvidenceCriterionAssessment a :sepio/FunctionalCriterionAssessment ;
@@ -43,20 +43,20 @@ where
   ?segregationTree gci:pointsCounted ?segregationTotal .
 
   #### Bind criterion assessment and evidence line identifiers
-  BIND(IRI(CONCAT(str(?classification), "_experimental_evidence_line"))
-       AS ?experimentalEvidenceLine) .
+  # BIND(IRI(CONCAT(str(?classification), "_experimental_evidence_line"))
+  #      AS ?experimentalEvidenceLine) .
   BIND(IRI(CONCAT(str(?classification), "_experimental_evidence_criterion_assessment"))
        AS ?experimentalEvidenceCriterionAssessment) .
-  BIND(IRI(CONCAT(str(?classification), "_functional_evidence_line"))
-       AS ?functionalEvidenceLine) .
+  # BIND(IRI(CONCAT(str(?classification), "_functional_evidence_line"))
+  #      AS ?functionalEvidenceLine) .
   BIND(IRI(CONCAT(str(?classification), "_functional_evidence_criterion_assessment"))
        AS ?functionalEvidenceCriterionAssessment) .
-  BIND(IRI(CONCAT(str(?classification), "_functional_alteration_evidence_line"))
-       AS ?functionalAlterationEvidenceLine) .
+  # BIND(IRI(CONCAT(str(?classification), "_functional_alteration_evidence_line"))
+  #      AS ?functionalAlterationEvidenceLine) .
   BIND(IRI(CONCAT(str(?classification), "_functional_alteration_criterion_assessment"))
        AS ?functionalAlterationCriterionAssessment) .
-  BIND(IRI(CONCAT(str(?classification), "_model_rescue_evidence_line"))
-       AS ?modelAndRescueEvidenceLine) .
+  # BIND(IRI(CONCAT(str(?classification), "_model_rescue_evidence_line"))
+  #      AS ?modelAndRescueEvidenceLine) .
   BIND(IRI(CONCAT(str(?classification), "_model_rescue_criterion_assessment"))
        AS ?modelAndRescueCriterionAssessment) .
 }

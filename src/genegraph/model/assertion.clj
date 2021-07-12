@@ -2,20 +2,26 @@
   (:require [genegraph.database.query :as q]
             [com.walmartlabs.lacinia.schema :refer [tag-with-type]]))
 
-(def transitive-evidence-items
+(def transitive-evidence
   (q/create-query
-   "select ?evidence_line where {
-    ?assertion ( :sepio/has-evidence-line | :sepio/has-evidence-item | :sepio/has-evidence | ( ^ :sepio/has-subject )  ) + ?evidence_line .
-    ?evidence_line ( a / :rdfs/sub-class-of * ) ?class }"))
+   "select ?evidence where {
+    ?assertion ( :sepio/has-evidence-line | :sepio/has-evidence-item | :sepio/has-evidence | ( ^ :sepio/has-subject )  ) + ?evidence .
+    ?evidence ( a / :rdfs/sub-class-of * ) ?class }"))
+
+(def direct-evidence
+  (q/create-query
+   "select ?evidence where {
+    ?assertion :sepio/has-evidence ?evidence .
+    ?evidence ( a / :rdfs/sub-class-of * ) ?class }"))
 
 (defn evidence-items [_ args value]
   (cond
     (and (:transitive args) (:class args))
-    (transitive-evidence-items {:assertion value
-                                :class (:class args)})
+    (transitive-evidence {:assertion value
+                          :class (:class args)})
     (:transitive args)
-    (transitive-evidence-items {:assertion value})
-    :else (:sepio/has-evidence-line value)))
+    (transitive-evidence {:assertion value})
+    :else (:sepio/has-evidence value)))
 
 (def assertion
   {:name :Assertion

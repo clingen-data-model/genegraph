@@ -19,15 +19,17 @@
 
 ;; TODO, this fn sometimes recieves nil, why?
 (defn resolve-type [resource schema]
-  (let [resource-types (->> (type-query {:resource resource})
-                            (map q/to-ref)
-                            (remove nil?)
-                            (into #{}))]
-    (if-let [type-mapping (->> (:type-mappings schema)
-                               (filter #(resource-types (first %)))
-                               first)]
-      (second type-mapping)
-      (:default-type-mapping schema))))
+  (if resource
+    (let [resource-types (->> (type-query {:resource resource})
+                              (map q/to-ref)
+                              (remove nil?)
+                              (into #{}))]
+      (if-let [type-mapping (->> (:type-mappings schema)
+                                 (filter #(resource-types (first %)))
+                                 first)]
+        (second type-mapping)
+        (:default-type-mapping schema)))
+    (:default-type-mapping schema)))
 
 (defn- construct-resolver-from-path [field]
   (if (:path field)

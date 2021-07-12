@@ -3,6 +3,7 @@ prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
 construct {
   ?evidenceLine  a ?evidenceLineType ;
   :dc/description ?scoreDescription ;
+  :sepio/has-evidence ?evidenceItem ;
   :sepio/evidence-line-strength-score ?score .
 
   ?evidenceItem  a ?evidenceItemType ;
