@@ -1,7 +1,7 @@
 prefix gci: <http://gci.clinicalgenome.org/> 
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
 construct {
-  ?criterionAssessment :sepio/has-evidence-line ?evidenceLine .
+  ?criterionAssessment :sepio/has-evidence ?evidenceLine .
 }
 where {
   ?criterionAssessment a ?criterionAssessmentType .

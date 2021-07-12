@@ -40,6 +40,9 @@
             :qualifier {:type '(list :Resource)
                         :description "Additional elements limiting the scope of the assertion"
                         :path [:sepio/has-qualifier]}
+            :score {:type 'Float
+                    :description "Numeric score of the statement. May be nil, used only when the applicable criteria calls for a numeric score in the assertion or critera assessment."
+                    :path [:sepio/evidence-line-strength-score]}
             :evidence {:type '(list :Resource)
                        :description "Evidence used in in support of the assertion"
                        :args {:class {:type :Type}

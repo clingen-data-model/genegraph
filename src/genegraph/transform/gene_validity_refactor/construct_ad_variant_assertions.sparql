@@ -2,8 +2,6 @@ prefix gci: <http://gci.clinicalgenome.org/>
 
 construct
 {
-  # ?geneticEvidenceCriterionAssessment :sepio/has-evidence-line ?autosomalDominantOtherVariantEvidenceLine ,   ?autosomalDominantNullVariantEvidenceLine ,  ?autosomalDominantDeNovoVariantEvidenceLine .
-
   ?geneticEvidenceCriterionAssessment :sepio/has-evidence
   ?autosomalDominantOtherVariantCriterionAssessment ,
   ?autosomalDominantNullVariantCriterionAssessment ,
