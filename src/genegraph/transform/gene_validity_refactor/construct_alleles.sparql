@@ -6,7 +6,7 @@ construct
 {
 
   ?vd a ga4gh:VariationDescriptor ;
-  ga4gh:CanonicalReference ?caid ;
+  :ga4gh/CanonicalReference ?caid ;
   :skos/preferred-label ?preferred_label . 
 
 }

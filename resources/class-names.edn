@@ -108,6 +108,7 @@
  [:cg/HaploinsufficiencyScore "http://dataexchange.clinicalgenome.org/terms/HaploinsufficiencyScore"]
  [:cg/TriplosensitivityScore "http://dataexchange.clinicalgenome.org/terms/TriplosensitivityScore"]
  [:sepio/Contribution "http://purl.obolibrary.org/obo/SEPIO_0000158"]
+ [:sepio/CriterionAssessment "http://purl.obolibrary.org/obo/SEPIO_0000191"]
  [:cnt/ContentAsText "http://www.w3.org/2011/content#ContentAsText"]
  [:sepio/GeneValidityEvidenceLevelAssertion "http://purl.obolibrary.org/obo/SEPIO_0004002"]
  [:sepio/GeneValidityEvidenceLevelAutoClassification "http://purl.obolibrary.org/obo/SEPIO_0004098"]

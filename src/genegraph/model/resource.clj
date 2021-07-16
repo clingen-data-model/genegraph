@@ -2,8 +2,10 @@
   "Definitions for model of RDFResource objects"
   (:require [genegraph.database.query :as q]))
 
-;; (def type-query
-;;   (q/create-query "select ?type where {"))
+
+(defn subject-of [_ args value]
+  (concat (q/ld-> value [[:sepio/has-subject :<]])
+          (q/ld-> value [[:sepio/has-object :<]])))
 
 (def resource-interface
   {:name :Resource
@@ -24,13 +26,17 @@
             :type {:type '(list :Resource)
                    :description "The types for this resource."
                    :path [:rdf/type]}
-            :subject_of {:type '(list :Assertion)
+            :description {:type 'String
+                          :description "Textual description of this resource"
+                          :path [:dc/description]}
+            :source {:type :Resource
+                     :description "A related resource from which the described resource is derived."
+                     :path [:dc/source]}
+            :subject_of {:type '(list :Statement)
                          :description "Assertions (or propositions) that have this resource as a subject (or object)."
                          ;; TODO implement as path when inverse; optional paths are done
                          ;; in Jena mapping. Exists as function for now.
-                         :resolve (fn [_ _ value]
-                                    (concat (q/ld-> value [[:sepio/has-subject :<]])
-                                            (q/ld-> value [[:sepio/has-object :<]])))}}})
+                         :resolve subject-of}}})
 
 (def generic-resource
   {:name :GenericResource
