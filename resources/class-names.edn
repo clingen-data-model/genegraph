@@ -25,6 +25,7 @@
  [:owl/AllDisjointClasses "http://www.w3.org/2002/07/owl#AllDisjointClasses"]
  [:owl/TransitiveProperty "http://www.w3.org/2002/07/owl#TransitiveProperty"]
  [:dcterms/AgentClass "http://purl.org/dc/terms/AgentClass"]
+ [:dc/BibliographicResource "http://purl.org/dc/terms/BibliographicResource"]
  [:skos/Concept "http://www.w3.org/2004/02/skos/core#Concept"]
  [:so/Gene "http://purl.obolibrary.org/obo/SO_0000704"]
  [:iao/DenotatorType "http://purl.obolibrary.org/obo/IAO_0000409"]

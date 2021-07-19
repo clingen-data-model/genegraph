@@ -40,6 +40,7 @@
                construct-segregation-evidence
                construct-evidence-connections
                construct-alleles
+               construct-articles
                )
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -81,6 +82,7 @@
             "rescueType" {"@type" "@vocab"}
             "studyType" {"@type" "@vocab"}
             "sequencingMethod" {"@type" "@vocab"}
+            "authors" {"@container" "@list"}
 
 
             ;; ;; Category names
@@ -169,6 +171,7 @@
                         (construct-case-control-evidence params)
                         (construct-segregation-evidence params)
                         (construct-alleles params)
+                        (construct-articles params)
                         )]
     (q/union unlinked-model
              (construct-evidence-connections 

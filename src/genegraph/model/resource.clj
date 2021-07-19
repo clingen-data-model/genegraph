@@ -22,14 +22,15 @@
                     :resolve (fn [_ _ value]
                                (first (concat (:skos/preferred-label value)
                                               (:rdfs/label value)
-                                              (:foaf/name value))))}
+                                              (:foaf/name value)
+                                              (:dc/title value))))}
             :type {:type '(list :Resource)
                    :description "The types for this resource."
                    :path [:rdf/type]}
             :description {:type 'String
                           :description "Textual description of this resource"
                           :path [:dc/description]}
-            :source {:type :Resource
+            :source {:type :BibliographicResource
                      :description "A related resource from which the described resource is derived."
                      :path [:dc/source]}
             :subject_of {:type '(list :Statement)

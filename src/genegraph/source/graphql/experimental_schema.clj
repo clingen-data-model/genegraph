@@ -8,6 +8,7 @@
             [genegraph.model.find :as model-find]
             [genegraph.model.proband-evidence :as model-proband]
             [genegraph.model.variation-descriptor :as model-variation]
+            [genegraph.model.bibliographic-resource :as model-bibliographic-resource]
             [com.walmartlabs.lacinia :as lacinia]
             [genegraph.database.util :refer [tx]]
             [genegraph.source.graphql.common.schema :as schema-builder]))
@@ -26,7 +27,8 @@
    model-find/types-enum
    model-find/find-query
    model-find/query-result
-   model-find/find-query])
+   model-find/find-query
+   model-bibliographic-resource/bibliographic-resource])
 
 
 (defn schema []
