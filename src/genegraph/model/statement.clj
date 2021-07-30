@@ -25,6 +25,6 @@
                     :path [:sepio/evidence-line-strength-score]}
             :evidence {:type '(list :Resource)
                        :description "Evidence used in in support of the statement"
-                       :args {:class {:type :Type}
+                       :args {:class {:type 'String}
                               :transitive {:type 'Boolean}}
                        :resolve common/evidence-items}}})

@@ -3,7 +3,6 @@
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :as l]
             [genegraph.model.resource :as model-resource]
-            [genegraph.model.assertion :as model-assertion]
             [genegraph.model.types :as model-types]
             [genegraph.model.agent :as model-agent]
             [genegraph.model.contribution :as model-contribution]

@@ -18,7 +18,7 @@
   (cond
     (and (:transitive args) (:class args))
     (transitive-evidence {:statement value
-                          :class (:class args)})
+                          :class (q/resource (:class args))})
     (:transitive args)
     (transitive-evidence {:statement value})
     :else (:sepio/has-evidence value)))

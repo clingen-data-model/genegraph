@@ -48,6 +48,8 @@
                               :cluster :dx-ccloud}
             :gene-validity-events-dev {:name "gene_validity_events_dev"
                                        :cluster :dx-ccloud}
+            :gene-tracker-test {:name "gt-precuration-events-test"
+                                :cluster :dx-ccloud}
             :clinvar-combined {:name "clinvar-combined"
                                :cluster :dx-ccloud
                                :format :clinvar-combined}}}

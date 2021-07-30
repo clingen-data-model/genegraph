@@ -33,6 +33,9 @@
             :source {:type :BibliographicResource
                      :description "A related resource from which the described resource is derived."
                      :path [:dc/source]}
+            :used_as_evidence_by {:type :Statement
+                                  :description "Statements that use this resource as evidence"
+                                  :path [[:sepio/has-evidence :<]]}
             :subject_of {:type '(list :Statement)
                          :description "Assertions (or propositions) that have this resource as a subject (or object)."
                          ;; TODO implement as path when inverse; optional paths are done
