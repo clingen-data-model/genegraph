@@ -1,4 +1,4 @@
-(ns genegraph.model.find
+(ns genegraph.source.graphql.schema.find
   (:require [genegraph.database.query :as q :refer [create-query]]
             [clojure.string :as s]))
 

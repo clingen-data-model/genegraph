@@ -1,4 +1,4 @@
-(ns genegraph.model.bibliographic-resource
+(ns genegraph.source.graphql.schema.bibliographic-resource
   (:require [genegraph.database.query :as q]))
 
 (defn short-citation [_ _ value]

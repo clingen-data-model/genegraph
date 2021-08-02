@@ -1,4 +1,4 @@
-(ns genegraph.model.common
+(ns genegraph.source.graphql.schema.common
   (:require [genegraph.database.query :as q]
             [com.walmartlabs.lacinia.schema :refer [tag-with-type]]))
 

@@ -1,6 +1,6 @@
-(ns genegraph.model.evidence-line
+(ns genegraph.source.graphql.schema.evidence-line
   (:require [genegraph.database.query :as q]
-            [genegraph.model.common :as common]
+            [genegraph.source.graphql.schema.common :as common]
             [com.walmartlabs.lacinia.schema :refer [tag-with-type]]))
 
 

@@ -1,4 +1,4 @@
-(ns genegraph.model.variation-descriptor
+(ns genegraph.source.graphql.schema.variation-descriptor
   (:require [genegraph.database.query :as q]))
 
 (def variation-descriptor

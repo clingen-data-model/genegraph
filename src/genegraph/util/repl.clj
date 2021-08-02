@@ -2,13 +2,6 @@
   "Functions and environment useful for developing Genegraph at the REPL"
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :as l]
-            [genegraph.model.resource :as model-resource]
-            [genegraph.model.types :as model-types]
-            [genegraph.model.agent :as model-agent]
-            [genegraph.model.contribution :as model-contribution]
-            [genegraph.model.find :as model-find]
-            ;; [genegraph.source.graphql.common.schema :as schema-builder]
-            [genegraph.source.graphql.common.schema-builder :as schema-builder]
             [genegraph.source.graphql.experimental-schema :as experimental-schema]
             [genegraph.database.instance :as db-instance]
             [genegraph.env :as env]

@@ -1,4 +1,4 @@
-(ns genegraph.model.agent
+(ns genegraph.source.graphql.schema.agent
   (:require [genegraph.database.query :as q]))
 
 (def agent

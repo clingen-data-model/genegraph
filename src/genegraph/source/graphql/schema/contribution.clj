@@ -1,4 +1,4 @@
-(ns genegraph.model.contribution
+(ns genegraph.source.graphql.schema.contribution
   (:require [genegraph.database.query :as q]))
 
 (def contribution

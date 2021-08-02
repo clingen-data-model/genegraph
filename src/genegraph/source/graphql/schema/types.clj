@@ -1,4 +1,4 @@
-(ns genegraph.model.types)
+(ns genegraph.source.graphql.schema.types)
 
 (def rdf-to-graphql-type-mappings
   {:type-mappings

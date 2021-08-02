@@ -1,4 +1,4 @@
-(ns genegraph.model.resource
+(ns genegraph.source.graphql.schema.resource
   "Definitions for model of RDFResource objects"
   (:require [genegraph.database.query :as q]))
 

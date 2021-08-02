@@ -1,4 +1,4 @@
-(ns genegraph.model.proband-evidence
+(ns genegraph.source.graphql.schema.proband-evidence
   (:require [genegraph.database.query :as q]))
 
 (def proband-evidence
