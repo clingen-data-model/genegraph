@@ -60,8 +60,7 @@
    [iri :sepio/activity-date (report-date report)]])
 
 (def contributor-roles
-  {"secondary contributor" :sepio/SecondaryContributorRole
-   "secondary approver" :sepio/SecondaryApproverRole})
+  {"secondary contributor" :sepio/SecondaryContributorRole})
 
 (defn secondary-contributions [report assertion-iri]
   (let [roles (set (keys contributor-roles))
