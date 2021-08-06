@@ -9,8 +9,7 @@
             [clojure.string :as s]
             [clojure.walk :refer [postwalk]]
             [taoensso.nippy :as nippy]
-            [genegraph.rocksdb :as rocksdb]
-            [clojure.core.async :refer [>! <! >!! <!! chan pub sub unsub go-loop close! sliding-buffer]])
+            [genegraph.rocksdb :as rocksdb])
   (:import java.util.Properties
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
             ConsumerRecords]
@@ -19,6 +18,8 @@
            [java.time.format DateTimeFormatter]))
 
 (def config (->> "kafka.edn" io/resource slurp edn/read-string (postwalk #(if (symbol? %) (-> % resolve var-get) %))))
+
+(def topics (map keyword (s/split env/dx-topics #";")))
 
 (defn offset-file []
   (str env/data-vol "/partition_offsets.edn"))
@@ -29,10 +30,6 @@
 (def all-offsets-up-to-date (promise))
 (def topic-state (atom {}))
 (def all-topics-closed (promise))
-
-(def in-chan (chan (sliding-buffer 64)))
-(def notify-pub (pub in-chan :msg-type))
-(def out-chan (chan))
 
 (defn consumer-record-to-clj [consumer-record spec]
   {::annotate/format spec 
@@ -80,21 +77,10 @@
                                {} kafka-end-offsets)]
     (swap! end-offsets merge end-offset-map)))
 
-(defn update-offsets! [consumer tps]
-  (read-end-offsets! consumer tps)
-  (doseq [tp tps]
-    (swap! current-offsets assoc [(.topic tp) (.partition tp)] (.position consumer tp)))
-  (spit (offset-file) (pr-str @current-offsets)))
-
-(def run-consumer (atom true))
-
-(defn read-offsets! [] 
-  (if (.exists (io/as-file (offset-file)))
-    (reset! current-offsets (-> (offset-file) slurp edn/read-string))
-    (reset! current-offsets {})))
-
 (defn up-to-date? []
-  (every? true? (vals @offsets-up-to-date)))
+  (and (some? (keys @offsets-up-to-date))
+       (= (count (keys @offsets-up-to-date)) (count topics))
+       (every? true? (vals @offsets-up-to-date))))
 
 (defn set-up-to-date-status!
   "Returns true if all partitions of all topics subscribed to have had messages
@@ -105,10 +91,28 @@
       (reset! offsets-up-to-date partitions-up-to-date?)
       (when (up-to-date?)
         (deliver all-offsets-up-to-date true))))
-  (log/debug :fn :set-up-to-date-status?
+  (log/info :fn :set-up-to-date-status?
              :current-offsets @current-offsets
              :end-offsets @end-offsets
              :offsets-up-to-date @offsets-up-to-date))
+
+(defn update-offsets! [consumer tps]
+  (read-end-offsets! consumer tps)
+  (doseq [tp tps]
+    
+    (let [key [(.topic tp) (.partition tp)]]
+      (when (not= (get @current-offsets key) (get @end-offsets key))
+        (swap! current-offsets assoc [(.topic tp) (.partition tp)] (.position consumer tp))
+        (spit (offset-file) (pr-str @current-offsets)))))
+  (when-not (up-to-date?)
+    (set-up-to-date-status!)))
+
+(def run-consumer (atom true))
+
+(defn read-offsets! [] 
+  (if (.exists (io/as-file (offset-file)))
+    (reset! current-offsets (-> (offset-file) slurp edn/read-string))
+    (reset! current-offsets {})))
 
 (defn consumers-closed?  []
   (every? #(= :stopped %) (vals @topic-state)))
@@ -135,9 +139,8 @@
           (when-let [records (poll-once consumer)]
             (->> records
                  (map #(consumer-record-to-clj % topic))
-                 event/process-event-seq!)
-            (update-offsets! consumer tp)
-            (set-up-to-date-status!)))
+                 event/process-event-seq!))
+          (update-offsets! consumer tp))
         (swap! topic-state assoc topic :stopped)
         (log/debug :fn :assign-topic!
                    :topic-state @topic-state
@@ -161,7 +164,7 @@
       (swap! topic-state assoc topic :running))))
 
 (defstate consumer-thread
-  :start (let [topics (map keyword (s/split env/dx-topics #";"))]
+  :start (do
            (reset! run-consumer true)
            (subscribe! topics))
   :stop  (reset! run-consumer false))
