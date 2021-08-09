@@ -48,6 +48,7 @@
     (case (str/lower-case classification)
       "no evidence" :NO_EVIDENCE
       "minimal evidence" :MINIMAL_EVIDENCE
+      "little evidence" :MINIMAL_EVIDENCE
       "moderate evidence" :MODERATE_EVIDENCE
       "sufficient evidence" :SUFFICIENT_EVIDENCE
       "gene associated with autosomal recessive phenotype" :ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE
