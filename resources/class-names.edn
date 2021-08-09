@@ -25,6 +25,7 @@
  [:owl/AllDisjointClasses "http://www.w3.org/2002/07/owl#AllDisjointClasses"]
  [:owl/TransitiveProperty "http://www.w3.org/2002/07/owl#TransitiveProperty"]
  [:dcterms/AgentClass "http://purl.org/dc/terms/AgentClass"]
+ [:dc/BibliographicResource "http://purl.org/dc/terms/BibliographicResource"]
  [:skos/Concept "http://www.w3.org/2004/02/skos/core#Concept"]
  [:so/Gene "http://purl.obolibrary.org/obo/SO_0000704"]
  [:iao/DenotatorType "http://purl.obolibrary.org/obo/IAO_0000409"]
@@ -33,6 +34,7 @@
  [:iao/ObsolescenceReasonSpecification "http://purl.obolibrary.org/obo/IAO_0000225"]
  [:geno/GenomicLocation "http://purl.obolibrary.org/obo/GENO_0000902"]
  [:geno/FunctionalCopyNumberComplement "http://purl.obolibrary.org/obo/GENO_0000963"]
+ [:go/DbXref "http://www.geneontology.org/formats/oboInOwl#DbXref"]
  [:sepio/DosageSensitivityEvaluationGuideline "http://purl.obolibrary.org/obo/SEPIO_0002002"]
  [:sepio/DosageSensitivityProposition "http://purl.obolibrary.org/obo/SEPIO_0002003"]
  [:sepio/EvidenceLevelAssertion "http://purl.obolibrary.org/obo/SEPIO_0002001"]
@@ -41,6 +43,7 @@
  [:foaf/Agent "http://xmlns.com/foaf/0.1/Agent"]
  [:foaf/Group "http://xmlns.com/foaf/0.1/Group"]
  [:foaf/Organization "http://xmlns.com/foaf/0.1/Organization"]
+ [:prov/Agent "http://www.w3.org/ns/prov#Agent"]
  [:sepio/StudyFinding "http://purl.obolibrary.org/obo/SEPIO_0000173"]
  [:sepio/PopulationAscertainmentMethod "http://purl.obolibrary.org/obo/SEPIO_0000260"]
  [:sepio/Acmg2015EvidenceStrength "http://purl.obolibrary.org/obo/SEPIO_0000408"]
@@ -92,6 +95,8 @@
  [:so/SequenceFeature "http://purl.obolibrary.org/obo/SO_0000110"]
  [:sepio/GeneDosageReport "http://purl.obolibrary.org/obo/SEPIO_0002015"]
  [:sepio/GeneDosageRecord "http://purl.obolibrary.org/obo/SEPIO_0002016"]
+ [:ga4gh/VariationDescriptor "https://terms.ga4gh.org/VariationDescriptor"]
+ [:ga4gh/CanonicalReference "https://terms.ga4gh.org/CanonicalReference"]
  [:geno/SequenceInterval "http://purl.obolibrary.org/obo/GENO_0000965"]
  [:geno/SequenceFeatureLocation"http://purl.obolibrary.org/obo/GENO_0000815"]
  [:geno/SequenceFeatureSet "http://purl.obolibrary.org/obo/GENO_0000659"]
@@ -104,8 +109,10 @@
  [:cg/HaploinsufficiencyScore "http://dataexchange.clinicalgenome.org/terms/HaploinsufficiencyScore"]
  [:cg/TriplosensitivityScore "http://dataexchange.clinicalgenome.org/terms/TriplosensitivityScore"]
  [:sepio/Contribution "http://purl.obolibrary.org/obo/SEPIO_0000158"]
+ [:sepio/CriterionAssessment "http://purl.obolibrary.org/obo/SEPIO_0000191"]
  [:cnt/ContentAsText "http://www.w3.org/2011/content#ContentAsText"]
  [:sepio/GeneValidityEvidenceLevelAssertion "http://purl.obolibrary.org/obo/SEPIO_0004002"]
+ [:sepio/GeneValidityEvidenceLevelAutoClassification "http://purl.obolibrary.org/obo/SEPIO_0004098"]
  [:sepio/GeneValidityProposition "http://purl.obolibrary.org/obo/SEPIO_0004001"]
  [:ro/IsCausalGermlineMutationIn "http://purl.obolibrary.org/obo/RO_0004013"]
  [:sepio/DosageNoEvidence "http://purl.obolibrary.org/obo/SEPIO_0002008"]
@@ -249,8 +256,10 @@
   "http://purl.obolibrary.org/obo/SEPIO_0004062"]
  [:sepio/ProbandWithNullVariantEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004034"]
- [:sepio/ExperimentalEvidenceLine
+ [:sepio/OverallExperimentalEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004006"]
+ [:sepio/ExperimentalEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004105"]
  [:sepio/ClinGenFunctionalAlterationEvidenceCriteria
   "http://purl.obolibrary.org/obo/SEPIO_0004075"]
  [:sepio/CellCultureModelEvidenceItem
@@ -331,5 +340,7 @@
  [:cg/PediatricActionabilityWorkingGroup "http://dataexchange.clinicalgenome.org/terms/PediatricActionabilityWorkingGroup"]
  [:void/Dataset "http://rdfs.org/ns/void#Dataset"]
  [:mondo/Disease "http://purl.obolibrary.org/obo/MONDO_0000001"]
+ [:sepio/Assertion
+   "http://purl.obolibrary.org/obo/SEPIO_0000001"]
  [:chebi/Drug "http://purl.obolibrary.org/obo/CHEBI_23888"]]
 

@@ -3,11 +3,11 @@ prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
 construct {
   ?evidenceLine a ?evidenceLineType ;
   :sepio/evidence-line-strength-score ?score ;
-  :sepio/has-evidence-item ?evidenceItem ;
+  :sepio/has-evidence ?evidenceItem ;
   :dc/description ?evidenceLineDescription .
 
   ?evidenceItem a ?evidenceItemType ;
-  :sepio/is-about-allele ?allele ;
+  :sepio/is-about-allele ?variant ;
   :dc/source ?article ;
   :rdfs/label ?individualLabel .
 
@@ -35,14 +35,20 @@ where {
   gci:variants ?variant ;
   gci:label ?individualLabel .
 
-  ?annotation gci:individuals ?evidenceItem ;
-  gci:article ?publication .
+  ?annotation  gci:individuals|gci:individualIncluded ?evidenceItem ;
+  ^(gci:families|gci:groups)? / gci:article ?publication .
   
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
 
-  ?variant gci:carId ?caId .
-  
-  BIND(IRI(CONCAT(?arbase, ?caID)) AS ?allele) .
+  # OPTIONAL {
+  #   ?variant gci:carId ?caId .
+  #   BIND(IRI(CONCAT(?arbase, ?caID)) AS ?allele) .
+  # }
+
+  # OPTIONAL {
+  #   ?variant gci:clinvarVariantId ?cvId .
+  #   BIND(IRI(CONCAT(?cvbase, ?cvId)) AS ?allele) .
+  # }
   
 }

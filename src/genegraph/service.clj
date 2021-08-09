@@ -13,6 +13,7 @@
             [com.walmartlabs.lacinia.schema :as schema]
             [com.walmartlabs.lacinia.util :as util]
             [genegraph.source.graphql.core :as gql]
+            [genegraph.source.graphql.experimental-schema :as experimental-schema]
             [genegraph.auth :as auth]
             [genegraph.response-cache :refer [response-cache-interceptor]]
             [genegraph.env :as env]
@@ -230,7 +231,9 @@
 
 (defn dev-service 
   "Service map to be used for development mode."
-  ([] (dev-service gql/schema))
+  ([] (dev-service (if env/use-experimental-schema
+                     experimental-schema/schema
+                     gql/schema)))
   ([gql-schema]
    (service-map (dev-interceptors gql-schema)
                 (dev-subscription-interceptors gql-schema)
@@ -238,7 +241,9 @@
 
 (defn service
   "Service map to be used for production mode"
-  ([] (service (gql/schema)))
+  ([] (service (if env/use-experimental-schema
+                 (experimental-schema/schema)
+                 (gql/schema))))
   ([gql-schema]
    (service-map (prod-interceptors gql-schema)
                 (prod-subscription-interceptors gql-schema)

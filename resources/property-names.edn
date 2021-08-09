@@ -1151,7 +1151,7 @@
   "http://purl.obolibrary.org/obo/SEPIO_0000146"]
  [:sepio/has-evidence-line
   "http://purl.obolibrary.org/obo/SEPIO_0000006"]
- [:sepio/has-evidence-line-with-item
+ [:sepio/has-evidence
   "http://purl.obolibrary.org/obo/SEPIO_0000189"]
  [:sepio/has-evidence-type
   "http://purl.obolibrary.org/obo/SEPIO_0000398"]

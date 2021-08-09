@@ -41,7 +41,7 @@
   (q/ld1-> value [:sepio/qualified-contribution :sepio/activity-date]))
 
 (defresolver evidence [args value]
-  (q/ld-> value [:sepio/has-evidence-line-with-item]))
+  (q/ld-> value [:sepio/has-evidence]))
 
 (defresolver score [args value]
   (when-let [classification (classification-description nil args value)]

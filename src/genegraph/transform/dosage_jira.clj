@@ -192,7 +192,7 @@
   (let [findings (finding-data curation dosage)]
     (mapcat (fn [[pmid description]]
               (let [finding-iri (l/blank-node)]
-                [[assertion-iri :sepio/has-evidence-line-with-item finding-iri]
+                [[assertion-iri :sepio/has-evidence finding-iri]
                  [finding-iri :rdf/type :sepio/StudyFinding]
                  [finding-iri :dc/source (str "PMID:" (re-find #"\d+" pmid))]
                  [finding-iri :dc/description (or description "")]]))

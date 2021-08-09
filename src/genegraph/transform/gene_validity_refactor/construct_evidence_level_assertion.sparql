@@ -6,8 +6,9 @@ construct {
   :sepio/has-subject ?proposition ;
   :sepio/has-predicate :sepio/HasEvidenceLevel ;
   :sepio/has-object ?evidencelevel ;
-  :sepio/has-evidence-line ?experimentalEvidenceLine, ?geneticEvidenceLine ;
+  :sepio/evidence-line-strength ?evidencelevel;
   :sepio/qualified-contribution ?contribution ;
+  :dc/description ?description ;
   :sepio/evidence-line-strength-score ?evidencePointsTotal .
 
   ?contribution :sepio/has-agent ?affiliation ;
@@ -15,14 +16,14 @@ construct {
 
 }
 where {
-
-
+  
   ?proposition a gci:gdm ;
   gci:affiliation ?affiliationID .
 
   BIND(IRI(CONCAT(?affbase, ?affiliationID)) AS ?affiliation) .
-  
+
   ?classification a gci:provisionalClassification ;
+  gci:evidenceSummary ?description ;
   gci:autoClassification ?evidencelevel ;
   gci:classificationDate ?classificationDate ;
   gci:classificationPoints ?pointsTree .

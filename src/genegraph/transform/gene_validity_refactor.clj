@@ -39,6 +39,8 @@
                construct-case-control-evidence
                construct-segregation-evidence
                construct-evidence-connections
+               construct-alleles
+               construct-articles
                )
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -80,6 +82,7 @@
             "rescueType" {"@type" "@vocab"}
             "studyType" {"@type" "@vocab"}
             "sequencingMethod" {"@type" "@vocab"}
+            "authors" {"@container" "@list"}
 
 
             ;; ;; Category names
@@ -119,6 +122,7 @@
             "Moderate" "SEPIO:0004506"
             "Limited" "SEPIO:0004507"
             "No Known Disease Relationship" "SEPIO:0004508"
+            "Refuted" "SEPIO:0004510"
             "No Classification" "SEPIO:0004508" ;; Maybe this should not exist in published records?
             ;; "No Classification" "SEPIO:0004508"
             }}))))
@@ -159,13 +163,16 @@
                         (construct-ad-variant-assertions params)
                         (construct-ar-variant-assertions params)
                         (construct-cc-and-seg-assertions params)
-                        (construct-proband-score params)                        
+                        (construct-proband-score params)
                         (construct-model-systems-evidence params)
                         (construct-functional-evidence params)
                         (construct-functional-alteration-evidence params)
                         (construct-rescue-evidence params)
                         (construct-case-control-evidence params)
-                        (construct-segregation-evidence params))]
+                        (construct-segregation-evidence params)
+                        (construct-alleles params)
+                        (construct-articles params)
+                        )]
     (q/union unlinked-model
              (construct-evidence-connections 
               {::q/model
