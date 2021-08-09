@@ -19,7 +19,8 @@
 
 (def config (->> "kafka.edn" io/resource slurp edn/read-string (postwalk #(if (symbol? %) (-> % resolve var-get) %))))
 
-(def topics (map keyword (s/split env/dx-topics #";")))
+(defn topics []
+  (map keyword (s/split env/dx-topics #";")))
 
 (defn offset-file []
   (str env/data-vol "/partition_offsets.edn"))
@@ -79,7 +80,7 @@
 
 (defn up-to-date? []
   (and (some? (keys @offsets-up-to-date))
-       (= (count (keys @offsets-up-to-date)) (count topics))
+       (= (count (keys @offsets-up-to-date)) (count (topics)))
        (every? true? (vals @offsets-up-to-date))))
 
 (defn set-up-to-date-status!
@@ -166,7 +167,7 @@
 (defstate consumer-thread
   :start (do
            (reset! run-consumer true)
-           (subscribe! topics))
+           (subscribe! (topics)))
   :stop  (reset! run-consumer false))
 
 (defn long-poll [c]
