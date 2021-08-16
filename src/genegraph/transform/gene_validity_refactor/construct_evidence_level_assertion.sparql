@@ -11,7 +11,9 @@ construct {
   :dc/description ?description ;
   :sepio/evidence-line-strength-score ?evidencePointsTotal .
 
+  # Needs role
   ?contribution :sepio/has-agent ?affiliation ;
+  :bfo/realizes :sepio/ApproverRole ;
   :sepio/activity-date ?classificationDate .
 
 }

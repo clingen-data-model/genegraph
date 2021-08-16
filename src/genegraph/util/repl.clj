@@ -236,3 +236,24 @@
                    [[k]])))
              m))
     []))
+
+(defn construct-gene-validity-events [input-file output-directory]
+  (with-open [r (io/reader input-file)]
+    (let [input-json (json/parse-stream r)]
+      (doseq [curation input-json]
+        (with-open [w (io/writer (str output-directory
+                                      "/"
+                                      (get curation "uuid")
+                                      ".edn"))]
+          (binding [*out* w]
+            (pr {::event/key (get curation "uuid")
+                 ::event/value (json/encode curation)
+                 ::ann/format :gene-validity-raw})))))))
+
+(defn event-seq-from-directory [directory]
+  (let [files (->> directory
+                  io/file
+                  file-seq
+                  (filter #(re-find #".edn" (.getName %))))]
+    (map #(edn/read-string (slurp %)) files)))
+
