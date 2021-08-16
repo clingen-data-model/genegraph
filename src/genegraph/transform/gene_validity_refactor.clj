@@ -41,6 +41,7 @@
                construct-evidence-connections
                construct-alleles
                construct-articles
+               construct-secondary-contributions
                )
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -171,8 +172,8 @@
                         (construct-case-control-evidence params)
                         (construct-segregation-evidence params)
                         (construct-alleles params)
-                        (construct-articles params)
-                        )]
+                        (construct-articles params) 
+                        (construct-secondary-contributions params))]
     (q/union unlinked-model
              (construct-evidence-connections 
               {::q/model
