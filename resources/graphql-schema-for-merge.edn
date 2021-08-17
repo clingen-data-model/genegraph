@@ -58,81 +58,7 @@
             :ProbandEvidenceLine]}}
 
  :interfaces
- {:Resource
-  {:description "An RDF Resource; generic type suitable for return when a variety of resources may be returned as the result of a function all"
-   :fields {:iri {:type String
-                  :description "The IRI for this resource."}
-            :curie {:type String
-                    :description "The CURIE internal to Genegraph for this resource."}
-            :label {:type String
-                    :description "The label for this resouce."}}}
-
-  :Proposition
-  {:description "An abstract entity representing the sharable meaning of what is expressed in a particular assertion."
-   :fields {:iri {:description "IRI of this proposition"
-                  :type String}
-            :curie {:description "CURIE of this proposition"
-                    :type String}
-            :type {:description "Type of this proposition"
-                   :type (list :Class)}
-            :subject {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the entity that representing the subject of this relationship."
-                      :type :Resource}
-            :predicate {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the property serving as the predicate in this relationship."
-                        :type :Resource}
-            :object {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the entity that representing the object or value of this relationship."
-                     :type :Resource}
-            :subject_of {:description "Entities that have this proposition as their subject"
-                         :type (list :Assertion)}}}
-  
-  :Assertion
-  {:description "A statement made by a particular agent on a particular occasion that a particular proposition is true, based on the evaluation of one or more lines of evidence."
-   :fields {:subject {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the entity that representing the subject of this relationship."
-                      :type :Resource}
-            :predicate {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the property serving as the predicate in this relationship."
-                        :type :Resource}
-            :object {:description "A relation that holds between a statement or proposition which can be captured in part or in whole as a directional relationship between two entities, and the entity that representing the object or value of this relationship."
-                     :type :Resource}
-            :evidence_lines {:description "Evidence lines contributing to this assertion"
-                             :type (list :EvidenceLine)}
-            :iri {:description "IRI of this assertion"
-                  :type String}
-            :curie {:descirption "CURIE of this assertion"
-                    :type String}
-            :type {:description "Type of this assertion"
-                   :type (list :Class)}
-            :description {:descripiton "Description of this assertion"
-                          :type String}}}
-
-  :EvidenceLine
-  {:description "A SEPIO evidence line"
-   :fields {:evidence_items {:description "Evidence items in support of a given evidence line"
-                             :type (list :EvidenceItem)}
-            :iri {:description "IRI of this evidence line"
-                  :type String}
-            :type {:description "Type of this evidence line"
-                   :type (list :Class)}
-            :score {:description "Numeric score of this evidence line; usually exists within
-the context of a formal evalutation framework"
-                    :type Float}
-            :description {:descripiton "Usually provides the reasoning behind the contribution of a given evidence item to a proposition or assertion"
-                          :type String}}}
-  
-  :EvidenceItem
-  {:description "A SEPIO evidence item"
-   :fields {:evidence_lines {:description "Evidence lines supporting the assertion"
-                             :type (list :EvidenceLine)
-                             :args {:recursive {:description "Recurse through SEPIO has-evidence-line, has-evidence-item associations to find deeper evidence lines"
-                                                :type Boolean}
-                                    :class {:description "When recursive is true, filter selection to instances of a given class. Include subclass hierarchy."
-                                            :type :SEPIOClass}}}
-            :iri {:description "IRI of this evidence item"
-                  :type String}
-            :type {:description "Type of this evidence item"
-                   :type (list :Class)}
-            :description {:descripiton "A description of the evidence item"
-                          :type String}}}
-
-  :GenomicCoordinate
+ {:GenomicCoordinate
   {:description "Genomic coordinate of a Gene or Region"
    :fields {:build {:type String
                     :description "The build name"}
@@ -146,134 +72,16 @@ the context of a formal evalutation framework"
                       :description "End coordinate"}
             :strand {:type String
                      :description "Strand the feature appears on."}}}
-
   :GenomicFeature
   {:description "Genomic feature represented by a Gene or Region"
-   :fields {:coordinates {:type (list :GenomicCoordinate)}}}
-
-  :Curation
-  {:fields {:report_date {:type String}}}}
+   :fields {:coordinates {:type (list :GenomicCoordinate)}}}}
 
  :objects
- {:Contribution
-  {:description "A container describing an act of contribution to a piece of data"
-   :fields {:iri {:type String
-                  :resolve :resource/iri
-                  :description "IRI of the Contribution record. Value is not persistent, subject to change."}
-            :agent {:type String
-                    :resolve :contribution/agent
-                    :description "Reference to the agent who made the contribution"}
-            :agent_role {:type String
-                         :resolve :contribution/agent-role
-                         :description "The role with which the agent made the contribution (author, evaluator, transformer, etc). Similar to 'contribution type' but from the agent's perspective."}
-            :activity_date {:type String
-                            :resolve :contribution/activity-date
-                            :description "When the contribution was made."}}}
-
-  :Variant
-  {:description "An instance of variation in a genomic sequence."
-   :fields {:iri {:type String
-                  :resolve :resource/iri
-                  :description "IRI of the variant record."}
-            :id {:type String
-                 :resolve :variant/id
-                 :description "Persistent identifier for the piece of knowledge (http://purl.org/dc/terms/isVersionOf)"}
-            :name {:type String
-                   :resolve :variant/name
-                   :description "The preferred label of the variant. Not necessarily a stable identifier."}
-            :genes {:type (list :ClinVarGene)
-                    :resolve :variant/genes
-                    :description "Genes in which this variant occurs."}}}
-
-  :ClinicalAssertion
-  {:description "A single assertion about clinical or phenotypic significance of a genomic feature."
-   :fields {:iri {:type String
-                  :resolve :resource/iri
-                  :description "IRI of the assertion. Scheme based on where the assertion was originally submitted."}
-            :id {:type String
-                 :resolve :clinvar/clinical-assertion-version-of
-                 :description "Persistent identifier for the piece of knowledge (http://purl.org/dc/terms/isVersionOf)"}
-            :version {:type String
-                      :resolve :clinvar/clinical-assertion-version
-                      :description "Version of the record. Record owner may increment when a change within the record was significant enough to change the meaning."}
-            :subject {:type :Variant
-                      :resolve :clinvar/clinical-assertion-subject
-                      :description "Subject of the assertion. For variant assertions this will be a variant."}
-            :predicate {:type String
-                        :resolve :clinvar/clinical-assertion-predicate
-                        :description "Predicate of the assertion. What is being asserted about the subject."}
-            :object {:type String
-                     :resolve :clinvar/clinical-assertion-object
-                     :description "Object of the assertion. What the subject has by relation of the predicate."}
-            :contribution {:type :Contribution
-                           :resolve :clinvar/clinical-assertion-contribution
-                           :description "Node holding information about a contribution to the record."}
-            :review_status {:type String
-                            :resolve :clinvar/clinical-assertion-review-status
-                            :description "ClinVar review status field. Interpretable as the inferred confidence in the assertion by the knowledge base, not the assertion creator."}
-            :release_date {:type String
-                           :resolve :clinvar/clinical-assertion-release-date
-                           :description "Date upstream knowledge base validated the submitted data. (Date ClinVar incorporated into a release.)"}
-            :date_updated {:type String
-                           :resolve :clinvar/clinical-assertion-date-updated
-                           :description "Date the record was last updated. This is a record level timestamp, not about the assertion, but the record as it exists in the knowledge base."}
-            :allele_origins {:type (list String)
-                             :resolve :clinvar/clinical-assertion-allele-origin
-                             :description "Assertion submitter specified origin for their observation of the variation."}
-            :collection_methods {:type (list String)
-                                 :resolve :clinvar/clinical-assertion-collection-method
-                                 :description "Assertion submitted specified method used to collect the information included in the assertion."}
-            :classification_context {:type String
-                                     :resolve :clinvar/clinical-assertion-classification-context
-                                     :description "ClinGen Classification Context"}
-            }}
-
-
-
-  :AggregateVariantAssertion
-  {:description "An aggregation of assertion information about a variation"
-   :fields {:iri {:type String
-                  :resolve :resource/iri
-                  :description "Unique identifier for a version of the piece of knowledge."}
-            :id {:type String
-                 :resolve :clinvar/aggregate-assertion-version-of
-                 :description "Persistent identifier for the piece of knowledge, not a version of it."}
-            :version {:type String
-                      :resolve :clinvar/aggregate-assertion-version
-                      :description "Data version of the record. Values within the record may change without the version changing."}
-            :release_date {:type String
-                           :resolve :clinvar/aggregate-assertion-release-date
-                           :description "Date upstream knowledge base validated the submitted data. (Date ClinVar incorporated into a release.)"}
-            :review_status {:type String
-                            :resolve :clinvar/aggregate-assertion-review-status
-                            :description "ClinVar review status field. Interpretable as the inferred confidence in the assertion by the knowledge base, not the assertion creator."}
-            :subject {:type :Variant
-                      :resolve :clinvar/aggregate-assertion-subject
-                      :description "Subject of the assertion. For variant assertions this will be a variant."}
-            :predicate {:type String
-                        :resolve :clinvar/aggregate-assertion-predicate
-                        :description "Predicate of the aggregate assertion."}
-            :object {:type String
-                     :resolve :clinvar/aggregate-assertion-object
-                     :description "Object of the aggregate assertion. Given arbitrary objects of member assertions, the aggregate object may not be useful."}
-            :members {:type (list :ClinicalAssertion)
-                      :resolve :clinvar/aggregate-assertion-members
-                      :description "List of member assertions of the aggregate assertion."}
-            }}
-
-  :ClinVarGene
-  {:description "A Gene, but within the context of ClinVar Curation efforts."
-   :fields {:iri {:type String
-                  :resolve :resource/iri}
-            :name {:type String
-                   :resolve :clinvar/gene-preferred-label}
-            :symbol {:type String
-                     :resolve :clinvar/gene-symbol}}
-   }
-
-  :Gene
+ {:Gene
   {:description "A genomic feature (a gene or a region). Along with conditions, one of the basic units of curation."
-   :implements [:Resource]
+   ;; TODO ensure Gene respects resource contract
+   ;; or implement Gene in new schema
+   ;; :implements [:Resource]
    :fields {:iri {:type String
                   :resolve :resource/iri
                   :description "IRI representing the gene. Uses NCBI gene identifiers"}
@@ -341,6 +149,7 @@ the context of a formal evalutation framework"
                                      :resolve :genetic-condition/gene-dosage-curation
                                      :description "Dosage sensitivity curation associated with this genetic condition."}}}
 
+  ;; TODO may not be used? investigate.
   :Coordinate
   {:description "a genomic coordinate"
    :implements [:GenomicCoordinate]
@@ -362,64 +171,66 @@ the context of a formal evalutation framework"
             :end_pos {:type Int
                       :resolve :coordinate/end-pos
                       :description "The coordinate end position."}}}
+  
+  ;; TODO may not be used? investigate.
+  ;; :GeneFeature
+  ;; {:description "A gene feature"
+  ;;  :implements [:Resource :GenomicFeature]
+  ;;  :fields {:iri {:type String
+  ;;                 :resolve :resource/iri
+  ;;                 :description "IRI representing the gene. Uses NCBI gene identifiers"}
+  ;;           :curie {:type String
+  ;;                   :resolve :resource/curie}
+  ;;           :label {:type String
+  ;;                   :resolve :resource/label
+  ;;                   :description "Gene symbol"}
+  ;;           :hgnc_id {:type String
+  ;;                     :resolve :gene-feature/hgnc-id
+  ;;                     :description "HGNC ID of gene"}
+  ;;           :gene_type {:type String
+  ;;                       :resolve :gene-feature/gene-type
+  ;;                       :description "The gene type"}
+  ;;           :locus_type {:type String
+  ;;                        :resolve :gene-feature/locus-type
+  ;;                        :description "The gene locus type"}
+  ;;           :previous_symbols {:type String
+  ;;                              :resolve :gene-feature/previous-symbols
+  ;;                              :description "The list of previous gene symbols"}
+  ;;           :alias_symbols {:type String
+  ;;                           :resolve :gene-feature/alias-symbols
+  ;;                           :description "The list of gene aliases"}
+  ;;           :chromosomal_band {:type String
+  ;;                              :resolve :gene-feature/chromosomal-band
+  ;;                              :description "The chromosomal location"}
+  ;;           :function {:type String
+  ;;                      :resolve :gene-feature/function
+  ;;                      :description "A description of the genes function"}
+  ;;           :coordinates {:type (list :Coordinate)
+  ;;                         :resolve :gene-feature/coordinates
+  ;;                         :description "Coordinates of the feature"}}}
 
-  :GeneFeature
-  {:description "A gene feature"
-   :implements [:Resource :GenomicFeature]
-   :fields {:iri {:type String
-                  :resolve :resource/iri
-                  :description "IRI representing the gene. Uses NCBI gene identifiers"}
-            :curie {:type String
-                    :resolve :resource/curie}
-            :label {:type String
-                    :resolve :resource/label
-                    :description "Gene symbol"}
-            :hgnc_id {:type String
-                      :resolve :gene-feature/hgnc-id
-                      :description "HGNC ID of gene"}
-            :gene_type {:type String
-                        :resolve :gene-feature/gene-type
-                        :description "The gene type"}
-            :locus_type {:type String
-                         :resolve :gene-feature/locus-type
-                         :description "The gene locus type"}
-            :previous_symbols {:type String
-                               :resolve :gene-feature/previous-symbols
-                               :description "The list of previous gene symbols"}
-            :alias_symbols {:type String
-                            :resolve :gene-feature/alias-symbols
-                            :description "The list of gene aliases"}
-            :chromosomal_band {:type String
-                               :resolve :gene-feature/chromosomal-band
-                               :description "The chromosomal location"}
-            :function {:type String
-                       :resolve :gene-feature/function
-                       :description "A description of the genes function"}
-            :coordinates {:type (list :Coordinate)
-                          :resolve :gene-feature/coordinates
-                          :description "Coordinates of the feature"}}}
-
-  :RegionFeature
-  {:description "A region feature"
-   :implements [:Resource :GenomicFeature]
-   :fields {:iri {:type String
-                  :resolve :resource/iri
-                  :description "IRI representing the region"}
-            :curie {:type String
-                    :resolve :resource/curie}
-            :label {:type String
-                    :resolve :resource/label
-                    :description "Region symbol"}
-            :chromosomal_band {:type String
-                               :resolve :region-feature/chromosomal-band
-                               :description "The chromosomal location"}
-            :coordinates {:type (list :Coordinate)
-                          :resolve :region-feature/coordinates
-                          :description "Coordinates of the feature"}}}
+  ;; TODO may not be used? investigate.
+  ;; :RegionFeature
+  ;; {:description "A region feature"
+  ;;  :implements [:Resource :GenomicFeature]
+  ;;  :fields {:iri {:type String
+  ;;                 :resolve :resource/iri
+  ;;                 :description "IRI representing the region"}
+  ;;           :curie {:type String
+  ;;                   :resolve :resource/curie}
+  ;;           :label {:type String
+  ;;                   :resolve :resource/label
+  ;;                   :description "Region symbol"}
+  ;;           :chromosomal_band {:type String
+  ;;                              :resolve :region-feature/chromosomal-band
+  ;;                              :description "The chromosomal location"}
+  ;;           :coordinates {:type (list :Coordinate)
+  ;;                         :resolve :region-feature/coordinates
+  ;;                         :description "Coordinates of the feature"}}}
 
   :ModeOfInheritance
   {:description "Mode of inheritance for a genetic condition."
-   :implements [:Resource]
+;;    :implements [:Resource]
    :fields {:iri {:type String
                   :resolve :resource/iri
                   :description "IRI for the condition. Currently MONDO ids are supported."}
@@ -436,7 +247,8 @@ the context of a formal evalutation framework"
 
   :Disease
   {:description "A disease or condition. May be a genetic condition, linked to a specific disease or mode of inheritance. Along with gene, one of the basic units of curation."
-   :implements [:Resource]
+   ;; TODO Ensure Disease conforms to Resource contract
+   ;; :implements [:Resource]
    :fields {:iri {:type String
                   :resolve :resource/iri
                   :description "IRI for the condition. Currently MONDO ids are supported."}
@@ -455,9 +267,10 @@ the context of a formal evalutation framework"
             :last_curated_date {:type String
                                 :resolve :condition/last-curated-date
                                 :description "Most recent date a curation (of any kind) has been performed on this condition."}
-            :propositions {:type (list :Proposition)
-                           :descriptions "Propositions about this disease."
-                           :resolve :condition/propositions}
+            ;; TODO Ensure this isn't being used.
+            ;; :propositions {:type (list :Proposition)
+            ;;                :descriptions "Propositions about this disease."
+            ;;                :resolve :condition/propositions}
             :curation_activities {:type (list :CurationActivity)
                                   :description "The curation activities that have published reports on the disease"
                                   :resolve :condition/curation-activities}
@@ -476,8 +289,9 @@ the context of a formal evalutation framework"
             :direct_superclasses {:type (list :Disease)
                                   :resolve :condition/direct-superclasses
                                   :description "direct superclasses of this disease only."}
-            :assertions {:type (list :Assertion)
-                         :description "assertions made about this disease"}}}
+            ;; :assertions {:type (list :Assertion)
+            ;;              :description "assertions made about this disease"}
+            }}
 
   :Diseases
   {:description "A collection of diseases."
@@ -496,6 +310,7 @@ the context of a formal evalutation framework"
                     :resolve :resource/label
                     :description "Label for this resourcce"}}}
 
+  ;; TODO make sure this isn't being used
   :Classification
   {:description "The result of an assertion relative to a proposition"
    :fields {:iri {:type String
@@ -508,6 +323,7 @@ the context of a formal evalutation framework"
                     :resolve :resource/label
                     :description "Label for this resourcce"}}}
 
+  ;; TODO make sure this isn't being used
   :Evidence
   {:description "An evidence item, typically used in support of an assertion made as a part of a curation"
    :fields {:source {:type String
@@ -520,7 +336,7 @@ the context of a formal evalutation framework"
 
   :GeneDosageCuration
   {:description "A complete gene dosage curation containing one or more dosage propositions"
-   :implements [:Resource]
+   ;; :implements [:Resource]
    :fields {:iri {:type String
                   :resolve :resource/iri
                   :description "IRI for the Dosage curation."}
@@ -554,6 +370,7 @@ the context of a formal evalutation framework"
             :morbid_phenotypes {:type (list String)
                                 :resolve :gene-dosage/morbid-phenotypes
                                 :description "Gene morbidity phenotypes"}
+            ;; TODO omim id is type Boolean? Really?
             :omim {:type Boolean
                    :resolve :gene-dosage/omim
                    :description "The OMIM curie for thsi gene or region."}
@@ -572,7 +389,8 @@ the context of a formal evalutation framework"
 
   :DosageAssertion
   {:description "An individual dosage proposition, either a Haplo Insufficiency proposition or a Triplo Sensitivity proposition"
-   :implements [:Resource :Curation]
+   ;; TODO, revisit interfaces implemented by this object
+   ;; :implements [:Resource :Curation]
    :fields {:iri {:type String
                   :resolve :resource/iri
                   :description "Identifier for the curation"}
@@ -618,7 +436,9 @@ the context of a formal evalutation framework"
                       :description "Disease associated with this assertion"}}}
 
   :ActionabilityCuration
-  {:implements [:Resource :Curation]
+  {
+   ;; TODO Revisit interfaces implemented by this 
+   ;;:implements [:Resource :Curation]
    :fields
    {:iri {:type String
           :resolve :resource/iri}
@@ -634,7 +454,9 @@ the context of a formal evalutation framework"
     :source {:type String :resolve :actionability/source}}}
 
   :ActionabilityAssertion
-  {;;:implements [:Resource :Curation]
+  {
+   ;; TODO Revisit interfaces implemented by this 
+   ;;:implements [:Resource :Curation]
    :description "An assertion regarding the Actionability of a gene-disease pair."
    :fields
    {:report_date {:type String :resolve :ac-assertion/report-date}
@@ -655,7 +477,9 @@ the context of a formal evalutation framework"
            :resolve :gv-contribution/date}}}
   
   :GeneValidityAssertion
-  {:implements [:Resource :Curation :EvidenceItem]
+  {
+   ;; TODO Revisit interfaces implemented by this 
+   ;;:implements [:Resource :Curation :EvidenceItem]
    :fields
    {:iri {:type String
           :resolve :resource/iri
@@ -692,11 +516,12 @@ the context of a formal evalutation framework"
     :specified_by {:type :Criteria
                    :description "Criteria used by the curators to create the gene validity assertion"
                    :resolve :gene-validity/specified-by}
-    :evidence_lines {:type (list :EvidenceLine)
-                     :args {:recursive {:type Boolean}
-                            :class {:type :SEPIOClass}}
-                     :description "Evidence lines used in support of the assertion."
-                     :resolve :evidence-item/evidence-lines}
+    ;; Make sure this isn't being used too...
+    ;; :evidence_lines {:type (list :EvidenceLine)
+    ;;                  :args {:recursive {:type Boolean}
+    ;;                         :class {:type :SEPIOClass}}
+    ;;                  :description "Evidence lines used in support of the assertion."
+    ;;                  :resolve :evidence-item/evidence-lines}
     :has_format {:type String
                  :description "Format of the Legacy JSON from the GCI."
                  :resolve :gene-validity/has-format}
@@ -706,101 +531,104 @@ the context of a formal evalutation framework"
     :description {:type String
                   :resolve :evidence/description}}}
 
-  :GenericEvidenceLine {:description "A SEPIO evidence line without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
-                        :implements [:EvidenceLine]
-                        :fields
-                        {:evidence_items {:type (list :EvidenceItem)
-                                          :resolve :evidence-line/evidence-items}
-                         :iri {:type String
-                               :resolve :resource/iri}
-                         :curie {:type String
-                               :resolve :resource/curie}
-                         :type {:type (list :Class)
-                                :resolve :resource/type}
-                         :score {:type Float
-                                 :resolve :evidence-line/score}
-                         :description {:type String
-                                       :resolve :evidence/description}}}
+  ;; None of these should be in use, commenting for now to be sure
+  
+  ;; :GenericEvidenceLine {:description "A SEPIO evidence line without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
+  ;;                       :implements [:EvidenceLine]
+  ;;                       :fields
+  ;;                       {:evidence_items {:type (list :EvidenceItem)
+  ;;                                         :resolve :evidence-line/evidence-items}
+  ;;                        :iri {:type String
+  ;;                              :resolve :resource/iri}
+  ;;                        :curie {:type String
+  ;;                              :resolve :resource/curie}
+  ;;                        :type {:type (list :Class)
+  ;;                               :resolve :resource/type}
+  ;;                        :score {:type Float
+  ;;                                :resolve :evidence-line/score}
+  ;;                        :description {:type String
+  ;;                                      :resolve :evidence/description}}}
 
-  :GenericEvidenceItem {:description "A SEPIO evidence item without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
-                        :implements [:EvidenceItem]
-                        :fields
-                        {:evidence_lines {:type (list :EvidenceLine)
-                                          :args {:recursive {:type Boolean}
-                                                 :class {:type :SEPIOClass}}
-                                          :resolve :evidence-item/evidence-lines}
-                         :iri {:type String
-                               :resolve :resource/iri}
-                         :curie {:type String
-                               :resolve :resource/curie}
-                         :type {:type (list :Class)
-                                :resolve :resource/type}
-                         :description {:type String
-                                       :resolve :evidence/description}}}
+  ;; :GenericEvidenceItem {:description "A SEPIO evidence item without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
+  ;;                       :implements [:EvidenceItem]
+  ;;                       :fields
+  ;;                       {:evidence_lines {:type (list :EvidenceLine)
+  ;;                                         :args {:recursive {:type Boolean}
+  ;;                                                :class {:type :SEPIOClass}}
+  ;;                                         :resolve :evidence-item/evidence-lines}
+  ;;                        :iri {:type String
+  ;;                              :resolve :resource/iri}
+  ;;                        :curie {:type String
+  ;;                              :resolve :resource/curie}
+  ;;                        :type {:type (list :Class)
+  ;;                               :resolve :resource/type}
+  ;;                        :description {:type String
+  ;;                                      :resolve :evidence/description}}}
 
-  :GenericAssertion {:description "A SEPIO assertion without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
-                     :implements [:EvidenceItem :Assertion]
-                     :fields
-                     {:subject {:type :Resource
-                                :resolve :assertion/subject}
-                      :predicate {:type :Resource
-                                  :resolve :assertion/predicate}
-                      :object {:type :Resource
-                               :resolve :assertion/object}
-                      :evidence_lines {:type (list :EvidenceLine)
-                                       :args {:recursive {:type Boolean}
-                                              :class {:type :SEPIOClass}}
-                                       :resolve :assertion/evidence-lines}
-                      :iri {:type String
-                            :resolve :resource/iri}
-                      :curie {:type String
-                               :resolve :resource/curie}
-                      :type {:type (list :Class)
-                             :resolve :resource/type}
-                      :description {:type String
-                                    :resolve :evidence/description}}}
+  ;; :GenericAssertion {:description "A SEPIO assertion without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
+  ;;                    :implements [:EvidenceItem :Assertion]
+  ;;                    :fields
+  ;;                    {:subject {:type :Resource
+  ;;                               :resolve :assertion/subject}
+  ;;                     :predicate {:type :Resource
+  ;;                                 :resolve :assertion/predicate}
+  ;;                     :object {:type :Resource
+  ;;                              :resolve :assertion/object}
+  ;;                     :evidence_lines {:type (list :EvidenceLine)
+  ;;                                      :args {:recursive {:type Boolean}
+  ;;                                             :class {:type :SEPIOClass}}
+  ;;                                      :resolve :assertion/evidence-lines}
+  ;;                     :iri {:type String
+  ;;                           :resolve :resource/iri}
+  ;;                     :curie {:type String
+  ;;                              :resolve :resource/curie}
+  ;;                     :type {:type (list :Class)
+  ;;                            :resolve :resource/type}
+  ;;                     :description {:type String
+  ;;                                   :resolve :evidence/description}}}
 
-    :GenericProposition {:description "A SEPIO proposition without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
-                     :implements [:EvidenceItem :Proposition]
-                     :fields
-                     {:subject {:type :Resource
-                                :resolve :assertion/subject}
-                      :predicate {:type :Resource
-                                  :resolve :assertion/predicate}
-                      :object {:type :Resource
-                               :resolve :assertion/object}
-                      :evidence_lines {:type (list :EvidenceLine)
-                                       :args {:recursive {:type Boolean}
-                                              :class {:type :SEPIOClass}}
-                                       :resolve :assertion/evidence-lines}
-                      :subject_of {:type (list :Assertion)
-                                   :resolve :assertion/subject-of}
-                      :iri {:type String
-                            :resolve :resource/iri}
-                      :curie {:type String
-                               :resolve :resource/curie}
-                      :type {:type (list :Class)
-                             :resolve :resource/type}
-                      :description {:type String
-                                    :resolve :evidence/description}}}
+  ;;   :GenericProposition {:description "A SEPIO proposition without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
+  ;;                    :implements [:EvidenceItem :Proposition]
+  ;;                    :fields
+  ;;                    {:subject {:type :Resource
+  ;;                               :resolve :assertion/subject}
+  ;;                     :predicate {:type :Resource
+  ;;                                 :resolve :assertion/predicate}
+  ;;                     :object {:type :Resource
+  ;;                              :resolve :assertion/object}
+  ;;                     :evidence_lines {:type (list :EvidenceLine)
+  ;;                                      :args {:recursive {:type Boolean}
+  ;;                                             :class {:type :SEPIOClass}}
+  ;;                                      :resolve :assertion/evidence-lines}
+  ;;                     :subject_of {:type (list :Assertion)
+  ;;                                  :resolve :assertion/subject-of}
+  ;;                     :iri {:type String
+  ;;                           :resolve :resource/iri}
+  ;;                     :curie {:type String
+  ;;                              :resolve :resource/curie}
+  ;;                     :type {:type (list :Class)
+  ;;                            :resolve :resource/type}
+  ;;                     :description {:type String
+  ;;                                   :resolve :evidence/description}}}
 
-  :GenericResource {:description "An RDF resource without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
-                    :implements [:Resource]
-                    :fields
-                    {:iri {:type String
-                           :resolve :resource/iri}
-                     :curie {:type String
-                             :resolve :resource/curie}
-                     :label {:type String
-                             :resolve :resource/label}}}
+  ;; :GenericResource {:description "An RDF resource without further specialization. A field that resolves to this may recieve a specialized type in the future. It is not recommended to reference this type directly, but rather to refer to the fields available via the interface."
+  ;;                   :implements [:Resource]
+  ;;                   :fields
+  ;;                   {:iri {:type String
+  ;;                          :resolve :resource/iri}
+  ;;                    :curie {:type String
+  ;;                            :resolve :resource/curie}
+  ;;                    :label {:type String
+  ;;                            :resolve :resource/label}}}
 
   :GeneValidityAssertions
   {:description "A collection of gene validity curations."
    :fields {:curation_list {:type (list :GeneValidityAssertion)}
             :count {:type Int}}}
 
+  ;; TOOD check to see if this is being used
   :Criteria
-  {:implements [:Resource]
+  {;; :implements [:Resource]
    :description "Criteria used to perform curation."
    :fields
    {:iri {:type String
@@ -813,19 +641,20 @@ the context of a formal evalutation framework"
             :resolve :resource/label
             :description "Label for this resourcce"}}}
 
-  :Group
-  {:implements [:Resource]
-   :description "A group that may contain one or more users, and grant priveliges within Genegraph"
-   :fields
-   {:iri {:type String
-          :resolve :resource/iri
-          :description "IRI identifying this resource"}
-    :curie {:type String
-            :resolve :resource/curie
-            :description "CURIE of the IRI identifying this resource"}
-    :label {:type String
-            :resolve :resource/label
-            :description "Label for this resourcce"}}}
+  ;; TODO See if we can get rid of this
+  ;; :Group
+  ;; {:implements [:Resource]
+  ;;  :description "A group that may contain one or more users, and grant priveliges within Genegraph"
+  ;;  :fields
+  ;;  {:iri {:type String
+  ;;         :resolve :resource/iri
+  ;;         :description "IRI identifying this resource"}
+  ;;   :curie {:type String
+  ;;           :resolve :resource/curie
+  ;;           :description "CURIE of the IRI identifying this resource"}
+  ;;   :label {:type String
+  ;;           :resolve :resource/label
+  ;;           :description "Label for this resourcce"}}}
 
   :Agents
   {:description "A list of agents, with a possible limit, and a count of the total number matching the query"
@@ -833,28 +662,31 @@ the context of a formal evalutation framework"
    {:agent_list {:type (list :Agent)}
     :count {:type Int}}}
 
+  ;; TODO trim down the fields here to what's actually being used
   :Agent
-  {:implements [:Resource]
+  {;; :implements [:Resource]
    :description "A person or group. In this context, generally a ClinGen Domain Working Group responsible for producing one or more curations."
    :fields
-   {:iri {:type String
-          :resolve :resource/iri
-          :description "IRI identifying this agent."}
-    :curie {:type String
-            :resolve :resource/curie
-            :description "CURIE of the IRI identifying this agent."}
-    :label {:type String
-            :resolve :resource/label
-            :description "Name of the agent"}
-    :email {:type String
-            :resolve :user/email
-            :description "Email of user"}
-    :member_of {:type (list :Agent)
-                :resolve :user/member-of
-                :description "Returns the roles or groups a user is a member of."}
-    :is_admin {:type Boolean
-               :resolve :user/is-admin
-               :description "Returns true if the Agent is an administrator"}
+   {
+    ;; Removing fields that overlap functionality in combined schema
+    ;; :iri {:type String
+    ;;       :resolve :resource/iri
+    ;;       :description "IRI identifying this agent."}
+    ;; :curie {:type String
+    ;;         :resolve :resource/curie
+    ;;         :description "CURIE of the IRI identifying this agent."}
+    ;; :label {:type String
+    ;;         :resolve :resource/label
+    ;;         :description "Name of the agent"}
+    ;; :email {:type String
+    ;;         :resolve :user/email
+    ;;         :description "Email of user"}
+    ;; :member_of {:type (list :Agent)
+    ;;             :resolve :user/member-of
+    ;;             :description "Returns the roles or groups a user is a member of."}
+    ;; :is_admin {:type Boolean
+    ;;            :resolve :user/is-admin
+    ;;            :description "Returns true if the Agent is an administrator"}
 
     :gene_validity_assertions
     {:type :GeneValidityAssertions
@@ -873,33 +705,34 @@ the context of a formal evalutation framework"
                    :description "Filter assertions by role played by agent"
                    :default-value :APPROVER}}}
 
-    :genes
-    {:type :Genes
-     :resolve :affiliation/curated-genes
-     :args {:limit {:type Int
-                    :default-value 10
-                    :description "Number of records to return"}
-            :offset {:type Int
-                     :default-value 0
-                     :description "Index to begin returning records from"}
-            :text {:type String
-                   :description "Filter list for genes including text in symbol previous symbols, names, or previous names."}
-            :sort {:type :Sort
-                   :description "Order in which to sort genes."}}}
+    ;; :genes
+    ;; {:type :Genes
+    ;;  :resolve :affiliation/curated-genes
+    ;;  :args {:limit {:type Int
+    ;;                 :default-value 10
+    ;;                 :description "Number of records to return"}
+    ;;         :offset {:type Int
+    ;;                  :default-value 0
+    ;;                  :description "Index to begin returning records from"}
+    ;;         :text {:type String
+    ;;                :description "Filter list for genes including text in symbol previous symbols, names, or previous names."}
+    ;;         :sort {:type :Sort
+    ;;                :description "Order in which to sort genes."}}}
 
-    :diseases
-    {:type :Diseases
-     :resolve :affiliation/curated-diseases
-     :args {:limit {:type Int
-                    :default-value 10
-                    :description "Number of records to return"}
-            :offset {:type Int
-                     :default-value 0
-                     :description "Index to begin returning records from"}
-            :text {:type String
-                   :description "Filter list for genes including text in symbol previous symbols, names, or previous names."}
-            :sort {:type :Sort
-                   :description "Order in which to sort genes."}}}}}
+    ;; :diseases
+    ;; {:type :Diseases
+    ;;  :resolve :affiliation/curated-diseases
+    ;;  :args {:limit {:type Int
+    ;;                 :default-value 10
+    ;;                 :description "Number of records to return"}
+    ;;         :offset {:type Int
+    ;;                  :default-value 0
+    ;;                  :description "Index to begin returning records from"}
+    ;;         :text {:type String
+    ;;                :description "Filter list for genes including text in symbol previous symbols, names, or previous names."}
+    ;;         :sort {:type :Sort
+    ;;                :description "Order in which to sort genes."}}}
+    }}
 
   :ServerStatus
   {:fields
@@ -923,26 +756,27 @@ the context of a formal evalutation framework"
     :curations {:type (list :CurationActivity) :resolve :suggest/curations}
     :weight {:type Int :resolve :suggest/weight}}}
 
-  :Drug
-  {:description "RxNorm normalized names for clinical drugs."
-   :implements [:Resource]
-   :fields {:iri {:type String
-                  :resolve :resource/iri
-                  :description "IRI for the drug. Currently RXNorm ids are supported."}
-            :curie {:type String
-                    :resolve :resource/curie
-                    :description "CURIE of the IRI representing this resource."}
-            :label {:type String
-                    :resolve :resource/label
-                    :description "Label for the condition."}
-            :aliases {:type (list String)
-                      :resolve :drug/aliases
-                      :description "Alias drug names."}}}
+  ;; TODO remove last vestiges of RxNorm 
+  ;; :Drug
+  ;; {:description "RxNorm normalized names for clinical drugs."
+  ;;  :implements [:Resource]
+  ;;  :fields {:iri {:type String
+  ;;                 :resolve :resource/iri
+  ;;                 :description "IRI for the drug. Currently RXNorm ids are supported."}
+  ;;           :curie {:type String
+  ;;                   :resolve :resource/curie
+  ;;                   :description "CURIE of the IRI representing this resource."}
+  ;;           :label {:type String
+  ;;                   :resolve :resource/label
+  ;;                   :description "Label for the condition."}
+  ;;           :aliases {:type (list String)
+  ;;                     :resolve :drug/aliases
+  ;;                     :description "Alias drug names."}}}
 
-  :Drugs
-  {:description "A collection of drugs."
-   :fields {:drug_list {:type (list :Drug)}
-            :count {:type Int}}}
+  ;; :Drugs
+  ;; {:description "A collection of drugs."
+  ;;  :fields {:drug_list {:type (list :Drug)}
+  ;;           :count {:type Int}}}
 
   :Statistics
   {:fields
@@ -1041,40 +875,7 @@ the context of a formal evalutation framework"
    {:sort_fields {:type (list :sort_spec)}}}}
 
  :queries
- {:clinical_assertion {:type :ClinicalAssertion
-                       :args {:iri {:type String}}
-                       :resolve :clinvar/clinical-assertion-single}
-  :clinical_assertions {:type (list :ClinicalAssertion)
-                        :args {:subject {:type String}
-                               :timeframe {:type String
-                                           :default-value "LATEST"
-                                           :description "ALL, LATEST (coming soon: or an ISO8601 interval string specifying datetime range to return values from)."}
-                               :limit {:type Int
-                                       :default-value 10}
-                               :offset {:type Int
-                                        :default-value 0}}
-                        :resolve :clinvar/clinical-assertion-list}
-  :aggregate_assertions {:type (list :AggregateVariantAssertion)
-                         :args {:id {:type String}
-                                :subject {:type String}
-                                :timeframe {:type String
-                                            :default-value "LATEST"
-                                            :description "ALL, LATEST (coming soon: or an ISO8601 interval string specifying datetime range to return values from)."}
-                                :limit {:type Int}
-                                :offset {:type Int}}
-                         :resolve :clinvar/aggregate-assertion-list}
-
-  :clinvar_genes {:type (list :ClinVarGene)
-                  :args {:id {:type Int}
-                         :symbol {:type String}
-                         :limit {:type Int
-                                 :default-value 10}
-                         :offset {:type Int
-                                  :default-value 0}}
-                  :resolve :clinvar/gene-list}
-
-
-  :gene {:type (non-null :Gene)
+ {:gene {:type (non-null :Gene)
          :args {:iri {:type String}}
          :resolve :gene/gene-query}
   :genes {:type :Genes
@@ -1197,8 +998,9 @@ the context of a formal evalutation framework"
   :user_query {:type :Agent
                :args {:email {:type String}}
                :resolve :user/user-query}
-  :groups_query {:type (list :Group)
-                 :resolve :group/groups}
+  ;; TODO should be able to get rid of this ...
+  ;; :groups_query {:type (list :Group)
+  ;;                :resolve :group/groups}
   :current_user {:type :Agent
                  :resolve :user/current-user}
   :totals {:type :Totals
@@ -1215,20 +1017,21 @@ the context of a formal evalutation framework"
                               :default-value (list :ALL)
                               :description "List of Curation Activities to filter suggestions with."}}
             :resolve :suggest/suggest}
-  :drug {:type (non-null :Drug)
-         :args {:iri {:type String}}
-         :resolve :drug/drug-query}
-  :drugs {:type :Drugs
-          :args {:limit {:type Int
-                         :default-value 10
-                         :description "Number of records to return"}
-                 :offset {:type Int
-                          :default-value 0
-                          :description "Index to begin returning records from"}
-                 :text {:type String
-                        :description "Filter list for drugs including text in name and synonyms."}
-                 :sort {:type :Sort
-                        :description "Order in which to sort drugs"}}
-          :resolve :drug/drugs}
+  ;; TODO Just say no to drugs
+  ;; :drug {:type (non-null :Drug)
+  ;;        :args {:iri {:type String}}
+  ;;        :resolve :drug/drug-query}
+  ;; :drugs {:type :Drugs
+  ;;         :args {:limit {:type Int
+  ;;                        :default-value 10
+  ;;                        :description "Number of records to return"}
+  ;;                :offset {:type Int
+  ;;                         :default-value 0
+  ;;                         :description "Index to begin returning records from"}
+  ;;                :text {:type String
+  ;;                       :description "Filter list for drugs including text in name and synonyms."}
+  ;;                :sort {:type :Sort
+  ;;                       :description "Order in which to sort drugs"}}
+  ;;         :resolve :drug/drugs}
   :statistics {:type :Statistics
                :resolve :actionability/statistics-query}}}
