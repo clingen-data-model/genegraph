@@ -11,7 +11,10 @@
             [genegraph.source.graphql.schema.bibliographic-resource :as model-bibliographic-resource]
             [com.walmartlabs.lacinia :as lacinia]
             [genegraph.database.util :refer [tx]]
-            [genegraph.source.graphql.common.schema :as schema-builder]))
+            [genegraph.source.graphql.common.schema :as schema-builder]
+            [com.walmartlabs.lacinia.schema :as lacinia-schema]
+            [genegraph.source.graphql.core :as legacy-schema]
+            [medley.core :as medley]))
 
 (def model
   [model-types/rdf-to-graphql-type-mappings
@@ -33,6 +36,11 @@
 
 (defn schema []
   (schema-builder/schema model))
+
+(defn merged-schema []
+  (-> (legacy-schema/schema-for-merge)
+      (medley/deep-merge (schema-builder/schema-description model))
+      lacinia-schema/compile))
 
 (defn schema-description []
   (schema-builder/schema-description model))

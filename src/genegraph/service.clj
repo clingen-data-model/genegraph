@@ -232,7 +232,7 @@
 (defn dev-service 
   "Service map to be used for development mode."
   ([] (dev-service (if env/use-experimental-schema
-                     experimental-schema/schema
+                     experimental-schema/merged-schema
                      gql/schema)))
   ([gql-schema]
    (service-map (dev-interceptors gql-schema)
@@ -242,7 +242,7 @@
 (defn service
   "Service map to be used for production mode"
   ([] (service (if env/use-experimental-schema
-                 (experimental-schema/schema)
+                 (experimental-schema/merged-schema)
                  (gql/schema))))
   ([gql-schema]
    (service-map (prod-interceptors gql-schema)
