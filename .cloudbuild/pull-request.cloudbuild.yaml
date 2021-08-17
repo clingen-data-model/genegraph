@@ -1,0 +1,11 @@
+# Pull request checks for clinvar-submitter
+#
+# Command line test usage:
+# gcloud builds submit --project=clingen-stage --config .cloudbuild/pull-request.cloudbuild.yaml \
+# .
+
+# Builds clinvar-submitter and tags for both stage and prod image repositories
+steps:
+- name: 'hadolint/hadolint'
+  entrypoint: '/bin/hadolint'
+  args: [ './Dockerfile']
