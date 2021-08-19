@@ -2,6 +2,7 @@
   "Functions and environment useful for developing Genegraph at the REPL"
   (:require [genegraph.database.query :as q]
             [genegraph.database.load :as l]
+            [genegraph.source.graphql.experimental-schema :as experimental-schema]
             [genegraph.database.instance :as db-instance]
             [genegraph.env :as env]
             [genegraph.database.util :as db-util :refer
@@ -14,7 +15,8 @@
             [genegraph.migration :as migrate]
             [genegraph.sink.rocksdb :as rocks-sink]
             [genegraph.transform.gene-validity :as gene-validity]
-            [genegraph.transform.gci-legacy :as gci-legacy]
+            [genegraph.transform.gene-validity-refactor :as gene-validity-refactor]
+            [medley.core :as medley]
             [cheshire.core :as json]
             [clojure.data.csv :as csv]
             [clojure.string :as s]
@@ -42,7 +44,7 @@
 (defn process-event-seq
   "Run event sequence through event processor"
   ([event-seq]
-   (process-event-seq event-seq {}))
+   (process-event-seq {} event-seq))
   ([opts event-seq]
    (write-tx
     (doseq [event event-seq]
@@ -234,3 +236,24 @@
                    [[k]])))
              m))
     []))
+
+(defn construct-gene-validity-events [input-file output-directory]
+  (with-open [r (io/reader input-file)]
+    (let [input-json (json/parse-stream r)]
+      (doseq [curation input-json]
+        (with-open [w (io/writer (str output-directory
+                                      "/"
+                                      (get curation "uuid")
+                                      ".edn"))]
+          (binding [*out* w]
+            (pr {::event/key (get curation "uuid")
+                 ::event/value (json/encode curation)
+                 ::ann/format :gene-validity-raw})))))))
+
+(defn event-seq-from-directory [directory]
+  (let [files (->> directory
+                  io/file
+                  file-seq
+                  (filter #(re-find #".edn" (.getName %))))]
+    (map #(edn/read-string (slurp %)) files)))
+

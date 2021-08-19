@@ -1,0 +1,14 @@
+prefix gci: <http://gci.clinicalgenome.org/>
+
+construct {
+  ?classification :sepio/qualified-contribution _:contrib .
+
+  _:contrib :sepio/has-agent ?secondaryContributor ;
+  :bfo/realizes :sepio/SecondaryContributorRole .
+}
+where {
+  ?classification a gci:provisionalClassification ;
+  gci:classificationContributors ?secondaryContributorID .
+
+  BIND(IRI(CONCAT(?affbase, ?secondaryContributorID)) AS ?secondaryContributor) .
+}

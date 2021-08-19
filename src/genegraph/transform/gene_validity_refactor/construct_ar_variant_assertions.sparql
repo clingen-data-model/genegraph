@@ -1,13 +1,11 @@
 prefix gci: <http://gci.clinicalgenome.org/>
 construct
 {
-  ?geneticEvidenceCriterionAssessment :sepio/has-evidence-line ?autosomalRecessiveVariantEvidenceLine .
+  ?geneticEvidenceCriterionAssessment :sepio/has-evidence
+  ?autosomalRecessiveVariantEvidenceLine .
   
-  ?autosomalRecessiveVariantEvidenceLine a :sepio/AutosomalRecessiveVariantEvidenceLine ;
-  :sepio/has-evidence-item ?autosomalRecessiveVariantCriterionAssessment ;
+  ?autosomalRecessiveVariantCriterionAssessment a :sepio/AutosomalRecessiveVariantCriterionAssessment ;
   :sepio/evidence-line-strength-score ?autosomalRecessiveDisorderTotal .  
-
-  ?autosomalRecessiveVariantCriterionAssessment a :sepio/AutosomalRecessiveVariantCriterionAssessment .
 }
 where
 {
@@ -21,5 +19,5 @@ where
   ?autosomalRecessiveDisorderTree gci:pointsCounted  ?autosomalRecessiveDisorderTotal .
 
   BIND (IRI(CONCAT(str(?classification), "_ar_ca")) AS ?autosomalRecessiveVariantCriterionAssessment) .
-  BIND (IRI(CONCAT(str(?classification), "_ar_el")) AS ?autosomalRecessiveVariantEvidenceLine ) .
+
 }

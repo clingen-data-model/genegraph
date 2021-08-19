@@ -1,13 +1,14 @@
 prefix gci: <http://gci.clinicalgenome.org/>
 construct
 {
-  ?classification :sepio/has-evidence-line ?geneticEvidenceLine .
+  ?classification :sepio/has-evidence   ?geneticEvidenceCriterionAssessment .
   
-  ?geneticEvidenceLine a :sepio/GeneticEvidenceLine ;
-  :sepio/has-evidence-item ?geneticEvidenceCriterionAssessment ;
-  :sepio/evidence-line-strength-score ?geneticEvidenceTotal .
+  # ?geneticEvidenceLine a :sepio/GeneticEvidenceLine ;
+  # :sepio/has-evidence-item ?geneticEvidenceCriterionAssessment ;
+  # :sepio/evidence-line-strength-score ?geneticEvidenceTotal .
 
   ?geneticEvidenceCriterionAssessment a :sepio/GeneticEvidenceCriterionAssessment ;
+  :sepio/evidence-line-strength-score ?geneticEvidenceTotal .
 }
 where
 {
@@ -17,5 +18,5 @@ where
   ?pointsTree gci:geneticEvidenceTotal ?geneticEvidenceTotal .
 
   BIND (IRI(CONCAT(str(?classification), "_genetic_evidence_criterion_assessment")) AS ?geneticEvidenceCriterionAssessment) .
-  BIND (IRI(CONCAT(str(?classification), "_genetic_evidence_line")) AS ?geneticEvidenceLine) .
+  # BIND (IRI(CONCAT(str(?classification), "_genetic_evidence_line")) AS ?geneticEvidenceLine) .
 }

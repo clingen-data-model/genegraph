@@ -2,19 +2,13 @@ prefix gci: <http://gci.clinicalgenome.org/>
 
 construct
 {
-  ?geneticEvidenceCriterionAssessment :sepio/has-evidence-line ?caseControlEvidenceLine , ?segregationEvidenceLine .
+  ?geneticEvidenceCriterionAssessment :sepio/has-evidence ?caseControlEvidenceCriterionAssessment , ?segregationCriterionAssessment .
 
-  ?caseControlEvidenceLine a :sepio/CaseControlEvidenceLine ;
-  :sepio/has-evidence-item ?caseControlEvidenceCriterionAssessment ;
+  ?caseControlEvidenceCriterionAssessment a :sepio/CaseControlEvidenceCriterionAssessment ;
   :sepio/evidence-line-strength-score ?caseControlTotal .
 
-  ?caseControlEvidenceCriterionAssessment a :sepio/CaseControlEvidenceCriterionAssessment .
-
-  ?segregationEvidenceLine a :sepio/SegregationEvidenceLine ;
-  :sepio/has-evidence-item ?segregationCriterionAssessment ;
+  ?segregationCriterionAssessment a :sepio/SegregationCriterionAssessment ;
   :sepio/evidence-line-strength-score ?segregationTotal .
-
-  ?segregationCriterionAssessment a :sepio/SegregationCriterionAssessment .
   
 }
 where

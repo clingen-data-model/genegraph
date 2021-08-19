@@ -242,6 +242,15 @@
       (util/attach-resolvers (resolver-map))
       schema/compile))
 
+(defn schema-for-merge
+  "Return the schema map for later compilation based on the schema to merge
+  with the new, model based schema."
+  []
+  (-> (io/resource "graphql-schema-for-merge.edn")
+      slurp
+      edn/read-string
+      (util/attach-resolvers (resolver-map))))
+
 (defn gql-query 
   "Function not used except for evaluating queries in the REPL
   may consider moving into test namespace in future"

@@ -2,32 +2,24 @@ prefix gci: <http://gci.clinicalgenome.org/>
 
 construct
 {
-  ?classification :sepio/has-evidence-line ?experimentalEvidenceLine .
+  ?classification :sepio/has-evidence ?experimentalEvidenceCriterionAssessment .
   
-  ?experimentalEvidenceLine a :sepio/ExperimentalEvidenceLine ;
-  :sepio/has-evidence-item ?experimentalEvidenceCriterionAssessment ;
-  :sepio/evidence-line-strength-score ?experimentalEvidenceTotal .
+  ?experimentalEvidenceLine a :sepio/OverallExperimentalEvidenceLine ;
+  :sepio/has-evidence-item ?experimentalEvidenceCriterionAssessment .
 
   ?experimentalEvidenceCriterionAssessment a :sepio/ExperimentalEvidenceCriterionAssessment ;
-  :sepio/has-evidence-line ?functionalEvidenceLine, ?functionalAlterationEvidenceLine, ?modelAndRescueEvidenceLine .
+  :sepio/evidence-line-strength-score ?experimentalEvidenceTotal ;
+  :sepio/has-evidence ?functionalEvidenceCriterionAssessment, ?functionalAlterationCriterionAssessment, ?modelAndRescueCriterionAssessment .
 
-  ?functionalEvidenceLine a :sepio/FunctionalEvidenceLine ;
-  :sepio/has-evidence-item ?functionalCriterionAssessment ;
+  ?functionalEvidenceCriterionAssessment a :sepio/FunctionalCriterionAssessment ;
   :sepio/evidence-line-strength-score ?functionTotal .
 
-  ?functionalCriterionAssessment a :sepio/FunctionalCriterionAssessment .
+  ?functionalAlterationCriterionAssessment a :sepio/FunctionalAlterationCriterionAssessment ;
+  :sepio/evidence-line-strength-score ?functionalAlterationTotal .  
 
-  ?functionalAlterationEvidenceLine a :sepio/FunctionalAlterationEvidenceLine ;
-  :sepio/has-evidence-item ?functionalAlterationCriterionAssessment ;
-  :sepio/evidence-line-strength-score ?functionalAlterationTotal .
-
-  ?functionalAlterationCriterionAssessment a :sepio/FunctionalAlterationCriterionAssessment .  
-
-  ?modelAndRescueEvidenceLine a :sepio/ModelAndRescueEvidenceLine ;
-  :sepio/has-evidence-item ?modelAndRescueCriterionAssessment ;
+  ?modelAndRescueCriterionAssessment a :sepio/ModelAndRescueCriterionAssessment ;
   :sepio/evidence-line-strength-score  ?modelsRescueTotal .
 
-  ?modelAndRescueCriterionAssessment a :sepio/ModelAndRescueCriterionAssessment .
 }
 where
 {
@@ -51,20 +43,20 @@ where
   ?segregationTree gci:pointsCounted ?segregationTotal .
 
   #### Bind criterion assessment and evidence line identifiers
-  BIND(IRI(CONCAT(str(?classification), "_experimental_evidence_line"))
-       AS ?experimentalEvidenceLine) .
+  # BIND(IRI(CONCAT(str(?classification), "_experimental_evidence_line"))
+  #      AS ?experimentalEvidenceLine) .
   BIND(IRI(CONCAT(str(?classification), "_experimental_evidence_criterion_assessment"))
        AS ?experimentalEvidenceCriterionAssessment) .
-  BIND(IRI(CONCAT(str(?classification), "_functional_evidence_line"))
-       AS ?functionalEvidenceLine) .
+  # BIND(IRI(CONCAT(str(?classification), "_functional_evidence_line"))
+  #      AS ?functionalEvidenceLine) .
   BIND(IRI(CONCAT(str(?classification), "_functional_evidence_criterion_assessment"))
        AS ?functionalEvidenceCriterionAssessment) .
-  BIND(IRI(CONCAT(str(?classification), "_functional_alteration_evidence_line"))
-       AS ?functionalAlterationEvidenceLine) .
+  # BIND(IRI(CONCAT(str(?classification), "_functional_alteration_evidence_line"))
+  #      AS ?functionalAlterationEvidenceLine) .
   BIND(IRI(CONCAT(str(?classification), "_functional_alteration_criterion_assessment"))
        AS ?functionalAlterationCriterionAssessment) .
-  BIND(IRI(CONCAT(str(?classification), "_model_rescue_evidence_line"))
-       AS ?modelAndRescueEvidenceLine) .
+  # BIND(IRI(CONCAT(str(?classification), "_model_rescue_evidence_line"))
+  #      AS ?modelAndRescueEvidenceLine) .
   BIND(IRI(CONCAT(str(?classification), "_model_rescue_criterion_assessment"))
        AS ?modelAndRescueCriterionAssessment) .
 }

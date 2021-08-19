@@ -41,13 +41,14 @@
   (q/ld1-> value [:sepio/qualified-contribution :sepio/activity-date]))
 
 (defresolver evidence [args value]
-  (q/ld-> value [:sepio/has-evidence-line-with-item]))
+  (q/ld-> value [:sepio/has-evidence]))
 
 (defresolver score [args value]
   (when-let [classification (classification-description nil args value)]
     (case (str/lower-case classification)
       "no evidence" :NO_EVIDENCE
       "minimal evidence" :MINIMAL_EVIDENCE
+      "little evidence" :MINIMAL_EVIDENCE
       "moderate evidence" :MODERATE_EVIDENCE
       "sufficient evidence" :SUFFICIENT_EVIDENCE
       "gene associated with autosomal recessive phenotype" :ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE

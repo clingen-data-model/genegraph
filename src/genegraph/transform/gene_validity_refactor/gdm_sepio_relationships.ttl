@@ -69,10 +69,11 @@ sepio:0004029 :hasEvidenceItemType sepio:0004048 ;
 sepio:0004030 :hasEvidenceItemType sepio:0004049 ;
     :hasGCIType :NonHumanModel ;
     :usedIn :Rescue .
-    
+
+#TODO Validate this works prior to rearchitecture
 # rescue in cell culture
 sepio:0004031 :hasEvidenceItemType sepio:0004050 ;
-    :hasGCIType :CellCulture ;
+    :hasGCIType :CellCultureModel ;
     :usedIn :Rescue .
     
 # rescue in patient cells
