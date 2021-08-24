@@ -1,10 +1,14 @@
-[{:name "gci-neo4j-archive"
-  :source "gci-neo4j-archive.tar.gz"
-  :type :compressed-event-files}
- {:name "roles"
-  :source "roles.tar.gz"
-  :type :compressed-event-files}
- {:name "gci-express-json"
-  :source "ClinGen-Gene-Expess-Data-01092020.json"
-  :type :json-event-sequence
-  :format :gci-express}]
+[;; {:name "gci-neo4j-archive"
+ ;;  :source "gci-neo4j-archive.tar.gz"
+ ;;  :type :compressed-event-files}
+ 
+ ;; {:name "roles"
+ ;;  :source "roles.tar.gz"
+ ;;  :type :compressed-event-files}
+ 
+ ;; {:name "gci-express-json"
+ ;;  :source "ClinGen-Gene-Expess-Data-01092020.json"
+ ;;  :type :json-event-sequence
+ ;;  :format :gci-express}
+ 
+ ]
