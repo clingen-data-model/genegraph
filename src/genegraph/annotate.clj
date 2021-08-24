@@ -141,12 +141,13 @@
 
 (defmethod add-subjects :sepio/ActionabilityReport [event]
   (log/debug :fn :add-subjects :root-type :sepio/ActionabilityReport :msg :received-event)
-  (if-let [act-condition (first (q/select "select ?s where { ?s a :cg/ActionabilityGeneticCondition }" {}
-                                          (::q/model event)))]
-    (let [genes (q/ld-> act-condition [:sepio/is-about-gene])
-          diseases (q/ld-> act-condition [:rdfs/sub-class-of])]
-      (add-subjects-to-event event genes diseases))
-    event))
+  (add-subjects-to-event event
+                         (q/select "select distinct ?gene where { ?s a :cg/ActionabilityGeneticCondition ; :sepio/is-about-gene ?gene  }"
+                                   {}
+                                   (::q/model event))
+                         (q/select "select distinct ?disease where { ?s a :cg/ActionabilityGeneticCondition ; :rdfs/sub-class-of ?disease  }"
+                                   {}
+                                   (::q/model event))))
 
 (defmethod add-subjects :sepio/GeneValidityReport [event]
   (log/debug :fn :add-subjects :root-type :sepio/GeneValidityReport :msg :received-event)
