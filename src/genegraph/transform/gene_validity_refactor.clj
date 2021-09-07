@@ -9,6 +9,8 @@
 
 (def base "http://dataexchange.clinicalgenome.org/gci/")
 
+(def legacy-report-base "http://dataexchange.clinicalgenome.org/gci/legacy-report_")
+
 (def gdm-sepio-relationships (l/read-rdf (str (resource "genegraph/transform/gene_validity_refactor/gdm_sepio_relationships.ttl")) {:format :turtle}))
 
 (def ns-prefixes {"dx" "http://dataexchange.clinicalgenome.org/"
@@ -52,14 +54,14 @@
           {"@context" 
            {
             ;; frontmatter
-            "@vocab" "http://gci.clinicalgenome.org/"
-            "@base" "http://gci.clinicalgenome.org/"
+            "@vocab" "http://dataexchange.clinicalgenome.org/gci/"
+            "@base" "http://dataexchange.clinicalgenome.org/gci/"
 
             "PK" "@id"
             "item_type" "@type"
 
             
-            "gci" "http://gci.clinicalgenome.org/"
+            "gci" "http://dataexchange.clinicalgenome.org/gci/"
             "gcixform" "http://dataexchange.clinicalgenome.org/gcixform/"
 
             ;; ;; common prefixes
@@ -136,7 +138,7 @@
     (l/read-rdf is {:format :json-ld})))
 
 (def gdm-is-about-gene-query
-  (q/create-query "prefix gci: <http://gci.clinicalgenome.org/>
+  (q/create-query "prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
   select ?hgnc where { 
  ?gdm a gci:gdm .
  ?gdm gci:gene ?gene .
@@ -151,6 +153,7 @@
         entrez-gene (first (hgnc-has-equiv-entrez-gene-query {:hgnc_gene gdm-is-about-gene}))
         params {::q/model (q/union gdm gdm-sepio-relationships)
                 :gcibase base
+                :legacy_report_base legacy-report-base
                 :arbase "http://reg.genome.network/allele/"
                 :cvbase "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
                 :pmbase "https://pubmed.ncbi.nlm.nih.gov/"

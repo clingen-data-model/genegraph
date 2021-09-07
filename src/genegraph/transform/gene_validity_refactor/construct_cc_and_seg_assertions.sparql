@@ -1,4 +1,4 @@
-prefix gci: <http://gci.clinicalgenome.org/>
+prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 
 construct
 {

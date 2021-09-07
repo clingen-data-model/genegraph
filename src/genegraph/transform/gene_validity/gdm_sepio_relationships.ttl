@@ -3,7 +3,7 @@
 # SEPIO types from information in the source model
 
 @prefix : <http://dataexchange.clinicalgenome.org/gcixform/> .
-@prefix gci:   <http://gci.clinicalgenome.org/> .
+@prefix gci: <http://dataexchange.clinicalgenome.org/gci/> .
 @prefix sepio:   <http://purl.obolibrary.org/obo/SEPIO_> .
 @base <http://dataexchange.clinicalgenome.org/gcixform> .
 
