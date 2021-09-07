@@ -9,10 +9,18 @@ construct
 }
 where
 {
-  ?gdm a gci:gdm . 
-  # ?gdm gci:gene ?gene .
-  # ?gene gci:hgncId ?hgnc . 
-  ?gdm gci:disease ?disease .
+  ?gdm a gci:gdm .
+
+
+  # Includes support for pre-refactor GCI curations
+  OPTIONAL {
+    ?gdm gci:disease / gci:diseaseId ?legacy_disease
+  }
+  
+  ?gdm gci:disease ?disease_node .
+
+  BIND(COALESCE(?legacy_disease, ?disease_node) AS ?disease) .
+  
   ?gdm gci:modeInheritance ?moistr .
 
   # The HPO term is embedded in a string, extract the digit and wrap in an IRI
