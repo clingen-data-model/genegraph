@@ -1,16 +1,16 @@
-# Cloud Build configuration for Genegraph
+# Cloud Build configuration for Genegraph - dev testing
 # 
 # Command line test usage:
 # gcloud builds submit --project=clingen-stage --config ./cloudbuild.yaml \
 #  --substitutions=COMMIT_SHA="testbuild" .
 
-# Builds genegraph and tags for both stage and prod image repositories
+# Builds genegraph and tags for dev image repository
 steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: [ 'build', '.', '-t', 'genegraph:$COMMIT_SHA']
 - name: 'gcr.io/cloud-builders/docker'
   args: [ 'tag', 'genegraph:$COMMIT_SHA', 'gcr.io/clingen-dev/genegraph:$COMMIT_SHA']
-- name: 'gcr.io/clingen-stage/git-image-updater'
+- name: 'gcr.io/clingen-dev/git-image-updater'
   secretEnv: ["GITHUB_TOKEN"]
   args: 
     - '-c'
