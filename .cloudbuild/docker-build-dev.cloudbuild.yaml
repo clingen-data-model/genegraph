@@ -28,7 +28,7 @@ steps:
 
 availableSecrets:
   secretManager:
-    - versionName: projects/clingen-dev/secrets/clingen-ci-github-token/versions/2
+    - versionName: projects/clingen-dev/secrets/clingen-ci-github-token/versions/1
       env: GITHUB_TOKEN
 
 # push the images
@@ -36,5 +36,5 @@ images:
   - 'gcr.io/clingen-dev/genegraph:$COMMIT_SHA'
 
 # timeout if not complete in 45 minutes
-timeout: 2800s
+timeout: 2700s
 
