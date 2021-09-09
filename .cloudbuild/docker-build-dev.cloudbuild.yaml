@@ -36,5 +36,5 @@ images:
   - 'gcr.io/clingen-dev/genegraph:$COMMIT_SHA'
 
 # timeout in seconds
-timeout: 2800s
+timeout: 2700s
 
