@@ -2,22 +2,19 @@ prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 
 construct
 {
-  ?classification :sepio/has-evidence ?experimentalEvidenceCriterionAssessment .
+  ?classification :sepio/has-evidence ?experimentalEvidenceLine .
   
   ?experimentalEvidenceLine a :sepio/OverallExperimentalEvidenceLine ;
-  :sepio/has-evidence-item ?experimentalEvidenceCriterionAssessment .
-
-  ?experimentalEvidenceCriterionAssessment a :sepio/ExperimentalEvidenceCriterionAssessment ;
   :sepio/evidence-line-strength-score ?experimentalEvidenceTotal ;
-  :sepio/has-evidence ?functionalEvidenceCriterionAssessment, ?functionalAlterationCriterionAssessment, ?modelAndRescueCriterionAssessment .
+  :sepio/has-evidence ?functionalEvidenceLine, ?functionalAlterationEvidenceLine, ?modelAndRescueEvidenceLine .
 
-  ?functionalEvidenceCriterionAssessment a :sepio/FunctionalCriterionAssessment ;
+  ?functionalEvidenceLine a :sepio/OverallFunctionalEvidenceLine ;
   :sepio/evidence-line-strength-score ?functionTotal .
 
-  ?functionalAlterationCriterionAssessment a :sepio/FunctionalAlterationCriterionAssessment ;
+  ?functionalAlterationEvidenceLine a :sepio/OverallFunctionalAlterationEvidenceLine ;
   :sepio/evidence-line-strength-score ?functionalAlterationTotal .  
 
-  ?modelAndRescueCriterionAssessment a :sepio/ModelAndRescueCriterionAssessment ;
+  ?modelAndRescueEvidenceLine a :sepio/OverallModelAndRescueEvidenceLine ;
   :sepio/evidence-line-strength-score  ?modelsRescueTotal .
 
 }
@@ -42,21 +39,12 @@ where
   ?pointsTree gci:segregation ?segregationTree .
   ?segregationTree gci:pointsCounted ?segregationTotal .
 
-  #### Bind criterion assessment and evidence line identifiers
-  # BIND(IRI(CONCAT(str(?classification), "_experimental_evidence_line"))
-  #      AS ?experimentalEvidenceLine) .
-  BIND(IRI(CONCAT(str(?classification), "_experimental_evidence_criterion_assessment"))
-       AS ?experimentalEvidenceCriterionAssessment) .
-  # BIND(IRI(CONCAT(str(?classification), "_functional_evidence_line"))
-  #      AS ?functionalEvidenceLine) .
-  BIND(IRI(CONCAT(str(?classification), "_functional_evidence_criterion_assessment"))
-       AS ?functionalEvidenceCriterionAssessment) .
-  # BIND(IRI(CONCAT(str(?classification), "_functional_alteration_evidence_line"))
-  #      AS ?functionalAlterationEvidenceLine) .
-  BIND(IRI(CONCAT(str(?classification), "_functional_alteration_criterion_assessment"))
-       AS ?functionalAlterationCriterionAssessment) .
-  # BIND(IRI(CONCAT(str(?classification), "_model_rescue_evidence_line"))
-  #      AS ?modelAndRescueEvidenceLine) .
-  BIND(IRI(CONCAT(str(?classification), "_model_rescue_criterion_assessment"))
-       AS ?modelAndRescueCriterionAssessment) .
+  BIND(IRI(CONCAT(str(?classification), "_experimental_evidence_line"))
+       AS ?experimentalEvidenceLine) .
+  BIND(IRI(CONCAT(str(?classification), "_functional_evidence_line"))
+       AS ?functionalEvidenceLine) .
+  BIND(IRI(CONCAT(str(?classification), "_functional_alteration_evidence_line"))
+       AS ?functionalAlterationEvidenceLine) .
+  BIND(IRI(CONCAT(str(?classification), "_model_rescue_evidence_line"))
+       AS ?modelAndRescueEvidenceLine) .
 }

@@ -101,31 +101,32 @@ sepio:0004091 :hasEvidenceItemType sepio:0004086 ;
 #### Connections to leaf-node evidence lines
 
 # :sepio/AutosomalDominantOtherVariantCriterionAssessment
-sepio:0004058 :hasEvidenceLineType sepio:0004080 .
+sepio:0004011 :hasEvidenceLineType sepio:0004080 .
 
 # :sepio/AutosomalDominantNullVariantCriterionAssessment
-sepio:0004057 :hasEvidenceLineType sepio:0004079 .
+sepio:0004010 :hasEvidenceLineType sepio:0004079 .
 
 # :sepio/AutosomalDominantDeNovoVariantCriterionAssessment
-sepio:0004056 :hasEvidenceLineType sepio:0004078 .
+sepio:0004009 :hasEvidenceLineType sepio:0004078 .
 
 # :sepio/AutosomalRecessiveVariantCriterionAssessment
-sepio:0004055 :hasEvidenceLineType sepio:0004019 , sepio:0004018 .
+sepio:0004008 :hasEvidenceLineType sepio:0004019 , sepio:0004018 .
 
 # # :sepio/CaseControlEvidenceCriterionAssessment
-sepio:0004054 :hasEvidenceLineType sepio:0004020, sepio:0004021 .
+sepio:0004007 :hasEvidenceLineType sepio:0004020, sepio:0004021 .
 
+# TODO validate segregation
 # # :sepio/SegregationCriterionAssessment
-sepio:0004059 :hasEvidenceLineType sepio:0004090, sepio:0004091 .
+sepio:0004012 :hasEvidenceLineType sepio:0004090, sepio:0004091 .
 
 # :sepio/FunctionalCriterionAssessment
-sepio:0004060 :hasEvidenceLineType sepio:0004022 , sepio:0004023 , sepio:0004024 .
+sepio:0004013 :hasEvidenceLineType sepio:0004022 , sepio:0004023 , sepio:0004024 .
 
 # :sepio/FunctionalAlterationCriterionAssessment
-sepio:0004061 :hasEvidenceLineType sepio:0004025 , sepio:0004026 .
+sepio:0004014 :hasEvidenceLineType sepio:0004025 , sepio:0004026 .
 
 # :sepio/ModelAndRescueCriterionAssessment
-sepio:0004062 :hasEvidenceLineType sepio:0004027 ,
+sepio:0004015 :hasEvidenceLineType sepio:0004027 ,
         sepio:0004028 , 
         sepio:0004029 , 
         sepio:0004030 , 

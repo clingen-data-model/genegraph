@@ -2,12 +2,12 @@ prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 
 construct
 {
-  ?geneticEvidenceCriterionAssessment :sepio/has-evidence ?caseControlEvidenceCriterionAssessment , ?segregationCriterionAssessment .
+  ?geneticEvidenceLine :sepio/has-evidence ?caseControlEvidenceLine , ?segregationEvidenceLine .
 
-  ?caseControlEvidenceCriterionAssessment a :sepio/CaseControlEvidenceCriterionAssessment ;
+  ?caseControlEvidenceLine a :sepio/OverallCaseControlEvidenceLine ;
   :sepio/evidence-line-strength-score ?caseControlTotal .
 
-  ?segregationCriterionAssessment a :sepio/SegregationCriterionAssessment ;
+  ?segregationEvidenceLine a :sepio/OverallSegregationEvidenceLine ;
   :sepio/evidence-line-strength-score ?segregationTotal .
   
 }
@@ -16,7 +16,7 @@ where
 
   ?classification a gci:provisionalClassification .
 
-  BIND (IRI(CONCAT(str(?classification), "_genetic_evidence_criterion_assessment")) AS ?geneticEvidenceCriterionAssessment) .
+  BIND (IRI(CONCAT(str(?classification), "_genetic_evidence_overall_evidence_line")) AS ?geneticEvidenceLine) .
   
   ?classification gci:classificationPoints ?pointsTree .
 
@@ -27,7 +27,5 @@ where
   ?caseControlTree gci:pointsCounted ?caseControlTotal .
 
   BIND (IRI(CONCAT(str(?classification), "_cc_el")) AS ?caseControlEvidenceLine) .
-  BIND (IRI(CONCAT(str(?classification), "_cc_ca")) AS ?caseControlEvidenceCriterionAssessment) .
   BIND (IRI(CONCAT(str(?classification), "_seg_el")) AS ?segregationEvidenceLine) .
-  BIND (IRI(CONCAT(str(?classification), "_seg_ca")) AS ?segregationCriterionAssessment) .  
 }

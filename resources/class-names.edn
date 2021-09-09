@@ -256,8 +256,26 @@
   "http://purl.obolibrary.org/obo/SEPIO_0004062"]
  [:sepio/ProbandWithNullVariantEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004034"]
+ [:sepio/OverallAutosomalDominantDeNovoVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004009"]
+ [:sepio/OverallAutosomalDominantNullVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004010"]
+ [:sepio/OverallAutosomalDominantOtherVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004011"]
+ [:sepio/OverallAutosomalRecessiveVariantEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004008"]
+ [:sepio/OverallCaseControlEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004007"]
  [:sepio/OverallExperimentalEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004006"]
+ [:sepio/OverallFunctionalAlterationEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004014"]
+ [:sepio/OverallFunctionalEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004013"]
+ [:sepio/OverallGeneticEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004005"]
+ [:sepio/OverallModelAndRescueEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004015"]
  [:sepio/ExperimentalEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004105"]
  [:sepio/ClinGenFunctionalAlterationEvidenceCriteria
