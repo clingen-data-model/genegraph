@@ -35,6 +35,6 @@ availableSecrets:
 images:
   - 'gcr.io/clingen-dev/genegraph:$COMMIT_SHA'
 
-# timeout if not complete in 45 minutes
-timeout: 2700s
+# timeout in seconds
+timeout: 2800s
 
