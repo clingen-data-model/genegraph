@@ -1,19 +1,19 @@
-prefix gci: <http://gci.clinicalgenome.org/>
+prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 
 construct
 {
-  ?geneticEvidenceCriterionAssessment :sepio/has-evidence
-  ?autosomalDominantOtherVariantCriterionAssessment ,
-  ?autosomalDominantNullVariantCriterionAssessment ,
-  ?autosomalDominantDeNovoVariantCriterionAssessment .
+  ?geneticEvidenceEvidenceLine :sepio/has-evidence
+  ?autosomalDominantOtherVariantEvidenceLine ,
+  ?autosomalDominantNullVariantEvidenceLine ,
+  ?autosomalDominantDeNovoVariantEvidenceLine .
   
-  ?autosomalDominantOtherVariantCriterionAssessment a :sepio/AutosomalDominantOtherVariantCriterionAssessment ;
+  ?autosomalDominantOtherVariantEvidenceLine a :sepio/OverallAutosomalDominantOtherVariantEvidenceLine ;
   :sepio/evidence-line-strength-score ?probandWithOtherVariantTypeWithGeneImpactTotal .
 
-  ?autosomalDominantNullVariantCriterionAssessment a :sepio/AutosomalDominantNullVariantCriterionAssessment ;
+  ?autosomalDominantNullVariantEvidenceLine a :sepio/OverallAutosomalDominantNullVariantEvidenceLine ;
   :sepio/evidence-line-strength-score ?probandWithPredictedOrProvenNullVariantTotal .
 
-  ?autosomalDominantDeNovoVariantCriterionAssessment a :sepio/AutosomalDominantDeNovoVariantCriterionAssessment ;
+  ?autosomalDominantDeNovoVariantEvidenceLine a :sepio/OverallAutosomalDominantDeNovoVariantEvidenceLine ;
   :sepio/evidence-line-strength-score ?variantIsDeNovoTotal .
 }
 where
@@ -21,7 +21,7 @@ where
   ?classification a gci:provisionalClassification .
   ?classification gci:classificationPoints ?pointsTree .
 
-  BIND (IRI(CONCAT(str(?classification), "_genetic_evidence_criterion_assessment")) AS ?geneticEvidenceCriterionAssessment) .
+  BIND (IRI(CONCAT(str(?classification), "_overall_genetic_evidence_line")) AS ?geneticEvidenceEvidenceLine) .
   
   ?pointsTree gci:autosomalDominantOrXlinkedDisorder ?autosomalDominantOrXlinkedDisorderTree .
 
@@ -34,8 +34,8 @@ where
   ?autosomalDominantOrXlinkedDisorderTree gci:variantIsDeNovo ?variantIsDeNovoTree .
   ?variantIsDeNovoTree gci:pointsCounted ?variantIsDeNovoTotal .
 
-  BIND(IRI(CONCAT(str(?classification), "_ad_other_ca")) AS ?autosomalDominantOtherVariantCriterionAssessment) .
-  BIND(IRI(CONCAT(str(?classification), "_ad_null_ca")) AS ?autosomalDominantNullVariantCriterionAssessment) .
-  BIND(IRI(CONCAT(str(?classification), "_ad_dn_ca")) AS ?autosomalDominantDeNovoVariantCriterionAssessment) .
+  BIND(IRI(CONCAT(str(?classification), "_ad_other_el")) AS ?autosomalDominantOtherVariantEvidenceLine) .
+  BIND(IRI(CONCAT(str(?classification), "_ad_null_el")) AS ?autosomalDominantNullVariantEvidenceLine) .
+  BIND(IRI(CONCAT(str(?classification), "_ad_dn_el")) AS ?autosomalDominantDeNovoVariantEvidenceLine) .
   
 }

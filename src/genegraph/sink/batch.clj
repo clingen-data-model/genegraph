@@ -7,10 +7,16 @@
             [me.raynes.fs :as fs]
             [clojure.java.shell :refer [sh]]
             [io.pedestal.log :as log]
-            [cheshire.core :as json])
+            [cheshire.core :as json]
+            [clojure.string :as s])
   (:import (java.io PushbackReader File)))
 
 (def batch-events "batch-events.edn")
+
+(defn batch-event-sources []
+  (if env/batch-event-sources
+    (set (map keyword (s/split env/batch-event-sources #";")))
+    #{}))
 
 (defn target-path [filename]
   (str env/data-vol "/events/" filename))
@@ -53,9 +59,11 @@
 (defn process-batched-events! 
   "Should be run during database initialization. Download and read events stored in batch format into database."
   []
-  (doseq [descriptor (-> batch-events io/resource slurp edn/read-string)]
-    (case (:type descriptor)
-      :compressed-event-files (process-compressed-event-file! descriptor)
-      :json-event-sequence (process-json-event-sequence! descriptor))))
+  (let [batches (-> batch-events io/resource slurp edn/read-string)
+        batches-to-process (filter #((batch-event-sources) (:name %)) batches)]
+    (doseq [descriptor batches-to-process]
+      (case (:type descriptor)
+        :compressed-event-files (process-compressed-event-file! descriptor)
+        :json-event-sequence (process-json-event-sequence! descriptor)))))
 
 

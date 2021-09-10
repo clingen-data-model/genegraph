@@ -1,23 +1,23 @@
-prefix gci: <http://gci.clinicalgenome.org/>
+prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 construct
 {
-  ?geneticEvidenceCriterionAssessment :sepio/has-evidence
+  ?geneticEvidenceLine :sepio/has-evidence
   ?autosomalRecessiveVariantEvidenceLine .
   
-  ?autosomalRecessiveVariantCriterionAssessment a :sepio/AutosomalRecessiveVariantCriterionAssessment ;
+  ?autosomalRecessiveVariantEvidenceLine a :sepio/OverallAutosomalRecessiveVariantEvidenceLine ;
   :sepio/evidence-line-strength-score ?autosomalRecessiveDisorderTotal .  
 }
 where
 {
   ?classification a gci:provisionalClassification .
 
-  BIND (IRI(CONCAT(str(?classification), "_genetic_evidence_criterion_assessment")) AS ?geneticEvidenceCriterionAssessment) .
+  BIND (IRI(CONCAT(str(?classification), "_overall_genetic_evidence_line")) AS ?geneticEvidenceLine) .
 
   ?classification gci:classificationPoints ?pointsTree .
 
   ?pointsTree gci:autosomalRecessiveDisorder ?autosomalRecessiveDisorderTree .
   ?autosomalRecessiveDisorderTree gci:pointsCounted  ?autosomalRecessiveDisorderTotal .
 
-  BIND (IRI(CONCAT(str(?classification), "_ar_ca")) AS ?autosomalRecessiveVariantCriterionAssessment) .
+  BIND (IRI(CONCAT(str(?classification), "_ar_el")) AS ?autosomalRecessiveVariantEvidenceLine) .
 
 }
