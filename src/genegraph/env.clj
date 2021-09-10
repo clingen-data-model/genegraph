@@ -18,6 +18,7 @@
 (def database-build-mode (System/getenv "GENEGRAPH_DATABASE_BUILD_MODE"))
 (def graphql-logging-topic (System/getenv "GENEGRAPH_GQL_LOGGING_TOPIC"))
 (def use-experimental-schema (System/getenv "GENEGRAPH_EXPERIMENTAL_SCHEMA"))
+(def batch-event-sources (System/getenv "GENEGRAPH_BATCH_EVENT_SOURCES"))
 
 (def dx-key-pass (System/getenv "SERVEUR_KEY_PASS"))
 

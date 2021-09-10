@@ -1,4 +1,4 @@
-prefix gci: <http://gci.clinicalgenome.org/>
+prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 
 construct {
   
@@ -10,6 +10,8 @@ construct {
   :sepio/qualified-contribution ?contribution ;
   :dc/description ?description ;
   :sepio/evidence-line-strength-score ?evidencePointsTotal .
+
+  ?legacy_report :bfo/has-part ?classification .
 
   # Needs role
   ?contribution :sepio/has-agent ?affiliation ;
@@ -23,6 +25,7 @@ where {
   gci:affiliation ?affiliationID .
 
   BIND(IRI(CONCAT(?affbase, ?affiliationID)) AS ?affiliation) .
+  BIND(IRI(CONCAT(STR(?proposition), "_legacy_report")) AS ?legacy_report) .
 
   ?classification a gci:provisionalClassification ;
   gci:evidenceSummary ?description ;

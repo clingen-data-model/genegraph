@@ -42,6 +42,10 @@
                           :name "gene_validity"
                           :root-type :sepio/GeneValidityReport
                           :cluster :dx-ccloud}
+            :gci-legacy-report-only  {:format :gci-legacy-report-only
+                                      :name "gene_validity"
+                                      :root-type :sepio/GeneValidityReport
+                                      :cluster :dx-ccloud}
             :gci-legacy-dev  {:format :gci-legacy
                               :name "gene_validity_dev"
                               :root-type :sepio/GeneValidityReport
