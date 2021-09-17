@@ -112,6 +112,9 @@ sepio:0004091 :hasEvidenceItemType sepio:0004086 ;
     
 #### Connections to leaf-node evidence lines
 
+# :sepio/OverallGeneticEvidenceEvidenceLine
+sepio:0004005 :hasEvidenceLineType sepio:0004120, sepio:0004121 .
+
 # :sepio/AutosomalDominantOtherVariantCriterionAssessment
 sepio:0004011 :hasEvidenceLineType sepio:0004080 .
 

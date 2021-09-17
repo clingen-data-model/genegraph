@@ -4,18 +4,22 @@ construct {
   ?evidenceLine a ?evidenceLineType ;
   # ?evidenceLine a ?variantType ;
   :sepio/evidence-line-strength-score ?score ;
-  :sepio/has-evidence ?evidenceItem ;
+  :sepio/has-evidence ?evidenceItem , ?functionEvidenceItem ;
   :dc/description ?evidenceLineDescription .
 
   ?evidenceItem a ?evidenceItemType ;
   :sepio/is-about-allele ?variant ;
   :dc/source ?article ;
+  :geno/allele-origin ?alleleOrigin ;
   :rdfs/label ?individualLabel .
 
   ?evidenceItem a ?evidenceItemType ;
   :sepio/is-about-allele ?variant ;
   :dc/source ?article ;
   :rdfs/label ?individualLabel .
+
+  ?functionEvidenceItem a :sepio/VariantFunctionalImpactEvidenceItem ;
+  :dc/description ?functionalDataExplanation .
 
 }
 where {
@@ -23,10 +27,14 @@ where {
   ?evidenceLine a gci:variantScore ;
   gci:variantType ?variantType ;
   gci:variantScored ?variant ;
+  gci:deNovo ?deNovo ;
   gci:calculatedScore ?calculatedScore .
 
+  BIND(IF(?deNovo = "Yes", :geno/DeNovoAlleleOrigin , :geno/AlleleOrigin ) AS ?alleleOrigin) .
+  
   OPTIONAL {
     ?evidenceLine gci:functionalDataExplanation ?functionalDataExplanation ;
+    BIND(IRI(CONCAT(STR(?evidenceLine), "_function_evidence_item")) AS ?functionEvidenceItem) .
   }
 
   BIND(IRI(CONCAT(STR(?evidenceLine), "_variant_evidence_item")) AS ?evidenceItem) .

@@ -24,7 +24,8 @@
                   "car" "http://reg.genome.network/allele/"
                   "cv" "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
                   "hgnc" "https://identifiers.org/hgnc:"
-                  "pmid" "https://pubmed.ncbi.nlm.nih.gov/"})
+                  "pmid" "https://pubmed.ncbi.nlm.nih.gov/"
+                  "geno" "http://purl.obolibrary.org/obo/GENO_"})
 
 (declare-query construct-proposition
                construct-evidence-level-assertion
