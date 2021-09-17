@@ -1,0 +1,56 @@
+prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
+prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+construct {
+  ?evidenceLine a ?evidenceLineType ;
+  # ?evidenceLine a ?variantType ;
+  :sepio/evidence-line-strength-score ?score ;
+  :sepio/has-evidence ?evidenceItem ;
+  :dc/description ?evidenceLineDescription .
+
+  ?evidenceItem a ?evidenceItemType ;
+  :sepio/is-about-allele ?variant ;
+  :dc/source ?article ;
+  :rdfs/label ?individualLabel .
+
+  ?evidenceItem a ?evidenceItemType ;
+  :sepio/is-about-allele ?variant ;
+  :dc/source ?article ;
+  :rdfs/label ?individualLabel .
+
+}
+where {
+
+  ?evidenceLine a gci:variantScore ;
+  gci:variantType ?variantType ;
+  gci:variantScored ?variant ;
+  gci:calculatedScore ?calculatedScore .
+
+  OPTIONAL {
+    ?evidenceLine gci:functionalDataExplanation ?functionalDataExplanation ;
+  }
+
+  BIND(IRI(CONCAT(STR(?evidenceLine), "_variant_evidence_item")) AS ?evidenceItem) .
+
+  OPTIONAL {
+    ?evidenceLine gci:scoreExplanation ?evidenceLineDescription .
+  }
+  
+  ?variantType gcixform:hasEvidenceLineType ?evidenceLineType ;
+  gcixform:hasEvidenceItemType ?evidenceItemType .
+
+  OPTIONAL  {
+    ?evidenceLine gci:score ?adjustedScore .
+  }
+  
+  BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
+
+  ?individual gci:variantScores ?evidenceLine ;
+  gci:label ?individualLabel .
+  
+  ?annotation  gci:individuals|gci:individualIncluded ?individual ;
+  ^(gci:families|gci:groups)? / gci:article ?publication .
+  
+  ?publication gci:pmid ?pmid .
+  BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
+  
+}

@@ -44,6 +44,7 @@
                construct-alleles
                construct-articles
                construct-secondary-contributions
+               construct-variant-score
                )
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -73,8 +74,10 @@
             "hgncId" {"@type" "@id"}
 
             "autoClassification" {"@type" "@vocab"}
+            "alteredClassification" {"@type" "@vocab"}
             "diseaseId" {"@type" "@id"}
             "caseInfoType" {"@type" "@id"}
+            "variantType" {"@type" "@id"}
             ;; "experimental_scored" {"@type" "@id"}
             ;; "caseControl_scored" {"@type" "@id"}
             ;; "variants" {"@type" "@id"}
@@ -120,12 +123,14 @@
             "patient cells" "gcixform:PatientCells"
 
             ;; ;; evidence strength
+            "No Modification" "gcixform:NoModification"
             "Definitive" "SEPIO:0004504"
             "Strong" "SEPIO:0004505"
             "Moderate" "SEPIO:0004506"
             "Limited" "SEPIO:0004507"
             "No Known Disease Relationship" "SEPIO:0004508"
             "Refuted" "SEPIO:0004510"
+            "Disputed" "SEPIO:0004540"
             "No Classification" "SEPIO:0004508" ;; Maybe this should not exist in published records?
             ;; "No Classification" "SEPIO:0004508"
             }}))))
@@ -160,23 +165,25 @@
                 :affbase "http://dataexchange.clinicalgenome.org/agent/"
                 :entrez_gene entrez-gene}
         unlinked-model (q/union 
-                        (construct-proposition params)
-                        (construct-evidence-level-assertion params)
-                        (construct-experimental-evidence-assertions params)
-                        (construct-genetic-evidence-assertion params)
-                        (construct-ad-variant-assertions params)
-                        (construct-ar-variant-assertions params)
-                        (construct-cc-and-seg-assertions params)
-                        (construct-proband-score params)
-                        (construct-model-systems-evidence params)
-                        (construct-functional-evidence params)
-                        (construct-functional-alteration-evidence params)
-                        (construct-rescue-evidence params)
-                        (construct-case-control-evidence params)
-                        (construct-segregation-evidence params)
-                        (construct-alleles params)
-                        (construct-articles params) 
-                        (construct-secondary-contributions params))]
+                        ;; (construct-proposition params)
+                        ;; (construct-evidence-level-assertion params)
+                        ;; (construct-experimental-evidence-assertions params)
+                        ;; (construct-genetic-evidence-assertion params)
+                        ;; (construct-ad-variant-assertions params)
+                        ;; (construct-ar-variant-assertions params)
+                        ;; (construct-cc-and-seg-assertions params)
+                        ;; (construct-proband-score params)
+                        ;; (construct-model-systems-evidence params)
+                        ;; (construct-functional-evidence params)
+                        ;; (construct-functional-alteration-evidence params)
+                        ;; (construct-rescue-evidence params)
+                        ;; (construct-case-control-evidence params)
+                        ;; (construct-segregation-evidence params)
+                        ;; (construct-alleles params)
+                        ;; (construct-articles params) 
+                        ;; (construct-secondary-contributions params)
+                        (construct-variant-score params)
+                        )]
     (q/union unlinked-model
              (construct-evidence-connections 
               {::q/model

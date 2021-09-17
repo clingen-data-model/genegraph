@@ -1,4 +1,5 @@
 prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
+prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
 
 construct {
   
@@ -9,14 +10,21 @@ construct {
   :sepio/evidence-line-strength ?evidencelevel;
   :sepio/qualified-contribution ?contribution ;
   :dc/description ?description ;
+  :sepio/has-evidence ?autoClassification ;
   :sepio/evidence-line-strength-score ?evidencePointsTotal .
 
   ?legacy_report :bfo/has-part ?classification .
 
-  # Needs role
   ?contribution :sepio/has-agent ?affiliation ;
   :bfo/realizes :sepio/ApproverRole ;
   :sepio/activity-date ?classificationDate .
+
+  ?autoClassification a :sepio/GeneValidityEvidenceLevelAutoClassification ;
+  :sepio/has-subject ?proposition ;
+  :sepio/has-predicate :sepio/HasEvidenceLevel ;
+  :sepio/has-object ?autoEvidenceLevel ;
+  :sepio/evidence-line-strength ?evidencelevel;
+  :sepio/evidence-line-strength-score ?evidencePointsTotal .
 
 }
 where {
@@ -29,11 +37,16 @@ where {
 
   ?classification a gci:provisionalClassification ;
   gci:evidenceSummary ?description ;
-  gci:autoClassification ?evidencelevel ;
+  gci:autoClassification ?autoEvidenceLevel ;
+  gci:alteredClassification ?alteredEvidenceLevel ;
   gci:classificationDate ?classificationDate ;
   gci:classificationPoints ?pointsTree .
 
+  BIND(IF(?alteredEvidenceLevel = gcixform:NoModification, ?autoEvidenceLevel, ?alteredEvidenceLevel) AS ?evidencelevel) .
+
   BIND(IRI(CONCAT(STR(?classification), "_contrib")) AS ?contribution ) .
+
+  BIND(IRI(CONCAT(STR(?classification), "_auto_classification")) AS ?autoClassification ) .
   
   ?pointsTree gci:evidencePointsTotal ?evidencePointsTotal .
   

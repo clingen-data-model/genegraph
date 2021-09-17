@@ -313,6 +313,15 @@
  [:sepio/ProbandWithVariantEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004081"]
  [:sepio/ProbandEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004097"]
+ ;;
+ [:sepio/NullVariantEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004120"]
+ [:sepio/NonNullVariantEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004121"]
+ [:sepio/VariantEvidenceItem "http://purl.obolibrary.org/obo/SEPIO_0004116"]
+ [:sepio/NullVariantEvidenceItem "http://purl.obolibrary.org/obo/SEPIO_0004117"]
+ [:sepio/NonNullVariantEvidenceItem "http://purl.obolibrary.org/obo/SEPIO_0004118"]
+ [:sepio/VariantFunctionalImpactEvidenceItem "http://purl.obolibrary.org/obo/SEPIO_0004119"]
+ 
+ ;;
  [:sepio/GeneValidityEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004082"]
  [:sepio/GeneValidityGeneticEvidenceLine
