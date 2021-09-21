@@ -16,11 +16,15 @@ where
 {
   ?gci_article a gci:article ;
   gci:title ?title ;
-  gci:abstract ?abstract ;
+
   gci:authors ?authors ;
   gci:date ?gci_date ;
   gci:pmid ?pmid .
 
+  OPTIONAL {
+    ?gci_article gci:abstract ?abstract .
+  }
+  
   ?authors rdf:first ?firstAuthor .
 
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
