@@ -8,7 +8,7 @@
 @base <http://dataexchange.clinicalgenome.org/gcixform> .
 
 
-# Variant types
+# Proband types
 gci:PREDICTED_OR_PROVEN_NULL_VARIANT :hasEvidenceLineType sepio:0004079 ;
     :hasEvidenceItemType sepio:0004034 .
     
@@ -23,7 +23,19 @@ gci:TWO_VARIANTS_WITH_GENE_IMPACT_IN_TRANS :hasEvidenceLineType sepio:0004019 ;
     
 gci:TWO_VARIANTS_IN_TRANS_WITH_ONE_DE_NOVO :hasEvidenceLineType sepio:0004018 ;
     :hasEvidenceItemType sepio:0004038 .
-    
+
+# Variant types
+
+gci:PREDICTED_OR_PROVEN_NULL :hasEvidenceLineType sepio:0004120 ;
+    :hasEvidenceItemType sepio:0004117 .
+
+gci:OTHER_VARIANT_TYPE :hasEvidenceLineType sepio:0004121 ;
+    :hasEvidenceItemType sepio:0004118 .
+
+
+# Variant types
+
+## TODO
 
 # biochemical function
 sepio:0004022 :hasEvidenceItemType sepio:0004041 ;
@@ -99,6 +111,9 @@ sepio:0004091 :hasEvidenceItemType sepio:0004086 ;
     :hasGCIType :ExomeSequencing .
     
 #### Connections to leaf-node evidence lines
+
+# :sepio/OverallGeneticEvidenceEvidenceLine
+sepio:0004005 :hasEvidenceLineType sepio:0004120, sepio:0004121 .
 
 # :sepio/AutosomalDominantOtherVariantCriterionAssessment
 sepio:0004011 :hasEvidenceLineType sepio:0004080 .

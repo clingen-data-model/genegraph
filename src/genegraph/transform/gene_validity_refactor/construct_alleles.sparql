@@ -6,7 +6,7 @@ construct
 {
 
   ?vd a ga4gh:VariationDescriptor ;
-  :ga4gh/CanonicalReference ?caid ;
+  :ga4gh/CanonicalReference ?canonical_reference ;
   :skos/preferred-label ?preferred_label . 
 
 }
@@ -39,9 +39,13 @@ where
   }
 
   OPTIONAL {
-    ?vd gci:clinvarVariantId ?cvId .
+    ?vd gci:clinvarVariantId ?cvIdstr .
+
+    BIND(IRI(CONCAT(?cvbase, ?cvIdstr)) AS ?cvId) .
   }
 
+  BIND(COALESCE(?caid, ?cvId) AS ?canonical_reference) .
+  
   BIND(COALESCE(?canonicalTranscriptTitle,
 		?maneTranscriptTitle,
 		?preferredTitle,
