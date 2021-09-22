@@ -24,7 +24,8 @@
                   "car" "http://reg.genome.network/allele/"
                   "cv" "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
                   "hgnc" "https://identifiers.org/hgnc:"
-                  "pmid" "https://pubmed.ncbi.nlm.nih.gov/"})
+                  "pmid" "https://pubmed.ncbi.nlm.nih.gov/"
+                  "geno" "http://purl.obolibrary.org/obo/GENO_"})
 
 (declare-query construct-proposition
                construct-evidence-level-assertion
@@ -44,6 +45,7 @@
                construct-alleles
                construct-articles
                construct-secondary-contributions
+               construct-variant-score
                )
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -73,8 +75,10 @@
             "hgncId" {"@type" "@id"}
 
             "autoClassification" {"@type" "@vocab"}
+            "alteredClassification" {"@type" "@vocab"}
             "diseaseId" {"@type" "@id"}
             "caseInfoType" {"@type" "@id"}
+            "variantType" {"@type" "@id"}
             ;; "experimental_scored" {"@type" "@id"}
             ;; "caseControl_scored" {"@type" "@id"}
             ;; "variants" {"@type" "@id"}
@@ -120,12 +124,14 @@
             "patient cells" "gcixform:PatientCells"
 
             ;; ;; evidence strength
+            "No Modification" "gcixform:NoModification"
             "Definitive" "SEPIO:0004504"
             "Strong" "SEPIO:0004505"
             "Moderate" "SEPIO:0004506"
             "Limited" "SEPIO:0004507"
             "No Known Disease Relationship" "SEPIO:0004508"
             "Refuted" "SEPIO:0004510"
+            "Disputed" "SEPIO:0004540"
             "No Classification" "SEPIO:0004508" ;; Maybe this should not exist in published records?
             ;; "No Classification" "SEPIO:0004508"
             }}))))
@@ -176,7 +182,8 @@
                         (construct-segregation-evidence params)
                         (construct-alleles params)
                         (construct-articles params) 
-                        (construct-secondary-contributions params))]
+                        (construct-secondary-contributions params)
+                        (construct-variant-score params))]
     (q/union unlinked-model
              (construct-evidence-connections 
               {::q/model

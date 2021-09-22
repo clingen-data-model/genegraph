@@ -106,6 +106,13 @@
  [:geno/Allele "http://purl.obolibrary.org/obo/GENO_0000512"]
  [:geno/Haplotype "http://purl.obolibrary.org/obo/GENO_0000871"]
  [:geno/Genotype "http://purl.obolibrary.org/obo/GENO_0000536"]
+ [:geno/AlleleOrigin "http://purl.obolibrary.org/obo/GENO_0000877"]
+ [:geno/DeNovoAlleleOrigin "http://purl.obolibrary.org/obo/GENO_0000880"]
+ [:geno/GermlineAlleleOrigin "http://purl.obolibrary.org/obo/GENO_0000888"]
+ [:geno/MaternalAlleleOrigin "http://purl.obolibrary.org/obo/GENO_0000878"]
+ [:geno/PaternalAlleleOrigin "http://purl.obolibrary.org/obo/GENO_0000879"]
+ [:geno/SomaticAlleleOrigin "http://purl.obolibrary.org/obo/GENO_0000882"]
+ [:geno/UnknownAlleleOrigin "http://purl.obolibrary.org/obo/GENO_0000881"]
  [:cg/HaploinsufficiencyScore "http://dataexchange.clinicalgenome.org/terms/HaploinsufficiencyScore"]
  [:cg/TriplosensitivityScore "http://dataexchange.clinicalgenome.org/terms/TriplosensitivityScore"]
  [:sepio/Contribution "http://purl.obolibrary.org/obo/SEPIO_0000158"]
@@ -313,6 +320,15 @@
  [:sepio/ProbandWithVariantEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004081"]
  [:sepio/ProbandEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004097"]
+ ;;
+ [:sepio/NullVariantEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004120"]
+ [:sepio/NonNullVariantEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004121"]
+ [:sepio/VariantEvidenceItem "http://purl.obolibrary.org/obo/SEPIO_0004116"]
+ [:sepio/NullVariantEvidenceItem "http://purl.obolibrary.org/obo/SEPIO_0004117"]
+ [:sepio/NonNullVariantEvidenceItem "http://purl.obolibrary.org/obo/SEPIO_0004118"]
+ [:sepio/VariantFunctionalImpactEvidenceItem "http://purl.obolibrary.org/obo/SEPIO_0004119"]
+ 
+ ;;
  [:sepio/GeneValidityEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004082"]
  [:sepio/GeneValidityGeneticEvidenceLine
