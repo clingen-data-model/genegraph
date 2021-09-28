@@ -109,7 +109,7 @@
 (defn dev-interceptors [gql-schema]
   (-> (lacinia-pedestal/default-interceptors gql-schema {})
       (lacinia/inject nil :replace ::lacinia-pedestal/body-data)
-      (lacinia/inject nil :replace ::lacinia-pedestal/enable-tracing)
+      ;; (lacinia/inject nil :replace ::lacinia-pedestal/enable-tracing)
       (lacinia/inject lacinia-pedestal/body-data-interceptor
                       :before
                       ::lacinia-pedestal/json-response)

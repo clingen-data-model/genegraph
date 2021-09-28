@@ -27,7 +27,9 @@
             [clojure.string :as str]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [taoensso.nippy :as nippy])
+            [taoensso.nippy :as nippy]
+            [genegraph.database.names :as db-names]
+            [genegraph.database.property-store :as property-store])
   (:import java.time.Instant
            org.apache.jena.rdf.model.AnonId))
 
