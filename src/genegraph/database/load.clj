@@ -4,6 +4,7 @@
             [camel-snake-kebab.core :as csk]
             [clojure.java.io :as io]
             [genegraph.database.instance :refer [db]]
+            [genegraph.database.property-store :as property-store]
             [genegraph.database.util :refer [property tx write-tx]]
             [genegraph.database.names :refer [local-property-names local-class-names]]
             [genegraph.database.query :as q]
@@ -71,9 +72,10 @@
   ([model name]
    (load-model model name {}))
   ([model name opts]
-     (write-tx
-      (.replaceNamedModel db name model)
-      {:succeeded true})))
+   (write-tx
+    (.replaceNamedModel db name model)
+    (property-store/put-model! model)
+    {:succeeded true})))
 
 (defn remove-model
   "Remove a named model from the database."

@@ -25,8 +25,14 @@
 (defn get-property
   "Get the list of values for the given property on the given resource."
   [resource property]
-  (rocksdb/rocks-get-multipart-key property-store
-                                   [(str resource) (str property)]))
+  ;; Contract for ld-> functions expects a seq as a return value
+  ;; may make more sense to move this there.
+  (let [result (rocksdb/rocks-get-multipart-key
+                property-store
+                [(str resource) (str property)])]
+    (if-not (= ::rocksdb/miss result)
+      (vector result)
+      [])))
 
 (defn property-in-store?
   "Return true if the given property is among those included in the
