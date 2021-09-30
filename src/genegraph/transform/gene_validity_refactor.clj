@@ -130,6 +130,7 @@
             "Moderate" "SEPIO:0004506"
             "Limited" "SEPIO:0004507"
             "No Known Disease Relationship" "SEPIO:0004508"
+            "No Reported Evidence" "SEPIO:0004508" ;; investigate the use of this
             "Refuted" "SEPIO:0004510"
             "Disputed" "SEPIO:0004540"
             "No Classification" "SEPIO:0004508" ;; Maybe this should not exist in published records?
