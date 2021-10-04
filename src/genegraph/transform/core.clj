@@ -20,7 +20,6 @@
             [genegraph.transform.clinvar.core]
             [genegraph.transform.rxnorm]
             [genegraph.env :as env]
-            [genegraph.transform.core :as xform]
             [io.pedestal.log :as log]))
 
 (defn add-model [event]

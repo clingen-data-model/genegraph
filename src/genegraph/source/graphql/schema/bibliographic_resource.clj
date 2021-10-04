@@ -2,10 +2,11 @@
   (:require [genegraph.database.query :as q]))
 
 (defn short-citation [_ _ value]
-  (str
-   (re-find #"^\w+"(q/ld1-> value [:dc/creator]))
-   " "
-   (q/ld1-> value [:dc/date])))
+  (if-let [creator (q/ld1-> value [:dc/creator])]
+    (str
+     (re-find #"^\w+" creator)
+     " "
+     (q/ld1-> value [:dc/date]))))
 
 (def bibliographic-resource
   {:name :BibliographicResource
