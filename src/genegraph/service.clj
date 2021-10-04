@@ -27,6 +27,14 @@
   (:import java.net.InetAddress
            (javax.servlet.http HttpServletRequest HttpServletResponse)))
 
+
+;; Currently just makes sure :error doesn't reach Pedestal
+;; More sophisticated handling to follow
+(def error-reporting-interceptor
+  (pedestal-interceptor/interceptor
+   {:name ::error-reporting
+    :error (fn [context] (dissoc context :error))}))
+
 (def open-tx-interceptor
   {:name ::open-tx
    :enter (fn [context] (begin-read-tx) context)
@@ -109,7 +117,7 @@
 (defn dev-interceptors [gql-schema]
   (-> (lacinia-pedestal/default-interceptors gql-schema {})
       (lacinia/inject nil :replace ::lacinia-pedestal/body-data)
-      (lacinia/inject nil :replace ::lacinia-pedestal/enable-tracing)
+      ;; (lacinia/inject nil :replace ::lacinia-pedestal/enable-tracing)
       (lacinia/inject lacinia-pedestal/body-data-interceptor
                       :before
                       ::lacinia-pedestal/json-response)
@@ -124,6 +132,9 @@
       ;;                 ::lacinia-pedestal/body-data)
       (lacinia/inject request-gate-interceptor
                       :after
+                      ::lacinia-pedestal/body-data)
+      (lacinia/inject error-reporting-interceptor
+                      :before
                       ::lacinia-pedestal/body-data)
       ;; (lacinia/inject user-info-interceptor
       ;;                 :after
@@ -152,7 +163,10 @@
             ;;                 ::lacinia-pedestal/inject-app-context)
             (lacinia/inject request-logging-interceptor
                       :before
-                      ::lacinia-pedestal/initialize-tracing))]
+                      ::lacinia-pedestal/initialize-tracing)
+            (lacinia/inject error-reporting-interceptor
+                            :before
+                            ::lacinia-pedestal/body-data))]
     (cond-> interceptor-chain
       env/use-response-cache (lacinia/inject 
                               (pedestal-interceptor/interceptor
@@ -169,6 +183,9 @@
                       :before
                       ::lacinia-subs/execute-operation)
       (lacinia/inject (pedestal-interceptor/interceptor log-request-interceptor)
+                      :before
+                      ::lacinia-subs/exception-handler)
+      (lacinia/inject error-reporting-interceptor
                       :before
                       ::lacinia-subs/exception-handler)
       ;; (lacinia/inject auth/auth-interceptor
@@ -188,6 +205,9 @@
             (lacinia/inject (pedestal-interceptor/interceptor open-tx-interceptor)
                             :before
                             ::lacinia-subs/execute-operation)
+            (lacinia/inject error-reporting-interceptor
+                            :before
+                            ::lacinia-subs/exception-handler)
             ;; (lacinia/inject auth/auth-interceptor
             ;;                 :after
             ;;                 ::lacinia-subs/exception-handler)

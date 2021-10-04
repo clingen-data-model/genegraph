@@ -19,12 +19,12 @@ where {
     ?evidenceLine gci:scoreExplanation ?scoreDescription .
   }
 
-  BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
-
   OPTIONAL  {
     ?evidenceLine gci:score ?adjustedScore .
   }
 
+  BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
+  
   ?evidenceItem gci:scores ?evidenceLine ;
   gci:label ?evidenceLabel ;
   gci:evidenceType ?gciType .

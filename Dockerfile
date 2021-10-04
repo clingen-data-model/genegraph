@@ -1,6 +1,6 @@
 # For more information on these images, and use of Clojure in Docker
 # https://hub.docker.com/_/clojure
-FROM clojure:openjdk-11-lein AS builder
+FROM clojure:openjdk-11-lein-2.9.6 AS builder
 
 # Copying and building deps as a separate step in order to mitigate
 # the need to download new dependencies every build.

@@ -22,17 +22,19 @@
             [clojure.string :as s]
             [clojure.set :as set]
             [clojure.spec.alpha :as spec]
-            [cognitect.rebl :as rebl]
+            ;; [cognitect.rebl :as rebl]
             [clojure.pprint :refer [pprint]]
             [clojure.string :as str]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [taoensso.nippy :as nippy])
+            [taoensso.nippy :as nippy]
+            [genegraph.database.names :as db-names]
+            [genegraph.database.property-store :as property-store])
   (:import java.time.Instant
            org.apache.jena.rdf.model.AnonId))
 
-(defn start-rebl []
-  (rebl/ui))
+;; (defn start-rebl []
+;;   (rebl/ui))
 
 (defn clear-named-grpahs-with-type [type-carrying-graph-name]
   (let [named-graphs (map str

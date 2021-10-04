@@ -3,6 +3,7 @@
             [clojure.datafy :as datafy :refer [datafy]]
             [clojure.string :as s]
             [genegraph.database.instance :refer [db]]
+            [genegraph.database.property-store :as property-store]
             [genegraph.database.names
              :as
              names
@@ -251,22 +252,24 @@
   ;; TODO fail more gracefully when starting point is a literal
   clojure.lang.IPersistentVector
   (step [edge start model]
-    (tx 
-     (let [property (kw-to-property (first edge))
-           out-fn (fn [n] (->> (.listObjectsOfProperty model (.resource n) property)
-                               iterator-seq))
-           in-fn (fn [n] (->> (.listResourcesWithProperty model property (.resource n))
-                              iterator-seq))
-           both-fn #(concat (out-fn %) (in-fn %))
-           step-fn (case (second edge)
-                     :> out-fn
-                     :< in-fn
-                     :- both-fn)
-           result (mapv #(to-clj % model) (step-fn start))]
-       (case (count result)
-         0 nil
-         ;; 1 (first result)
-         result)))))
+    (let [property (kw-to-property (first edge))]
+      (if (property-store/property-in-store? property)
+        (property-store/get-property start property)
+        (tx 
+         (let [out-fn (fn [n] (->> (.listObjectsOfProperty model (.resource n) property)
+                                   iterator-seq))
+               in-fn (fn [n] (->> (.listResourcesWithProperty model property (.resource n))
+                                  iterator-seq))
+               both-fn #(concat (out-fn %) (in-fn %))
+               step-fn (case (second edge)
+                         :> out-fn
+                         :< in-fn
+                         :- both-fn)
+               result (mapv #(to-clj % model) (step-fn start))]
+           (case (count result)
+             0 nil
+             ;; 1 (first result)
+             result)))))))
 
 (defn resource?
   "Return true if the object is an RDFResource"

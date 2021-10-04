@@ -5,6 +5,7 @@
             [me.raynes.fs :as fs]
             [genegraph.sink.base :as base]
             [genegraph.database.instance :as db]
+            [genegraph.database.property-store :as property-store]
             [genegraph.sink.event :as event]
             [genegraph.sink.stream :as stream]
             [genegraph.suggest.suggesters :as suggest]
@@ -53,11 +54,13 @@
   (with-redefs [env/data-vol path]
     (fs/mkdirs env/data-vol)
     (start #'db/db)
+    (start #'property-store/property-store)
     (base/initialize-db!)
     ;; (batch/process-batched-events!)
     (start #'suggest/suggestions)
     (suggest/build-all-suggestions)
     (stop #'suggest/suggestions)
+    (stop #'property-store/property-store)
     (stop #'db/db)))
 
 (defn build-database
@@ -67,6 +70,7 @@
   (with-redefs [env/data-vol path]
     (fs/mkdirs env/data-vol)
     (start #'db/db)
+    (start #'property-store/property-store)
     (base/initialize-db!)
     (batch/process-batched-events!)
     (start #'stream/consumer-thread)
@@ -84,6 +88,7 @@
     (log/info :fn :build-database :msg "Building suggesters...")
     (suggest/build-all-suggestions)
     (stop #'suggest/suggestions)
+    (stop #'property-store/property-store)
     (stop #'db/db)))
 
 (defn compress-database
