@@ -92,7 +92,7 @@
       (reset! offsets-up-to-date partitions-up-to-date?)
       (when (up-to-date?)
         (deliver all-offsets-up-to-date true))))
-  (log/debug :fn :set-up-to-date-status?
+  (log/info :fn :set-up-to-date-status?
              :current-offsets @current-offsets
              :end-offsets @end-offsets
              :offsets-up-to-date @offsets-up-to-date))

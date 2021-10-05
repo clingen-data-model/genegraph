@@ -12,17 +12,34 @@ steps:
   args: [ 'tag', 'genegraph:$COMMIT_SHA', 'gcr.io/clingen-stage/genegraph:$COMMIT_SHA']
 - name: 'gcr.io/cloud-builders/docker'
   args: [ 'tag', 'genegraph:$COMMIT_SHA', 'gcr.io/clingen-dx/genegraph:$COMMIT_SHA']
-  
-# sync genegraph-stage and genegraph-prod migration buckets
-- name: 'gcr.io/cloud-builders/gsutil'
-  args: [ '-m', 'rsync', '-dru', 'gs://genegraph-stage/', 'gs://genegraph-prod' ]
+- name: 'gcr.io/clingen-stage/git-image-updater'
+  secretEnv: ["GITHUB_TOKEN"]
+  args: 
+    - '-c'
+    - |
+      git clone https://clingen-ci:$$GITHUB_TOKEN@github.com/clingen-data-model/architecture \
+      && cd architecture \
+      && git checkout -b image-update-$SHORT_SHA \
+      && /usr/bin/yq eval -i ".genegraph_docker_image_tag = \"$COMMIT_SHA\"" ./helm/values/genegraph/values-stage.yaml \
+      && /usr/bin/yq eval -i ".genegraph_docker_image_tag = \"$COMMIT_SHA\"" ./helm/values/genegraph/values-prod.yaml \
+      && date "+%Y-%m-%dT%H%M" > /workspace/DATETIME.txt \
+      && /usr/bin/yq eval -i ".genegraph_data_version = \"$(tr -d '\n' < /workspace/DATETIME.txt)\"" ./helm/values/genegraph/values-stage.yaml \
+      && /usr/bin/yq eval -i ".genegraph_data_version = \"$(tr -d '\n' < /workspace/DATETIME.txt)\"" ./helm/values/genegraph/values-prod.yaml \
+      && git add -u \
+      && git -c user.name="Clingen CI Automation" -c user.email="clingendevs@broadinstitute.org" commit -m "bumping docker image for genegraph" \
+      && git push origin image-update-$SHORT_SHA \
+      && gh pr create --fill -l automation
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/clingen-stage/secrets/clingen-ci-github-token/versions/2
+      env: GITHUB_TOKEN
 
 # push the images
 images:
   - 'gcr.io/clingen-stage/genegraph:$COMMIT_SHA'
   - 'gcr.io/clingen-dx/genegraph:$COMMIT_SHA'
 
-# timeout if not complete in 30 minutes
-timeout: 1800s
+# timeout if not complete in 45 minutes
+timeout: 2700s
 
-  

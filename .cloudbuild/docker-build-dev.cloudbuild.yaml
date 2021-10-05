@@ -1,0 +1,40 @@
+# Cloud Build configuration for Genegraph - dev testing
+# 
+# Command line test usage:
+# gcloud builds submit --project=clingen-stage --config ./cloudbuild.yaml \
+#  --substitutions=COMMIT_SHA="testbuild" .
+
+# Builds genegraph and tags for dev image repository
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '.', '-t', 'genegraph:$COMMIT_SHA']
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'tag', 'genegraph:$COMMIT_SHA', 'gcr.io/clingen-dev/genegraph:$COMMIT_SHA']
+- name: 'gcr.io/clingen-dev/git-image-updater'
+  secretEnv: ["GITHUB_TOKEN"]
+  args: 
+    - '-c'
+    - |
+      git clone https://clingen-ci:$$GITHUB_TOKEN@github.com/clingen-data-model/architecture \
+      && cd architecture \
+      && git checkout -b image-update-$SHORT_SHA \
+      && /usr/bin/yq eval -i ".genegraph_docker_image_tag = \"$COMMIT_SHA\"" ./helm/values/genegraph/values-dev.yaml \
+      && date "+%Y-%m-%dT%H%M" > /workspace/DATETIME.txt \
+      && /usr/bin/yq eval -i ".genegraph_data_version = \"$(tr -d '\n' < /workspace/DATETIME.txt)\"" ./helm/values/genegraph/values-dev.yaml \
+      && git add -u \
+      && git -c user.name="Clingen CI Automation" -c user.email="clingendevs@broadinstitute.org" commit -m "bumping docker image for genegraph" \
+      && git push origin image-update-$SHORT_SHA \
+      && gh pr create --fill -l automation
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/clingen-dev/secrets/clingen-ci-github-token/versions/1
+      env: GITHUB_TOKEN
+
+# push the images
+images:
+  - 'gcr.io/clingen-dev/genegraph:$COMMIT_SHA'
+
+# timeout in seconds
+timeout: 2700s
+
