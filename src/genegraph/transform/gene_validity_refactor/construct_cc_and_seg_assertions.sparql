@@ -7,7 +7,7 @@ construct
   ?caseControlEvidenceLine a :sepio/OverallCaseControlEvidenceLine ;
   :sepio/evidence-line-strength-score ?caseControlTotal .
 
-  ?segregationEvidenceLine a :sepio/OverallSegregationEvidenceLine ;
+  ?segregationEvidenceLine a :sepio/SegregationEvidenceLine ;
   :sepio/evidence-line-strength-score ?segregationTotal .
   
 }
@@ -16,7 +16,7 @@ where
 
   ?classification a gci:provisionalClassification .
 
-  BIND (IRI(CONCAT(str(?classification), "_genetic_evidence_overall_evidence_line")) AS ?geneticEvidenceLine) .
+  BIND (IRI(CONCAT(str(?classification), "_overall_genetic_evidence_line")) AS ?geneticEvidenceLine) .
   
   ?classification gci:classificationPoints ?pointsTree .
 
