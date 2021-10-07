@@ -1,15 +1,13 @@
 [
- {:name "gci-neo4j-archive"
+ {:name :gci-neo4j-archive
   :source "gci-neo4j-archive.tar.gz"
   :type :compressed-event-files}
 
- {:name "gci-raw-snapshot"
+ {:name :gci-raw-snapshot
   :source "gci_snapshot_events_may_2020.tar.gz"
   :type :compressed-event-files}
  
- {:name "gci-express-json"
+ {:name :gci-express-json
   :source "ClinGen-Gene-Expess-Data-01092020.json"
   :type :json-event-sequence
-  :format :gci-express}
-
- ]
+  :format :gci-express}]
