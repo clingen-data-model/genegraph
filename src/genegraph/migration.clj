@@ -113,7 +113,9 @@
 (defn create-migration
   "Populate a new database, package and upload to Google Cloud"
   []
-  (let [version-id (new-version-identifier)
+  (let [data-version-id (if (some? env/data-version) env/data-version (new-version-identifier))
+        version-id (if (some? env/genegraph-version) (str data-version-id ":" env/genegraph-version)
+                       data-version-id)
         database-path (str env/base-dir "/" version-id)
         archive-path (str database-path ".tar.gz")]
     (build-database database-path)
