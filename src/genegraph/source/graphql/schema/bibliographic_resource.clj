@@ -4,7 +4,7 @@
 (defn short-citation [_ _ value]
   (if-let [creator (q/ld1-> value [:dc/creator])]
     (str
-     (re-find #"^\w+" creator)
+     (second (re-find #"^(.*)\W(\w+)$" creator))
      " "
      (q/ld1-> value [:dc/date]))))
 
