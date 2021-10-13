@@ -20,7 +20,7 @@ where {
   }
 
   OPTIONAL  {
-    ?gciScore gci:score ?adjustedScore .
+    ?evidenceLine gci:score ?adjustedScore .
   }
   
   BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
