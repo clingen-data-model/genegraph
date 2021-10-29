@@ -21,7 +21,6 @@
            [java.nio.file Path Paths]
            [java.io InputStream OutputStream FileInputStream File]
            [com.google.common.io ByteStreams]
-           [org.apache.kafka.clients.producer Producer KafkaProducer ProducerRecord]
            [com.google.cloud.storage Bucket BucketInfo Storage StorageOptions
             BlobId BlobInfo Blob]
            [com.google.cloud.storage Storage$BlobWriteOption
@@ -74,6 +73,7 @@
     (base/initialize-db!)
     (batch/process-batched-events!)
     (start #'stream/consumer-thread)
+    (start #'event/event-processing)
     (log/info :fn :build-database :msg "Processing streams...")
     (stream/wait-for-topics-up-to-date)
     (log/info :fn :build-database :msg "Stopping streams...")

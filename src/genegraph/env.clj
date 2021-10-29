@@ -19,6 +19,7 @@
 (def graphql-logging-topic (System/getenv "GENEGRAPH_GQL_LOGGING_TOPIC"))
 (def use-experimental-schema (System/getenv "GENEGRAPH_EXPERIMENTAL_SCHEMA"))
 (def batch-event-sources (System/getenv "GENEGRAPH_BATCH_EVENT_SOURCES"))
+(def transformer-mode (Boolean/valueOf (System/getenv "GENEGRAPH_TRANSFORMER_MODE")))
 
 (def dx-key-pass (System/getenv "SERVEUR_KEY_PASS"))
 
@@ -31,7 +32,8 @@
                   :genegraph-mode mode
                   :genegraph-validate-events validate-events
                   :genegraph-version genegraph-version
-                  :graphql-logging-topic graphql-logging-topic})
+                  :graphql-logging-topic graphql-logging-topic
+                  :genegraph-transformer-mode transformer-mode})
 
 (defn log-environment []
   (log/info :fn :log-environment

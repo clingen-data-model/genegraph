@@ -30,6 +30,7 @@
     (with-test-database
       (with-redefs [env/data-vol data-vol]
         (mount.core/start-without #'genegraph.sink.stream/consumer-thread
+                                  #'genegraph.sink.event/event-processing
                                   #'genegraph.server/server)
         (f)
         (mount.core/stop)))
@@ -223,4 +224,4 @@
       ;;                              :data
       ;;                              :gene
       ;;                              :genetic_conditions]))))))
-          )))))
+          )))

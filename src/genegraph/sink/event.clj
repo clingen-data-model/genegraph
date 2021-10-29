@@ -1,5 +1,6 @@
 (ns genegraph.sink.event
-  (:require [genegraph.database.query :as q]
+  (:require [genegraph.env :as env]
+            [genegraph.database.query :as q]
             [genegraph.database.load :refer [load-model remove-model]]
             [genegraph.database.util :refer [begin-write-tx close-write-tx write-tx]]
             [genegraph.source.graphql.common.cache :as cache]
@@ -12,6 +13,7 @@
                                                 add-validation-interceptor
                                                 add-subjects-interceptor]]
             [genegraph.suggest.suggesters :as suggest :refer [update-suggesters-interceptor]]
+            [genegraph.sink.stream :as stream :refer [consumer-thread]]
             [mount.core :as mount :refer [defstate]]
             [io.pedestal.interceptor :as intercept]
             [io.pedestal.interceptor.chain :as chain :refer [terminate]]
@@ -76,23 +78,59 @@
               (terminate e)
               e))})
 
-(def interceptor-chain [log-result-interceptor
-                        ann/add-metadata-interceptor
-                        ann/add-model-interceptor
-                        ann/add-iri-interceptor
-                        ann/add-validation-shape-interceptor
-                        ann/add-validation-context-interceptor
-                        ann/add-validation-interceptor
-                        ann/add-subjects-interceptor
-                        ann/add-action-interceptor
-                        ann/add-replaces-interceptor
-                        abort-on-dry-run-interceptor
-                        add-to-db-interceptor
-                        unpublish-interceptor
-                        replace-interceptor
-                        suggest/update-suggesters-interceptor
-                        cache/expire-resolver-cache-interceptor
-                        response-cache/expire-response-cache-interceptor])
+(defn stream-producer [event]
+  (if-let [producer-topic (stream/transformer-topic-for (::stream/topic event))]
+    (when (= :publish (::ann/action event))
+      (let [iri (::ann/iri event)
+            model (::q/model event)
+            producer (stream/producer-for-topic! producer-topic)
+            producer-record (stream/producer-record-for producer-topic iri model)
+            future (.send producer producer-record)]
+      (assoc event ::record-metadata (.get future))))
+    event))
+
+(def stream-producer-interceptor
+  "Interceptor for producing message to an output stream"
+  {:name ::stream-producer-interceptor
+   :enter stream-producer})
+
+(def transformer-interceptor-chain [ann/add-metadata-interceptor
+                                    ann/add-model-interceptor
+                                    ann/add-iri-interceptor
+                                    ann/add-validation-shape-interceptor
+                                    ann/add-validation-context-interceptor
+                                    ann/add-validation-interceptor
+                                    ann/add-subjects-interceptor
+                                    ann/add-action-interceptor
+                                    ann/add-replaces-interceptor
+                                    abort-on-dry-run-interceptor
+                                    add-to-db-interceptor
+                                    unpublish-interceptor
+                                    replace-interceptor
+                                    stream-producer-interceptor])
+
+(def web-interceptor-chain [log-result-interceptor
+                            ann/add-metadata-interceptor
+                            ann/add-model-interceptor
+                            ann/add-iri-interceptor
+                            ann/add-validation-shape-interceptor
+                            ann/add-validation-context-interceptor
+                            ann/add-validation-interceptor
+                            ann/add-subjects-interceptor
+                            ann/add-action-interceptor
+                            ann/add-replaces-interceptor
+                            abort-on-dry-run-interceptor
+                            add-to-db-interceptor
+                            unpublish-interceptor
+                            replace-interceptor
+                            suggest/update-suggesters-interceptor
+                            cache/expire-resolver-cache-interceptor
+                            response-cache/expire-response-cache-interceptor])
+
+(defn interceptor-chain []
+  (if (true? env/transformer-mode)
+    transformer-interceptor-chain
+    web-interceptor-chain))
 
 (defn inject-trace-into-interceptor-chain
   "Modifies the interceptor chain so that For every interceptor in the chain,
@@ -121,7 +159,7 @@
   (log/debug :fn :process-event! :event event :msg :event-received)
   (-> event 
       (chain/enqueue (map #(intercept/interceptor %)
-                          (inject-trace-into-interceptor-chain interceptor-chain)))
+                          (inject-trace-into-interceptor-chain (interceptor-chain))))
       chain/execute))
 
 (defn process-event-seq!
@@ -131,3 +169,6 @@
    (write-tx 
     (doseq [e event-seq]
       (process-event! (merge e opts))))))
+
+(defstate event-processing
+  :start (stream/start-consumers process-event-seq!))
