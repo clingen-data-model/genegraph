@@ -29,7 +29,7 @@ where {
   gci:rescue ?gciRescue  ;
   gci:label ?evidenceLabel .
 
-  ?gciRescue gci:rescueMethod ?evidenceDescription ;
+  ?gciRescue gci:explanation ?evidenceDescription ;
   gci:rescueType ?gciType .
 
   ?evidenceLineType gcixform:hasGCIType ?gciType ;
