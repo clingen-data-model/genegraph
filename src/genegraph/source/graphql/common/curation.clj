@@ -20,6 +20,7 @@
 
 (def gene-dosage-bgp
   '[[dosage_report :iao/is-about gene]
+    [gene :rdf/type :so/Gene]
     [dosage_report :rdf/type :sepio/GeneDosageReport]
     [dosage_report :bfo/has-part dosage_assertion]])
 
