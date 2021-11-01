@@ -33,7 +33,7 @@ where {
   ?gciEvidence gci:modelSystems ?gciModelSystem  ;
   gci:label ?evidenceLabel .
 
-  ?gciModelSystem gci:descriptionOfGeneAlteration ?evidenceDescription ;
+  ?gciModelSystem gci:explanation ?evidenceDescription ;
   gci:modelSystemsType ?gciType .
 
   ?evidenceLineType gcixform:hasGCIType ?gciType ;

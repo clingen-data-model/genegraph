@@ -225,6 +225,8 @@
 (defn service-map [interceptors subscription-interceptors gql-schema]
   (-> {:env :dev,
        ::http/host "0.0.0.0"
+       ::http/allowed-origins {:allowed-origins (constantly true)
+                               :creds true}
        :io.pedestal.http/routes
        (set/union
         (lacinia-pedestal/graphiql-asset-routes "/assets/graphiql")
