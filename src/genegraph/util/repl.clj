@@ -259,3 +259,12 @@
                   (filter #(re-find #".edn" (.getName %))))]
     (map #(edn/read-string (slurp %)) files)))
 
+(defn write-named-graphs-by-type [type destination]
+  (tx
+   (let [issues (q/select "select ?x where { ?x a ?type }"
+                          {:type type})]
+     (doseq [issue issues]
+       (let [issue-ttl (-> issue str q/get-named-graph q/to-turtle)
+             issue-number (re-find #"ISCA.*$" (str issue))]
+         (spit (str destination "/" issue-number ".ttl") issue-ttl)))
+     (count issues))))

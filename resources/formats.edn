@@ -9,7 +9,12 @@
                      :genegraph.annotate/graph-name :sepio/GeneDosageReport}
  :gene-dosage-jira {:genegraph.transform.core/format :gene-dosage-jira
                    :genegraph.annotate/root-type :sepio/GeneDosageReport
-                   :genegraph.annotate/graph-name :sepio/GeneDosageRecord}
+                    :genegraph.annotate/graph-name :sepio/GeneDosageRecord}
+ ;; Hopefully temporary, needed to recover a set of dosage records from the
+ ;; data exchange
+ :gene-dosage-restored {:genegraph.transform.core/format :turtle
+                        :genegraph.annotate/root-type :sepio/GeneDosageReport
+                        :genegraph.annotate/graph-name :sepio/GeneDosageRecord}
  :gene-validity  {:genegraph.transform.core/format :gci-legacy
                   :genegraph.annotate/root-type :sepio/GeneValidityReport
                   :genegraph.annotate/graph-name :sepio/GeneValidityProposition}
