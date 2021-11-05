@@ -12,8 +12,8 @@
                                                 add-metadata-interceptor
                                                 add-validation-interceptor
                                                 add-subjects-interceptor]]
+            [genegraph.sink.stream :as stream]
             [genegraph.suggest.suggesters :as suggest :refer [update-suggesters-interceptor]]
-            [genegraph.sink.stream :as stream :refer [consumer-thread]]
             [mount.core :as mount :refer [defstate]]
             [io.pedestal.interceptor :as intercept]
             [io.pedestal.interceptor.chain :as chain :refer [terminate]]
@@ -79,13 +79,15 @@
               e))})
 
 (defn stream-producer [event]
-  (if-let [producer-topic (stream/transformer-topic-for (::stream/topic event))]
+  (if-let [topic-key (::ann/producer-topic event)]
     (when (= :publish (::ann/action event))
       (let [iri (::ann/iri event)
             model (::q/model event)
-            producer (stream/producer-for-topic! producer-topic)
-            producer-record (stream/producer-record-for producer-topic iri model)
+            producer (stream/producer-for-topic! topic-key)
+            topic (-> stream/config :topics topic-key :name) ;; TODO TON - exposes too much - s/b f in stream.clj
+            producer-record (stream/producer-record-for topic iri model)
             future (.send producer producer-record)]
+        (log/debug :fn :stream-producer :topic topic :key iri)
       (assoc event ::record-metadata (.get future))))
     event))
 
@@ -170,5 +172,9 @@
     (doseq [e event-seq]
       (process-event! (merge e opts))))))
 
-(defstate event-processing
-  :start (stream/start-consumers process-event-seq!))
+(defstate stream-processing
+  :start (do
+           (stream/start-consumers!)
+           (stream/run-consumers! process-event-seq!))
+  :stop (stream/stop-consumers!))
+

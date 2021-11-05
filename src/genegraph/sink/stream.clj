@@ -21,23 +21,6 @@
 (defn consumer-topics []
   (mapv keyword (s/split env/dx-topics #";")))
       
-(defn transformer-topics
-  "Use the consumer topics defined in the env
-  to transitively (through the :transformer-topic-map
-  in kafka.edn) produce the associated producer topics.
-  Only emits producer topics for those consumers defined
-  in :transformer-topic-map."
-  []
-  (let [consumer-producer (:transformer-topic-map config)
-        producer-consumer (clojure.set/map-invert consumer-producer)]
-    (->> (consumer-topics)
-         (map #(get producer-consumer % (consumer-producer %)))
-         (filter some?))))
-
-(defn transformer-topic-for [consumer-topic]
-  "Return the transformer topic associated with the consumer topic"
-  (get (:transformer-topic-map config) consumer-topic))
-
 (defn offset-file []
   (str env/data-vol "/partition_offsets.edn"))
 
@@ -51,12 +34,15 @@
 
 (defn consumer-record-to-clj [consumer-record spec]
   {::annotate/format spec 
-   :genegraph.sink.stream/key (.key consumer-record)
-   :genegraph.sink.stream/value (.value consumer-record)
+   :genegraph.sink.event/key (.key consumer-record)
+   :genegraph.sink.event/value (.value consumer-record)
    ::timestamp (.timestamp consumer-record)
    ::topic (.topic consumer-record)
    ::partition (.partition consumer-record)
-   ::offset (.offset consumer-record)})
+   ::offset (.offset consumer-record)
+   ::annotate/producer-topic (-> (:topics config)
+                                 spec
+                                 :producer-topic)})
 
 ;; Java Properties object defining configuration of Kafka client
 (defn- client-configuration 
@@ -90,7 +76,6 @@
         consumer-config (merge-with into (:common cluster-config) (:consumer cluster-config))] 
     (KafkaConsumer. consumer-config)))
 
-;; TODO - TON - Unit Test with redef for multiple clusters
 (defn producer-for-topic!
   "Returns a single KafkaProducer per cluster, as KafkaProducers are thread-safe
   and a single producer across threads will generally be faster than
@@ -178,7 +163,6 @@
             (->> records
                  (map #(consumer-record-to-clj % topic))
                  event-processing-fn))
-                 ;;event/process-event-seq!))
           (update-consumer-offsets! consumer tp))
         (swap! consumer-topic-state assoc topic :stopped)
         (log/debug :fn :assign-topic-consumer!
@@ -202,12 +186,14 @@
       (.start thread)
       (swap! consumer-topic-state assoc topic :running))))
 
-(defn start-consumers [event-processing-fn]
+(defn run-consumers! [event-processing-fn]
   (subscribe-consumers! event-processing-fn (consumer-topics)))
   
-(defstate consumer-thread
-  :start (reset! run-consumer true)
-  :stop  (reset! run-consumer false))
+(defn start-consumers! []
+  (reset! run-consumer true))
+
+(defn stop-consumers! []
+  (reset! run-consumer false))
 
 (defn long-poll [c]
   (-> c (.poll (Duration/ofMillis 2000)) .iterator iterator-seq))

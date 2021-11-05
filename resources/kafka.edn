@@ -25,7 +25,8 @@
             :gene-dosage-jira {:name "gene_dosage_raw"
                                 :format :gene-dosage-jira
                                 :root-type :sepio/GeneDosageReport
-                                :cluster :dx-ccloud}
+                               :cluster :dx-ccloud
+                               :producer-topic :test-public-v1}
             :gene-validity  {:format :gene-validity-v1
                              :name "gene_validity"
                              :root-type :sepio/GeneValidityReport
@@ -61,7 +62,4 @@
                                :format :clinvar-combined}
             :test-public-v1 {:name "test-public-v1"
                              :format :json-ld
-                             :cluster :zx-ccloud}}
- ;; transformer consumer/producer pairs (i.e. { :input-topic :output-topic })
-:transformer-topic-map { :gene-dosage-jira :test-public-v1 }}
-
+                             :cluster :dx-ccloud}}}
