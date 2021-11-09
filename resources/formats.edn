@@ -7,7 +7,7 @@
  :gene-dosage-stage {:genegraph.transform.core/format :json-ld
                      :genegraph.annotate/root-type :sepio/GeneDosageReport
                      :genegraph.annotate/graph-name :sepio/GeneDosageReport}
- :gene-dosage-jira {:genegraph.transform.core/format :turtle
+ :gene-dosage-jira {:genegraph.transform.core/format :gene-dosage-jira
                    :genegraph.annotate/root-type :sepio/GeneDosageReport
                     :genegraph.annotate/graph-name :sepio/GeneDosageRecord}
  :gene-dosage-restored {:genegraph.transform.core/format :turtle
