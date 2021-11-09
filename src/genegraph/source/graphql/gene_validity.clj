@@ -29,7 +29,7 @@
       (or (find-newest-gci-curation (:iri args))
           (find-gciex-curation (:iri args))))))
 
-(defresolver report-date [args value]
+(defresolver ^:expire-by-value report-date [args value]
   (ld1-> value [:sepio/qualified-contribution :sepio/activity-date]))
 
 
@@ -54,16 +54,16 @@
    :sepio/DisputingEvidence :DISPUTED
    :sepio/StrongEvidence :STRONG})
 
-(defresolver classification [args value]
+(defresolver ^:expire-by-value classification [args value]
   (-> value :sepio/has-object first))
 
-(defresolver gene [args value]
+(defresolver ^:expire-by-value gene [args value]
   (ld1-> value [:sepio/has-subject :sepio/has-subject]))
 
-(defresolver disease [args value]
+(defresolver ^:expire-by-value disease [args value]
   (ld1-> value [:sepio/has-subject :sepio/has-object]))
 
-(defresolver mode-of-inheritance [args value]
+(defresolver ^:expire-by-value mode-of-inheritance [args value]
   (ld1-> value [:sepio/has-subject :sepio/has-qualifier]))
 
 ;; (defresolver attributed-to [args value]
@@ -78,16 +78,16 @@
     :sepio/has-agent ?agent . } 
    limit 1 "))
 
-(defresolver attributed-to [args value]
+(defresolver ^:expire-by-value attributed-to [args value]
   (first (primary-attribution-query {:assertion value})))
 
-(defresolver contributions [args value]
+(defresolver ^:expire-by-value contributions [args value]
   (:sepio/qualified-contribution value))
 
-(defresolver specified-by [args value]
+(defresolver ^:expire-by-value specified-by [args value]
   (ld1-> value [:sepio/is-specified-by]))
 
-(defresolver has-format [args value]
+(defresolver ^:expire-by-value has-format [args value]
   (ld1-> value [:dc/has-format]))
 
 (defn legacy-json [_ _ value]

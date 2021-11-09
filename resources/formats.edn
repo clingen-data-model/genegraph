@@ -10,8 +10,6 @@
  :gene-dosage-jira {:genegraph.transform.core/format :gene-dosage-jira
                    :genegraph.annotate/root-type :sepio/GeneDosageReport
                     :genegraph.annotate/graph-name :sepio/GeneDosageRecord}
- ;; Hopefully temporary, needed to recover a set of dosage records from the
- ;; data exchange
  :gene-dosage-restored {:genegraph.transform.core/format :turtle
                         :genegraph.annotate/root-type :sepio/GeneDosageReport
                         :genegraph.annotate/graph-name :sepio/GeneDosageRecord}
