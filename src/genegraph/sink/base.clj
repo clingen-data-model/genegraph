@@ -39,9 +39,13 @@
 (defn retrieve-base-data! [resources]
   (doall (pmap (fn [resource]
                  (let [{uri-str :source, target-file :target, opts :fetch-opts, name :name} resource
-                      path (str (target-base) target-file)]
+                       path (str (target-base) target-file)]
                    (io/make-parents path)
-                   (fetch/fetch-data uri-str path opts))) resources)))
+                   (try
+                     (fetch/fetch-data uri-str path opts)
+                     (catch Exception e
+                       (log/error :fn :retrieve-base-data :resource name)
+                       (throw e))))) resources)))
 
 (defn import-documents! [documents]
   (doall (pmap (fn [d]

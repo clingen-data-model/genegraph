@@ -28,6 +28,21 @@ where {
   ?evidenceItem gci:scores ?evidenceLine ;
   gci:label ?evidenceLabel ;
   gci:evidenceType ?gciType .
+
+  OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction / gci:evidenceForFunction ?biochemicalFunctionDescription .
+  }
+
+  OPTIONAL {
+    ?evidenceItem gci:proteinInteractions / gci:relationshipOfOtherGenesToDisese ?proteinInteractionDescription .
+  }
+
+  OPTIONAL {
+    ?evidenceItem gci:expression / gci:alteredExpression / gci:evidence ?expressionDescription .
+  }
+  
+  
+  BIND(COALESCE(?expressionDescription, ?proteinInteractionDescription, ?biochemicalFunctionDescription) AS ?evidenceDescription) .
   
   ?evidenceLineType gcixform:hasGCIType ?gciType ;
   gcixform:hasEvidenceItemType ?evidenceItemType ;

@@ -18,22 +18,22 @@
         " order by desc(?date) "
         " limit 1 ")))
 
-(defresolver report-date [args value]
+(defresolver ^:expire-by-value report-date [args value]
   (some-> (report-date-query {:report value}) first :sepio/activity-date first))
 
-(defresolver report-id [args value]
+(defresolver ^:expire-by-value report-id [args value]
   (->> value str (re-find #"\w+$")))
 
-(defresolver wg-label [args value]
+(defresolver ^:expire-by-value wg-label [args value]
   (q/ld1-> value [:sepio/qualified-contribution :sepio/has-agent :rdfs/label]))
 
 (defresolver classification-description [args value]
   "View report for scoring details")
 
-(defresolver conditions [args value]
+(defresolver ^:expire-by-value conditions [args value]
   (:sepio/is-about-condition value))
 
-(defresolver source [args value]
+(defresolver ^:expire-by-value source [args value]
   (q/ld1-> value [:dc/source]))
 
 (def wg-search-actionability-reports

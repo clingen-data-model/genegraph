@@ -6,6 +6,10 @@
  {:name :gci-raw-snapshot
   :source "gci_snapshot_events_may_2020.tar.gz"
   :type :compressed-event-files}
+
+ {:name :gene-dosage-restored
+  :source "gene-dosage-restored.tar.gz"
+  :type :compressed-event-files}
  
  {:name :gci-express-json
   :source "ClinGen-Gene-Expess-Data-01092020.json"
