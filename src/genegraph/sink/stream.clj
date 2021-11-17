@@ -86,13 +86,14 @@
         producer (get @producers cluster-key)]
     (if producer
       producer
-      (let [producer-config (merge-with into (:common cluster-config) (:producer cluster-config))
-            producer(KafkaProducer. producer-config)]
+      (let [producer (-> (merge-with into (:common cluster-config) (:producer cluster-config))
+                         client-configuration
+                         KafkaProducer.)]
         (swap! producers assoc cluster-key producer)
         producer))))
 
-(defn producer-record-for [topic iri model]
-   (.ProducerRecord topic iri model))
+(defn producer-record-for [kafka-topic-name key value]
+   (ProducerRecord. kafka-topic-name key value))
 
 (defn- read-end-offsets! [consumer topic-partitions]
   (let [kafka-end-offsets (.endOffsets consumer topic-partitions)

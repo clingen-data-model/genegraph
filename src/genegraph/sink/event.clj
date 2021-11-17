@@ -82,13 +82,15 @@
   (if-let [topic-key (::ann/producer-topic event)]
     (when (= :publish (::ann/action event))
       (let [iri (::ann/iri event)
-            model (::q/model event)
+            turtle-model (-> event ::q/model q/to-turtle)
             producer (stream/producer-for-topic! topic-key)
-            topic (-> stream/config :topics topic-key :name) ;; TODO TON - exposes too much - s/b f in stream.clj
-            producer-record (stream/producer-record-for topic iri model)
+            producer-topic-name (-> stream/config :topics topic-key :name) ;; TODO TON - exposes too much - s/b f in stream.clj
+            producer-record (stream/producer-record-for producer-topic-name iri turtle-model)
             future (.send producer producer-record)]
-        (log/debug :fn :stream-producer :topic topic :key iri)
-      (assoc event ::record-metadata (.get future))))
+        (log/debug :fn :stream-producer :producer-topic-name producer-topic-name :key iri :value turtle-model)
+        (->> (.get future)
+             ((fn [f] {:timestamp (.timestamp f) :offset (.offset f) :partition (.partition f) :topic (.topic f)}))
+             (assoc event ::producer-metadata))))
     event))
 
 (def stream-producer-interceptor
