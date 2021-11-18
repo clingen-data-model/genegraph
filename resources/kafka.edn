@@ -1,14 +1,12 @@
-{:clusters {:dx-ccloud {:common {"ssl.endpoint.identification.algorithm" "https"
-                                 "sasl.mechanism" "PLAIN"
-                                 "bootstrap.servers" "pkc-4yyd6.us-east1.gcp.confluent.cloud:9092"
-                                 "request.timeout.ms" "20000"
-                                 "retry.backoff.ms" "500"
-                                 "security.protocol" "SASL_SSL"
-                                 "sasl.jaas.config" genegraph.env/dx-jaas-config}
-                        :consumer {"key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
-                                   "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}
-                        :producer {"key.serializer" "org.apache.kafka.common.serialization.StringSerializer"
-                                   "value.serializer" "org.apache.kafka.common.serialization.StringSerializer"}}}
+{:clusters {:dx-ccloud {"ssl.endpoint.identification.algorithm" "https"
+                        "sasl.mechanism" "PLAIN"
+                        "request.timeout.ms" "20000"
+                        "bootstrap.servers" "pkc-4yyd6.us-east1.gcp.confluent.cloud:9092"
+                        "retry.backoff.ms" "500"
+                        "security.protocol" "SASL_SSL"
+                        "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
+                        "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
+                        "sasl.jaas.config" genegraph.env/dx-jaas-config}}
  :topics   {:actionability {:name "actionability"
                             :format :actionability-v1
                             :root-type :sepio/ActionabilityReport
@@ -23,10 +21,13 @@
                                 :root-type :sepio/GeneDosageReport
                                 :cluster :dx-ccloud}
             :gene-dosage-jira {:name "gene_dosage_raw"
-                               :format :gene-dosage-jira
-                               :root-type :sepio/GeneDosageReport
-                               :cluster :dx-ccloud
-                               :producer-topic :test-public-v1}
+                                :format :gene-dosage-jira
+                                :root-type :sepio/GeneDosageReport
+                                :cluster :dx-ccloud}
+            :gene-dosage-jira-clone {:name "gene_dosage_raw_clone"
+                                     :format :gene-dosage-jira
+                                     :root-type :sepio/GeneDosageReport
+                                     :cluster :dx-ccloud}
             :gene-validity  {:format :gene-validity-v1
                              :name "gene_validity"
                              :root-type :sepio/GeneValidityReport
@@ -57,9 +58,7 @@
                                        :cluster :dx-ccloud}
             :gene-tracker-test {:name "gt-precuration-events-test"
                                 :cluster :dx-ccloud}
-            :clinvar-combined {:name "clinvar-combined-dev"
+            :clinvar-combined {:name "clinvar-combined"
                                :cluster :dx-ccloud
-                               :format :clinvar-combined}
-            :test-public-v1 {:name "test-public-v1"
-                             :format :json-ld
-                             :cluster :dx-ccloud}}}
+                               :format :clinvar-combined}}}
+
