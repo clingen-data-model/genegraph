@@ -1,48 +1,62 @@
 prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
-construct {
-  ?family  a ?evidenceLineType ;
-  :dc/description ?scoreDescription ;
-  :sepio/has-evidence ?segregationIRI ;
-  :sepio/evidence-line-strength-score ?lodScore .
 
-  ?segregationIRI  a ?evidenceItemType ;
-  :dc/description ?evidenceDescription ;
+construct {
+  ?family a :sepio/FamilyCosegregation ;
+  :dc/description ?scoreDescription ;
+  :sepio/sequencing-method ?sequencingMethod ;
   :dc/source ?article ;
+  :sepio/estimated-lod-score ?estimatedLodScore ;
+  :sepio/published-lod-score ?publishedLodScore ;
+  :sepio/phenotype-positive-allele-positive ?affected ;
+  :sepio/phenotype-negative-allele-negative ?unaffected ;
+  :sepio/meets-inclusion-criteria ?meetsCriteria ;
+  :sepio/is-about-condition ?phenotypes ;
   :rdfs/label ?evidenceLabel .
+
 }
 where {
+  
   ?family a gci:family ;
   gci:segregation ?segregation ;
   gci:label ?evidenceLabel .
 
-  # Limit to scored segregations
-  # ?segregation gci:includeLodScoreInAggregateCalculation true .
+  # Limit to scored segregations -- need to consider how to incorporate this
+  ?segregation gci:includeLodScoreInAggregateCalculation ?meetsCriteria .
+  
   OPTIONAL {
-    ?segregation gci:sequencingMethod ?gciType .
-    ?declaredEvidenceLineType gcixform:hasGCIType ?gciType .
+    ?segregation gci:sequencingMethod ?sequencingMethod .
   }
 
-  # Bind specific type if identified, if not, use generic segregation evidence line
-  BIND(COALESCE(?declaredEvidenceLineType, <http://purl.obolibrary.org/obo/SEPIO_0004036>) AS ?evidenceLineType)
+  ?annotation gci:families | ( gci:groups / gci:familyIncluded ) ?family ;
+  gci:article ?publication .
+  ?publication gci:pmid ?pmid .
+  BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
 
-  # gcixform:hasEvidenceItemType ?evidenceItemType .
+  optional {
+    ?segregation gci:publishedLodScore ?publishedLodScore .
+  }
 
-  # ?annotation gci:families ?family ;
-  # gci:article ?publication .
-  # ?publication gci:pmid ?pmid .
-  # BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
+  optional {
+    ?segregation gci:estimatedLodScore ?estimatedLodScore .
+  }
 
-  # optional {
-  #   ?segregation gci:publishedLodScore ?publishedLodScore .
-  # }
+  optional {
+    ?segregation gci:reasonExplanation ?scoreDescription ;
+  }
+  
+  optional {
+    ?segregation gci:numberOfAffectedWithGenotype ?affected .
+  }
 
-  # optional {
-  #   ?segregation gci:estimatedLodScore ?estimatedLodScore .
-  # }
+  optional {
+    ?family gci:hpoIdInDiagnosis ?phenotypeString .
+    BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", SUBSTR(?phenotypeString, STRLEN(?phenotypeString) - 7 , 7))) AS ?phenotypes) .
+  }
 
-  # BIND(COALESCE(?estimatedLodScore, ?publishedLodScore) AS ?lodScore) .
-
-  BIND(CONCAT(STR(?family), "seg") AS ?segregationIRI) .
-
+  # NB, this seems specific to AR curations, don't forget to check AD .
+  optional {
+    ?segregation gci:numberOfUnaffectedWithoutBiallelicGenotype ?unaffected .
+  }
+  
 }

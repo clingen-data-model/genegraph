@@ -545,6 +545,7 @@
   "http://purl.obolibrary.org/obo/mondo#predisposes_towards"]
  [:mondo-p/synonym-to-be-removed-from-public-release-but-maintained-in-edit-version-as-record-of-external-usage
   "http://purl.obolibrary.org/obo/mondo#EXCLUDE"]
+ [:ncit/lod-score "http://purl.obolibrary.org/obo/NCIT_C16800"]
  [:oban/association-has-object
   "http://purl.org/oban/association_has_object"]
  [:oban/association-has-predicate
@@ -1164,6 +1165,7 @@
  [:sepio/has-prefix "http://purl.obolibrary.org/obo/SEPIO_0000367"]
  [:sepio/has-qualifier "http://purl.obolibrary.org/obo/SEPIO_0000144"]
  [:sepio/has-role "http://purl.obolibrary.org/obo/SEPIO_0000046"]
+ [:sepio/sequencing-method "http://purl.obolibrary.org/obo/SEPIO_0004122"]
  [:sepio/has-subject "http://purl.obolibrary.org/obo/SEPIO_0000388"]
  [:sepio/has-supporting-evidence-line
   "http://purl.obolibrary.org/obo/SEPIO_0000007"]
@@ -1223,6 +1225,7 @@
   "http://purl.obolibrary.org/obo/SEPIO_0000306"]
  [:sepio/measures-parameter
   "http://purl.obolibrary.org/obo/SEPIO_0000114"]
+ [:sepio/meets-inclusion-criteria "http://purl.obolibrary.org/obo/SEPIO_0004126"]
  [:sepio/median-sequencing-coverage
   "http://purl.obolibrary.org/obo/SEPIO_0000303"]
  [:sepio/obsolete-evidence-assessed-by
@@ -1263,6 +1266,8 @@
   "http://purl.obolibrary.org/obo/SEPIO_0000231"]
  [:sepio/strongly-contradicts
   "http://purl.obolibrary.org/obo/SEPIO_0000100"]
+ [:sepio/estimated-lod-score "http://purl.obolibrary.org/obo/SEPIO_0004125"]
+ [:sepio/published-lod-score "http://purl.obolibrary.org/obo/SEPIO_0004124"]
  [:sepio/total-allele-count
   "http://purl.obolibrary.org/obo/SEPIO_0000298"]
  [:sepio/total-individual-count
@@ -1281,6 +1286,10 @@
  [:sepio/validated-by "http://purl.obolibrary.org/obo/SEPIO_0000151"]
  [:sepio/variant-allele-count
   "http://purl.obolibrary.org/obo/SEPIO_0000296"]
+ [:sepio/phenotype-positive-allele-positive "http://purl.obolibrary.org/obo/SEPIO_0000292"]
+ [:sepio/phenotype-negative-allele-negative "http://purl.obolibrary.org/obo/SEPIO_0000289"]
+ [:sepio/phenotype-positive-allele-negative "http://purl.obolibrary.org/obo/SEPIO_0000290"]
+ [:sepio/phenotype-negative-allele-positive "http://purl.obolibrary.org/obo/SEPIO_0000291"]
  [:shacl/alternative-path "http://www.w3.org/ns/shacl#alternativePath"]
  [:shacl/and "http://www.w3.org/ns/shacl#and"]
  [:shacl/annotation-property

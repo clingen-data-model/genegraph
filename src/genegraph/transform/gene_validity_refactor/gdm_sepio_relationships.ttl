@@ -102,13 +102,20 @@ sepio:0004021 :hasEvidenceItemType sepio:0004040 ;
 
 #### Segregation
 
-# single gene
-sepio:0004090 :hasEvidenceItemType sepio:0004085 ;
-    :hasGCIType :CandidateGeneSequencing .
+# TODO validate segregation
+# # :sepio/SegregationCriterionAssessment
 
-# multi-locus
-sepio:0004091 :hasEvidenceItemType sepio:0004086 ;
-    :hasGCIType :ExomeSequencing .
+sepio:0004012 :hasEvidenceLineType sepio:0000247 .
+
+# sepio:0004012 :hasEvidenceLineType sepio:0004090, sepio:0004091 .
+
+# # single gene
+# sepio:0004090 :hasEvidenceItemType sepio:0004085 ;
+#     :hasGCIType :CandidateGeneSequencing .
+
+# # multi-locus
+# sepio:0004091 :hasEvidenceItemType sepio:0004086 ;
+#     :hasGCIType :ExomeSequencing .
     
 #### Connections to leaf-node evidence lines
 
@@ -129,10 +136,6 @@ sepio:0004008 :hasEvidenceLineType sepio:0004019 , sepio:0004018 .
 
 # # :sepio/CaseControlEvidenceCriterionAssessment
 sepio:0004007 :hasEvidenceLineType sepio:0004020, sepio:0004021 .
-
-# TODO validate segregation
-# # :sepio/SegregationCriterionAssessment
-sepio:0004012 :hasEvidenceLineType sepio:0004090, sepio:0004091 .
 
 # :sepio/FunctionalCriterionAssessment
 sepio:0004013 :hasEvidenceLineType sepio:0004022 , sepio:0004023 , sepio:0004024 .

@@ -70,6 +70,7 @@
             "HGNC" "https://identifiers.org/hgnc:"
             "MONDO" "http://purl.obolibrary.org/obo/MONDO_"
             "SEPIO" "http://purl.obolibrary.org/obo/SEPIO_"
+            "NCIT" "http://purl.obolibrary.org/obo/NCIT_"
             
             ;; ;; declare attributes with @id, @vocab types
             "hgncId" {"@type" "@id"}
@@ -102,8 +103,11 @@
             "Single variant analysis" "gcixform:SingleVariantAnalysis"
 
             ;; segregation
-            "Candidate gene sequencing" "gcixform:CandidateGeneSequencing"
-            "Exome/genome or all genes sequenced in linkage region" "gcixform:ExomeSequencing"
+            ;; "Candidate gene sequencing" "gcixform:CandidateGeneSequencing"
+            ;; "Exome/genome or all genes sequenced in linkage region" "gcixform:ExomeSequencing"
+
+            "Candidate gene sequencing" "SEPIO:0004543"
+            "Exome/genome or all genes sequenced in linkage region" "SEPIO:0004541"
 
             ;; Experimental evidence types
             "Expression" "gcixform:Expression"
@@ -138,7 +142,8 @@
             }}))))
 
 (defn parse-gdm [gdm-json]
-  (let [gdm-with-fixed-curies (s/replace gdm-json #"MONDO_" "MONDO:")
+  (let [gdm-with-fixed-curies (-> gdm-json
+                                  (s/replace #"MONDO_" "MONDO:"))
         is (-> (str context "," (subs gdm-with-fixed-curies 1))
                .getBytes
                ByteArrayInputStream.)]
@@ -184,7 +189,8 @@
                         (construct-alleles params)
                         (construct-articles params) 
                         (construct-secondary-contributions params)
-                        (construct-variant-score params))]
+                        (construct-variant-score params)
+                        )]
     (q/union unlinked-model
              (construct-evidence-connections 
               {::q/model

@@ -41,6 +41,10 @@
   :source "https://www.w3.org/2009/08/skos-reference/skos.rdf",
   :target "skos.rdf",
   :format :rdf}
+ ;; {:name "https://www.ebi.ac.uk/efo/efo"
+ ;;  :source "https://www.ebi.ac.uk/efo/efo.owl"
+ ;;  :target "efo.owl"
+ ;;  :format :rdf}
  {:name "http://purl.obolibrary.org/obo/so.owl"
   :source "https://raw.githubusercontent.com/The-Sequence-Ontology/SO-Ontologies/master/Ontology_Files/so.owl",
   :target "so.owl",
