@@ -9,6 +9,9 @@
    :fields {:conditions {:type '(list :Resource)
                          :description "segregating phenotypes within the family"
                          :path [:sepio/is-about-condition]}
+            :sequencing_method {:type :Resource
+                                :description "sequencing method used to detect the genotype under consideration"
+                                :path [:sepio/sequencing-method]}
             :phenotype_positive_allele_positive_count
             {:type 'Int
              :description "Count of individuals with described phenotype noted genotype."
