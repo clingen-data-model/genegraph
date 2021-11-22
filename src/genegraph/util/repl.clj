@@ -199,6 +199,18 @@
              ann/add-replaces))
        stream))
 
+(defn process-event [event]
+  (-> event
+      ann/add-metadata
+      ann/add-model
+      ann/add-iri
+      ann/add-validation-shape
+      ann/add-validation-context
+      ann/add-validation
+      ann/add-subjects
+      ann/add-action
+      ann/add-replaces))
+
 (defn invalid-events [events]
   (filter #(or (:exception %) (::spec/invalid %)) events))
 

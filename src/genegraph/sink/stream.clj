@@ -100,7 +100,6 @@
 (defn update-offsets! [consumer tps]
   (read-end-offsets! consumer tps)
   (doseq [tp tps]
-    
     (let [key [(.topic tp) (.partition tp)]]
       (when (not= (get @current-offsets key) (get @end-offsets key))
         (swap! current-offsets assoc [(.topic tp) (.partition tp)] (.position consumer tp))

@@ -10,6 +10,9 @@
  :gene-dosage-jira {:genegraph.transform.core/format :gene-dosage-jira
                    :genegraph.annotate/root-type :sepio/GeneDosageReport
                     :genegraph.annotate/graph-name :sepio/GeneDosageRecord}
+ :gene-dosage-jira-clone {:genegraph.transform.core/format :gene-dosage-jira
+                   :genegraph.annotate/root-type :sepio/GeneDosageReport
+                    :genegraph.annotate/graph-name :sepio/GeneDosageRecord}
  :gene-dosage-restored {:genegraph.transform.core/format :turtle
                         :genegraph.annotate/root-type :sepio/GeneDosageReport
                         :genegraph.annotate/graph-name :sepio/GeneDosageRecord}

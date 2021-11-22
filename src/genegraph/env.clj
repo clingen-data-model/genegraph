@@ -31,7 +31,8 @@
                   :genegraph-mode mode
                   :genegraph-validate-events validate-events
                   :genegraph-version genegraph-version
-                  :graphql-logging-topic graphql-logging-topic})
+                  :graphql-logging-topic graphql-logging-topic
+                  :batch-event-sources batch-event-sources})
 
 (defn log-environment []
   (log/info :fn :log-environment
