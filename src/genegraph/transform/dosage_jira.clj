@@ -208,7 +208,7 @@
 (defn- dosage-proposition-object [curation dosage]
   (let [phenotype-field (if (= 1 dosage) :customfield-10200 :customfield-10201)
         phenotype (get-in curation [:fields phenotype-field])
-        object (or (if (re-find #"MONDO:" phenotype)
+        object (or (if (and phenotype (re-find #"MONDO:" phenotype))
                      (q/resource phenotype)
                      (omim-str-to-mondo phenotype))
                    (q/resource "http://purl.obolibrary.org/obo/MONDO_0000001"))
@@ -307,3 +307,6 @@
     (if (spec/invalid? (spec/conform ::fields (:fields jira-json)))
       (assoc event ::spec/invalid true)
       (assoc event ::q/model (-> jira-json gene-dosage-report l/statements-to-model)))))
+
+
+
