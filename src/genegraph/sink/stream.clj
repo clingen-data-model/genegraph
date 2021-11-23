@@ -2,7 +2,6 @@
   (:require [genegraph.annotate :as annotate]
             [genegraph.env :as env]
             [clojure.java.io :as io]
-            [mount.core :refer [defstate]]
             [clojure.edn :as edn]
             [io.pedestal.log :as log]
             [clojure.string :as s]

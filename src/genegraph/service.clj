@@ -222,34 +222,42 @@
                               :before
                               ::lacinia-subs/send-operation-response))))
 
+(def base-service-map
+  {:env :dev
+   ::http/host "0.0.0.0"
+   ::http/allowed-origins {:allowed-origins (constantly true)
+                           :creds true}
+   :io.pedestal.http/routes #{}
+   :io.pedestal.http/port 8888,
+   :io.pedestal.http/type :jetty,
+   :io.pedestal.http/join? false,
+   :io.pedestal.http/secure-headers nil})
+
+(defn graphql-routes [interceptors]
+  (set/union(lacinia-pedestal/graphiql-asset-routes "/assets/graphiql")
+            #{["/api"
+               :post interceptors
+               :route-name
+               :com.walmartlabs.lacinia.pedestal2/graphql-api]
+              ["/graphql"
+               :post interceptors
+               :route-name
+               ::legacy-api-route]
+              ["/ide"
+               :get (lacinia-pedestal/graphiql-ide-handler {})
+               :route-name
+               :com.walmartlabs.lacinia.pedestal2/graphiql-ide]}))
+
 (defn service-map [interceptors subscription-interceptors gql-schema]
-  (-> {:env :dev,
-       ::http/host "0.0.0.0"
-       ::http/allowed-origins {:allowed-origins (constantly true)
-                               :creds true}
-       :io.pedestal.http/routes
-       (set/union
-        (lacinia-pedestal/graphiql-asset-routes "/assets/graphiql")
-        #{["/api"
-           :post interceptors
-           :route-name
-           :com.walmartlabs.lacinia.pedestal2/graphql-api]
-          ["/graphql"
-           :post interceptors
-           :route-name
-           ::legacy-api-route]
-          ["/ide"
-           :get (lacinia-pedestal/graphiql-ide-handler {})
-           :route-name
-           :com.walmartlabs.lacinia.pedestal2/graphiql-ide]}),
-       :io.pedestal.http/port 8888,
-       :io.pedestal.http/type :jetty,
-       :io.pedestal.http/join? false,
-       :io.pedestal.http/secure-headers nil}
+  (-> base-service-map
+      (assoc :io.pedestal.http/routes (graphql-routes interceptors))
       lacinia-pedestal/enable-graphiql
       (lacinia-pedestal/enable-subscriptions 
        gql-schema
        {:subscription-interceptors subscription-interceptors})))
+
+(defn transformer-service []
+  base-service-map)
 
 (defn dev-service 
   "Service map to be used for development mode."

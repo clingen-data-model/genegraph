@@ -30,6 +30,7 @@
 (defn start-server! []
   (let [service-map (case env/mode
                       "production" (service/service)
+                      "transformer" (service/transformer-service)
                       (service/dev-service))]
     (server/start 
      (server/create-server
@@ -93,7 +94,7 @@
   "The entry-point for 'lein run'"
   [& args]
   (if (= 0 (count args))
-    (if (true? env/transformer-mode)
+    (if (env/transformer-mode)
       (run-server-transformer nil)
       (run-server-genegraph nil))
     (run-migration nil)))

@@ -132,7 +132,7 @@
                             response-cache/expire-response-cache-interceptor])
 
 (defn interceptor-chain []
-  (if (true? env/transformer-mode)
+  (if (env/transformer-mode)
     transformer-interceptor-chain
     web-interceptor-chain))
 

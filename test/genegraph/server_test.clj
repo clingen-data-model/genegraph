@@ -29,8 +29,7 @@
     (mount/stop)
     (with-test-database
       (with-redefs [env/data-vol data-vol]
-        (mount.core/start-without #'genegraph.sink.stream/consumer-thread
-                                  #'genegraph.sink.event/event-processing
+        (mount.core/start-without #'genegraph.sink.event/stream-processing
                                   #'genegraph.server/server)
         (f)
         (mount.core/stop)))
@@ -124,6 +123,8 @@
       ann/add-metadata
       ann/add-model
       ann/add-iri
+      ann/add-validation-shape
+      ann/add-validation-context
       ann/add-validation
       ann/add-subjects))
 
