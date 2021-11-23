@@ -199,12 +199,10 @@
             findings)))
 
 (defn- omim-str-to-mondo [omim-str]
-  (println omim-str)
   (when-let [omim (some->> omim-str
                            (re-find #"^\d*$")
                            (str "OMIM:")
                            q/resource)]
-    (println omim)
     (q/ld1-> omim [[:skos/has-exact-match :<]])))
 
 (defn- dosage-proposition-object [curation dosage]
@@ -215,7 +213,6 @@
                      (omim-str-to-mondo phenotype))
                    (q/resource "http://purl.obolibrary.org/obo/MONDO_0000001"))
         iri (proposition-iri curation dosage)]
-    (println object)
     [[iri :sepio/has-object object]]))
 
 (defn- gene-dosage-variant [iri curation dosage]
