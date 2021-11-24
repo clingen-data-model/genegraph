@@ -269,7 +269,7 @@
                 (dev-subscription-interceptors gql-schema)
                 gql-schema)))
 
-(defn service
+(defn prod-service
   "Service map to be used for production mode"
   ([] (service (if env/use-experimental-schema
                  (experimental-schema/merged-schema)

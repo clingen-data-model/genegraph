@@ -29,7 +29,7 @@
 
 (defn start-server! []
   (let [service-map (case env/mode
-                      "production" (service/service)
+                      "production" (service/prod-service)
                       "transformer" (service/transformer-service)
                       (service/dev-service))]
     (server/start 
