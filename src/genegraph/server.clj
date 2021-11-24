@@ -94,7 +94,7 @@
   "The entry-point for 'lein run'"
   [& args]
   (if (= 0 (count args))
-    (if (env/transformer-mode)
+    (if (env/transformer-mode?)
       (run-server-transformer nil)
       (run-server-genegraph nil))
     (run-migration nil)))

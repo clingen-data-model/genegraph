@@ -38,5 +38,5 @@
   (log/info :fn :log-environment
             :env environment))
 
-(defn transformer-mode []
+(defn transformer-mode? []
   (= "transformer" mode))

@@ -79,8 +79,10 @@
               e))})
 
 (defn stream-producer [event]
+  (log/info :fn :stream-producer :action (::ann/action event) :iri (::ann/iri event))
   (if-let [topic-key (::ann/producer-topic event)]
     (when (= :publish (::ann/action event))
+      (log/info :fn :stream-producer :action (::ann/action event) :iri (::ann/iri event) :msg "PUBLISHED!")
       (let [iri (::ann/iri event)
             turtle-model (-> event ::q/model q/to-turtle)
             producer (stream/producer-for-topic! topic-key)
@@ -132,7 +134,7 @@
                             response-cache/expire-response-cache-interceptor])
 
 (defn interceptor-chain []
-  (if (env/transformer-mode)
+  (if (env/transformer-mode?)
     transformer-interceptor-chain
     web-interceptor-chain))
 
