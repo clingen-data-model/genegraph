@@ -110,7 +110,8 @@
                             :request-ip-addr (get-in ctx [:request :remote-addr])
                             :servlet-request (.toString (.getRequestURL (get-in ctx [:request :servlet-request])))
                             :servlet-request-body (get-in ctx [:request :body])
-                            :reponse-status (.getStatus (get-in ctx [:request :servlet-response]))
+                            :reponse-status (some-> (get-in ctx [:request :servlet-response])
+                                                    .getStatus)
                             :response-time (str total "ms"))
                ctx))}))
     
@@ -271,7 +272,7 @@
 
 (defn prod-service
   "Service map to be used for production mode"
-  ([] (service (if env/use-experimental-schema
+  ([] (prod-service (if env/use-experimental-schema
                  (experimental-schema/merged-schema)
                  (gql/schema))))
   ([gql-schema]

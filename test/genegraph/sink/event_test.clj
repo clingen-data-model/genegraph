@@ -7,7 +7,7 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]))
 
-(use-fixtures :once mount-database-fixture)
+(use-fixtures :each mount-database-fixture)
 
 ;; TODO - TON - Test Failing due to no ::graph-name entry in add-iri - discuss with Tristan
 (deftest decorate-event-with-iri

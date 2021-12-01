@@ -8,7 +8,7 @@
             [clojure.java.io :as io]
             [clojure.string :as string])
 
-(use-fixtures :once mount-database-fixture)  
+(use-fixtures :each mount-database-fixture)  
 
 (deftest decorate-event-with-iri
   (let [evt (-> "test_data/gene_validity_0_1094.edn" io/resource slurp edn/read-string)]

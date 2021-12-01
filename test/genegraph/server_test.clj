@@ -142,7 +142,7 @@
 (deftest event-lifecycle-test
   (with-open [r (io/reader (io/resource "test_data/test_events.edn"))]
     (let [events (edn/read (PushbackReader. r))
-          server (::server/service-fn (server/create-servlet (service/service)))
+          server (::server/service-fn (server/create-servlet (service/dev-service)))
           query (create-query-fn server)]
       (doseq [base-event (:base-data events)]
         (event/process-event! base-event))

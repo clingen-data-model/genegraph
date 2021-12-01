@@ -4,7 +4,7 @@
             [genegraph.database.load :refer [statements-to-model]]
             [genegraph.server-test :refer [mount-database-fixture]]))
 
-(use-fixtures :once mount-database-fixture)  
+(use-fixtures :each mount-database-fixture)  
 
 (def sample-data (statements-to-model [["http://test/resource1" :rdf/type :owl/Class]
                                        ["http://test/resource1" :rdfs/label "TestClass"]]))
