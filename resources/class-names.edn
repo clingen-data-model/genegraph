@@ -39,6 +39,7 @@
  [:sepio/DosageSensitivityProposition "http://purl.obolibrary.org/obo/SEPIO_0002003"]
  [:sepio/EvidenceLevelAssertion "http://purl.obolibrary.org/obo/SEPIO_0002001"]
  [:sepio/EvidenceDirection "http://purl.obolibrary.org/obo/SEPIO_0000402"]
+ [:sepio/FamilyCosegregation "http://purl.obolibrary.org/obo/SEPIO_0000247"]
  [:sepio/VariantPathogenicityInterpretation "http://purl.obolibrary.org/obo/SEPIO_0000190"]
  [:foaf/Agent "http://xmlns.com/foaf/0.1/Agent"]
  [:foaf/Group "http://xmlns.com/foaf/0.1/Group"]
