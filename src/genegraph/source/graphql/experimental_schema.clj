@@ -9,6 +9,7 @@
             [genegraph.source.graphql.schema.proband-evidence :as model-proband]
             [genegraph.source.graphql.schema.variation-descriptor :as model-variation]
             [genegraph.source.graphql.schema.bibliographic-resource :as model-bibliographic-resource]
+            [genegraph.source.graphql.schema.segregation :as model-segregation]
             [com.walmartlabs.lacinia :as lacinia]
             [genegraph.database.util :refer [tx]]
             [genegraph.source.graphql.common.schema :as schema-builder]
@@ -31,6 +32,7 @@
    model-find/find-query
    model-find/query-result
    model-find/find-query
+   model-segregation/segregation
    model-bibliographic-resource/bibliographic-resource])
 
 

@@ -10,14 +10,14 @@
 (def dx-topics (System/getenv "CG_SEARCH_TOPICS"))
 (def dx-jaas-config (System/getenv "DX_JAAS_CONFIG"))
 (def genegraph-bucket (System/getenv "GENEGRAPH_BUCKET"))
-(def use-gql-cache (System/getenv "GENEGRAPH_GQL_CACHE"))
+(def use-gql-cache (Boolean/valueOf (System/getenv "GENEGRAPH_GQL_CACHE")))
 (def mode (System/getenv "GENEGRAPH_MODE"))
 (def validate-events (Boolean/valueOf (System/getenv "GENEGRAPH_VALIDATE_EVENTS")))
-(def use-response-cache (System/getenv "GENEGRAPH_RESPONSE_CACHE"))
+(def use-response-cache (Boolean/valueOf (System/getenv "GENEGRAPH_RESPONSE_CACHE")))
 (def genegraph-version (System/getenv "GENEGRAPH_IMAGE_VERSION"))
 (def database-build-mode (System/getenv "GENEGRAPH_DATABASE_BUILD_MODE"))
 (def graphql-logging-topic (System/getenv "GENEGRAPH_GQL_LOGGING_TOPIC"))
-(def use-experimental-schema (System/getenv "GENEGRAPH_EXPERIMENTAL_SCHEMA"))
+(def use-experimental-schema (Boolean/valueOf (System/getenv "GENEGRAPH_EXPERIMENTAL_SCHEMA")))
 (def batch-event-sources (System/getenv "GENEGRAPH_BATCH_EVENT_SOURCES"))
 
 (def dx-key-pass (System/getenv "SERVEUR_KEY_PASS"))
@@ -32,7 +32,8 @@
                   :genegraph-validate-events validate-events
                   :genegraph-version genegraph-version
                   :graphql-logging-topic graphql-logging-topic
-                  :batch-event-sources batch-event-sources})
+                  :batch-event-sources batch-event-sources
+                  :use-experimental-schema use-experimental-schema})
 
 (defn log-environment []
   (log/info :fn :log-environment

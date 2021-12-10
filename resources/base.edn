@@ -12,10 +12,11 @@
   :source "http://www.w3.org/2011/content.rdf",
   :target "content.ttl",
   :format :rdf}
- {:name "http://xmlns.com/foaf/0.1/"
-  :source "http://xmlns.com/foaf/spec/index.rdf",
-  :target "foaf.rdf",
-  :format :rdf} 
+ ;; FOAF times out--is xmlns dead?
+ ;; {:name "http://xmlns.com/foaf/0.1/"
+ ;;  :source "http://xmlns.com/foaf/spec/index.rdf",
+ ;;  :target "foaf.rdf",
+ ;;  :format :rdf} 
  {:name "http://www.w3.org/ns/sparql-service-description#"
   :source "https://www.w3.org/ns/sparql-service-description.ttl"
   :target "sparql-service-description.ttl"
@@ -40,6 +41,10 @@
   :source "https://www.w3.org/2009/08/skos-reference/skos.rdf",
   :target "skos.rdf",
   :format :rdf}
+ ;; {:name "https://www.ebi.ac.uk/efo/efo"
+ ;;  :source "https://www.ebi.ac.uk/efo/efo.owl"
+ ;;  :target "efo.owl"
+ ;;  :format :rdf}
  {:name "http://purl.obolibrary.org/obo/so.owl"
   :source "https://raw.githubusercontent.com/The-Sequence-Ontology/SO-Ontologies/master/Ontology_Files/so.owl",
   :target "so.owl",

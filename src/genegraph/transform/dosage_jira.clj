@@ -205,14 +205,19 @@
                            q/resource)]
     (q/ld1-> omim [[:skos/has-exact-match :<]])))
 
-
 (defn- dosage-proposition-object [curation dosage]
-  (let [mondo-field (if (= 1 dosage) :customfield-11631 :customfield-11633)
-        mondo (some->> curation :fields mondo-field (re-find #"MONDO:\d*") q/resource)
-        omim-field (if (= 1 dosage) :customfield-10200 :customfield-10201)
-        omim (omim-str-to-mondo (get-in curation [:fields omim-field]))
-        object (or mondo
-                   omim
+  (let [legacy-mondo-field (if (= 1 dosage) :customfield-11631 :customfield-11633)
+        legacy-mondo (some->> curation
+                              :fields
+                              legacy-mondo-field
+                              (re-find #"MONDO:\d*")
+                              q/resource)
+        phenotype-field (if (= 1 dosage) :customfield-10200 :customfield-10201)
+        phenotype (get-in curation [:fields phenotype-field])
+        object (or (if (and phenotype (re-find #"MONDO:" phenotype))
+                     (q/resource phenotype)
+                     (omim-str-to-mondo phenotype))
+                   legacy-mondo
                    (q/resource "http://purl.obolibrary.org/obo/MONDO_0000001"))
         iri (proposition-iri curation dosage)]
     [[iri :sepio/has-object object]]))
@@ -309,3 +314,6 @@
     (if (spec/invalid? (spec/conform ::fields (:fields jira-json)))
       (assoc event ::spec/invalid true)
       (assoc event ::q/model (-> jira-json gene-dosage-report l/statements-to-model)))))
+
+
+

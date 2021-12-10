@@ -22,7 +22,7 @@
             [clojure.string :as s]
             [clojure.set :as set]
             [clojure.spec.alpha :as spec]
-            [cognitect.rebl :as rebl]
+            ;; [cognitect.rebl :as rebl]
             [clojure.pprint :refer [pprint]]
             [clojure.string :as str]
             [clojure.java.io :as io]
@@ -33,8 +33,8 @@
   (:import java.time.Instant
            org.apache.jena.rdf.model.AnonId))
 
-(defn start-rebl []
-  (rebl/ui))
+;; (defn start-rebl []
+;;   (rebl/ui))
 
 (defn clear-named-grpahs-with-type [type-carrying-graph-name]
   (let [named-graphs (map str
@@ -271,3 +271,12 @@
                   (filter #(re-find #".edn" (.getName %))))]
     (map #(edn/read-string (slurp %)) files)))
 
+(defn write-named-graphs-by-type [type destination]
+  (tx
+   (let [issues (q/select "select ?x where { ?x a ?type }"
+                          {:type type})]
+     (doseq [issue issues]
+       (let [issue-ttl (-> issue str q/get-named-graph q/to-turtle)
+             issue-number (re-find #"ISCA.*$" (str issue))]
+         (spit (str destination "/" issue-number ".ttl") issue-ttl)))
+     (count issues))))
