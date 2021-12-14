@@ -82,11 +82,10 @@
   (log/info :fn :stream-producer :action (::ann/action event) :iri (::ann/iri event))
   (if-let [topic-key (::ann/producer-topic event)]
     (when (= :publish (::ann/action event))
-      (log/info :fn :stream-producer :action (::ann/action event) :iri (::ann/iri event) :msg "PUBLISHED!")
       (let [iri (::ann/iri event)
             turtle-model (-> event ::q/model q/to-turtle)
             producer (stream/producer-for-topic! topic-key)
-            producer-topic-name (-> stream/config :topics topic-key :name) ;; TODO TON - exposes too much - s/b f in stream.clj
+            producer-topic-name (-> stream/config :topics topic-key :name)
             producer-record (stream/producer-record-for producer-topic-name iri turtle-model)
             future (.send producer producer-record)]
         (log/debug :fn :stream-producer :producer-topic-name producer-topic-name :key iri :value turtle-model)
