@@ -25,8 +25,12 @@
             :gene-dosage-jira {:name "gene_dosage_raw"
                                :format :gene-dosage-jira
                                :root-type :sepio/GeneDosageReport
-                               :cluster :dx-ccloud
-                               :producer-topic :test-public-v1}
+                               :cluster :dx-ccloud}
+;;            :gene-dosage-jira {:name "gene_dosage_raw"
+;;                               :format :gene-dosage-jira
+;;                               :root-type :sepio/GeneDosageReport
+;;                               :cluster :dx-ccloud
+;;                               :producer-topic :test-public-v1}
             :gene-validity  {:format :gene-validity-v1
                              :name "gene_validity"
                              :root-type :sepio/GeneValidityReport
