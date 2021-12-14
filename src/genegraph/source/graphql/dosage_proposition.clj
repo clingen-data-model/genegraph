@@ -16,7 +16,7 @@
 ;; Reflects the classification from the dosage process and not the SEPIO-derived value
 ;; and not the SEPIO structure of gene dosage curations generally, pending a discussion
 ;; with stakeholders, hopefully can be reviewed and (perhaps) deprecated in future iterations
-(defresolver dosage-classification [args value]
+(defresolver ^:expire-by-value dosage-classification [args value]
   (if (q/is-rdf-type? value :sepio/EvidenceLevelAssertion)
     (case (q/to-ref (q/ld1-> value [:sepio/has-subject :sepio/has-predicate]))
       :geno/PathogenicForCondition (let [score (q/ld1-> value [:sepio/has-object])]
@@ -34,16 +34,16 @@
      :ordinal 30
      :enum_value :ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE}))
 
-(defresolver classification-description [args value]
+(defresolver ^:expire-by-value classification-description [args value]
   (q/ld1-> value [:sepio/has-object :rdfs/label]))
 
-(defresolver report-date [args value]
+(defresolver ^:expire-by-value report-date [args value]
   (q/ld1-> value [:sepio/qualified-contribution :sepio/activity-date]))
 
-(defresolver evidence [args value]
+(defresolver ^:expire-by-value evidence [args value]
   (q/ld-> value [:sepio/has-evidence]))
 
-(defresolver score [args value]
+(defresolver ^:expire-by-value score [args value]
   (when-let [classification (classification-description nil args value)]
     (case (str/lower-case classification)
       "no evidence" :NO_EVIDENCE
@@ -54,21 +54,21 @@
       "gene associated with autosomal recessive phenotype" :ASSOCIATED_WITH_AUTOSOMAL_RECESSIVE_PHENOTYPE
       "dosage sensitivity unlikely" :DOSAGE_SENSITIVITY_UNLIKELY)))
 
-(defresolver assertion-type [args value]
+(defresolver ^:expire-by-value assertion-type [args value]
   (if (= 1 (q/ld1-> value [:sepio/has-subject :sepio/has-subject :geno/has-member-count]))
     :HAPLOINSUFFICIENCY_ASSERTION
     :TRIPLOSENSITIVITY_ASSERTION))
 
-(defresolver comments [args value]
+(defresolver ^:expire-by-value comments [args value]
   (q/ld1-> value [:dc/description]))
 
-(defresolver phenotypes [args value]
+(defresolver ^:expire-by-value phenotypes [args value]
   (str/join ", " (q/ld-> value [[:sepio/has-object :>] [:owl/equivalent-class :<] :rdfs/label])))
 
-(defresolver gene [args value]
+(defresolver ^:expire-by-value gene [args value]
   (q/ld1-> value [:sepio/has-subject :sepio/has-subject :geno/has-location]))
 
-(defresolver disease [args value]
+(defresolver ^:expire-by-value disease [args value]
   (let [disease  (q/ld1-> value [:sepio/has-subject :sepio/has-object])]
     (when-not (= (q/resource :mondo/Disease) disease)
       disease)))
