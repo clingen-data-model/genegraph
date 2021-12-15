@@ -17,7 +17,7 @@ construct {
 
   ?contribution :sepio/has-agent ?affiliation ;
   :bfo/realizes :sepio/ApproverRole ;
-  :sepio/activity-date ?classificationDate .
+  :sepio/activity-date ?date .
 
   ?autoClassification a :sepio/GeneValidityEvidenceLevelAutoClassification ;
   :sepio/has-subject ?proposition ;
@@ -39,8 +39,17 @@ where {
   gci:evidenceSummary ?description ;
   gci:autoClassification ?autoEvidenceLevel ;
   gci:alteredClassification ?alteredEvidenceLevel ;
-  gci:classificationDate ?classificationDate ;
   gci:classificationPoints ?pointsTree .
+
+  OPTIONAL {
+    ?classification gci:classificationDate ?classificationDate .
+  }
+
+  OPTIONAL {
+    ?classification gci:approvalDate ?approvalDate .
+  }
+
+  BIND(COALESCE(?classificationDate, ?approvalDate) AS ?date)
 
   BIND(IF(?alteredEvidenceLevel = gcixform:NoModification, ?autoEvidenceLevel, ?alteredEvidenceLevel) AS ?evidencelevel) .
 
