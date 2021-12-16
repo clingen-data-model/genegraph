@@ -19,7 +19,7 @@
      :get (fn [_] {:status 200 :body "server is live"})
      :route-name ::liveness]
     ["/ready"
-     :get (fn [_] (if (true? @initialized?)
+     :get (fn [_] (if (and (@initialized? (stream/consumers-up-to-date?)))
                     {:status 200 :body "server is ready"}
                     {:status 503 :body "server is not ready"}))
      :route-name ::readiness]

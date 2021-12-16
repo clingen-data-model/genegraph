@@ -79,12 +79,10 @@
    (resource/construct query-string params model)))
 
 (defn get-named-graph [name]
-  (tx
-   (.getNamedModel db name)))
+  (.getNamedModel db name))
 
 (defn list-named-graphs []
-  (tx
-   (into [] (iterator-seq (.listNames db)))))
+   (into [] (iterator-seq (.listNames db))))
 
 (defn to-turtle [model]
   (let [os (ByteArrayOutputStream.)]
