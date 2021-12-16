@@ -38,3 +38,6 @@
 (defn log-environment []
   (log/info :fn :log-environment
             :env environment))
+
+(defn transformer-mode? []
+  (= "transformer" mode))
