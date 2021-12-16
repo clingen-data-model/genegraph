@@ -68,14 +68,14 @@
   (log/info :fn :-main :message "Genegraph fully initialized, all systems go"))
 
 (defn run-migration
-  [_]
+  [migration-args]
   (log/info :fn :-main :message "Creating migration")
   (env/log-environment)
-  (migration/create-migration))
+  (migration/create-migration (rest migration-args)))
 
 (defn -main
   "The entry-point for 'lein run'"
   [& args]
   (if (= 0 (count args))
     (run-server nil)
-    (run-migration nil)))
+    (run-migration args)))

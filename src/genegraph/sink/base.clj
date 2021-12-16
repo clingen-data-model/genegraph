@@ -36,27 +36,30 @@
 (defn read-base-resources []
   (read-edn base-resources-edn))
 
-(defn retrieve-base-data! [resources]
+(defn retrieve-base-data! [resources source-path]
   (doall (pmap (fn [resource]
                  (let [{uri-str :source, target-file :target, opts :fetch-opts, name :name} resource
-                       path (str (target-base) target-file)]
-                   (io/make-parents path)
+                       source-uri (if source-path (str "file://" source-path target-file) uri-str)
+                       target-path (str (target-base) target-file)]
+                   (io/make-parents target-path)
                    (try
-                     (fetch/fetch-data uri-str path opts)
+                     (fetch/fetch-data source-uri target-path opts)
                      (catch Exception e
-                       (log/error :fn :retrieve-base-data :resource name)
+                       (log/error :fn :retrieve-base-data :resource name :source-uri source-uri :target-path target-path)
                        (throw e))))) resources)))
 
-(defn import-documents! [documents]
-  (doall (pmap (fn [d]
+(defn import-documents! [documents source-path]
+  (doall (pmap (fn [d source-path]
                  (log/debug :fn :import-documents! :msg :importing :name (:name d))
                  (db/load-model (transform-doc d) (:name d))) documents)))
 
-(defn initialize-db! []
-  (let [res (read-base-resources)]
-    (retrieve-base-data! res)
-    (import-documents! res)
-    (log/debug :fn :initialize-db! :msg :initialization-complete)))
+(defn initialize-db! 
+  ([] (initialize-db! nil))
+  ([source-path]
+   (let [res (read-base-resources)]
+     (retrieve-base-data! res source-path)
+     (import-documents! res)
+     (log/debug :fn :initialize-db! :msg :initialization-complete))))
 
 (defn import-document [name documents]
   (import-documents! (filter #(= name (:name %)) documents)))

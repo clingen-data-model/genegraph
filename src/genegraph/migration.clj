@@ -65,13 +65,14 @@
 
 (defn build-database
   "Build the Jena database and associated indexes from scratch."
-  [path]
-  (log/info :fn :build-database :msg (str "Building database at " path))
-  (with-redefs [env/data-vol path]
+  [dest-path source-path]
+  (log/info :fn :build-database :msg (str "Building database at " dest-path " from "
+                                          (if source-path source-path " source sites.")))
+  (with-redefs [env/data-vol dest-path]
     (fs/mkdirs env/data-vol)
     (start #'db/db)
     (start #'property-store/property-store)
-    (base/initialize-db!)
+    (base/initialize-db! source-path)
     (batch/process-batched-events!)
     (start #'stream/consumer-thread)
     (log/info :fn :build-database :msg "Processing streams...")
@@ -112,16 +113,17 @@
 
 (defn create-migration
   "Populate a new database, package and upload to Google Cloud"
-  []
+  [arg-seq]
   (let [data-version-id (if (some? env/data-version) env/data-version (new-version-identifier))
         version-id (if (some? env/genegraph-version) (str data-version-id ":" env/genegraph-version)
                        data-version-id)
-        database-path (str env/base-dir "/" version-id)
-        archive-path (str database-path ".tar.gz")]
-    (build-database database-path)
-    (compress-database database-path archive-path)
+        source-database-path (if (some? arg-seq) (str env/base-dir "/" (first arg-seq) "/base/") nil)
+        dest-database-path (str env/base-dir "/" version-id)
+        dest-archive-path (str dest-database-path ".tar.gz")]
+    (build-database dest-database-path source-database-path)
+    (compress-database dest-database-path dest-archive-path)
     (Thread/sleep 1000) ;; seems to be a race condition here to avoid
-    (send-database env/genegraph-bucket archive-path version-id)))
+    (send-database env/genegraph-bucket dest-archive-path version-id)))
 
 (defn create-local-base-migration
   "Populate a new database with just local data, not intended for Google Cloud"
