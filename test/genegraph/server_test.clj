@@ -29,7 +29,7 @@
     (mount/stop)
     (with-test-database
       (with-redefs [env/data-vol data-vol]
-        (mount.core/start-without #'genegraph.sink.stream/consumer-thread
+        (mount.core/start-without #'genegraph.sink.event/stream-processing
                                   #'genegraph.server/server)
         (f)
         (mount.core/stop)))
@@ -123,6 +123,8 @@
       ann/add-metadata
       ann/add-model
       ann/add-iri
+      ann/add-validation-shape
+      ann/add-validation-context
       ann/add-validation
       ann/add-subjects))
 
@@ -140,7 +142,7 @@
 (deftest event-lifecycle-test
   (with-open [r (io/reader (io/resource "test_data/test_events.edn"))]
     (let [events (edn/read (PushbackReader. r))
-          server (::server/service-fn (server/create-servlet (service/service)))
+          server (::server/service-fn (server/create-servlet (service/dev-service)))
           query (create-query-fn server)]
       (doseq [base-event (:base-data events)]
         (event/process-event! base-event))
@@ -223,4 +225,4 @@
       ;;                              :data
       ;;                              :gene
       ;;                              :genetic_conditions]))))))
-          )))))
+          )))
