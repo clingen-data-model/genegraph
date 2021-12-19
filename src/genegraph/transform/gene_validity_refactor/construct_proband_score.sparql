@@ -14,6 +14,9 @@ construct {
 }
 where {
 
+  # Ensure this pattern does not exist for >= SOPV8 curations
+  FILTER NOT EXISTS { ?otherScore a gci:variantScore } .
+  
   ?evidenceLine a gci:evidenceScore ;
   gci:caseInfoType ?gciCaseType ;
   gci:calculatedScore ?calculatedScore .
