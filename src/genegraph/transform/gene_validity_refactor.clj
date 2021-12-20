@@ -61,6 +61,7 @@
 
             "PK" "@id"
             "item_type" "@type"
+            "uuid" "@id"
 
             
             "gci" "http://dataexchange.clinicalgenome.org/gci/"
@@ -143,7 +144,8 @@
 
 (defn parse-gdm [gdm-json]
   (let [gdm-with-fixed-curies (-> gdm-json
-                                  (s/replace #"MONDO_" "MONDO:"))
+                                  (s/replace #"MONDO_" "MONDO:")
+                                  (s/replace #"@id" "gciid"))
         is (-> (str context "," (subs gdm-with-fixed-curies 1))
                .getBytes
                ByteArrayInputStream.)]
