@@ -8,6 +8,7 @@
     [:sepio/EvidenceLine :Statement]
     [:dc/BibliographicResource :BibliographicResource]
     [:sepio/ProbandWithVariantEvidenceItem :ProbandEvidence]
+    [:sepio/VariantEvidenceItem :VariantEvidence]
     [:ga4gh/VariationDescriptor :VariationDescriptor]
     [:sepio/FamilyCosegregation :Segregation]]
    :default-type-mapping :GenericResource})
