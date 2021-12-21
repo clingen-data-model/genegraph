@@ -71,6 +71,7 @@
             "HGNC" "https://identifiers.org/hgnc:"
             "MONDO" "http://purl.obolibrary.org/obo/MONDO_"
             "SEPIO" "http://purl.obolibrary.org/obo/SEPIO_"
+            "GENO" "http://purl.obolibrary.org/obo/GENO_"
             "NCIT" "http://purl.obolibrary.org/obo/NCIT_"
             
             ;; ;; declare attributes with @id, @vocab types
@@ -92,6 +93,7 @@
             "studyType" {"@type" "@vocab"}
             "sequencingMethod" {"@type" "@vocab"}
             "authors" {"@container" "@list"}
+            "recessiveZygosity" {"@type" "@vocab"}
 
 
             ;; ;; Category names
@@ -140,6 +142,11 @@
             "Disputed" "SEPIO:0004540"
             "No Classification" "SEPIO:0004508" ;; Maybe this should not exist in published records?
             ;; "No Classification" "SEPIO:0004508"
+
+            ;; Zygosity
+            "Homozygous" "GENO:0000136"
+            "TwoTrans" "GENO:0000135"
+            
             }}))))
 
 (defn parse-gdm [gdm-json]
