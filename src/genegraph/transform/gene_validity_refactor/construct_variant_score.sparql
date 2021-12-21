@@ -11,11 +11,7 @@ construct {
   :sepio/is-about-allele ?variant ;
   :dc/source ?article ;
   :geno/allele-origin ?alleleOrigin ;
-  :rdfs/label ?individualLabel .
-
-  ?evidenceItem a ?evidenceItemType ;
-  :sepio/is-about-allele ?variant ;
-  :dc/source ?article ;
+  :geno/has-zygosity ?zygosity ;
   :rdfs/label ?individualLabel .
 
   ?functionEvidenceItem a :sepio/VariantFunctionalImpactEvidenceItem ;
@@ -43,6 +39,8 @@ where {
     ?evidenceLine gci:scoreExplanation ?evidenceLineDescription .
   }
   
+
+  
   ?variantType gcixform:hasEvidenceLineType ?evidenceLineType ;
   gcixform:hasEvidenceItemType ?evidenceItemType .
 
@@ -50,10 +48,16 @@ where {
     ?evidenceLine gci:score ?adjustedScore .
   }
   
-  BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
+  BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?baseScore) .
 
   ?individual gci:variantScores ?evidenceLine ;
   gci:label ?individualLabel .
+
+  OPTIONAL {
+    ?individual gci:recessiveZygosity ?zygosity .
+  }
+
+  BIND(IF( ?zygosity = :geno/Homozygous , ?baseScore * 2 , ?baseScore) AS ?score) .
   
   ?annotation  gci:individuals|gci:individualIncluded ?individual ;
   ^gci:familyIncluded? / ^(gci:families|gci:groups)? / gci:article ?publication .

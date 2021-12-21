@@ -8,4 +8,7 @@
    :implements [:Resource]
    :fields {:variant {:type :VariationDescriptor
                       :description "Variation descriptor for this evidence"
-                      :path [:sepio/is-about-allele]}}})
+                      :path [:sepio/is-about-allele]}
+            :zygosity {:type :Resource
+                       :description "Zygosity of this allele in the patient genome"
+                       :path [:geno/has-zygosity]}}})
