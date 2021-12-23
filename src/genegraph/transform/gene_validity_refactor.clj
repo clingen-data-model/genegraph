@@ -46,6 +46,7 @@
                construct-articles
                construct-secondary-contributions
                construct-variant-score
+               construct-unscoreable-evidence
                )
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -94,6 +95,7 @@
             "sequencingMethod" {"@type" "@vocab"}
             "authors" {"@container" "@list"}
             "recessiveZygosity" {"@type" "@vocab"}
+            "sopVersion" {"@type" "@vocab"}
 
 
             ;; ;; Category names
@@ -146,6 +148,13 @@
             ;; Zygosity
             "Homozygous" "GENO:0000136"
             "TwoTrans" "GENO:0000135"
+
+            ;; SOP versions
+            "4" "SEPIO:0004092"
+            "5" "SEPIO:0004093"
+            "6" "SEPIO:0004094"
+            "7" "SEPIO:0004095"
+            "8" "SEPIO:0004096"
             
             }}))))
 
@@ -199,6 +208,7 @@
                         (construct-articles params) 
                         (construct-secondary-contributions params)
                         (construct-variant-score params)
+                        (construct-unscoreable-evidence params)
                         )]
     (q/union unlinked-model
              (construct-evidence-connections 
