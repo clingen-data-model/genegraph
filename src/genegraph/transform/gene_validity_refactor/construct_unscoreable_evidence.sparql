@@ -1,0 +1,20 @@
+prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
+prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+construct {
+  ?evidenceLine a :sepio/UnscoreableEvidenceLine ;
+  :sepio/has-evidence ?evidenceItem ;
+  :dc/description ?description .
+
+  ?evidenceItem a :sepio/EvidenceItem ;
+  :dc/source ?article .
+  
+}
+where {
+  ?evidenceLine a gci:annotation ;
+  gci:article / gci:pmid ?pmid ;
+  gci:articleNotes / gci:nonscorable /gci:text ?description . 
+
+  BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
+  BIND(IRI(CONCAT(STR(?evidenceLine), "_evidence_item")) AS ?evidenceItem) .
+
+}
