@@ -23,6 +23,10 @@
             :score {:type 'Float
                     :description "Numeric score of the statement. May be nil, used only when the applicable criteria calls for a numeric score in the statement or critera assessment."
                     :path [:sepio/evidence-line-strength-score]}
+            :specified_by {:type :Resource
+                           :description "The criteria or method used to create the assertion or evidence line."
+                           :path [:sepio/is-specified-by]
+                           }
             :contributions {:type '(list :Contribution)
                             :description "Contributions made by agents towards the creation of this resource."
                             :path [:sepio/qualified-contribution]}

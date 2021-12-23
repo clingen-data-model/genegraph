@@ -118,6 +118,7 @@ sepio:0004012 :hasEvidenceLineType sepio:0000247 .
 #     :hasGCIType :ExomeSequencing .
     
 #### Connections to leaf-node evidence lines
+sepio:0004002 :hasEvidenceLineType sepio:0004127 .
 
 # :sepio/OverallGeneticEvidenceEvidenceLine
 sepio:0004005 :hasEvidenceLineType sepio:0004120, sepio:0004121 .

@@ -11,6 +11,7 @@ construct {
   :sepio/qualified-contribution ?contribution ;
   :dc/description ?description ;
   :sepio/has-evidence ?autoClassification ;
+  :sepio/is-specified-by ?sopVersion ;
   :sepio/evidence-line-strength-score ?evidencePointsTotal .
 
   ?legacy_report :bfo/has-part ?classification .
@@ -36,11 +37,19 @@ where {
   BIND(IRI(CONCAT(STR(?proposition), "_legacy_report")) AS ?legacy_report) .
 
   ?classification a gci:provisionalClassification ;
-  gci:evidenceSummary ?description ;
+  gci:evidenceSummary ?description_text ;
   gci:autoClassification ?autoEvidenceLevel ;
   gci:alteredClassification ?alteredEvidenceLevel ;
+  gci:sopVersion ?sopVersion ;
   gci:classificationPoints ?pointsTree .
 
+  OPTIONAL {
+    ?classification gci:reasons ?reasonForChangedScore .
+  }
+
+  # Trying this out as a way to accomodate changed score
+  BIND(IF(?reasonForChangedScore, CONCAT(?description_text, "\n", ?reasonForChangedScore), ?description_text) AS ?description) .
+  
   OPTIONAL {
     ?classification gci:classificationDate ?classificationDate .
   }
