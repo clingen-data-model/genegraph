@@ -148,6 +148,7 @@
             ;; Zygosity
             "Homozygous" "GENO:0000136"
             "TwoTrans" "GENO:0000135"
+            "Hemizygous" "GENO:0000134"
 
             ;; SOP versions
             "4" "SEPIO:0004092"
