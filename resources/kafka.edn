@@ -58,7 +58,7 @@
                                        :cluster :dx-ccloud}
             :gene-tracker-test {:name "gt-precuration-events-test"
                                 :cluster :dx-ccloud}
-            :clinvar-combined {:name "clinvar-combined"
-                               :cluster :dx-ccloud
-                               :format :clinvar-combined}}}
+            :clinvar-raw {:name "clinvar-raw"
+                          :cluster :dx-ccloud
+                          :format :clinvar-raw}}}
 
