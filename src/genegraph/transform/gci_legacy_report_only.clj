@@ -20,9 +20,9 @@
 (defn gci-legacy-report-to-triples [report]
   (let [root-version (str gci-root (-> report :iri))
         id (:iri report) 
-        iri (resource (str gci-root id "_legacy_report"))
+        iri (resource (str gci-root id "_report"))
         content-id (l/blank-node)
-        assertion-id (resource (str gci-root "assertion_" id))
+        assertion-id (resource (str gci-root id))
         result (concat [[iri :rdf/type :sepio/GeneValidityReport]
                         [iri :bfo/has-part content-id]
                         [iri :bfo/has-part assertion-id]]
