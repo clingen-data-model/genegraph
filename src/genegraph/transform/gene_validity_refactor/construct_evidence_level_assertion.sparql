@@ -54,7 +54,7 @@ where {
   }
 
   # Trying this out as a way to accomodate changed score
-  BIND(IF(?reasonForChangedScore, CONCAT(?description_text, "\n", ?reasonForChangedScore), ?description_text) AS ?description) .
+  BIND(IF(bound(?reasonForChangedScore), CONCAT(?description_text, "\n", ?reasonForChangedScore), ?description_text) AS ?description) .
   
   OPTIONAL {
     ?classification gci:classificationDate ?classificationDate .
