@@ -64,14 +64,13 @@
 
 (defn build-database
   "Build the Jena database and associated indexes from scratch."
-  [dest-path source-path]
-  (log/info :fn :build-database :msg (str "Building database at " dest-path " from "
-                                          (if source-path source-path " source sites.")))
+  [dest-path]
+  (log/info :fn :build-database :msg (str "Building database at " dest-path))
   (with-redefs [env/data-vol dest-path]
     (fs/mkdirs env/data-vol)
     (start #'db/db)
     (start #'property-store/property-store)
-    (base/initialize-db! source-path)
+    (base/initialize-db!)
     (batch/process-batched-events!)
     (start #'event/stream-processing)
     (log/info :fn :build-database :msg "Processing streams...")
@@ -112,14 +111,14 @@
 
 (defn create-migration
   "Populate a new database, package and upload to Google Cloud"
-  [arg-seq]
+  []
   (let [data-version-id (if (some? env/data-version) env/data-version (new-version-identifier))
-        version-id (if (some? env/genegraph-version) (str data-version-id ":" env/genegraph-version)
-                       data-version-id)
-        source-database-path (if (some? arg-seq) (str env/base-dir "/" (first arg-seq) "/base/") nil)
+        version-id (if (some? env/genegraph-image-version)
+                     (str data-version-id ":" env/genegraph-image-version)
+                     data-version-id)
         dest-database-path (str env/base-dir "/" version-id)
         dest-archive-path (str dest-database-path ".tar.gz")]
-    (build-database dest-database-path source-database-path)
+    (build-database dest-database-path)
     (compress-database dest-database-path dest-archive-path)
     (Thread/sleep 1000) ;; seems to be a race condition here to avoid
     (send-database env/genegraph-bucket dest-archive-path version-id)))
@@ -161,5 +160,4 @@
       (log/info :fn :populate-data-vol-if-needed :msg (str "retrieving " archive-file))
       (retrieve-migration env/genegraph-bucket archive-file env/data-vol)
       (decompress-database env/data-vol archive-path))))
-
 

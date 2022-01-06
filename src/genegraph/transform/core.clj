@@ -33,7 +33,7 @@
 
 (defmethod xform-types/transform-doc :rdf [doc-def] 
   (with-open [is (if (:target doc-def)
-                   (io/input-stream (str (xform-types/target-base) (:target doc-def)))
+                   (io/input-stream (str xform-types/target-base (:target doc-def)))
                    (-> doc-def :document .getBytes java.io.ByteArrayInputStream.))] 
     (l/read-rdf is (:reader-opts doc-def))))
 
@@ -42,7 +42,7 @@
                    (:genegraph.sink.event/value event)
                    (-> event :genegraph.sink.event/value .getBytes java.io.ByteArrayInputStream.)
                    (:genegraph.sink.base/document event)
-                   (io/input-stream (str (xform-types/target-base) (:genegraph.sink.base/document event))))] 
+                   (io/input-stream (str xform-types/target-base (:genegraph.sink.base/document event))))] 
     (assoc event :genegraph.database.query/model (l/read-rdf is {:format format}))))
 
 (defmethod xform-types/add-model :rdf-xml [event] 

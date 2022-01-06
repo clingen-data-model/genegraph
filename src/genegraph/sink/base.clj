@@ -23,10 +23,8 @@
   (:import java.io.PushbackReader
            java.time.Instant))
 
-;; TODO ensure target directory exists
-(defn target-base []
-  (str env/data-vol "/base/"))
-
+(def source-path (if env/migration-data-vol (str env/migration-data-vol "/base/") nil))
+(def target-base (str env/data-vol "/base/"))
 (def base-resources-edn "base.edn")
 
 (defn read-edn [resource]
@@ -36,30 +34,31 @@
 (defn read-base-resources []
   (read-edn base-resources-edn))
 
-(defn retrieve-base-data! [resources source-path]
-  (doall (pmap (fn [resource]
-                 (let [{uri-str :source, target-file :target, opts :fetch-opts, name :name} resource
-                       source-uri (if source-path (str "file://" source-path target-file) uri-str)
-                       target-path (str (target-base) target-file)]
-                   (io/make-parents target-path)
-                   (try
-                     (fetch/fetch-data source-uri target-path opts)
-                     (catch Exception e
-                       (log/error :fn :retrieve-base-data :resource name :source-uri source-uri :target-path target-path)
-                       (throw e))))) resources)))
+(defn fetch-resource! [resource]
+  (let [{uri-str :source, target-file :target, opts :fetch-opts, name :name} resource
+        source-uri (if source-path (str "file://" source-path target-file) uri-str)
+        target-path (str target-base target-file)]
+    (io/make-parents target-path)
+    (try
+      (fetch/fetch-data source-uri target-path opts)
+      (catch Exception e
+        (log/error :fn :retrieve-base-data :resource name :source-uri source-uri :target-path target-path)
+        (throw e)))))
 
-(defn import-documents! [documents source-path]
-  (doall (pmap (fn [d source-path]
+(defn retrieve-base-data! [resources]
+  (doall (pmap fetch-resource! resources)))
+
+(defn import-documents! [documents]
+  (doall (pmap (fn [d]
                  (log/debug :fn :import-documents! :msg :importing :name (:name d))
-                 (db/load-model (transform-doc d) (:name d))) documents)))
+                 (db/load-model (transform-doc d) (:name d)))
+               documents)))
 
-(defn initialize-db! 
-  ([] (initialize-db! nil))
-  ([source-path]
-   (let [res (read-base-resources)]
-     (retrieve-base-data! res source-path)
-     (import-documents! res)
-     (log/debug :fn :initialize-db! :msg :initialization-complete))))
+(defn initialize-db! []
+  (let [res (read-base-resources)]
+    (retrieve-base-data! res)
+    (import-documents! res)
+    (log/debug :fn :initialize-db! :msg :initialization-complete)))
 
 (defn import-document [name documents]
   (import-documents! (filter #(= name (:name %)) documents)))
@@ -72,5 +71,5 @@
      (let [changed-documents (filter #(= (-> event :file .getName) (:target %)) 
                                      (read-base-resources))]
        (import-documents! changed-documents)))
-   (io/file (target-base))))
+   (io/file target-base)))
 

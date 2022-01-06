@@ -83,12 +83,15 @@
   (reset! initialized? true)
   (log/info :fn :-main :message "Genegraph Transformer fully initialized, all systems go"))
 
-
 (defn run-migration
-  [migration-args]
+  []
   (log/info :fn :-main :message "Creating migration")
   (env/log-environment)
-  (migration/create-migration (rest migration-args)))
+  (when env/migration-data-version
+    (with-redefs [env/data-vol env/migration-data-vol
+                  env/data-version env/migration-data-version] 
+      (migration/populate-data-vol-if-needed)))
+  (migration/create-migration))
 
 (defn -main
   "The entry-point for 'lein run'"
@@ -97,5 +100,5 @@
     (if (env/transformer-mode?)
       (run-server-transformer nil)
       (run-server-genegraph nil))
-    (run-migration nil)))
+    (run-migration)))
 
