@@ -40,8 +40,14 @@ where {
   gci:evidenceSummary ?description_text ;
   gci:autoClassification ?autoEvidenceLevel ;
   gci:alteredClassification ?alteredEvidenceLevel ;
-  gci:sopVersion ?sopVersion ;
+
   gci:classificationPoints ?pointsTree .
+
+  OPTIONAL {
+    ?classification gci:sopVersion ?declaredSopVersion .
+  }
+
+  BIND(COALESCE(?declaredSopVersion, <http://purl.obolibrary.org/obo/SEPIO_0004093>) AS ?sopVersion) .
 
   OPTIONAL {
     ?classification gci:reasons ?reasonForChangedScore .
