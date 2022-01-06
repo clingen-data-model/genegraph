@@ -7,6 +7,7 @@
             [genegraph.source.graphql.schema.contribution :as model-contribution]
             [genegraph.source.graphql.schema.find :as model-find]
             [genegraph.source.graphql.schema.proband-evidence :as model-proband]
+            [genegraph.source.graphql.schema.variant-evidence :as model-variant-evidence]
             [genegraph.source.graphql.schema.variation-descriptor :as model-variation]
             [genegraph.source.graphql.schema.bibliographic-resource :as model-bibliographic-resource]
             [genegraph.source.graphql.schema.segregation :as model-segregation]
@@ -26,6 +27,7 @@
    model-evidence-line/evidence-line
    model-contribution/contribution
    model-proband/proband-evidence
+   model-variant-evidence/variant-evidence
    model-variation/variation-descriptor
    model-agent/agent
    model-find/types-enum

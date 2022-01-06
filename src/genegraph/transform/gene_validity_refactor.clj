@@ -46,6 +46,7 @@
                construct-articles
                construct-secondary-contributions
                construct-variant-score
+               construct-unscoreable-evidence
                )
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -61,6 +62,7 @@
 
             "PK" "@id"
             "item_type" "@type"
+            "uuid" "@id"
 
             
             "gci" "http://dataexchange.clinicalgenome.org/gci/"
@@ -70,6 +72,7 @@
             "HGNC" "https://identifiers.org/hgnc:"
             "MONDO" "http://purl.obolibrary.org/obo/MONDO_"
             "SEPIO" "http://purl.obolibrary.org/obo/SEPIO_"
+            "GENO" "http://purl.obolibrary.org/obo/GENO_"
             "NCIT" "http://purl.obolibrary.org/obo/NCIT_"
             
             ;; ;; declare attributes with @id, @vocab types
@@ -91,6 +94,8 @@
             "studyType" {"@type" "@vocab"}
             "sequencingMethod" {"@type" "@vocab"}
             "authors" {"@container" "@list"}
+            "recessiveZygosity" {"@type" "@vocab"}
+            "sopVersion" {"@type" "@vocab"}
 
 
             ;; ;; Category names
@@ -139,11 +144,25 @@
             "Disputed" "SEPIO:0004540"
             "No Classification" "SEPIO:0004508" ;; Maybe this should not exist in published records?
             ;; "No Classification" "SEPIO:0004508"
+
+            ;; Zygosity
+            "Homozygous" "GENO:0000136"
+            "TwoTrans" "GENO:0000135"
+            "Hemizygous" "GENO:0000134"
+
+            ;; SOP versions
+            "4" "SEPIO:0004092"
+            "5" "SEPIO:0004093"
+            "6" "SEPIO:0004094"
+            "7" "SEPIO:0004095"
+            "8" "SEPIO:0004096"
+            
             }}))))
 
 (defn parse-gdm [gdm-json]
   (let [gdm-with-fixed-curies (-> gdm-json
-                                  (s/replace #"MONDO_" "MONDO:"))
+                                  (s/replace #"MONDO_" "MONDO:")
+                                  (s/replace #"@id" "gciid"))
         is (-> (str context "," (subs gdm-with-fixed-curies 1))
                .getBytes
                ByteArrayInputStream.)]
@@ -190,6 +209,7 @@
                         (construct-articles params) 
                         (construct-secondary-contributions params)
                         (construct-variant-score params)
+                        (construct-unscoreable-evidence params)
                         )]
     (q/union unlinked-model
              (construct-evidence-connections 

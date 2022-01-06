@@ -5,7 +5,7 @@
             [genegraph.database.instance :refer [db]]
             [genegraph.database.names :as names]
             [genegraph.database.query.resource :as resource]
-            [genegraph.database.util :as util :refer [tx]])
+            [genegraph.database.util :as util])
   (:import java.io.ByteArrayOutputStream
            org.apache.jena.graph.NodeFactory
            org.apache.jena.query.QueryFactory
@@ -82,7 +82,7 @@
   (.getNamedModel db name))
 
 (defn list-named-graphs []
-   (into [] (iterator-seq (.listNames db))))
+  (into [] (iterator-seq (.listNames db))))
 
 (defn to-turtle [model]
   (let [os (ByteArrayOutputStream.)]
@@ -98,9 +98,8 @@
   "Create a new model that is the union of models"
   [& models]
   (let [union-model (ModelFactory/createDefaultModel)]
-    (util/tx
-     (doseq [model models] (.add union-model model))
-     union-model)))
+    (doseq [model models] (.add union-model model))
+    union-model))
 
 (defn empty-model []
   (ModelFactory/createDefaultModel))

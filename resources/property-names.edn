@@ -294,6 +294,7 @@
  [:foaf/mbox "http://xmlns.com/foaf/0.1/mbox"]
  [:foaf/member "http://xmlns.com/foaf/0.1/member"]
  [:foaf/page "http://xmlns.com/foaf/0.1/page"]
+ [:ga4gh/CanonicalReference "https://terms.ga4gh.org/CanonicalReference"]
  [:geno/bears-concretization-of
   "http://purl.obolibrary.org/obo/GENO_0000211"]
  [:geno/benign-for-condition
