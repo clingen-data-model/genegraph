@@ -9,8 +9,8 @@ construct
 }
 where
 {
-  ?gdm a gci:gdm .
-
+  ?gdm a gci:gdm ;
+  gci:gene / gci:hgncId ?hgnc . # Adding path to gene to fix bug related to incomplete GDM
 
   # Includes support for pre-refactor GCI curations
   OPTIONAL {
