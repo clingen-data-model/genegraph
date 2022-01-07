@@ -39,7 +39,7 @@ where {
   gci:label ?individualLabel .
 
   ?annotation  gci:individuals|gci:individualIncluded ?evidenceItem ;
-  ^(gci:families|gci:groups)? / gci:article ?publication .
+  ^gci:familyIncluded? / ^(gci:families|gci:groups)? / gci:article ?publication .
   
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
