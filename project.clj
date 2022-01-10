@@ -36,6 +36,8 @@
                  [juxt/dirwatch "0.2.5"]
                  ;; for generating jsonld context
                  [org.flatland/ordered "1.5.7"]
+                 [com.apicatalog/titanium-json-ld "1.1.0"]
+                 [org.glassfish/jakarta.json "2.0.1"]
                  ;; REBL reqs
                  [lein-cljfmt "0.6.4"]
                  [org.openjfx/javafx-fxml "16"]
