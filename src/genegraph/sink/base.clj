@@ -24,8 +24,11 @@
            java.time.Instant))
 
 (def source-path (if env/migration-data-vol (str env/migration-data-vol "/base/") nil))
-(def target-base (str env/data-vol "/base/"))
 (def base-resources-edn "base.edn")
+
+;; TODO ensure target directory exists
+(defn target-base []
+  (str env/data-vol "/base/"))
 
 (defn read-edn [resource]
   (with-open [rdr (PushbackReader. (io/reader (io/resource resource)))]
@@ -37,7 +40,7 @@
 (defn fetch-resource! [resource]
   (let [{uri-str :source, target-file :target, opts :fetch-opts, name :name} resource
         source-uri (if source-path (str "file://" source-path target-file) uri-str)
-        target-path (str target-base target-file)]
+        target-path (str (target-base) target-file)]
     (io/make-parents target-path)
     (try
       (fetch/fetch-data source-uri target-path opts)
@@ -71,5 +74,5 @@
      (let [changed-documents (filter #(= (-> event :file .getName) (:target %)) 
                                      (read-base-resources))]
        (import-documents! changed-documents)))
-   (io/file target-base)))
+   (io/file (target-base))))
 

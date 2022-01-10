@@ -82,4 +82,4 @@
   [& args]
   (if (= 0 (count args))
     (run-server nil)
-    (run-migration nil)))
+    (run-migration)))

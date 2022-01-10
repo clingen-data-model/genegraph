@@ -5,7 +5,8 @@
 
 (defmulti transform-doc :format)
 
-(def target-base (str env/data-vol "/base/"))
+(defn target-base []
+  (str env/data-vol "/base/"))
 
-(defn src-path [doc-def] (str target-base (:target doc-def)))
+(defn src-path [doc-def] (str (target-base) (:target doc-def)))
 

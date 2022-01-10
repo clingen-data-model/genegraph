@@ -42,7 +42,7 @@
 
 (defn add-hgnc-gene-data [curation-events]
   "get hgnc data related to selected genes"
-  (with-open [r (io/reader (str base/target-base "hgnc.json"))]
+  (with-open [r (io/reader (str (base/target-base) "hgnc.json"))]
     (let [genes (:curated-genes curation-events)
           hgnc-gene (get-in (json/parse-stream r true) [:response :docs])
           entrez-ids (into #{} (map #(re-find #"\d*$" %) genes))
@@ -106,7 +106,7 @@
   (let [base-data (-> "test_data/base_events.edn" io/resource slurp edn/read-string)]
     (assoc curation-events
            :base-data
-           (mapv #(assoc % ::event/value (slurp (str base/target-base "/" (:target %)))) base-data))))
+           (mapv #(assoc % ::event/value (slurp (str (base/target-base) (:target %)))) base-data))))
 
 
 (defn select-published-curations [curation-sequence]
