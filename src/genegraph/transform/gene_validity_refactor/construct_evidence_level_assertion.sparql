@@ -31,17 +31,29 @@ construct {
 where {
   
   ?proposition a gci:gdm ;
-  gci:affiliation ?affiliationID .
+  gci:gene / gci:hgncId ?hgnc . # Adding path to gene to fix bug related to incomplete GDM
 
-  BIND(IRI(CONCAT(?affbase, ?affiliationID)) AS ?affiliation) .
+  OPTIONAL {
+    ?proposition gci:affiliation ?gdmAffiliationID ;
+  }
+  
   BIND(IRI(CONCAT(STR(?proposition), "_legacy_report")) AS ?legacy_report) .
-
+  
   ?classification a gci:provisionalClassification ;
-  gci:evidenceSummary ?description_text ;
+  # gci:evidenceSummary ?description_text ;
   gci:autoClassification ?autoEvidenceLevel ;
   gci:alteredClassification ?alteredEvidenceLevel ;
-
   gci:classificationPoints ?pointsTree .
+
+  OPTIONAL {
+    ?classification gci:evidenceSummary ?description_text .
+  }
+  
+  OPTIONAL {
+    ?classification gci:affiliation ?classificationAffiliationID ;
+  }
+
+  BIND(IRI(CONCAT(?affbase, COALESCE(?classificationAffiliationID, ?gdmAffiliationID))) AS ?affiliation) .
 
   OPTIONAL {
     ?classification gci:sopVersion ?declaredSopVersion .
