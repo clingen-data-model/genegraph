@@ -1,9 +1,7 @@
 (ns genegraph.sink.stream
-  (:require [genegraph.sink.event :as event]
-            [genegraph.annotate :as annotate]
+  (:require [genegraph.annotate :as annotate]
             [genegraph.env :as env]
             [clojure.java.io :as io]
-            [mount.core :refer [defstate]]
             [clojure.edn :as edn]
             [io.pedestal.log :as log]
             [clojure.string :as s]
@@ -11,35 +9,39 @@
             [taoensso.nippy :as nippy]
             [genegraph.rocksdb :as rocksdb])
   (:import java.util.Properties
-           [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord
-            ConsumerRecords]
+           [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord ConsumerRecords]
+           [org.apache.kafka.clients.producer KafkaProducer Producer ProducerRecord]
            [org.apache.kafka.common PartitionInfo TopicPartition]
            [java.time Duration ZonedDateTime ZoneOffset LocalDateTime LocalDate]
            [java.time.format DateTimeFormatter]))
 
 (def config (->> "kafka.edn" io/resource slurp edn/read-string (postwalk #(if (symbol? %) (-> % resolve var-get) %))))
 
-(defn topics []
-  (map keyword (s/split env/dx-topics #";")))
-
+(defn consumer-topics []
+  (mapv keyword (s/split env/dx-topics #";")))
+      
 (defn offset-file []
   (str env/data-vol "/partition_offsets.edn"))
 
 (def current-offsets (atom {}))
 (def end-offsets (atom {}))
 (def offsets-up-to-date (atom {}))
-(def all-offsets-up-to-date (promise))
-(def topic-state (atom {}))
-(def all-topics-closed (promise))
+(def consumer-offsets-up-to-date (promise))
+(def consumer-topic-state (atom {}))
+(def consumer-topics-closed (promise))
+(def producers (atom {}))
 
 (defn consumer-record-to-clj [consumer-record spec]
   {::annotate/format spec 
-   ::event/key (.key consumer-record)
-   ::event/value (.value consumer-record)
+   :genegraph.sink.event/key (.key consumer-record)
+   :genegraph.sink.event/value (.value consumer-record)
    ::timestamp (.timestamp consumer-record)
    ::topic (.topic consumer-record)
    ::partition (.partition consumer-record)
-   ::offset (.offset consumer-record)})
+   ::offset (.offset consumer-record)
+   ::annotate/producer-topic (-> (:topics config)
+                                 spec
+                                 :producer-topic)})
 
 ;; Java Properties object defining configuration of Kafka client
 (defn- client-configuration 
@@ -50,11 +52,6 @@
       (.put props (p 0) (p 1)))
     props))
 
-(defn- create-kafka-consumer
-  []
-  (let [props (client-configuration)]
-    (new KafkaConsumer props)))
-
 (defn- topic-partitions [c topic]
   (let [topic-name (-> config :topics topic :name)
         partition-infos (.partitionsFor c topic-name)]
@@ -63,13 +60,39 @@
 (defn- poll-once 
   ([c] (-> c (.poll (Duration/ofMillis 500)) .iterator iterator-seq)))
 
-(defn- consumer-for-topic [topic]
-  (let [cluster-key (-> config :topics topic :cluster)]
+(defn topic-cluster-key [topic]
+  (-> config :topics topic :cluster))
+
+(defn topic-cluster-config [topic]
+   (let [cluster-key (topic-cluster-key topic)]
     (-> config
         :clusters
         cluster-key
-        client-configuration 
-        KafkaConsumer.)))
+        client-configuration)))
+
+(defn- consumer-for-topic [topic]
+  (let [cluster-config (topic-cluster-config topic)
+        consumer-config (merge-with into (:common cluster-config) (:consumer cluster-config))] 
+    (KafkaConsumer. consumer-config)))
+
+(defn producer-for-topic!
+  "Returns a single KafkaProducer per cluster, as KafkaProducers are thread-safe
+  and a single producer across threads will generally be faster than
+  having multiple instances"
+  [topic]
+  (let [cluster-key (topic-cluster-key topic)
+        cluster-config (topic-cluster-config topic)
+        producer (get @producers cluster-key)]
+    (if producer
+      producer
+      (let [producer (-> (merge-with into (:common cluster-config) (:producer cluster-config))
+                         client-configuration
+                         KafkaProducer.)]
+        (swap! producers assoc cluster-key producer)
+        producer))))
+
+(defn producer-record-for [kafka-topic-name key value]
+   (ProducerRecord. kafka-topic-name key value))
 
 (defn- read-end-offsets! [consumer topic-partitions]
   (let [kafka-end-offsets (.endOffsets consumer topic-partitions)
@@ -78,9 +101,9 @@
                                {} kafka-end-offsets)]
     (swap! end-offsets merge end-offset-map)))
 
-(defn up-to-date? []
+(defn consumers-up-to-date? []
   (and (some? (keys @offsets-up-to-date))
-       (= (count (keys @offsets-up-to-date)) (count (topics)))
+       (= (count (keys @offsets-up-to-date)) (count (consumer-topics)))
        (every? true? (vals @offsets-up-to-date))))
 
 (defn set-up-to-date-status!
@@ -90,21 +113,21 @@
   (when (= (set (keys @current-offsets)) (set (keys @end-offsets)))
     (let [partitions-up-to-date? (merge-with <= @end-offsets @current-offsets)]
       (reset! offsets-up-to-date partitions-up-to-date?)
-      (when (up-to-date?)
-        (deliver all-offsets-up-to-date true))))
+      (when (consumers-up-to-date?)
+        (deliver consumer-offsets-up-to-date true))))
   (log/info :fn :set-up-to-date-status?
              :current-offsets @current-offsets
              :end-offsets @end-offsets
              :offsets-up-to-date @offsets-up-to-date))
 
-(defn update-offsets! [consumer tps]
+(defn update-consumer-offsets! [consumer tps]
   (read-end-offsets! consumer tps)
   (doseq [tp tps]
     (let [key [(.topic tp) (.partition tp)]]
       (when (not= (get @current-offsets key) (get @end-offsets key))
         (swap! current-offsets assoc [(.topic tp) (.partition tp)] (.position consumer tp))
         (spit (offset-file) (pr-str @current-offsets)))))
-  (when-not (up-to-date?)
+  (when-not (consumers-up-to-date?)
     (set-up-to-date-status!)))
 
 (def run-consumer (atom true))
@@ -115,16 +138,16 @@
     (reset! current-offsets {})))
 
 (defn consumers-closed?  []
-  (every? #(= :stopped %) (vals @topic-state)))
+  (every? #(= :stopped %) (vals @consumer-topic-state)))
 
 (defn wait-for-topics-closed []
-  @all-topics-closed)
+  @consumer-topics-closed)
 
-(defn- assign-topic!
+(defn- assign-topic-consumer!
   "Return a function that creates a consumer, sets it to listen to all partitions available
   for that topic, assigns the most recently read offsets for those partitions, and keeps them
   up-to-date while they are read. Terminates when the run-consumer atom returns false"
-  [topic]
+  [event-processing-fn topic]
   (fn []
     (with-open [consumer (consumer-for-topic topic)]
       (let [tp (topic-partitions consumer topic)
@@ -134,40 +157,43 @@
           (if-let [offset (get @current-offsets [topic-name (.partition part)])]
             (.seek consumer part offset)
             (.seekToBeginning consumer [part])))
-        (update-offsets! consumer tp)
+        (update-consumer-offsets! consumer tp)
         (while @run-consumer
           (when-let [records (poll-once consumer)]
             (->> records
                  (map #(consumer-record-to-clj % topic))
-                 event/process-event-seq!))
-          (update-offsets! consumer tp))
-        (swap! topic-state assoc topic :stopped)
-        (log/debug :fn :assign-topic!
-                   :topic-state @topic-state
+                 event-processing-fn))
+          (update-consumer-offsets! consumer tp))
+        (swap! consumer-topic-state assoc topic :stopped)
+        (log/debug :fn :assign-topic-consumer!
+                   :consumer-topic-state @consumer-topic-state
                    :consumers-closed? (consumers-closed?))
         (when (consumers-closed?)
-          (deliver all-topics-closed true))))))
+          (deliver consumer-topics-closed true))))))
 
 (defn wait-for-topics-up-to-date []
-  @all-offsets-up-to-date)
+  @consumer-offsets-up-to-date)
 
-(defn subscribe!
+(defn subscribe-consumers!
   "Start a Kafka consumer listening to topics in topic-list
   Messages are transformed to RDF, if needed, and imported into triplestore"
-  [topic-list]
+  [event-processing-fn topic-list]
   (read-offsets!)
   (doseq [topic topic-list]
-    (let [thread (-> topic assign-topic! Thread.)]
+    (let [thread (Thread. (assign-topic-consumer! event-processing-fn topic))]
       (log/info :fn :subscribe!
-                :msg (str "assigning " topic))
+                :msg (str "assigning consumer " topic))
       (.start thread)
-      (swap! topic-state assoc topic :running))))
+      (swap! consumer-topic-state assoc topic :running))))
 
-(defstate consumer-thread
-  :start (do
-           (reset! run-consumer true)
-           (subscribe! (topics)))
-  :stop  (reset! run-consumer false))
+(defn run-consumers! [event-processing-fn]
+  (subscribe-consumers! event-processing-fn (consumer-topics)))
+  
+(defn start-consumers! []
+  (reset! run-consumer true))
+
+(defn stop-consumers! []
+  (reset! run-consumer false))
 
 (defn long-poll [c]
   (-> c (.poll (Duration/ofMillis 2000)) .iterator iterator-seq))

@@ -7,7 +7,6 @@
            [java.nio.file Path Paths]
            [java.io InputStream OutputStream FileInputStream File]
            [com.google.common.io ByteStreams]
-           [org.apache.kafka.clients.producer Producer KafkaProducer ProducerRecord]
            [com.google.cloud.storage Bucket BucketInfo Storage StorageOptions
             BlobId BlobInfo Blob]
            [com.google.cloud.storage Storage$BlobWriteOption
