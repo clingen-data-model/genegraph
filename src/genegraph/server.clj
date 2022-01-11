@@ -68,9 +68,13 @@
   (log/info :fn :-main :message "Genegraph fully initialized, all systems go"))
 
 (defn run-migration
-  [_]
+  []
   (log/info :fn :-main :message "Creating migration")
   (env/log-environment)
+  (when env/migration-data-version
+    (with-redefs [env/data-vol env/migration-data-vol
+                  env/data-version env/migration-data-version] 
+      (migration/populate-data-vol-if-needed)))
   (migration/create-migration))
 
 (defn -main
@@ -78,4 +82,4 @@
   [& args]
   (if (= 0 (count args))
     (run-server nil)
-    (run-migration nil)))
+    (run-migration)))

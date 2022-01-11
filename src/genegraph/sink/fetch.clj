@@ -28,7 +28,7 @@
         (io/copy unzip-s w)))))
 
 (defn get-ftp
-  [url target-file & opts]
+  [url target-file opts]
   (let [dir (re-find #"^.*/" (.getPath url))
         remote-file (re-find #"[^/]+$" (.getPath url))
         con-str (str "ftp://anonymous:user%40example.com@" (.getHost url) dir)]
@@ -50,12 +50,11 @@
   "Retreive, store and (if necessary) decompress a local file (file:/// url)
   and store at target-file. Useful for testing against a local file."
   [url target-file opts]
-  (let [f (.getFile url)]
-    (->> f
-         slurp
-         (spit target-file))
-    (unzip-target target-file)
-    (log/debug :fn :get-file :msg :processed-file :file f :target target-file)))
+  (do (with-open [in (io/input-stream url)
+                  out (io/output-stream target-file)]
+        (io/copy in out)))
+  (unzip-target target-file)
+  (log/debug :fn :get-file :msg :processed-file :file url :target target-file))
 
 (defn fetch-data
   "retrieve file from remote url and store in data directory
