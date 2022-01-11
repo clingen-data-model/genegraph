@@ -7,6 +7,13 @@
   (concat (q/ld-> value [[:sepio/has-subject :<]])
           (q/ld-> value [[:sepio/has-object :<]])))
 
+(def type-query (q/create-query "select ?type where {?resource a /  :rdfs/subClassOf * ?type}"))
+
+(defn rdf-types [_ args value]
+  (if (:inferred args)
+    (type-query {:resource value})
+    (q/ld-> value [:rdf/type])))
+
 (def resource-interface
   {:name :Resource
    :graphql-type :interface
@@ -26,7 +33,8 @@
                                               (:dc/title value))))}
             :type {:type '(list :Resource)
                    :description "The types for this resource."
-                   :path [:rdf/type]}
+                   :args {:inferred {:type 'Boolean}}
+                   :resolve rdf-types}
             :description {:type 'String
                           :description "Textual description of this resource"
                           :path [:dc/description]}

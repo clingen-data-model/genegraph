@@ -40,15 +40,21 @@ where {
   gci:evidenceSummary ?description_text ;
   gci:autoClassification ?autoEvidenceLevel ;
   gci:alteredClassification ?alteredEvidenceLevel ;
-  gci:sopVersion ?sopVersion ;
+
   gci:classificationPoints ?pointsTree .
+
+  OPTIONAL {
+    ?classification gci:sopVersion ?declaredSopVersion .
+  }
+
+  BIND(COALESCE(?declaredSopVersion, <http://purl.obolibrary.org/obo/SEPIO_0004093>) AS ?sopVersion) .
 
   OPTIONAL {
     ?classification gci:reasons ?reasonForChangedScore .
   }
 
   # Trying this out as a way to accomodate changed score
-  BIND(IF(?reasonForChangedScore, CONCAT(?description_text, "\n", ?reasonForChangedScore), ?description_text) AS ?description) .
+  BIND(IF(bound(?reasonForChangedScore), CONCAT(?description_text, "\n", ?reasonForChangedScore), ?description_text) AS ?description) .
   
   OPTIONAL {
     ?classification gci:classificationDate ?classificationDate .
