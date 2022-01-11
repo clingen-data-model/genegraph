@@ -45,6 +45,16 @@
     (doseq [graph-name named-graphs]
       (l/remove-model graph-name))))
 
+(def portal-atom (atom nil))
+
+(defn start-portal []
+  (swap! portal-atom p/open)
+  (add-tap #'p/submit))
+
+(defn stop-portal []
+  (remove-tap #'p/submit)
+  (p/close))
+
 (defn process-event-seq
   "Run event sequence through event processor"
   ([event-seq]
