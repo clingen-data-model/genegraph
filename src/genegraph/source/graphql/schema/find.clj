@@ -22,6 +22,11 @@
    :DISEASE :mondo/Disease
    :AFFILIATION :cg/Affiliation})
 
+(defn args->resource [args keys]
+  (->> (select-keys args keys)
+       (map (fn [[k v]] [k (q/resource v)]))
+       (into {})))
+
 (defn query [_ args _]
   (let [limit-offset-sort-params (-> args
                                     (select-keys [:limit :offset :sort])
@@ -29,8 +34,8 @@
         query-params (-> (if (string? (:text args))
                            {:text (s/lower-case (:text args))}
                            {})
-                         (assoc :type (graphql-type-to-rdf-type (:type args))
-                                ::q/params limit-offset-sort-params))
+                         (merge (args->resource args [:type]))
+                         (assoc ::q/params limit-offset-sort-params))
         query (if (:text args)
                 query-with-text-search
                 query-without-text-search)
@@ -61,7 +66,7 @@
    :description "Query useable to find any kind of resource in Genegraph, including genes, dieseases, affiliation groups."
    :type :QueryResult
    :skip-type-resolution true
-   :args {:type {:type :Type}
+   :args {:type {:type 'String}
           :text {:type 'String}
           :limit {:type 'Int
                   :default-value 10
