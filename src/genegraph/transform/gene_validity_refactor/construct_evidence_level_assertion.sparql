@@ -40,7 +40,7 @@ where {
   BIND(IRI(CONCAT(STR(?proposition), "_legacy_report")) AS ?legacy_report) .
   
   ?classification a gci:provisionalClassification ;
-  # gci:evidenceSummary ?description_text ;
+  gci:approvedClassification true ;
   gci:autoClassification ?autoEvidenceLevel ;
   gci:alteredClassification ?alteredEvidenceLevel ;
   gci:classificationPoints ?pointsTree .
