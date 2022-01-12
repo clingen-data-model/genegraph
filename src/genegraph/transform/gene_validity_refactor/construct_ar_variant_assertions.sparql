@@ -9,11 +9,11 @@ construct
 }
 where
 {
-  ?classification a gci:provisionalClassification .
+  ?classification a gci:provisionalClassification ;
+  gci:approvedClassification true ;
+  gci:classificationPoints ?pointsTree .
 
   BIND (IRI(CONCAT(str(?classification), "_overall_genetic_evidence_line")) AS ?geneticEvidenceLine) .
-
-  ?classification gci:classificationPoints ?pointsTree .
 
   ?pointsTree gci:autosomalRecessiveDisorder ?autosomalRecessiveDisorderTree .
   ?autosomalRecessiveDisorderTree gci:pointsCounted  ?autosomalRecessiveDisorderTotal .
