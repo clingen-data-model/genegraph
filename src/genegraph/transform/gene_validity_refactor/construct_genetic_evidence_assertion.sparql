@@ -8,8 +8,9 @@ construct
 }
 where
 {
-  ?classification a gci:provisionalClassification .
-  ?classification gci:classificationPoints ?pointsTree .
+  ?classification a gci:provisionalClassification ;
+  gci:approvedClassification true ;
+  gci:classificationPoints ?pointsTree .
 
   ?pointsTree gci:geneticEvidenceTotal ?geneticEvidenceTotal .
 

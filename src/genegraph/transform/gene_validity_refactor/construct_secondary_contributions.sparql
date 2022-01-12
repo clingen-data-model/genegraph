@@ -8,6 +8,7 @@ construct {
 }
 where {
   ?classification a gci:provisionalClassification ;
+  gci:approvedClassification true ;
   gci:classificationContributors ?secondaryContributorID .
 
   BIND(IRI(CONCAT(?affbase, ?secondaryContributorID)) AS ?secondaryContributor) .

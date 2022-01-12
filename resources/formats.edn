@@ -60,4 +60,8 @@
                    :genegraph.annotate/graph-name :void/Dataset}
  :clinvar-combined {:genegraph.transform.core/format :clinvar-combined
                     :genegraph.annotate/root-type :cg/ClinVarObject
-                    :genegraph.annotate/graph-name :cg/ClinVarObject}}
+                    :genegraph.annotate/graph-name :cg/ClinVarObject}
+ :clinvar-raw {:genegraph.transform.core/format :clinvar-raw
+               :genegraph.annotate/root-type :cg/ClinVarObject
+               :genegraph.annotate/graph-name :cg/ClinVarObject}
+ }

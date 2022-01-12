@@ -7,6 +7,7 @@
             [genegraph.env :as env]
             [genegraph.interceptor :as intercept :refer [interceptor-enter-def]]
             [genegraph.transform.core :as transform]
+            [genegraph.transform.types :as xform-types :refer [model-to-jsonld]]
             [genegraph.transform.gci-legacy :as gci-legacy]
             [genegraph.transform.actionability :as aci]
             [genegraph.transform.gci-neo4j :as gci-neo4j]
@@ -25,7 +26,7 @@
   "Interceptor for annotating an event with a publish or unpublish action."
   {:name ::add-action
    :enter add-action})
-  
+
 (defn add-metadata [event]
   (log/debug :fn :add-metadata :event event :msg :received-event)
   (merge event (get formats (::format event))))
@@ -53,7 +54,7 @@
   "Annotate event with topic genes."
   [event])
 
-(defn add-model 
+(defn add-model
   "Annotate event with model derived from its value"
   [event]
   (log/debug :fn :add-model :event event :msg :received-event)
@@ -119,17 +120,17 @@
 (def add-validation-interceptor
   "Interceptor adding shacl validation to stream events.
   Short circuits interceptor chain when data is not validated."
- {:name ::add-validation
-  :enter (fn [context] (let [evt (add-validation context)]
-                         (if (false? (::did-validate evt))
-                           (terminate evt)
-                           evt)))})
+  {:name ::add-validation
+   :enter (fn [context] (let [evt (add-validation context)]
+                          (if (false? (::did-validate evt))
+                            (terminate evt)
+                            evt)))})
 
 (defn add-subjects-to-event
   "Perform the actual event annotation, returnng the event to th caller"
   [event genes diseases]
   (let [gene-iris (mapv #(str %) genes)
-         disease-iris (mapv #(str %) diseases)]
+        disease-iris (mapv #(str %) diseases)]
     (assoc event ::subjects {:gene-iris gene-iris :disease-iris disease-iris})))
 
 (defmulti add-subjects ::root-type)
@@ -184,7 +185,7 @@
 (defmethod add-subjects :default [event]
   (log/debug :fn :add-subjects :root-type :default :msg :received-event)
   event)
-  
+
 (def add-subjects-interceptor
   "Interceptor adding a subject annotation (gene/disease iris) to stream events"
   (interceptor-enter-def ::add-subjects add-subjects))
@@ -196,3 +197,9 @@
   "Interceptor checking to see if an incoming curation should replace any existing records"
   {:name ::add-replaces-interceptor
    :enter add-replaces})
+
+(def add-jsonld-interceptor
+  {:name ::add-jsonld-interceptor
+   :enter (fn [e]
+            (let [j (xform-types/model-to-jsonld e)]
+              (if j (assoc e ::jsonld j) e)))})
