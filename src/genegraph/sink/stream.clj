@@ -23,8 +23,15 @@
 (defn offset-file []
   (str env/data-vol "/partition_offsets.edn"))
 
+;; This atom file may contain some, none, or all of the consumer topics defined 
+;; for processing in the environment. All offsets that have been previously 
+;; recorded in partition_offsets.edn are be preserved, and any new consumer topics
+;; defined for processing will have their offset state tracked."
 (def current-offsets (atom {}))
+
+;; This atom contains the end offsets of the current topics defined in the environment
 (def end-offsets (atom {}))
+
 (def offsets-up-to-date (atom {}))
 (def consumer-offsets-up-to-date (promise))
 (def consumer-topic-state (atom {}))
@@ -52,9 +59,10 @@
       (.put props (p 0) (p 1)))
     props))
 
-(defn- topic-partitions [c topic]
+(defn- topic-partitions
+  [consumer topic]
   (let [topic-name (-> config :topics topic :name)
-        partition-infos (.partitionsFor c topic-name)]
+        partition-infos (.partitionsFor consumer topic-name)]
     (map #(TopicPartition. (.topic %) (.partition %)) partition-infos)))
 
 (defn- poll-once 
@@ -102,9 +110,12 @@
     (swap! end-offsets merge end-offset-map)))
 
 (defn consumers-up-to-date? []
+  "Checks if the consumers for the list of topics defined for processing
+   in the environment are all up to date - that is they have processed
+   up to their topic partitions end offsets"
   (and (some? (keys @offsets-up-to-date))
        (= (count (keys @offsets-up-to-date)) (count (consumer-topics)))
-       (every? true? (vals @offsets-up-to-date))))
+       (every? true? (vals @offsets-up-to-date)))) ;; TON <=== YOU ARE HERE
 
 (defn set-up-to-date-status!
   "Returns true if all partitions of all topics subscribed to have had messages
@@ -120,22 +131,24 @@
              :end-offsets @end-offsets
              :offsets-up-to-date @offsets-up-to-date))
 
-(defn update-consumer-offsets! [consumer tps]
-  (read-end-offsets! consumer tps)
-  (doseq [tp tps]
-    (let [key [(.topic tp) (.partition tp)]]
+(defn initialize-current-offsets! []
+  (if (.exists (io/as-file (offset-file)))
+    (reset! current-offsets (-> (offset-file) slurp edn/read-string))
+    (reset! current-offsets {})))
+
+(defn update-consumer-offsets! [consumer topic-partitions]
+  (read-end-offsets! consumer topic-partitions)
+  (doseq [tp topic-partitions]
+    (let [topic-name (.topic tp)
+          partition (.partition tp)
+          key [topic-name partition]]
       (when (not= (get @current-offsets key) (get @end-offsets key))
-        (swap! current-offsets assoc [(.topic tp) (.partition tp)] (.position consumer tp))
+        (swap! current-offsets assoc key (.position consumer tp))
         (spit (offset-file) (pr-str @current-offsets)))))
   (when-not (consumers-up-to-date?)
     (set-up-to-date-status!)))
 
 (def run-consumer (atom true))
-
-(defn read-offsets! [] 
-  (if (.exists (io/as-file (offset-file)))
-    (reset! current-offsets (-> (offset-file) slurp edn/read-string))
-    (reset! current-offsets {})))
 
 (defn consumers-closed?  []
   (every? #(= :stopped %) (vals @consumer-topic-state)))
@@ -176,9 +189,10 @@
 
 (defn subscribe-consumers!
   "Start a Kafka consumer listening to topics in topic-list
+  Topic-list is the list of topic keywords
   Messages are transformed to RDF, if needed, and imported into triplestore"
   [event-processing-fn topic-list]
-  (read-offsets!)
+  (initialize-current-offsets!)
   (doseq [topic topic-list]
     (let [thread (Thread. (assign-topic-consumer! event-processing-fn topic))]
       (log/info :fn :subscribe!

@@ -112,6 +112,7 @@
                                     add-to-db-interceptor
                                     unpublish-interceptor
                                     replace-interceptor
+                                    ann/add-jsonld-interceptor
                                     stream-producer-interceptor])
 
 (def web-interceptor-chain [log-result-interceptor
