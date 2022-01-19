@@ -57,8 +57,7 @@
         clinvar-variation-iri (q/resource (str iri/clinvar-variation (:variation_id msg)))
         ;proposition-iri (l/blank-node)
         proposition-iri (q/resource (str vcv-statement-unversioned-iri "_proposition." (:release_date msg)))
-        variation-rule-descriptor-iri (q/resource (str vcv-statement-unversioned-iri "_variation_rule_descriptor." (:release_date msg)))
-        ]
+        variation-rule-descriptor-iri (q/resource (str vcv-statement-unversioned-iri "_variation_rule_descriptor." (:release_date msg)))]
     (concat
       [; SEPIO Statement (ClinVarVCVStatement)
        ; statement: <proposition> <has confidence + direction> <strength>
@@ -70,6 +69,7 @@
        [vcv-statement-iri :cg/release-date (:release_date msg)]
 
        [vcv-statement-iri :sepio/has-predicate (q/resource (ns-cg "has_evidence_level"))]
+       ; TODO change to boolean literal. Requires adding impl to AsResource
        [vcv-statement-iri :cg/negated "FALSE"]
        [vcv-statement-iri :sepio/has-object (:review_status msg)] ; ex: "criteria provided, conflicting interpretations"
 
@@ -92,9 +92,21 @@
        ; Variation Rule Descriptor
        [variation-rule-descriptor-iri :rdf/type (q/resource (ns-cg "VariationRuleDescriptor"))]
        [variation-rule-descriptor-iri :vrs/xref clinvar-variation-iri]]
-      ; TODO
-      ;(mapv (fn [[k v]] [vcv-statement-iri :vrs/extension {k v}])
-      ;      (dissoc msg :id :release_date :review_status :interp_description))
+      ; TODO Label (variant name?) should be added to this same VariationRuleDescriptor when received from variation record
+
+
+      ; Add extension for each field not mapped above
+      (let [leftover (dissoc msg :id :release_date :version :review_status :interp_description)
+            extensions (into []
+                             ; flatten one level
+                             (apply concat
+                                    (map (fn [[k v]]
+                                           (let [ext-iri (q/resource (str vcv-statement-iri "_" (name k)))]
+                                             [[vcv-statement-iri :vrs/extension ext-iri]
+                                              [ext-iri (ns-cg (name k)) v]]))
+                                         leftover)))]
+        (log/trace :extensions extensions)
+        extensions)
       )))
 
 (defn resource-to-out-triples
@@ -105,6 +117,7 @@
   (map #(cons resource %) (into {} resource)))
 
 (defmethod clinvar-to-model :variation_archive [event]
+  (log/debug :fn ::clinvar-to-model :event event)
   (let [model (-> event
                   :genegraph.transform.clinvar.core/parsed-value
                   variation-archive-v1-triples
