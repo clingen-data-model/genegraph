@@ -1,0 +1,33 @@
+name: GC Express Removal
+description: Request to remove a gene express entry from the website
+title: "[GC Express]: "
+labels: [genevalidity, gcexpress]
+assignees: toneillbroad
+body:
+  - type: input
+    id: requester
+    attributes:
+      label: Requester
+      description: Name of the stakeholder initiating the request
+      placeholder: ex. ABCDEFGHIJK
+  - type: input
+    id: requester-contact
+    attributes:
+      label: Requester Contact Info
+      description: How can we get in touch with the original requester if we need more info?
+      placeholder: ex. kchang@broadinstitute.org or @Kelsea Chang
+    validations:
+      required: true
+  - type: input
+    id: gcexpress-entry-url
+    attributes:
+      label: GC Express Entry URL
+      description: The URL of the GC Express entry to be removed from the website
+      placeholder: ex. https://search.clinicalgenome.org/kb/gene-validity/CGGCIEX:assertion_8492
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: If there are any additional requirements outside the norm of simply removing the entry please provide them here
