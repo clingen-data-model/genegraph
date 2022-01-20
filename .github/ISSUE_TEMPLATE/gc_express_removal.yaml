@@ -7,9 +7,11 @@ body:
   - type: input
     id: requester
     attributes:
-      label: Requester
-      description: Name of the stakeholder initiating the request
-      placeholder: ex. ABCDEFGHIJK
+      label: Requester Name
+      description: Name of the stakeholder initiating the request. This can be different than the user entering the issue.
+      placeholder: ex. Kelsea Chang
+    validations:
+      required: true
   - type: input
     id: requester-contact
     attributes:
@@ -21,8 +23,8 @@ body:
   - type: input
     id: gcexpress-entry-url
     attributes:
-      label: GC Express Entry URL
-      description: The URL of the GC Express entry to be removed from the website
+      label: GC Express Entry Website URL
+      description: The full website URL of the GC Express entry to be removed
       placeholder: ex. https://search.clinicalgenome.org/kb/gene-validity/CGGCIEX:assertion_8492
     validations:
       required: true
