@@ -95,35 +95,6 @@
       ; TODO Label (variant name?) should be added to this same VariationRuleDescriptor when received from variation record
 
       ; Extensions
-
-      ; List of nodes with id and field being the name of the
-      ;(let [leftover (dissoc msg :id :release_date :version :review_status :interp_description)
-      ;      extensions (into []
-      ;                       ; flatten one level
-      ;                       (apply concat
-      ;                              (map (fn [[k v]]
-      ;                                     (let [ext-iri (q/resource (str vcv-statement-iri "_" (name k)))]
-      ;                                       [[vcv-statement-iri :vrs/extension ext-iri]
-      ;                                        [ext-iri (ns-cg (name k)) v]]))
-      ;                                   leftover)))]
-      ;  (log/trace :extensions extensions)
-      ;  extensions)
-
-      ; List of id/type/value. JSON-LD Doesn't like id and value together.
-      ; Using typed literals is a bit heavy/unfriendly
-      ;(let [leftover (dissoc msg :id :release_date :version :review_status :interp_description)
-      ;      extensions (into []
-      ;                       ; flatten one level
-      ;                       (apply concat
-      ;                              (map (fn [[k v]]
-      ;                                     (let [ext-iri (q/resource (str vcv-statement-iri "_" (name k)))]
-      ;                                       [[vcv-statement-iri :vrs/extension ext-iri]
-      ;                                        [ext-iri :rdf/type (q/resource (ns-cg (name k)))]
-      ;                                        [ext-iri :rdf/value v]]))
-      ;                                   leftover)))]
-      ;  (log/trace :extensions extensions)
-      ;  extensions)
-
       (let [leftover (dissoc msg :id :release_date :version :review_status :interp_description)
             extensions (into []
                              ; flatten one level
