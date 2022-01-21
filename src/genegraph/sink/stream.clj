@@ -27,20 +27,25 @@
 ;; for processing in the environment. All offsets that have been previously 
 ;; recorded in partition_offsets.edn are be preserved, and any new consumer topics
 ;; defined for processing will have their offset state tracked.
+;; Map is in the form { [topic-name partition] current-offset}
 (def current-offsets (atom {}))
 
-;; This atom contains the end offsets for the current topics defined in the environment
+;; This atom contains the end offsets for the current topics defined in the environment.
+;; Map is in the form { [topic-name partition] end-offset}
 (def end-offsets (atom {}))
 
 ;; This promise is only delivered once, the initial time that the offsets of the current
-;; topics defined in the environment are completely brought up to their end offsets
+;; topics defined in the environment are completely brought up to their end offsets.
 (def consumer-offsets-up-to-date (promise))
 
-;; Consumer topic state is either :running or :stopped 
+;; Consumer topic state is either :running or :stopped
+;; Map is in the form { topic state }
 (def consumer-topic-state (atom {}))
 (def consumer-topics-closed (promise))
 
-;; In transformer mode, we store each clusters producer
+;; In transformer mode, we store a single producer per cluster
+;; Map is in the form { cluster producer }.
+;; See the :clusters entry in kafka.edn
 (def producers (atom {}))
 
 (defn consumer-record-to-clj [consumer-record spec]
