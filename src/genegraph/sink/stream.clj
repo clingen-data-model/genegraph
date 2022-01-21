@@ -26,16 +26,21 @@
 ;; This atom file may contain some, none, or all of the consumer topics defined 
 ;; for processing in the environment. All offsets that have been previously 
 ;; recorded in partition_offsets.edn are be preserved, and any new consumer topics
-;; defined for processing will have their offset state tracked."
+;; defined for processing will have their offset state tracked.
 (def current-offsets (atom {}))
 
-;; This atom contains the end offsets of the current topics defined in the environment
+;; This atom contains the end offsets for the current topics defined in the environment
 (def end-offsets (atom {}))
 
-(def offsets-up-to-date (atom {}))
+;; This promise is only delivered once, the initial time that the offsets of the current
+;; topics defined in the environment are completely brought up to their end offsets
 (def consumer-offsets-up-to-date (promise))
+
+;; Consumer topic state is either :running or :stopped 
 (def consumer-topic-state (atom {}))
 (def consumer-topics-closed (promise))
+
+;; In transformer mode, we store each clusters producer
 (def producers (atom {}))
 
 (defn consumer-record-to-clj [consumer-record spec]
@@ -109,27 +114,47 @@
                                {} kafka-end-offsets)]
     (swap! end-offsets merge end-offset-map)))
 
+(defn consumer-topic-names []
+  (->> (consumer-topics) (select-keys (:topics config)) vals (map :name) set))
+
+(defn filter-by-consumer-topic-names [offset-coll]
+  "Filter any map collection that is keyed by [topic partition]
+   by the current list of topics defined in the environment."
+  (reduce (fn [acc [[topic-name partition] offset]]
+            (if (contains? (consumer-topic-names) topic-name)
+              (assoc acc [topic-name partition] offset)
+              acc))
+          {}
+          offset-coll))
+
+(defn offsets-up-to-date-status []
+  (if (= (keys (filter-by-consumer-topic-names @current-offsets)) (keys @end-offsets))
+    (merge-with <= @end-offsets (filter-by-consumer-topic-names @current-offsets))
+    {}))
+
+(defn end-offsets-has-all-consumer-topics? []
+  "This is a gate to ensure that all topic for processing in the environment
+   have their end offsets recorded"
+  (= (->> @end-offsets keys (map first) count) (count (set (consumer-topics)))))
+
 (defn consumers-up-to-date? []
   "Checks if the consumers for the list of topics defined for processing
-   in the environment are all up to date - that is they have processed
-   up to their topic partitions end offsets"
-  (and (some? (keys @offsets-up-to-date))
-       (= (count (keys @offsets-up-to-date)) (count (consumer-topics)))
-       (every? true? (vals @offsets-up-to-date)))) ;; TON <=== YOU ARE HERE
+   in the environment have processed up to their topic partitions end offsets"
+  (let [offsets-status (offsets-up-to-date-status)]
+    (and (end-offsets-has-all-consumer-topics?)
+         (some? (keys offsets-status))
+         (every? true? (vals (filter-by-consumer-topic-names offsets-status))))))
 
-(defn set-up-to-date-status!
+(defn check-consumers-up-to-date-status!
   "Returns true if all partitions of all topics subscribed to have had messages
   consumed up to the latest offset when the consumer was started."
   []
-  (when (= (set (keys @current-offsets)) (set (keys @end-offsets)))
-    (let [partitions-up-to-date? (merge-with <= @end-offsets @current-offsets)]
-      (reset! offsets-up-to-date partitions-up-to-date?)
-      (when (consumers-up-to-date?)
-        (deliver consumer-offsets-up-to-date true))))
-  (log/info :fn :set-up-to-date-status?
-             :current-offsets @current-offsets
-             :end-offsets @end-offsets
-             :offsets-up-to-date @offsets-up-to-date))
+  (when (consumers-up-to-date?)
+    (deliver consumer-offsets-up-to-date true))
+  (log/info :fn :check-consumers-up-to-date-status?
+            :current-offsets @current-offsets
+            :end-offsets @end-offsets
+            :offsets-up-to-date (offsets-up-to-date-status)))
 
 (defn initialize-current-offsets! []
   (if (.exists (io/as-file (offset-file)))
@@ -145,8 +170,8 @@
       (when (not= (get @current-offsets key) (get @end-offsets key))
         (swap! current-offsets assoc key (.position consumer tp))
         (spit (offset-file) (pr-str @current-offsets)))))
-  (when-not (consumers-up-to-date?)
-    (set-up-to-date-status!)))
+  (when-not (realized? consumer-offsets-up-to-date)
+    (check-consumers-up-to-date-status!)))
 
 (def run-consumer (atom true))
 
