@@ -14,12 +14,12 @@ construct
 where
 {
 
-  ?classification a gci:provisionalClassification .
+  ?classification a gci:provisionalClassification ;
+  gci:classificationPoints ?pointsTree ;
+  gci:approvedClassification true .
 
   BIND (IRI(CONCAT(str(?classification), "_overall_genetic_evidence_line")) AS ?geneticEvidenceLine) .
   
-  ?classification gci:classificationPoints ?pointsTree .
-
   ?pointsTree gci:segregation ?segregationTree .
   ?segregationTree gci:pointsCounted ?segregationTotal .
 
