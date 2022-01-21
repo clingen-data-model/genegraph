@@ -94,16 +94,46 @@
        [variation-rule-descriptor-iri :vrs/xref clinvar-variation-iri]]
       ; TODO Label (variant name?) should be added to this same VariationRuleDescriptor when received from variation record
 
+      ; Extensions
 
-      ; Add extension for each field not mapped above
+      ; List of nodes with id and field being the name of the
+      ;(let [leftover (dissoc msg :id :release_date :version :review_status :interp_description)
+      ;      extensions (into []
+      ;                       ; flatten one level
+      ;                       (apply concat
+      ;                              (map (fn [[k v]]
+      ;                                     (let [ext-iri (q/resource (str vcv-statement-iri "_" (name k)))]
+      ;                                       [[vcv-statement-iri :vrs/extension ext-iri]
+      ;                                        [ext-iri (ns-cg (name k)) v]]))
+      ;                                   leftover)))]
+      ;  (log/trace :extensions extensions)
+      ;  extensions)
+
+      ; List of id/type/value. JSON-LD Doesn't like id and value together.
+      ; Using typed literals is a bit heavy/unfriendly
+      ;(let [leftover (dissoc msg :id :release_date :version :review_status :interp_description)
+      ;      extensions (into []
+      ;                       ; flatten one level
+      ;                       (apply concat
+      ;                              (map (fn [[k v]]
+      ;                                     (let [ext-iri (q/resource (str vcv-statement-iri "_" (name k)))]
+      ;                                       [[vcv-statement-iri :vrs/extension ext-iri]
+      ;                                        [ext-iri :rdf/type (q/resource (ns-cg (name k)))]
+      ;                                        [ext-iri :rdf/value v]]))
+      ;                                   leftover)))]
+      ;  (log/trace :extensions extensions)
+      ;  extensions)
+
       (let [leftover (dissoc msg :id :release_date :version :review_status :interp_description)
             extensions (into []
                              ; flatten one level
                              (apply concat
                                     (map (fn [[k v]]
-                                           (let [ext-iri (q/resource (str vcv-statement-iri "_" (name k)))]
+                                           (let [ext-iri (l/blank-node)]
                                              [[vcv-statement-iri :vrs/extension ext-iri]
-                                              [ext-iri (ns-cg (name k)) v]]))
+                                              [ext-iri :rdf/type :vrs/Extension]
+                                              [ext-iri :vrs/name (name k)]
+                                              [ext-iri :vrs/value v]]))
                                          leftover)))]
         (log/trace :extensions extensions)
         extensions)
@@ -114,6 +144,7 @@
   them into a Model. These triples can be used as input to l/statements-to-model.
   NOTE: that only works when all the properties of the resource are in property-names.edn"
   [resource]
+  ; [k v] -> [r k v]
   (map #(cons resource %) (into {} resource)))
 
 (defmethod clinvar-to-model :variation_archive [event]

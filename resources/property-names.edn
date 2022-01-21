@@ -225,6 +225,8 @@
  [:cg/negated "http://dataexchange.clinicalgenome.org/terms/negated"]
  [:vrs/xref "https://vrs.ga4gh.org/terms/xref"]
  [:vrs/extension "https://vrs.ga4gh.org/terms/extension"]
+ [:vrs/value "https://vrs.ga4gh.org/terms/value"]
+ [:vrs/name "https://vrs.ga4gh.org/terms/name"]
  [:cnt/chars "http://www.w3.org/2011/content#chars"]
  [:data/genome-build-identifier "http://edamontology.org/data_2340"]
  [:dc/abstract "http://purl.org/dc/terms/abstract"]
