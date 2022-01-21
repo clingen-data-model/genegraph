@@ -38,7 +38,7 @@ where {
   }
 
   OPTIONAL {
-    ?evidenceItem gci:expression / gci:alteredExpression / gci:evidence ?expressionDescription .
+    ?evidenceItem gci:expression / ( gci:alteredExpression | gci:normalExpression )  / gci:evidence ?expressionDescription .
   }
   
   
