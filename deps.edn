@@ -55,7 +55,8 @@
   juxt/dirwatch {:mvn/version "0.2.5"}
   ;; for generating jsonld context
   org.flatland/ordered {:mvn/version "1.5.7"}
-
+  com.apicatalog/titanium-json-ld {:mvn/version "1.1.0"}
+  org.glassfish/jakarta.json {:mvn/version "2.0.1"}
   ;; Alternative to REBL
   djblue/portal {:mvn/version "0.18.1"}
   ;; REBL reqs
