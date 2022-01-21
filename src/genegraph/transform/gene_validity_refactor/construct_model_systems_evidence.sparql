@@ -28,10 +28,11 @@ where {
   BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
   
   ?evidenceItem gci:scores ?evidenceLine ;
+  gci:modelSystems ?gciModelSystem  ;
   gci:label ?evidenceLabel .
   
-  ?gciEvidence gci:modelSystems ?gciModelSystem  ;
-  gci:label ?evidenceLabel .
+  # ?gciEvidence gci:modelSystems ?gciModelSystem  ;
+  # gci:label ?evidenceLabel .
 
   ?gciModelSystem gci:explanation ?evidenceDescription ;
   gci:modelSystemsType ?gciType .
@@ -40,7 +41,7 @@ where {
   gcixform:hasEvidenceItemType ?evidenceItemType ;
   gcixform:usedIn gcixform:ModelSystems .
   
-  ?annotation gci:experimentalData ?gciEvidence ;
+  ?annotation gci:experimentalData ?evidenceItem ;
   gci:article ?publication .
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
