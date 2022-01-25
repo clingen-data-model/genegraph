@@ -98,9 +98,8 @@
   "Create a new model that is the union of models"
   [& models]
   (let [union-model (ModelFactory/createDefaultModel)]
-    (util/tx
-     (doseq [model models] (.add union-model model))
-     union-model)))
+    (doseq [model models] (.add union-model model))
+    union-model))
 
 (defn empty-model []
   (ModelFactory/createDefaultModel))
