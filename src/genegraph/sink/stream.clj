@@ -133,7 +133,7 @@
           offset-coll))
 
 (defn offsets-up-to-date-status []
-  (if (= (keys (filter-by-consumer-topic-names @current-offsets)) (keys @end-offsets))
+(if (= (-> (filter-by-consumer-topic-names @current-offsets) keys set) (-> @end-offsets keys set))
     (merge-with <= @end-offsets (filter-by-consumer-topic-names @current-offsets))
     {}))
 
