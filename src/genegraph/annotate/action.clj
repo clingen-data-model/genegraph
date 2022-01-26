@@ -24,7 +24,7 @@
              :publish))))
 
 (defmethod add-action :gci-refactor [event]
-  (let [action (if (re-find #"\"publishClassification\":true"
+  (let [action (if (re-find #"\"publishClassification\": ?true"
                             (:genegraph.sink.event/value event))
                  :publish
                  :unpublish)]
