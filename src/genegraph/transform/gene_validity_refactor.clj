@@ -3,6 +3,7 @@
             [genegraph.database.query :as q :refer [select construct ld-> ld1-> declare-query]]
             [genegraph.transform.types :refer [transform-doc src-path add-model]]
             [cheshire.core :as json]
+            [clojure.walk :refer [postwalk]]
             [clojure.string :as s]
             [clojure.java.io :as io :refer [resource]])
   (:import java.io.ByteArrayInputStream ))
@@ -159,14 +160,29 @@
             
             }}))))
 
+(defn clear-associated-snapshots [gdm-json]
+  (->> (json/parse-string gdm-json)
+       (postwalk #(if (map? %) (dissoc % "associatedClassificationSnapshots") %))
+       json/generate-string))
+
+(defn fix-gdm-identifiers [gdm-json]
+  (-> gdm-json
+      (s/replace #"MONDO_" "MONDO:")
+      (s/replace #"@id" "gciid")))
+
+(defn append-context [gdm-json]
+  (str context "," (subs gdm-json 1)))
+
+(defn str->bytestream [s]
+  (-> s .getBytes ByteArrayInputStream.))
+
 (defn parse-gdm [gdm-json]
-  (let [gdm-with-fixed-curies (-> gdm-json
-                                  (s/replace #"MONDO_" "MONDO:")
-                                  (s/replace #"@id" "gciid"))
-        is (-> (str context "," (subs gdm-with-fixed-curies 1))
-               .getBytes
-               ByteArrayInputStream.)]
-    (l/read-rdf is {:format :json-ld})))
+  (-> gdm-json
+      clear-associated-snapshots
+      fix-gdm-identifiers
+      append-context
+      str->bytestream
+      (l/read-rdf {:format :json-ld})))
 
 (def gdm-is-about-gene-query
   (q/create-query "prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
