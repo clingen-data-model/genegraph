@@ -3,7 +3,8 @@
             [genegraph.source.graphql.common.enum :as enum]
             [genegraph.source.graphql.common.curation :as curation]
             [genegraph.source.graphql.common.cache :refer [defresolver]]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [cheshire.core :as json]))
 
 ;; CGGV:assertion_43fb4e99-e97a-4d9c-af11-79c2b09ecd2e-2019-07-24T160000.000Z
 ;; CGGCIEX:assertion_10075
@@ -92,3 +93,9 @@
 
 (defn legacy-json [_ _ value]
   (ld1-> value [[:bfo/has-part :<] :bfo/has-part :cnt/chars]))
+
+(defn report-id [_ _ value]
+  (-> (legacy-json nil nil value)
+      (json/parse-string true)
+      :report_id))
+

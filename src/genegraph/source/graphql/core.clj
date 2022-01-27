@@ -201,6 +201,7 @@
    :gene-validity/report-date gene-validity/report-date
    :gene-validity/specified-by gene-validity/specified-by
    :gene-validity/has-format gene-validity/has-format
+   :gene-validity/report-id gene-validity/report-id
    :genetic-condition/actionability-curations genetic-condition/actionability-curations
    :genetic-condition/actionability-assertions genetic-condition/actionability-assertions
    :genetic-condition/disease genetic-condition/disease
