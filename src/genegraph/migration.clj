@@ -21,7 +21,6 @@
            [java.nio.file Path Paths]
            [java.io InputStream OutputStream FileInputStream File]
            [com.google.common.io ByteStreams]
-           [org.apache.kafka.clients.producer Producer KafkaProducer ProducerRecord]
            [com.google.cloud.storage Bucket BucketInfo Storage StorageOptions
             BlobId BlobInfo Blob]
            [com.google.cloud.storage Storage$BlobWriteOption
@@ -57,37 +56,39 @@
     (start #'property-store/property-store)
     (base/initialize-db!)
     ;; (batch/process-batched-events!)
-    (start #'suggest/suggestions)
-    (suggest/build-all-suggestions)
-    (stop #'suggest/suggestions)
+    (when-not (env/transformer-mode?)
+      (start #'suggest/suggestions)
+      (suggest/build-all-suggestions)
+      (stop #'suggest/suggestions))
     (stop #'property-store/property-store)
     (stop #'db/db)))
 
 (defn build-database
   "Build the Jena database and associated indexes from scratch."
-  [path]
-  (log/info :fn :build-database :msg (str "Building database at " path))
-  (with-redefs [env/data-vol path]
+  [dest-path]
+  (log/info :fn :build-database :msg (str "Building database at " dest-path))
+  (with-redefs [env/data-vol dest-path]
     (fs/mkdirs env/data-vol)
     (start #'db/db)
     (start #'property-store/property-store)
     (base/initialize-db!)
     (batch/process-batched-events!)
-    (start #'stream/consumer-thread)
+    (start #'event/stream-processing)
     (log/info :fn :build-database :msg "Processing streams...")
     (stream/wait-for-topics-up-to-date)
     (log/info :fn :build-database :msg "Stopping streams...")
-    (stop #'stream/consumer-thread)
+    (stop #'event/stream-processing)
     (log/info :fn :build-database :msg "Waiting for streams to close...")
     (stream/wait-for-topics-closed)
-    (log/info :fn :build-database :msg "Starting resolver cache...")
-    (start #'cache/resolver-cache-db)
-    (warm-resolver-cache)
-    (stop #'cache/resolver-cache-db)
-    (start #'suggest/suggestions)
-    (log/info :fn :build-database :msg "Building suggesters...")
-    (suggest/build-all-suggestions)
-    (stop #'suggest/suggestions)
+    (when-not (env/transformer-mode?)
+      (log/info :fn :build-database :msg "Starting resolver cache...")
+      (start #'cache/resolver-cache-db)
+      (warm-resolver-cache)
+      (stop #'cache/resolver-cache-db)
+      (start #'suggest/suggestions)
+      (log/info :fn :build-database :msg "Building suggesters...")
+      (suggest/build-all-suggestions)
+      (stop #'suggest/suggestions))
     (stop #'property-store/property-store)
     (stop #'db/db)))
 
@@ -114,14 +115,15 @@
   "Populate a new database, package and upload to Google Cloud"
   []
   (let [data-version-id (if (some? env/data-version) env/data-version (new-version-identifier))
-        version-id (if (some? env/genegraph-version) (str data-version-id ":" env/genegraph-version)
-                       data-version-id)
-        database-path (str env/base-dir "/" version-id)
-        archive-path (str database-path ".tar.gz")]
-    (build-database database-path)
-    (compress-database database-path archive-path)
+        version-id (if (some? env/genegraph-image-version)
+                     (str data-version-id ":" env/genegraph-image-version)
+                     data-version-id)
+        dest-database-path (str env/base-dir "/" version-id)
+        dest-archive-path (str dest-database-path ".tar.gz")]
+    (build-database dest-database-path)
+    (compress-database dest-database-path dest-archive-path)
     (Thread/sleep 1000) ;; seems to be a race condition here to avoid
-    (send-database env/genegraph-bucket archive-path version-id)))
+    (send-database env/genegraph-bucket dest-archive-path version-id)))
 
 (defn create-local-base-migration
   "Populate a new database with just local data, not intended for Google Cloud"
@@ -160,5 +162,4 @@
       (log/info :fn :populate-data-vol-if-needed :msg (str "retrieving " archive-file))
       (retrieve-migration env/genegraph-bucket archive-file env/data-vol)
       (decompress-database env/data-vol archive-path))))
-
 

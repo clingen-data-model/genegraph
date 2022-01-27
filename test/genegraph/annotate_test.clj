@@ -2,14 +2,17 @@
   (:require [genegraph.annotate :as ann :refer :all]
             [genegraph.database.query :as q]
             [genegraph.database.validation :as validate]
+            [genegraph.server-test :refer [mount-database-fixture]]
             [clojure.test :refer :all]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.string :as string]))
+            [clojure.string :as string])
+
+(use-fixtures :each mount-database-fixture)  
 
 (deftest decorate-event-with-iri
   (let [evt (-> "test_data/gene_validity_0_1094.edn" io/resource slurp edn/read-string)]
-    (is (= "http://dataexchange.clinicalgenome.org/gci/report_03628749-51d6-437e-9816-1e32852645cf-2020-06-08T141802.817Z"
+    (is (= "http://dataexchange.clinicalgenome.org/gci/proposition_03628749-51d6-437e-9816-1e32852645cf"
            (-> evt add-metadata add-model add-iri ::ann/iri)))))
 
 
@@ -31,13 +34,25 @@
                        io/resource
                        slurp
                        edn/read-string)
-        dosage-evt (-> gene-based-dosage-data add-metadata add-model add-iri add-validation)]
+        dosage-evt (-> gene-based-dosage-data
+                       add-metadata
+                       add-model
+                       add-iri
+                       add-validation-shape
+                       add-validation-context
+                       add-validation)]
     (is (true? (validate/did-validate? (::ann/validation dosage-evt)))))
   (let [region-based-dosage-data  (-> "test_data/gene_dosage_sepio_in_0_5534.edn"
                        io/resource
                        slurp
                        edn/read-string)
-        dosage-evt (-> region-based-dosage-data add-metadata add-model add-iri add-validation)]
+        dosage-evt (-> region-based-dosage-data
+                       add-metadata
+                       add-model
+                       add-iri
+                       add-validation-shape
+                       add-validation-context
+                       add-validation)]
     (is (true? (validate/did-validate? (::ann/validation dosage-evt)))))
   (let [invalid-dosage-data  (-> "test_data/gene_dosage_sepio_in_bad.edn"
                        io/resource

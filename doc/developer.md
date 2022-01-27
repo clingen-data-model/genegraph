@@ -11,6 +11,11 @@
 `GENEGRAPH_BUCKET`="genegraph-dev" - gs bucket containing database versions<br>
 `GENEGRAPH_VALIDATE_EVENTS`=true - enable shacl validation of stream events<br>
 `GENEGRAPH_GQL_CACHE`=true - enable/disable caching<br>
+`GENEGRAPH_MIGRATION_VERSION`="2020-07-07T1234" - When defined, and
+the date represents a previous migration archive (either in a gcs bucket or
+locally), represents the migration from
+where base data will pulled when creating a new migration. This is
+instead of pulling from the internet URLs defined in base.edn.
 
 ## Project directory structure
 

@@ -3,15 +3,16 @@
             [genegraph.source.graphql.common.enum :as enum]
             [genegraph.source.graphql.common.curation :as curation]
             [genegraph.source.graphql.common.cache :refer [defresolver]]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [cheshire.core :as json]))
 
 ;; CGGV:assertion_43fb4e99-e97a-4d9c-af11-79c2b09ecd2e-2019-07-24T160000.000Z
 ;; CGGCIEX:assertion_10075
 ;; https://search.clinicalgenome.org/kb/gene-validity/3210
-;; https://search.clinicalgenome.org/kb/gene-validity/92e04f9e-f03e-4295-baac-e9fb6b48a258--2020-06-29T17:45:43
+;; "https://search.clinicalgenome.org/kb/gene-validity/CGGV:assertion_2f6d71c6-6595-49bf-a50e-fce726b22088-2018-10-03T160000.000Z"
 
 (defn find-newest-gci-curation [id]
-  (when-let [uuid-part (re-find #"\w+-\w+-\w+-\w+-\w+" id)]
+  (when-let [uuid-part (->> id (re-find #"(\w+_)(\w+-\w+-\w+-\w+-\w+)") last)]
     (let [proposition (q/resource (str "CGGV:proposition_" uuid-part))]
       (when (q/is-rdf-type? proposition :sepio/GeneValidityProposition)
         (ld1-> proposition [[:sepio/has-subject :<]])))))
@@ -92,3 +93,9 @@
 
 (defn legacy-json [_ _ value]
   (ld1-> value [[:bfo/has-part :<] :bfo/has-part :cnt/chars]))
+
+(defn report-id [_ _ value]
+  (-> (legacy-json nil nil value)
+      (json/parse-string true)
+      :report_id))
+

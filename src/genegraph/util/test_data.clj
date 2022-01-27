@@ -106,7 +106,7 @@
   (let [base-data (-> "test_data/base_events.edn" io/resource slurp edn/read-string)]
     (assoc curation-events
            :base-data
-           (mapv #(assoc % ::event/value (slurp (str (base/target-base) "/" (:target %)))) base-data))))
+           (mapv #(assoc % ::event/value (slurp (str (base/target-base) (:target %)))) base-data))))
 
 
 (defn select-published-curations [curation-sequence]

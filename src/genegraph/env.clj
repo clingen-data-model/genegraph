@@ -1,5 +1,6 @@
 (ns genegraph.env
   (:require [io.pedestal.log :as log]))
+
 (def base-dir (or (System/getenv "GENEGRAPH_DATA_PATH")
                   (System/getenv "CG_SEARCH_DATA_VOL")))
 (def data-version (System/getenv "GENEGRAPH_DATA_VERSION"))
@@ -14,11 +15,16 @@
 (def mode (System/getenv "GENEGRAPH_MODE"))
 (def validate-events (Boolean/valueOf (System/getenv "GENEGRAPH_VALIDATE_EVENTS")))
 (def use-response-cache (Boolean/valueOf (System/getenv "GENEGRAPH_RESPONSE_CACHE")))
-(def genegraph-version (System/getenv "GENEGRAPH_IMAGE_VERSION"))
+(def genegraph-image-version (System/getenv "GENEGRAPH_IMAGE_VERSION"))
 (def database-build-mode (System/getenv "GENEGRAPH_DATABASE_BUILD_MODE"))
 (def graphql-logging-topic (System/getenv "GENEGRAPH_GQL_LOGGING_TOPIC"))
 (def use-experimental-schema (Boolean/valueOf (System/getenv "GENEGRAPH_EXPERIMENTAL_SCHEMA")))
 (def batch-event-sources (System/getenv "GENEGRAPH_BATCH_EVENT_SOURCES"))
+
+;; When defined, this is a previous migration archive name (without the '.tar.gz')
+;; from where the base data for a new migration will originate.
+(def migration-data-version (System/getenv "GENEGRAPH_MIGRATION_VERSION"))
+(def migration-data-vol (if migration-data-version (str base-dir "/" migration-data-version) nil))
 
 (def dx-key-pass (System/getenv "SERVEUR_KEY_PASS"))
 
@@ -30,11 +36,17 @@
                   :genegraph-response-cache use-response-cache
                   :genegraph-mode mode
                   :genegraph-validate-events validate-events
-                  :genegraph-version genegraph-version
+                  :genegraph-image-version genegraph-image-version
                   :graphql-logging-topic graphql-logging-topic
                   :batch-event-sources batch-event-sources
-                  :use-experimental-schema use-experimental-schema})
+                  :use-experimental-schema use-experimental-schema
+                  :migration-data-version migration-data-version
+                  :migration-data-volume migration-data-vol})
 
 (defn log-environment []
   (log/info :fn :log-environment
             :env environment))
+
+(defn transformer-mode? []
+  (= "transformer" mode))
+
