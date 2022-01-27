@@ -225,7 +225,8 @@
                         (construct-articles params) 
                         (construct-secondary-contributions params)
                         (construct-variant-score params)
-                        (construct-unscoreable-evidence params))]
+                        (construct-unscoreable-evidence params)
+                        )]
     (q/union unlinked-model
              (construct-evidence-connections 
               {::q/model
