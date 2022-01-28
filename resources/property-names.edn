@@ -1076,6 +1076,8 @@
   "http://purl.obolibrary.org/obo/SEPIO_0000026"]
  [:sepio/asserts-proposition
   "http://purl.obolibrary.org/obo/SEPIO_0000030"]
+ [:sepio/calculated-score
+  "http://purl.obolibrary.org/obo/SEPIO_0004128"]
  [:sepio/case-allele-frequency-statement
   "http://purl.obolibrary.org/obo/SEPIO_0000304"]
  [:sepio/clin-gen-preferred-term

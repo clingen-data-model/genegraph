@@ -6,6 +6,7 @@ construct {
   :dc/description ?scoreDescription ;
   :sepio/has-evidence ?evidenceItem ;
   gci:type ?gciType ;
+  :sepio/calculated-score ?calculatedScore ;
   :sepio/evidence-line-strength-score ?score .
 
   ?evidenceItem  a ?evidenceItemType ;

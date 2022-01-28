@@ -5,6 +5,7 @@ construct {
   # ?evidenceLine a ?variantType ;
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence ?evidenceItem , ?functionEvidenceItem ;
+  :sepio/calculated-score ?resultCalculatedScore ;
   :dc/description ?evidenceLineDescription .
 
   ?evidenceItem a ?evidenceItemType ;
@@ -58,6 +59,8 @@ where {
   }
 
   BIND(IF( ?zygosity = :geno/Homozygous , ?baseScore * 2 , ?baseScore) AS ?score) .
+
+  BIND(IF( ?zygosity = :geno/Homozygous , ?calculatedScore * 2 , ?calculatedScore) AS ?resultCalculatedScore) .
   
   ?annotation  gci:individuals|gci:individualIncluded ?individual ;
   ^gci:familyIncluded? / ^(gci:families|gci:groups)? / gci:article ?publication .

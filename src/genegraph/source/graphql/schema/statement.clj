@@ -1,4 +1,4 @@
-(ns genegraph.source.graphql.schema.statement
+  (ns genegraph.source.graphql.schema.statement
   (:require [genegraph.database.query :as q]
             [genegraph.source.graphql.schema.common :as common]
             [com.walmartlabs.lacinia.schema :refer [tag-with-type]]))
@@ -23,6 +23,9 @@
             :score {:type 'Float
                     :description "Numeric score of the statement. May be nil, used only when the applicable criteria calls for a numeric score in the statement or critera assessment."
                     :path [:sepio/evidence-line-strength-score]}
+            :calculated_score {:type 'Float
+                               :description "Calculated score as presented per the parameters of the SOP by the curation tool. May differ from the score if the curator selected a score apart from the default score."
+                               :path [:sepio/calculated-score]}
             :specified_by {:type :Resource
                            :description "The criteria or method used to create the assertion or evidence line."
                            :path [:sepio/is-specified-by]
