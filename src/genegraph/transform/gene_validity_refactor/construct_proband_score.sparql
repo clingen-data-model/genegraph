@@ -4,6 +4,7 @@ construct {
   ?evidenceLine a ?evidenceLineType ;
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence ?evidenceItem ;
+  :sepio/calculatedScore ?calculatedScore ;
   :dc/description ?evidenceLineDescription .
 
   ?evidenceItem a ?evidenceItemType ;
