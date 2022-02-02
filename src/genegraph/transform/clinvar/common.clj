@@ -86,6 +86,17 @@
   (or (get clinvar-clinsig-map-by-clinsig (s/lower-case clinsig))
       "other"))
 
+(defn variation-vrs-type
+  [clinvar-type]
+  (cond (= "SimpleAllele" clinvar-type)
+        :vrs/TextUtilityVariation
+        (= "Haplotype" clinvar-type)
+        :vrs/TextUtilityVariation
+        (= "Genotype" clinvar-type)
+        :vrs/TextUtilityVariation
+        :default (do (log/error :msg "Unknown variation type")
+                     :geno/Allele)))
+
 (defn variation-geno-type
   [variation-type]
   (cond (= "SimpleAllele" variation-type)
@@ -266,3 +277,19 @@ LIMIT 1")
     (.write writer sw ds prefix-map base-uri context)
     (jsonld-to-jsonld-1-1-framed (.toString sw)
                                  frame-str)))
+
+(defn fields-to-extensions
+  "Takes a map, converts all fields to VRS Extension triples.
+  `node-iri` is the subject to link each extension to."
+  [node-iri m]
+  (apply concat
+         (for [[k v] m]
+           (if (sequential? v)
+             (concat
+               (for [v1 v]
+                 (fields-to-extensions node-iri {k v1})))
+             (let [ext-iri (l/blank-node)]
+               [[node-iri :vrs/extension ext-iri]
+                [ext-iri :rdf/type :vrs/Extension]
+                [ext-iri :vrs/name (name k)]
+                [ext-iri :vrs/value v]])))))

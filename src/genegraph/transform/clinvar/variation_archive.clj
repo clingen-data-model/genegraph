@@ -9,7 +9,8 @@
                                                         mark-prior-replaced
                                                         clinvar-model-to-jsonld
                                                         model-framed-to-jsonld]]
-            [genegraph.transform.clinvar.iri :as iri]
+            [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
+            [genegraph.transform.clinvar.common :as ccommon]
             [clojure.pprint :refer [pprint]]
             [clojure.datafy :refer [datafy]]
             [clojure.string :as s]
@@ -20,7 +21,6 @@
 
 (def prefix-vrs-1-2-0 "https://vrs.ga4gh.org/en/1.2.0/")
 (defn ns-vrs [term] (str prefix-vrs-1-2-0 term))
-(defn ns-cg [term] (str iri/cgterms term))
 
 (def variation-archive-frame
   "Frame map for VCV"
@@ -95,19 +95,9 @@
       ; TODO Label (variant name?) should be added to this same VariationRuleDescriptor when received from variation record
 
       ; Extensions
-      (let [leftover (dissoc msg :id :release_date :version :review_status :interp_description)
-            extensions (into []
-                             ; flatten one level
-                             (apply concat
-                                    (map (fn [[k v]]
-                                           (let [ext-iri (l/blank-node)]
-                                             [[vcv-statement-iri :vrs/extension ext-iri]
-                                              [ext-iri :rdf/type :vrs/Extension]
-                                              [ext-iri :vrs/name (name k)]
-                                              [ext-iri :vrs/value v]]))
-                                         leftover)))]
-        (log/trace :extensions extensions)
-        extensions)
+      (ccommon/fields-to-extensions
+        vcv-statement-iri
+        (dissoc msg :id :release_date :version :review_status :interp_description))
       )))
 
 (defn resource-to-out-triples

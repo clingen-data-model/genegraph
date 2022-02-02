@@ -384,5 +384,8 @@
  [:mondo/Disease "http://purl.obolibrary.org/obo/MONDO_0000001"]
  [:sepio/Assertion "http://purl.obolibrary.org/obo/SEPIO_0000001"]
  [:vrs/Extension "https://vrs.ga4gh.org/terms/Extension"]
+ [:vrs/Allele "https://vrs.ga4gh.org/terms/Allele"]
+ [:vrs/TextUtilityVariation "https://vrs.ga4gh.org/terms/TextUtilityVariation"]
+ [:vrs/VariationDescriptor "https://vrs.ga4gh.org/terms/VariationDescriptor"]
  [:chebi/Drug "http://purl.obolibrary.org/obo/CHEBI_23888"]]
 
