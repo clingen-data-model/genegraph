@@ -12,7 +12,8 @@
                                                         clinvar-to-model
                                                         clinvar-model-to-jsonld]]
 
-            [genegraph.transform.clinvar.variation-archive])
+            [genegraph.transform.clinvar.variation-archive]
+            [genegraph.transform.clinvar.variation])
   (:import (java.io StringReader)))
 
 ;(defmethod clinvar-to-jsonld :release_sentinel
