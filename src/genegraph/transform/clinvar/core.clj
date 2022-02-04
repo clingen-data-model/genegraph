@@ -1,20 +1,17 @@
 (ns genegraph.transform.clinvar.core
-  (:require [genegraph.database.load :as l]
-            [genegraph.database.query :as q]
+  (:require [genegraph.database.query :as q]
             [genegraph.transform.types :as xform-types :refer [add-model]]
 
             [genegraph.database.names :refer [prefix-ns-map]]
             [cheshire.core :as json]
             [clojure.java.io :as io]
             [io.pedestal.log :as log]
-            [genegraph.transform.clinvar.iri :as iri]
             [genegraph.transform.clinvar.common :refer [transform-clinvar
                                                         clinvar-to-model
                                                         clinvar-model-to-jsonld]]
 
             [genegraph.transform.clinvar.variation-archive]
-            [genegraph.transform.clinvar.variation])
-  (:import (java.io StringReader)))
+            [genegraph.transform.clinvar.variation]))
 
 ;(defmethod clinvar-to-jsonld :release_sentinel
 ;  [msg]
@@ -51,12 +48,6 @@
 (defmethod add-model :clinvar-raw [event]
   "Construct an Apache Jena Model for the message contained in event under :genegraph.sink.event/value.
   Set it to key :genegraph.database.query/model."
-  ;(let [info-keys [:genegraph.transform.core/format
-  ;                 :genegraph.sink.stream/topic
-  ;                 :genegraph.sink.stream/partition
-  ;                 :genegraph.sink.stream/offset]]
-  ;  (log/info :fn ::add-model :dispatch :clinvar-raw :value (select-keys event info-keys))
-  ;  (log/debug :fn ::add-model :dispatch :clinvar-raw :value (select-other-keys event info-keys)))
   (let [event (-> event
                   (#(assoc % ::parsed-value (-> %
                                                 :genegraph.sink.event/value
@@ -66,6 +57,6 @@
     (log/info :fn ::add-model :event event)
     event))
 
-(defmethod xform-types/model-to-jsonld :clinvar-raw [event]
-  (log/debug :fn ::model-to-jsonld :event event)
-  (clinvar-model-to-jsonld event))
+(defmethod xform-types/add-model-jsonld :clinvar-raw [event]
+  (log/debug :fn ::add-model-jsonld :event event)
+  (assoc event :genegraph.annotate/jsonld (clinvar-model-to-jsonld event)))

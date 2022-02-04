@@ -28,8 +28,7 @@
 
 (defmulti clinvar-model-to-jsonld
           "Multimethod for ClinVar events.
-          Takes an event, returns the JSON-LD representation of the model.
-          Precondition: ::q/model field must already be populated on the event."
+          Takes an event, returns it annotated with the JSON-LD representation of the model."
           :genegraph.transform.clinvar/format)
 
 (def clinvar-jsonld-context {"@context" {"@vocab" iri/cgterms

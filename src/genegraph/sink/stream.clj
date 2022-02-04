@@ -53,7 +53,7 @@
 (defonce consumers (atom {}))
 
 (defn consumer-record-to-clj [consumer-record spec]
-  {::annotate/format spec 
+  {::annotate/format spec
    :genegraph.sink.event/key (.key consumer-record)
    :genegraph.sink.event/value (.value consumer-record)
    ::timestamp (.timestamp consumer-record)
@@ -62,7 +62,10 @@
    ::offset (.offset consumer-record)
    ::annotate/producer-topic (-> (:topics config)
                                  spec
-                                 :producer-topic)})
+                                 :producer-topic)
+   ::annotate/producer-format (-> (:topics config)
+                                  spec
+                                  (get :producer-format :json-ld))})
 
 ;; Java Properties object defining configuration of Kafka client
 (defn- client-configuration 
