@@ -8,6 +8,7 @@
             [clojure.string :as s]
             [clojure.java.io :as io]
             [cheshire.core :as json]
+            [clj-http.client :as http]
             [io.pedestal.log :as log])
   (:import (org.apache.jena.rdf.model Model)))
 
@@ -24,9 +25,33 @@
 ; add fields to VariationDescriptor
 ; promote xrefs to Resource graphql type
 
-; TODO
-(defn vrs-allele-for-variation [variation]
-  ())
+;(def cancer-variants-normalize-url
+;  "URL for cancervariants.org VRSATILE normalization.
+;  Returns a JSON document containing a variation_descriptor field along with other metadata."
+;  "https://normalize.cancervariants.org/variation/normalize")
+;
+;(defn ^String get-canonical-representation-for-variation
+;  [variation]
+;  (let [nested-content (json/parse-string (:content variation))
+;        spdi (get nested-content "CanonicalSPDI")]
+;    (if spdi
+;      spdi
+;      (let [hgvs-list (get nested-content "HGVSlist")
+;            ]))))
+;
+;(defn vrs-allele-for-variation
+;  "`variation` should be a string understood by the VICC normalization service.
+;  https://normalize.cancervariants.org/variation"
+;  [variation]
+;  (let [response (http/get cancer-variants-normalize-url {:query-params {"q" "NG_011645.1:g.58868C>T"}})
+;        status (:status response)]
+;    (case status
+;      200 (let [body (:body response)]
+;            (log/info :fn ::vrs-allele-for-variation))
+;      ; Error case
+;      (log/error :fn ::vrs-allele-for-variation :msg "Error in VRS normalization request" :status status :response response)
+;      )
+;    ))
 
 
 (defn variation-triples [msg]
@@ -55,7 +80,6 @@
 
        ;(q/resource (str iri/clinvar-variation (:variation_id msg)))
        ; TODO reverse link to VCV? Or rely on VCV->variation that should be added by VCV
-
        ;;[subject-iri :rdf/type (ns-vrs "Allele")]
 
        ;; Variation Rule Descriptor
@@ -65,8 +89,7 @@
       ; TODO Label (variant name?) should be added to this same VariationRuleDescriptor when received from variation record
 
       ; Extensions
-      (ccommon/fields-to-extensions vrd-versioned (dissoc msg :id :release_date))
-      )))
+      (ccommon/fields-to-extensions vrd-versioned (dissoc msg :id :release_date)))))
 
 (defn resource-to-out-triples
   "Uses steppable interface of RDFResource to obtain all the out properties and load

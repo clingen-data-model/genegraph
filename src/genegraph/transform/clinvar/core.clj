@@ -9,7 +9,7 @@
             [genegraph.transform.clinvar.common :refer [transform-clinvar
                                                         clinvar-to-model
                                                         clinvar-model-to-jsonld]]
-
+            [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.clinvar.variation-archive]
             [genegraph.transform.clinvar.variation]))
 
@@ -48,11 +48,26 @@
 (defmethod add-model :clinvar-raw [event]
   "Construct an Apache Jena Model for the message contained in event under :genegraph.sink.event/value.
   Set it to key :genegraph.database.query/model."
+  (log/info :msg "in clinvar-raw add-model" :event event)
   (let [event (-> event
                   (#(assoc % ::parsed-value (-> %
                                                 :genegraph.sink.event/value
                                                 (json/parse-string true))))
+                  ((fn [event] (log/info :event event) event))
+                  (#(assoc % ::parsed-value (-> %
+                                                ::parsed-value
+                                                ((fn [val] (log/info :val val) val))
+                                                ((fn [val]
+                                                   (let [nested-content (-> val :content :content (json/parse-string) util/simplify-dollar-map-recur)
+                                                         ;(:content (:content val))
+                                                         ]
+                                                     (log/info :nested-content nested-content)
+                                                     (update-in val
+                                                               [:content :content]
+                                                               nested-content)))))))
+                  ((fn [event] (log/info :msg "added format") event))
                   (#(assoc % :genegraph.transform.clinvar/format (get-clinvar-format (::parsed-value %))))
+
                   (#(assoc % ::q/model (clinvar-to-model %))))]
     (log/info :fn ::add-model :event event)
     event))

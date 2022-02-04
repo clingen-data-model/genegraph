@@ -47,3 +47,21 @@
 
 (defn in? [coll e]
   (some #(= % e) coll))
+
+(defn simplify-dollar-map [m]
+  "Return (get m :$) if m is a map and :$ is the only key. Otherwise return m.
+  Useful for BigQuery JSON serialization where single values may be turned into $ maps"
+  (if (and (map? m)
+           (= '(:$) (keys m)))
+    (:$ m)
+    m))
+
+(defn simplify-dollar-map-recur [m]
+  (if (map? m)
+    (if (get m :$)
+      (simplify-dollar-map-recur (simplify-dollar-map m))
+      (into {} (for [[k v] m]
+                 [k (simplify-dollar-map-recur v)])))
+    (if (coll? m)
+      (map simplify-dollar-map-recur m)
+      m)))

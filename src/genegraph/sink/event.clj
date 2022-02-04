@@ -82,11 +82,7 @@
   (log/info :fn :stream-producer :action (::ann/action event) :iri (::ann/iri event))
   (if-let [topic-key (::ann/producer-topic event)]
     (when (= :publish (::ann/action event))
-      (let [iri (::ann/iri event)
-            ;(-> event ::q/model q/to-turtle)
-            ;serialized-model (serialize-model (::q/model event)
-            ;                                  (::ann/producer-format event))
-            ]
+      (let [iri (::ann/iri event)]
         (when-let [serialized-model (::ann/jsonld event)]
           (let [producer (stream/producer-for-topic! topic-key)
                 producer-topic-name (-> stream/config :topics topic-key :name)
