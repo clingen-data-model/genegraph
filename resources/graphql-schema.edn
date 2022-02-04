@@ -706,6 +706,9 @@ the context of a formal evalutation framework"
     :report_id {:type String
                 :description "GDM UUID from the GCI"
                 :resolve :gene-validity/report-id}
+    :animal_model {:type Boolean
+                :description "Animal model only flag from legacy json"
+                :resolve :gene-validity/animal-model}
     :description {:type String
                   :resolve :evidence/description}}}
 
