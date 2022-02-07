@@ -41,6 +41,7 @@ where {
   
   ?classification a gci:provisionalClassification ;
   gci:approvedClassification true ;
+  gci:publishClassification true ;
   gci:autoClassification ?autoEvidenceLevel ;
   gci:alteredClassification ?alteredEvidenceLevel ;
   gci:classificationPoints ?pointsTree .
