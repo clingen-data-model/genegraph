@@ -1,5 +1,6 @@
 (ns genegraph.transform.clinvar.util
-  (:require [clojure.spec.alpha :as spec]))
+  (:require [clojure.spec.alpha :as spec]
+            [cheshire.core :as json]))
 
 (defn string-is-int?
   "Returns true if input string `s` is an arbitrarily large integer"
@@ -65,3 +66,14 @@
     (if (coll? m)
       (map simplify-dollar-map-recur m)
       m)))
+
+(defn parse-json-if-not-parsed [val]
+  (if (string? val)
+    (json/parse-string val)
+    val))
+
+(defn parse-nested-content [val]
+  (let [nested-content (-> val :content :content parse-json-if-not-parsed simplify-dollar-map-recur)]
+    (update-in val
+               [:content :content]
+               nested-content)))

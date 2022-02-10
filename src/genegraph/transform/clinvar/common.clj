@@ -49,13 +49,13 @@
   "Reads a CSV file, using the first line as headers, converting each remaining
   line to a map of the headers (as keywords) to the corresponding values in each line.
 
-  Loads whole file into memory."
+  If caller closes the reader, wrap in doall to load whole file into memory."
   [reader]
   (let [lines (csv/read-csv reader)
         headers (map #(keyword %) (first lines))]
-    (doall (map #(into {} %)
-                (map (fn [line] (map vector headers line))
-                     (rest lines))))))
+    (map #(into {} %)
+         (map (fn [line] (map vector headers line))
+              (rest lines)))))
 
 (def consensus-cancer-genes-list
   (map (fn [row] {:gene_id (nth row 0)
@@ -74,7 +74,7 @@
                 consensus-cancer-genes-list)))
 
 (def clinvar-clinsig-map
-  (read-csv-with-header (io/reader (io/resource "clinvar_clinsig-map.csv"))))
+  (doall (read-csv-with-header (io/reader (io/resource "clinvar_clinsig-map.csv")))))
 
 (def clinvar-clinsig-map-by-clinsig
   (into {} (map (fn [{:keys [clinsig normalized group]}]
@@ -231,51 +231,6 @@ LIMIT 1")
                       [previous-resource :dc/is-replaced-by iri-resource]]]
          (.add model (l/statements-to-model triples))))
      model)))
-
-(defn jsonld-to-jsonld-1-1-framed
-  "Takes a JSON-LD (1.0 or 1.1) string and a framing string. Returns a JSON-LD 1.1 string of the
-  original object, with the frame applied."
-  [^String input-str ^String frame-str]
-  (log/info :fn :to-jsonld-1-1-framed :input-str input-str :frame-str frame-str)
-  (let [input-stream (ByteArrayInputStream. (.getBytes input-str (Charset/forName "UTF-8")))
-        frame-stream (ByteArrayInputStream. (.getBytes frame-str (Charset/forName "UTF-8")))
-        titanium-doc (JsonDocument/of input-stream)
-        titanium-frame (JsonDocument/of frame-stream)
-        framing (JsonLd/frame titanium-doc titanium-frame)]
-    (-> framing .get .toString)))
-
-(defn model-framed-to-jsonld
-  "Takes a Jena Model object and a JSON-LD Framing 1.1 map.
-  Returns a string of the model converted to JSON-LD 1.1, framed with the frame map."
-  [model frame-map]
-  (let [writer (JsonLDWriter. RDFFormat/JSONLD_COMPACT_PRETTY)
-        sw (StringWriter.)
-        ds (DatasetGraphInMemory.)
-        ; prefix-map left blank
-        prefix-map (PrefixMapStd.)
-        base-uri ""
-        context (Context.)
-        jsonld-options (JsonLdOptions.)
-        frame-str (json/generate-string frame-map)]
-    (log/trace :msg "Adding model to dataset")
-    ; we don't use the graphname on export, it's value shouldn't appear in output
-    (.addGraph ds
-               (NodeFactory/createURI "testgraphname")
-               (.getGraph model))
-    (log/trace :msg "Setting jsonld frame")
-    ; TODO this appears to do nothing when writing jsonld
-    ; maybe it affects reading, not sure why it's under JsonLDWriter then though
-    (.set context JsonLDWriter/JSONLD_FRAME frame-str)
-    (log/trace :msg "Setting jsonld options")
-    ; TODO does nothing
-    ;(.setOmitGraph jsonld-options true)
-    ; TODO does nothing
-    ;(.setProcessingMode jsonld-options "JSON_LD_1_1")
-    (.set context JsonLDWriter/JSONLD_OPTIONS jsonld-options)
-    (log/trace :msg "Writing framed jsonld")
-    (.write writer sw ds prefix-map base-uri context)
-    (jsonld-to-jsonld-1-1-framed (.toString sw)
-                                 frame-str)))
 
 (defn fields-to-extensions
   "Takes a map, converts all fields to VRS Extension triples.
