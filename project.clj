@@ -14,7 +14,7 @@
                  [org.slf4j/jcl-over-slf4j "1.7.26"]
                  [org.slf4j/log4j-over-slf4j "1.7.26"]
                  [com.github.danielwegener/logback-kafka-appender "0.2.0-RC2"]
-                 [org.apache.kafka/kafka-clients "2.5.0"]
+                 [org.apache.kafka/kafka-clients "3.1.0"]
                  [cheshire "5.8.1"]
                  [org.clojure/data.csv "0.1.4"]
                  [camel-snake-kebab "0.4.0"]

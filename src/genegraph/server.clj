@@ -44,6 +44,20 @@
   :start (FirebaseApp/initializeApp)
   :stop (.delete firebase))
 
+(defonce watch-streams (atom false))
+
+(defn monitor-stream-loop []
+  (while @watch-streams
+    (if-not (stream/consumers-are-polling?)
+      (log/error :message "consumer poll interval exceeds maximum drift" :consumers @stream/consumers))
+    (Thread/sleep (* 1000 10))))
+
+(defstate stream-watcher
+  :start (do
+           (reset! watch-streams true)
+           (.start (Thread. monitor-stream-loop)))
+  :stop (reset! watch-streams false))
+
 (defn run-dev
   "Run a development-focused environment: skip connection to Kafka unless
   requested, watch for updates in base data."
