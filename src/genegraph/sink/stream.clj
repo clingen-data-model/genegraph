@@ -80,7 +80,9 @@
     (map #(TopicPartition. (.topic %) (.partition %)) partition-infos)))
 
 (defn- poll-once 
-  ([c] (-> c (.poll (Duration/ofMillis 500)) .iterator iterator-seq)))
+  ([c] (try
+         (-> c (.poll (Duration/ofMillis 500)) .iterator iterator-seq)
+         (catch Exception e (log/error :fn :poll-once :exception e) []))))
 
 (defn topic-cluster-key [topic]
   (-> config :topics topic :cluster))
