@@ -78,6 +78,7 @@
          base-uri ""
          context (Context.)
          jsonld-options (JsonLdOptions.)]
+     (.setUseNativeTypes jsonld-options true)
      (log/trace :msg "Adding model to dataset")
      ; we don't use the graph name on export, its value shouldn't appear in output
      (.addGraph ds (NodeFactory/createURI "BLANK") (.getGraph model))
