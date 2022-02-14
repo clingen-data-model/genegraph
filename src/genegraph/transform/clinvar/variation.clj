@@ -6,6 +6,7 @@
             [genegraph.transform.clinvar.common :as common]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.jsonld.common :as jsonld]
+            [genegraph.transform.clinvar.cancervariants :as vicc]
             [clojure.pprint :refer [pprint]]
             [clojure.datafy :refer [datafy]]
             [clojure.string :as s]
@@ -14,7 +15,8 @@
             [clj-http.client :as http]
             [io.pedestal.log :as log]
             [genegraph.transform.clinvar.util :as util])
-  (:import (org.apache.jena.rdf.model Model)))
+  (:import (org.apache.jena.rdf.model Model)
+           (java.io ByteArrayInputStream)))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
 (def variation-frame
@@ -40,7 +42,9 @@
 
   NOTE: .content.content should be parsed already, but it tries to parse it again if not."
   [variation-msg]
-  (let [hgvs-list (-> variation-msg (util/parse-nested-content) (get "HGVSlist") (get "HGVS"))]
+  (log/info :variation-msg variation-msg)
+  (let [hgvs-list (-> variation-msg (util/parse-nested-content) :content :content (get "HGVSlist") (get "HGVS"))]
+    (log/info :hgvs-list hgvs-list)
     (let [matchers {:GRCh38 #(= "GRCh38" (get-in % ["NucleotideExpression" "@Assembly"]))
                     :GRCh37 #(= "GRCh37" (get-in % ["NucleotideExpression" "@Assembly"]))}
           getters {:GRCh38 #(-> % (get "NucleotideExpression") (get "Expression") (get "$"))
@@ -58,27 +62,32 @@
 
 
 (defn variation-triples [msg]
-  (let [msg (assoc-in msg [:content :release_date] (:release_date msg))
-        msg (assoc-in msg [:content :event_type] (:event_type msg))
-        msg (:content msg)
+  (let [msg (util/parse-nested-content msg)
+        ;msg (assoc-in msg [:content :release_date] (:release_date msg))
+        ;msg (assoc-in msg [:content :event_type] (:event_type msg))
+        content (:content msg)
 
-        vrd-unversioned (str (ns-cg "VariationDescriptor_") (:id msg))
-        vrd-versioned (str vrd-unversioned "." (:release_date msg))
+        vrd-unversioned (str (ns-cg "VariationDescriptor_") (:id content))
+        vd-iri (str vrd-unversioned "." (:release_date msg))
         ;variation-rule-descriptor-iri (q/resource (str vcv-statement-unversioned-iri "_variation_rule_descriptor." (:release_date msg)))]
-        clinvar-variation-iri (q/resource (str iri/clinvar-variation (:id msg)))]
+        clinvar-variation-iri (q/resource (str iri/clinvar-variation (:id content)))]
     (concat
-      [; VRS Variation Rule Descriptor
-       ;[vrd-versioned :rdf/type (ccommon/variation-geno-type (:subclass_type msg))]
-       ;[vrd-versioned :rdf/type (ccommon/variation-vrs-type (:subclass_type msg))]
-       [vrd-versioned :rdf/type :vrs/VariationDescriptor]
-       [vrd-versioned :rdf/type (q/resource (ns-cg "ClinVarVariation"))]
+      [; VRS Variation Descriptor
+       ;[vrd-versioned :rdf/type (ccommon/variation-geno-type (:subclass_type content))]
+       ;[vrd-versioned :rdf/type (ccommon/variation-vrs-type (:subclass_type content))]
+       [vd-iri :rdf/type :vrs/VariationDescriptor]
+       [vd-iri :rdf/type (q/resource (ns-cg "ClinVarVariation"))]
        ; For tracking clinvar objects and identifying the named graph
-       [vrd-versioned :rdf/type (q/resource (ns-cg "ClinVarObject"))]
+       [vd-iri :rdf/type (q/resource (ns-cg "ClinVarObject"))]
 
-       ; Rule Descriptor describes object: variation
-       [vrd-versioned :sepio/has-object clinvar-variation-iri]
-       [vrd-versioned :dc/is-version-of (q/resource vrd-unversioned)]
-       [vrd-versioned :cg/release-date (:release_date msg)]
+       ; Variation Descriptor describes object: variation
+       ;[vd-iri :sepio/has-object clinvar-variation-iri]
+       ; TODO handle nil return value from normalization service
+       ;[vd-iri :sepio/has-object (vicc/vrs-allele-for-variation (prioritized-variation-expression msg))]
+       [vd-iri :sepio/has-object (q/resource (prioritized-variation-expression msg))]
+       [vd-iri :dc/is-version-of (q/resource vrd-unversioned)]
+       [vd-iri :cg/release-date (:release_date msg)]
+
 
        ;(q/resource (str iri/clinvar-variation (:variation_id msg)))
        ; TODO reverse link to VCV? Or rely on VCV->variation that should be added by VCV
@@ -91,7 +100,10 @@
       ; TODO Label (variant name?) should be added to this same VariationRuleDescriptor when received from variation record
 
       ; Extensions
-      (common/fields-to-extensions vrd-versioned (dissoc msg :id :release_date)))))
+      (common/fields-to-extensions vd-iri (merge (dissoc content :id :release_date)
+                                                 ; Put this back into a string
+                                                 (assoc content :content (json/generate-string (:content content)))
+                                                 {:clinvar_variation clinvar-variation-iri})))))
 
 (defn resource-to-out-triples
   "Uses steppable interface of RDFResource to obtain all the out properties and load
@@ -101,6 +113,22 @@
   ; [k v] -> [r k v]
   (map #(cons resource %) (into {} resource)))
 
+(defn string->InputStream [s]
+  (ByteArrayInputStream. (.getBytes s)))
+
+(defn add-vrs-model [model]
+  (let [object-expr (q/select "SELECT ?object WHERE { ?iri :sepio/has-object ?object }" {} model)
+        vrs-json (vicc/vrs-allele-for-variation object-expr)
+        vrs-model (l/read-rdf (string->InputStream (json/generate-string vrs-json)) {:format :json-ld})]
+    (log/info :fn ::add-vrs-model :vrs-model vrs-model)
+    (let [vrs-jsonld (jsonld/model-to-jsonld vrs-model)
+          vrs-jsonld-framed (jsonld/jsonld-to-jsonld-framed vrs-jsonld
+                                                            (json/generate-string
+                                                              {"https://vrs.ga4gh.org/type" "VariationDescriptor"}))]
+      (log/info :vrs-jsonld vrs-jsonld)
+      (log/info :vrs-jsonld-framed vrs-jsonld-framed))
+    (q/union model vrs-model)))
+
 (defmethod common/clinvar-to-model :variation [event]
   (log/debug :fn ::clinvar-to-model :event event)
   (let [model (-> event
@@ -108,7 +136,8 @@
                   variation-triples
                   (#(do (log/info :triples %) %))
                   l/statements-to-model
-                  (#(do (log/info :model %) %))
+                  ;add-vrs-model
+                  ;(#(do (log/info :model %) %))
                   (#(common/mark-prior-replaced % (q/resource clinvar-variation-type))))]
     (log/debug :fn ::clinvar-to-model :model model)
     model))
