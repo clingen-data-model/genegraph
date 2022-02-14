@@ -62,10 +62,7 @@
    ::offset (.offset consumer-record)
    ::annotate/producer-topic (-> (:topics config)
                                  spec
-                                 :producer-topic)
-   ::annotate/producer-format (-> (:topics config)
-                                  spec
-                                  (get :producer-format :json-ld))})
+                                 :producer-topic)})
 
 ;; Java Properties object defining configuration of Kafka client
 (defn- client-configuration 
