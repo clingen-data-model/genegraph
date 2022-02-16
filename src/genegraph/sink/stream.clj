@@ -12,7 +12,7 @@
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord ConsumerRecords]
            [org.apache.kafka.clients.producer KafkaProducer Producer ProducerRecord]
            [org.apache.kafka.common PartitionInfo TopicPartition]
-           [java.time Duration ZonedDateTime ZoneOffset LocalDateTime LocalDate]
+           [java.time Duration ZonedDateTime ZoneOffset LocalDateTime LocalDate Instant]
            [java.time.format DateTimeFormatter]))
 
 (def config (->> "kafka.edn" io/resource slurp edn/read-string (postwalk #(if (symbol? %) (-> % resolve var-get) %))))
@@ -28,25 +28,29 @@
 ;; recorded in partition_offsets.edn are be preserved, and any new consumer topics
 ;; defined for processing will have their offset state tracked.
 ;; Map is in the form { [topic-name partition] current-offset}
-(def current-offsets (atom {}))
+(defonce current-offsets (atom {}))
 
 ;; This atom contains the end offsets for the current topics defined in the environment.
 ;; Map is in the form { [topic-name partition] end-offset}
-(def end-offsets (atom {}))
+(defonce end-offsets (atom {}))
 
 ;; This promise is only delivered once, the initial time that the offsets of the current
 ;; topics defined in the environment are completely brought up to their end offsets.
-(def consumer-offsets-up-to-date (promise))
+(defonce consumer-offsets-up-to-date (promise))
 
 ;; Consumer topic state is either :running or :stopped
 ;; Map is in the form { topic state }
-(def consumer-topic-state (atom {}))
-(def consumer-topics-closed (promise))
+(defonce consumer-topic-state (atom {}))
+(defonce consumer-topics-closed (promise))
 
 ;; In transformer mode, we store a single producer per cluster
 ;; Map is in the form { cluster producer }.
 ;; See the :clusters entry in kafka.edn
-(def producers (atom {}))
+(defonce producers (atom {}))
+
+
+;; Atom containing information about declared consumers,
+(defonce consumers (atom {}))
 
 (defn consumer-record-to-clj [consumer-record spec]
   {::annotate/format spec 
@@ -75,8 +79,33 @@
         partition-infos (.partitionsFor consumer topic-name)]
     (map #(TopicPartition. (.topic %) (.partition %)) partition-infos)))
 
-(defn- poll-once 
-  ([c] (-> c (.poll (Duration/ofMillis 500)) .iterator iterator-seq)))
+(defn- poll-catch-exception [consumer]
+  (try
+    (-> consumer
+        (.poll (Duration/ofMillis 500))
+        .iterator
+        iterator-seq)
+    (catch Exception e
+      (log/info :fn :poll-catch-exception
+                :exception e
+                :msg "exception caught"
+                :partitions (.assignment consumer))
+      :error)))
+
+(defn- poll-once [consumer]
+  (let [max-retries 4
+        backoff-interval 10]
+    (loop [attempt-number 0]
+      (let [poll-result (poll-catch-exception consumer)]
+        (if-not (= :error poll-result)
+          poll-result
+          (do
+            (when (>= attempt-number max-retries)
+              (log/error :fn :poll-once
+                         :msg "polling exceeds max retries"
+                         :partitions (.assignment consumer)))
+            (Thread/sleep (Math/pow backoff-interval attempt-number))
+            (recur (+ 1 attempt-number))))))))
 
 (defn topic-cluster-key [topic]
   (-> config :topics topic :cluster))
@@ -178,13 +207,24 @@
   (when-not (realized? consumer-offsets-up-to-date)
     (check-consumers-up-to-date-status!)))
 
-(def run-consumer (atom true))
+(defonce run-consumer (atom true))
 
 (defn consumers-closed?  []
   (every? #(= :stopped %) (vals @consumer-topic-state)))
 
 (defn wait-for-topics-closed []
   @consumer-topics-closed)
+
+(defn metrics->clj [metrics-map]
+  (into {} (map (fn [metric]
+                  [(-> metric .metricName .name keyword)
+                   (-> metric .metricValue)])
+                (vals metrics-map))))
+
+(defn consumers-are-polling? []
+  (let [max-drift (* 1000 60 5)
+        latest-acceptable-poll (- (System/currentTimeMillis) max-drift)]
+    (->> @consumers vals (map :last-polled) (some #(< latest-acceptable-poll %)))))
 
 (defn- assign-topic-consumer!
   "Return a function that creates a consumer, sets it to listen to all partitions available
@@ -195,6 +235,7 @@
     (with-open [consumer (consumer-for-topic topic)]
       (let [tp (topic-partitions consumer topic)
             topic-name (-> config :topics topic :name)]
+        (swap! consumers assoc topic {:kafka-consumer consumer})
         (.assign consumer tp)
         (doseq [part tp]
           (if-let [offset (get @current-offsets [topic-name (.partition part)])]
@@ -202,6 +243,7 @@
             (.seekToBeginning consumer [part])))
         (update-consumer-offsets! consumer tp)
         (while @run-consumer
+          (swap! consumers assoc-in [topic :last-polled] (System/currentTimeMillis))
           (when-let [records (poll-once consumer)]
             (->> records
                  (map #(consumer-record-to-clj % topic))
