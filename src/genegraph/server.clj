@@ -64,7 +64,7 @@
   ;; Optional args so that it can be run from clj -X
   [& args]
   (env/log-environment)
-  (mount.core/start-without #'genegraph.sink.event/stream-processing))
+  (mount.core/start-without #'genegraph.sink.event/stream-processing #'stream-watcher))
 
 (defn run-server-genegraph
   [_]

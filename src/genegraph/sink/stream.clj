@@ -79,10 +79,33 @@
         partition-infos (.partitionsFor consumer topic-name)]
     (map #(TopicPartition. (.topic %) (.partition %)) partition-infos)))
 
-(defn- poll-once 
-  ([c] (try
-         (-> c (.poll (Duration/ofMillis 500)) .iterator iterator-seq)
-         (catch Exception e (log/error :fn :poll-once :exception e) []))))
+(defn- poll-catch-exception [consumer]
+  (try
+    (-> consumer
+        (.poll (Duration/ofMillis 500))
+        .iterator
+        iterator-seq)
+    (catch Exception e
+      (log/info :fn :poll-catch-exception
+                :exception e
+                :msg "exception caught"
+                :partitions (.assignment consumer))
+      :error)))
+
+(defn- poll-once [consumer]
+  (let [max-retries 4
+        backoff-interval 10]
+    (loop [attempt-number 0]
+      (let [poll-result (poll-catch-exception consumer)]
+        (if-not (= :error poll-result)
+          poll-result
+          (do
+            (when (>= attempt-number max-retries)
+              (log/error :fn :poll-once
+                         :msg "polling exceeds max retries"
+                         :partitions (.assignment consumer)))
+            (Thread/sleep (Math/pow backoff-interval attempt-number))
+            (recur (+ 1 attempt-number))))))))
 
 (defn topic-cluster-key [topic]
   (-> config :topics topic :cluster))
