@@ -99,3 +99,12 @@
       (json/parse-string true)
       :report_id))
 
+(defn animal-model [_ _ value]
+  (let [animal-model (-> (legacy-json nil nil value)
+                        (json/parse-string true)
+                        (get-in [:scoreJson :summary :AnimalModelOnly]))]
+    (case animal-model
+        "YES" true
+        "NO"  false
+        nil)))
+
