@@ -2,7 +2,6 @@ prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
 construct {
   ?evidenceLine a ?evidenceLineType ;
-  # ?evidenceLine a ?variantType ;
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence ?evidenceItem , ?functionEvidenceItem ;
   :sepio/calculated-score ?resultCalculatedScore ;
@@ -40,8 +39,6 @@ where {
     ?evidenceLine gci:scoreExplanation ?evidenceLineDescription .
   }
   
-
-  
   ?variantType gcixform:hasEvidenceLineType ?evidenceLineType ;
   gcixform:hasEvidenceItemType ?evidenceItemType .
 
@@ -58,9 +55,9 @@ where {
     ?individual gci:recessiveZygosity ?zygosity .
   }
 
-  BIND(IF( ?zygosity = :geno/Homozygous , ?baseScore * 2 , ?baseScore) AS ?score) .
+  BIND(IF( bound(?zygosity) && ?zygosity = :geno/Homozygous , ?baseScore * 2 , ?baseScore) AS ?score) .
 
-  BIND(IF( ?zygosity = :geno/Homozygous , ?calculatedScore * 2 , ?calculatedScore) AS ?resultCalculatedScore) .
+  BIND(IF( bound(?zygosity) && ?zygosity = :geno/Homozygous , ?calculatedScore * 2 , ?calculatedScore) AS ?resultCalculatedScore) .
   
   ?annotation  gci:individuals|gci:individualIncluded ?individual ;
   ^gci:familyIncluded? / ^(gci:families|gci:groups)? / gci:article ?publication .
