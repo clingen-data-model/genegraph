@@ -2,7 +2,8 @@ prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
 
 construct {
-  ?family a :sepio/FamilyCosegregation ;
+  ?segregationID a :sepio/FamilyCosegregation ;
+  :sepio/is-about-family ?family ;
   :dc/description ?scoreDescription ;
   :sepio/sequencing-method ?sequencingMethod ;
   :dc/source ?article ;
@@ -14,12 +15,17 @@ construct {
   :sepio/is-about-condition ?phenotypes ;
   :rdfs/label ?evidenceLabel .
 
+  ?family a :pco/Family ;
+  :rdfs/label ?evidenceLabel .
+
 }
 where {
   
   ?family a gci:family ;
   gci:segregation ?segregation ;
   gci:label ?evidenceLabel .
+
+  BIND(IRI(CONCAT(STR(?family), "_segregation")) AS ?segregationID) .
 
   # Limit to scored segregations -- need to consider how to incorporate this
   ?segregation gci:includeLodScoreInAggregateCalculation ?meetsCriteria .

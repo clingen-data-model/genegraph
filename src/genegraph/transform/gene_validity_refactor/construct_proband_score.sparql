@@ -12,6 +12,10 @@ construct {
   :dc/source ?article ;
   :rdfs/label ?individualLabel .
 
+  ?family a :pco/Family ;
+  :rdfs/label ?familyLabel ;
+  :ro/has-member ?evidenceItem .
+
 }
 where {
 
@@ -41,6 +45,12 @@ where {
 
   ?annotation  gci:individuals|gci:individualIncluded ?evidenceItem ;
   ^gci:familyIncluded? / ^(gci:families|gci:groups)? / gci:article ?publication .
+
+  OPTIONAL {
+    ?family gci:individualIncluded ?evidenceItem ;
+    gci:label ?familyLabel ;
+    a gci:family .
+  }
   
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .

@@ -44,6 +44,7 @@
  [:foaf/Agent "http://xmlns.com/foaf/0.1/Agent"]
  [:foaf/Group "http://xmlns.com/foaf/0.1/Group"]
  [:foaf/Organization "http://xmlns.com/foaf/0.1/Organization"]
+ [:pco/Family "http://purl.obolibrary.org/obo/PCO_0000020"]
  [:prov/Agent "http://www.w3.org/ns/prov#Agent"]
  [:sepio/Statement "http://purl.obolibrary.org/obo/SEPIO_0000174"]
  [:sepio/StudyFinding "http://purl.obolibrary.org/obo/SEPIO_0000173"]

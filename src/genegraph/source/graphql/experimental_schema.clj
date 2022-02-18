@@ -8,6 +8,7 @@
             [genegraph.source.graphql.schema.find :as model-find]
             [genegraph.source.graphql.schema.proband-evidence :as model-proband]
             [genegraph.source.graphql.schema.variant-evidence :as model-variant-evidence]
+            [genegraph.source.graphql.schema.family :as family]
             [genegraph.source.graphql.schema.variation-descriptor :as model-variation]
             [genegraph.source.graphql.schema.bibliographic-resource :as model-bibliographic-resource]
             [genegraph.source.graphql.schema.segregation :as model-segregation]
@@ -34,6 +35,7 @@
    model-find/find-query
    model-find/query-result
    model-find/find-query
+   family/family
    model-segregation/segregation
    model-bibliographic-resource/bibliographic-resource])
 
