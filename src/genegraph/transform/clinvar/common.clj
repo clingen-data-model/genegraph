@@ -239,7 +239,8 @@ LIMIT 1")
   (apply concat
          (for [[k v] m]
            (if (sequential? v)
-             (concat
+             ; Take the list of lists of triples for each element, flatten one level
+             (apply concat
                (for [v1 v]
                  (fields-to-extensions node-iri {k v1})))
              (let [ext-iri (l/blank-node)]

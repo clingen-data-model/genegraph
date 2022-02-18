@@ -80,3 +80,14 @@
     (assoc-in val
               [:content :content]
               nested-content)))
+
+;(defmacro log-and-throw- [& args]
+;  (let [m (into {} (partition-all 2 args))]
+;    (eval (log/error args))
+;    (throw (ex-info (str m) m))))
+
+;(defn log-and-throw [& args]
+;  (println (str (into '() (partition-all 2 args))))
+;  (let [m (into {} (partition-all 2 args))]
+;    (eval (log/-error args))
+;    (throw (ex-info (str m) m))))

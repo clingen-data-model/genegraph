@@ -2,7 +2,8 @@
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q]
             [genegraph.database.names :refer [local-property-names
-                                              property-uri->keyword]]
+                                              property-uri->keyword
+                                              prefix-ns-map]]
             [genegraph.transform.clinvar.common :as common]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.jsonld.common :as jsonld]
@@ -117,17 +118,31 @@
   (ByteArrayInputStream. (.getBytes s)))
 
 (defn add-vrs-model [model]
-  (let [object-expr (q/select "SELECT ?object WHERE { ?iri :sepio/has-object ?object }" {} model)
-        vrs-json (vicc/vrs-allele-for-variation object-expr)
-        vrs-model (l/read-rdf (string->InputStream (json/generate-string vrs-json)) {:format :json-ld})]
-    (log/info :fn ::add-vrs-model :vrs-model vrs-model)
-    (let [vrs-jsonld (jsonld/model-to-jsonld vrs-model)
-          vrs-jsonld-framed (jsonld/jsonld-to-jsonld-framed vrs-jsonld
-                                                            (json/generate-string
-                                                              {"https://vrs.ga4gh.org/type" "VariationDescriptor"}))]
-      (log/info :vrs-jsonld vrs-jsonld)
-      (log/info :vrs-jsonld-framed vrs-jsonld-framed))
-    (q/union model vrs-model)))
+  (let [object-exprs (q/select "SELECT ?object WHERE { ?iri :sepio/has-object ?object }" {} model)]
+    (when (< 1 (count object-exprs)) (let [e (ex-info "More than 1 object in model" {:model model
+                                                                                     :object-exprs object-exprs})]
+                                       (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
+    (let [object-expr (first object-exprs)
+          vrs-json (vicc/vrs-allele-for-variation object-expr)
+          vrs-model (l/read-rdf (string->InputStream (json/generate-string vrs-json)) {:format :json-ld})]
+      (log/info :fn ::add-vrs-model :vrs-model vrs-model)
+      (let [vrs-jsonld (jsonld/model-to-jsonld vrs-model)
+            vrs-jsonld-framed (jsonld/jsonld-to-jsonld-framed vrs-jsonld
+                                                              (json/generate-string
+                                                                {"https://vrs.ga4gh.org/type" "VariationDescriptor"}))]
+        (log/debug :vrs-jsonld vrs-jsonld)
+        (log/debug :vrs-jsonld-framed vrs-jsonld-framed))
+      ; Add a triple linking the model iri to the vrs variation model via :sepio/has-object
+      (let [variation-descriptor-i (first (q/select "SELECT ?iri WHERE { ?iri <https://vrs.ga4gh.org/type> \"VariationDescriptor\" }"
+                                                    {} vrs-model))
+            i (first (q/select "SELECT ?iri WHERE { ?iri :sepio/has-object ?object }" {} model))
+            stmts [[i :sepio/has-object variation-descriptor-i]]
+            link-model (l/statements-to-model stmts)]
+        (when (empty? variation-descriptor-i)
+          (let [e (ex-info "Could not determine variation descriptor iri" {:model vrs-model})]
+            (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
+        (log/debug :msg "Joining model, vrs model, and linking model" :link-model link-model)
+        (q/union model vrs-model link-model)))))
 
 (defmethod common/clinvar-to-model :variation [event]
   (log/debug :fn ::clinvar-to-model :event event)
@@ -136,14 +151,15 @@
                   variation-triples
                   (#(do (log/info :triples %) %))
                   l/statements-to-model
-                  ;add-vrs-model
-                  ;(#(do (log/info :model %) %))
+                  add-vrs-model
+                  (#(do (log/info :model %) %))
                   (#(common/mark-prior-replaced % (q/resource clinvar-variation-type))))]
     (log/debug :fn ::clinvar-to-model :model model)
     model))
 
 (def variation-context
-  {"@context" {"object" {"@id" (str (get local-property-names :sepio/has-object))
+  {"@context" {; Properties
+               "object" {"@id" (str (get local-property-names :sepio/has-object))
                          "@type" "@id"}
                "is_version_of" {"@id" (str (get local-property-names :dc/is-version-of))
                                 "@type" "@id"}
@@ -153,6 +169,10 @@
                "extension" {"@id" (str (get local-property-names :vrs/extension))}
                "name" {"@id" (str (get local-property-names :vrs/name))}
                "value" {"@id" (str (get local-property-names :vrs/value))}
+
+               ; Prefixes
+               "vrs" {"@id" (get prefix-ns-map "vrs");"https://vrs.ga4gh.org/terms/"
+                      "@prefix" true}
                }})
 
 

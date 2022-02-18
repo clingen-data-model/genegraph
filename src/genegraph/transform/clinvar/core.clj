@@ -54,7 +54,7 @@
                                                 (json/parse-string true))))
                   ;((fn [event] (log/info :event event) event))
                   ;(#(assoc % ::parsed-value (-> % ::parsed-value util/parse-nested-content)))
-                  ((fn [event] (log/info :msg "parsed content" :parsed-value (::parsed-value event)) event))
+                  ;((fn [event] (log/info :msg "parsed content" :parsed-value (::parsed-value event)) event))
                   (#(assoc % :genegraph.transform.clinvar/format (get-clinvar-format (::parsed-value %))))
                   (#(assoc % ::q/model (clinvar-to-model %))))]
     (log/trace :fn ::add-model :event event)
