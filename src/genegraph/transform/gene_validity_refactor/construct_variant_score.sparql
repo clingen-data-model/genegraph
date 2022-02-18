@@ -14,6 +14,9 @@ construct {
   :geno/has-zygosity ?zygosity ;
   :rdfs/label ?individualLabel .
 
+  ?individual a :sepio/ProbandWithVariantEvidenceItem ;
+  :sepio/has-variant ?evidenceItem .
+
   ?functionEvidenceItem a :sepio/VariantFunctionalImpactEvidenceItem ;
   :dc/description ?functionalDataExplanation .
 

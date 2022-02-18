@@ -1171,6 +1171,7 @@
  [:sepio/has-prefix "http://purl.obolibrary.org/obo/SEPIO_0000367"]
  [:sepio/has-qualifier "http://purl.obolibrary.org/obo/SEPIO_0000144"]
  [:sepio/has-role "http://purl.obolibrary.org/obo/SEPIO_0000046"]
+ [:sepio/has-variant "http://purl.obolibrary.org/obo/SEPIO_0004129"]
  [:sepio/sequencing-method "http://purl.obolibrary.org/obo/SEPIO_0004122"]
  [:sepio/has-subject "http://purl.obolibrary.org/obo/SEPIO_0000388"]
  [:sepio/has-supporting-evidence-line
