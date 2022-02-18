@@ -28,7 +28,9 @@ where {
   BIND(IRI(CONCAT(STR(?family), "_segregation")) AS ?segregationID) .
 
   # Limit to scored segregations -- need to consider how to incorporate this
-  ?segregation gci:includeLodScoreInAggregateCalculation ?meetsCriteria .
+  OPTIONAL {
+    ?segregation gci:includeLodScoreInAggregateCalculation ?meetsCriteria .
+  }
   
   OPTIONAL {
     ?segregation gci:sequencingMethod ?sequencingMethod .
