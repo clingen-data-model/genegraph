@@ -14,6 +14,13 @@ construct {
   :geno/has-zygosity ?zygosity ;
   :rdfs/label ?individualLabel .
 
+  ?individual a :sepio/ProbandWithVariantEvidenceItem ;
+  :sepio/has-variant ?evidenceItem .
+
+  ?family a :pco/Family ;
+  :rdfs/label ?familyLabel ;
+  :ro/has-member ?individual .
+
   ?functionEvidenceItem a :sepio/VariantFunctionalImpactEvidenceItem ;
   :dc/description ?functionalDataExplanation .
 
@@ -61,7 +68,13 @@ where {
   
   ?annotation  gci:individuals|gci:individualIncluded ?individual ;
   ^gci:familyIncluded? / ^(gci:families|gci:groups)? / gci:article ?publication .
-  
+
+  OPTIONAL {
+    ?family gci:individualIncluded ?individual ;
+    gci:label ?familyLabel ;
+    a gci:family .
+  }
+
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
   

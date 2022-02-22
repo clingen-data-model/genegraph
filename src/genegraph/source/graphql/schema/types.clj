@@ -10,6 +10,7 @@
     [:sepio/ProbandWithVariantEvidenceItem :ProbandEvidence]
     [:sepio/VariantEvidenceItem :VariantEvidence]
     [:ga4gh/VariationDescriptor :VariationDescriptor]
-    [:sepio/FamilyCosegregation :Segregation]]
+    [:sepio/FamilyCosegregation :Segregation]
+    [:pco/Family :Family]]
    :default-type-mapping :GenericResource})
 
