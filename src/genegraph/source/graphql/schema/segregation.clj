@@ -9,6 +9,9 @@
    :fields {:conditions {:type '(list :Resource)
                          :description "segregating phenotypes within the family"
                          :path [:sepio/is-about-condition]}
+            :family {:type :Family
+                     :description "Family used as the basis for this segregation"
+                     :path [:sepio/is-about-family]}
             :sequencing_method {:type :Resource
                                 :description "sequencing method used to detect the genotype under consideration"
                                 :path [:sepio/sequencing-method]}

@@ -8,4 +8,10 @@
    :implements [:Resource]
    :fields {:variants {:type '(list :VariationDescriptor)
                        :description "Alleles of interest in the genotype of this proband."
-                       :path [:sepio/is-about-allele]}}})
+                       :path [:sepio/is-about-allele]}
+            :variant_evidence {:type '(list :VariantEvidence)
+                               :description "description of a variant present in the proband used as evidence for a curation"
+                               :path [:sepio/has-variant]}
+            :family {:type :Family
+                     :description "Family proband is a member of."
+                     :path [:sepio/is-about-family]}}})

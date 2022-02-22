@@ -11,4 +11,7 @@
                       :path [:sepio/is-about-allele]}
             :zygosity {:type :Resource
                        :description "Zygosity of this allele in the patient genome"
-                       :path [:geno/has-zygosity]}}})
+                       :path [:geno/has-zygosity]}
+            :proband {:type :ProbandEvidence
+                      :description "Proband in which this variant is present"
+                      :path [[:sepio/has-variant :<]]}}})
