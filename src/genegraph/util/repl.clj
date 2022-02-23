@@ -292,3 +292,11 @@
              issue-number (re-find #"ISCA.*$" (str issue))]
          (spit (str destination "/" issue-number ".ttl") issue-ttl)))
      (count issues))))
+
+
+(defn write-events-to-dir [dir events]
+  (doseq [event events]
+    (let [file-name (str dir "/" (::event/key event) ".edn")]
+      (with-open [w (io/writer file-name)]
+        (binding [*out* w]
+          (pr event))))))
