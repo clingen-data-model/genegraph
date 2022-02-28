@@ -10,7 +10,7 @@
                                                         clinvar-to-model
                                                         clinvar-model-to-jsonld]]
             [genegraph.transform.clinvar.util :as util]
-            [genegraph.transform.clinvar.variation-archive]
+            ;[genegraph.transform.clinvar.variation-archive]
             [genegraph.transform.clinvar.variation]))
 
 ;(defmethod clinvar-to-jsonld :release_sentinel
