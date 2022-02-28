@@ -77,7 +77,11 @@ where {
     ?classification gci:approvalDate ?approvalDate .
   }
 
-  BIND(COALESCE(?classificationDate, ?approvalDate) AS ?date)
+  OPTIONAL {
+    ?classification gci:approvalReviewDate ?approvalReviewDate .
+  }
+
+  BIND(COALESCE(?approvalReviewDate, ?approvalDate, ?classificationDate) AS ?date)
 
   BIND(IF(?alteredEvidenceLevel = gcixform:NoModification, ?autoEvidenceLevel, ?alteredEvidenceLevel) AS ?evidencelevel) .
 
