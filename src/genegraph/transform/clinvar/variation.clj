@@ -44,20 +44,24 @@
   NOTE: .content.content should be parsed already, but it tries to parse it again if not."
   [variation-msg]
   (log/info :variation-msg variation-msg)
-  (let [hgvs-list (-> variation-msg (util/parse-nested-content) :content :content (get "HGVSlist") (get "HGVS"))]
-    (log/info :hgvs-list hgvs-list)
-    (let [matchers {:GRCh38 #(= "GRCh38" (get-in % ["NucleotideExpression" "@Assembly"]))
-                    :GRCh37 #(= "GRCh37" (get-in % ["NucleotideExpression" "@Assembly"]))}
-          getters {:GRCh38 #(-> % (get "NucleotideExpression") (get "Expression") (get "$"))
-                   :GRCh37 #(-> % (get "NucleotideExpression") (get "Expression") (get "$"))}
-          get-hgvs (fn [hgvs-list matcher-key]
-                     (let [filtered (filter (get matchers matcher-key) hgvs-list)]
-                       (if (< 1 (count filtered)) (log/warn :fn ::prioritized-variation-expression
-                                                            :msg (str "Multiple expressions for variation for type " matcher-key)
-                                                            :variation variation-msg))
-                       (-> filtered first ((get getters matcher-key)))))]
-      (let [exprs (for [mk [:GRCh38 :GRCh37]]
-                    (get-hgvs hgvs-list mk))]
+  (let [nested-content (-> variation-msg (util/parse-nested-content) :content :content)]
+    (letfn [(get-hgvs [nested-content assembly-name]
+              (let [hgvs-list (-> nested-content (get "HGVSlist") (get "HGVS"))
+                    filtered (filter #(= assembly-name (get-in % ["NucleotideExpression" "@Assembly"])) hgvs-list)]
+                (if (< 1 (count filtered)) (log/warn :fn ::prioritized-variation-expression
+                                                     :msg (str "Multiple expressions for variation for assembly: " assembly-name)
+                                                     :variation variation-msg))
+                (-> filtered first (get "NucleotideExpression") (get "Expression") (get "$"))))
+            (get-spdi [nested-content]
+              (-> nested-content (get "CanonicalSPDI") (get "$")))]
+      (let [exprs (for [val-opt [{:fn #(get-spdi nested-content)
+                                  :type :spdi}
+                                 {:fn #(get-hgvs nested-content "GRCh38")
+                                  :type :hgvs}
+                                 {:fn #(get-hgvs nested-content "GRCh37")
+                                  :type :hgvs}]]
+                    (let [expr ((get val-opt :fn))]
+                      (when expr {:expr expr :type (:type val-opt)})))]
         ; Return first non-nil
         (some identity exprs)))))
 
@@ -71,7 +75,11 @@
         vrd-unversioned (str (ns-cg "VariationDescriptor_") (:id content))
         vd-iri (str vrd-unversioned "." (:release_date msg))
         ;variation-rule-descriptor-iri (q/resource (str vcv-statement-unversioned-iri "_variation_rule_descriptor." (:release_date msg)))]
-        clinvar-variation-iri (q/resource (str iri/clinvar-variation (:id content)))]
+        clinvar-variation-iri (q/resource (str iri/clinvar-variation (:id content)))
+        canonical-variation-obj (prioritized-variation-expression msg)
+        canonical-variation-expression (q/resource (:expr canonical-variation-obj))
+        canonical-variation-expression-type (q/resource (name (:type canonical-variation-obj)))
+        ]
     (concat
       [; VRS Variation Descriptor
        ;[vrd-versioned :rdf/type (ccommon/variation-geno-type (:subclass_type content))]
@@ -85,7 +93,9 @@
        ;[vd-iri :sepio/has-object clinvar-variation-iri]
        ; TODO handle nil return value from normalization service
        ;[vd-iri :sepio/has-object (vicc/vrs-allele-for-variation (prioritized-variation-expression msg))]
-       [vd-iri :sepio/has-object (q/resource (prioritized-variation-expression msg))]
+       [vd-iri :sepio/has-object canonical-variation-expression]
+       [canonical-variation-expression :rdf/type canonical-variation-expression-type]
+
        [vd-iri :dc/is-version-of (q/resource vrd-unversioned)]
        [vd-iri :cg/release-date (:release_date msg)]
 
@@ -123,26 +133,33 @@
                                                                                      :object-exprs object-exprs})]
                                        (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
     (let [object-expr (first object-exprs)
-          vrs-json (vicc/vrs-allele-for-variation object-expr)
-          vrs-model (l/read-rdf (string->InputStream (json/generate-string vrs-json)) {:format :json-ld})]
-      (log/info :fn ::add-vrs-model :vrs-model vrs-model)
-      (let [vrs-jsonld (jsonld/model-to-jsonld vrs-model)
-            vrs-jsonld-framed (jsonld/jsonld-to-jsonld-framed vrs-jsonld
-                                                              (json/generate-string
-                                                                {"https://vrs.ga4gh.org/type" "VariationDescriptor"}))]
-        (log/debug :vrs-jsonld vrs-jsonld)
-        (log/debug :vrs-jsonld-framed vrs-jsonld-framed))
-      ; Add a triple linking the model iri to the vrs variation model via :sepio/has-object
-      (let [variation-descriptor-i (first (q/select "SELECT ?iri WHERE { ?iri <https://vrs.ga4gh.org/type> \"VariationDescriptor\" }"
-                                                    {} vrs-model))
-            i (first (q/select "SELECT ?iri WHERE { ?iri :sepio/has-object ?object }" {} model))
-            stmts [[i :sepio/has-object variation-descriptor-i]]
-            link-model (l/statements-to-model stmts)]
-        (when (empty? variation-descriptor-i)
-          (let [e (ex-info "Could not determine variation descriptor iri" {:model vrs-model})]
-            (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
-        (log/debug :msg "Joining model, vrs model, and linking model" :link-model link-model)
-        (q/union model vrs-model link-model)))))
+          object-expr-type (q/ld1-> object-expr [:rdf/type])
+          _ (log/info :object-expr-type object-expr-type)
+          vrs-obj (vicc/vrs-variation-for-expression object-expr (keyword (str object-expr-type)))]
+      (if (empty? vrs-obj)
+        (do (let [e (ex-info "No variation received from VRS normalization" {:fn ::add-vrs-model :object-expr object-expr})]
+              (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
+        (let [vrs-id (get vrs-obj "_id")
+              vrs-model (l/read-rdf (string->InputStream (json/generate-string vrs-obj)) {:format :json-ld})]
+          (log/debug :fn ::add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj :vrs-model vrs-model)
+          (let [vrs-jsonld (jsonld/model-to-jsonld vrs-model)
+                vrs-jsonld-framed (jsonld/jsonld-to-jsonld-framed vrs-jsonld
+                                                                  (json/generate-string
+                                                                    ;{"https://vrs.ga4gh.org/type" "Allele"}
+                                                                    {"@id" vrs-id}))]
+            (log/debug :vrs-jsonld vrs-jsonld :vrs-jsonld-framed vrs-jsonld-framed)
+            ; Add a triple linking the model iri to the vrs variation model via :sepio/has-object
+            (let [variation-i vrs-id
+                  _ (if (empty? variation-i) (throw (ex-info "Variation id not found" {:vrs-jsonld vrs-jsonld})))
+                  i (first (q/select "SELECT ?iri WHERE { ?iri :sepio/has-object ?object }" {} model))
+                  stmts [[i :sepio/has-object (q/resource variation-i)]]
+                  link-model (l/statements-to-model stmts)]
+              (when (empty? variation-i)
+                (let [e (ex-info "Could not determine variation descriptor iri" {:model vrs-model})]
+                  (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
+              (log/debug :msg "Joining model, vrs model, and linking model" :link-model link-model)
+              (q/union model vrs-model link-model))
+            ))))))
 
 (defmethod common/clinvar-to-model :variation [event]
   (log/debug :fn ::clinvar-to-model :event event)
@@ -171,7 +188,7 @@
                "value" {"@id" (str (get local-property-names :vrs/value))}
 
                ; Prefixes
-               "vrs" {"@id" (get prefix-ns-map "vrs");"https://vrs.ga4gh.org/terms/"
+               "vrs" {"@id" (get prefix-ns-map "vrs")       ;"https://vrs.ga4gh.org/terms/"
                       "@prefix" true}
                }})
 

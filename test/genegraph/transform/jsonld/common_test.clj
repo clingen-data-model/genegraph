@@ -36,6 +36,37 @@
                                       "http://example.org/field4" "value4"}})
 (def j1-frame {"@type" "http://example.org/Type1"})
 
+(deftest test-native-types
+  (testing "Test that native types get serialized and deserialized as native types"
+    (let [j5 {"@id" "http://example.org/j1"
+              "@type" "http://example.org/Type1"
+              "http://example.org/field1" true
+              "http://example.org/field2" 25
+              "http://example.org/field3" -100
+              "http://example.org/field4" nil}
+          j5-frame {"@type" "http://example.org/Type1"}
+          j5-context {"@context" {"field1" {"@id" "http://example.org/field1"}
+                                  "field2" {"@id" "http://example.org/field2"}
+                                  "field3" {"@id" "http://example.org/field3"}
+                                  "field4" {"@id" "http://example.org/field4"}}}
+          expected (merge j5-context
+                          {"@id" "http://example.org/j1"
+                           "@type" "http://example.org/Type1"
+                           "field1" true
+                           "field2" 25
+                           "field3" -100
+                           "field4" nil})
+          actual (-> j5
+                     (jsonld-map-to-model)
+                     (model-to-jsonld)
+                     ((fn [v] (println v) v))
+                     (jsonld-to-jsonld-framed (json/generate-string j5-frame))
+                     ((fn [v] (println v) v))
+                     (jsonld-compact (json/generate-string j5-context))
+                     ((fn [v] (println v) v))
+                     (json/parse-string))]
+      (is (= expected actual) (diff expected actual)))))
+
 (deftest test-model-to-jsonld
   (let [model (jsonld-map-to-model j1)]
     (testing "Testing unframed output"
@@ -95,7 +126,8 @@
             expected {"@id" "http://example.org/j2"
                       "@type" "http://example.org/Type2"
                       "http://example.org/field1" "http://example.org/value1",
-                      "@context" {"field1" {"@id" "http://example.org/field1"}}}
+                      "@context" {"field1" {"@id" "http://example.org/field1"
+                                            "@type" "@id"}}}
             actual (json/parse-string
                      (-> j2
                          (jsonld-map-to-model)
@@ -110,46 +142,46 @@
 
 
   (comment (testing "Testing case with identifier "
-     (let [j2 {"@id" "http://example.org/j2"
-               "@type" "http://example.org/Type2"
-               "http://example.org/field1" "http://example.org/value1"
-               "http://example.org/field2" "http://example.org/value2"}
-           j2-model (jsonld-map-to-model j2)
-           j2-frame {"@type" "http://example.org/Type2"}
-           j2-context {"@context" {"field1" {"@id" "http://example.org/field1"}
-                                   "Type2" {"@id" "http://example.org/Type2"}}}
+             (let [j2 {"@id" "http://example.org/j2"
+                       "@type" "http://example.org/Type2"
+                       "http://example.org/field1" "http://example.org/value1"
+                       "http://example.org/field2" "http://example.org/value2"}
+                   j2-model (jsonld-map-to-model j2)
+                   j2-frame {"@type" "http://example.org/Type2"}
+                   j2-context {"@context" {"field1" {"@id" "http://example.org/field1"}
+                                           "Type2" {"@id" "http://example.org/Type2"}}}
 
-           expected {"@context" {"field1" {"@id" "http://example.org/field1"}}
-                     "@id" "http://example.org/j2"
-                     "@type" "http://example.org/Type2"
-                     "field1" {"@id" "http://example.org/value1"}
-                     "http://example.org/field2" "http://example.org/value2"}
-           ]
-       (is (= expected (json/parse-string
-                         (jsonld-compact
-                           (jsonld-to-jsonld-framed (model-to-jsonld j2-model)
-                                                    (json/generate-string j2-frame))
-                           (json/generate-string j2-context))))))))
+                   expected {"@context" {"field1" {"@id" "http://example.org/field1"}}
+                             "@id" "http://example.org/j2"
+                             "@type" "http://example.org/Type2"
+                             "field1" {"@id" "http://example.org/value1"}
+                             "http://example.org/field2" "http://example.org/value2"}
+                   ]
+               (is (= expected (json/parse-string
+                                 (jsonld-compact
+                                   (jsonld-to-jsonld-framed (model-to-jsonld j2-model)
+                                                            (json/generate-string j2-frame))
+                                   (json/generate-string j2-context))))))))
 
   (comment (testing "Testing cases with identifier values"
-     (let [j2 {"@id" "http://example.org/j2"
-               "@type" "http://example.org/Type2"
-               "http://example.org/field1" {"@id" "http://example.org/value1"}
-               "http://example.org/field2" "http://example.org/value2"}
-           j2-model (jsonld-map-to-model j2)
-           j2-frame {"@type" "http://example.org/Type2"}
-           j2-context {"@context" {"field1" {"@id" "http://example.org/field1"}
-                                   "Type2" {"@id" "http://example.org/Type2"}}}
+             (let [j2 {"@id" "http://example.org/j2"
+                       "@type" "http://example.org/Type2"
+                       "http://example.org/field1" {"@id" "http://example.org/value1"}
+                       "http://example.org/field2" "http://example.org/value2"}
+                   j2-model (jsonld-map-to-model j2)
+                   j2-frame {"@type" "http://example.org/Type2"}
+                   j2-context {"@context" {"field1" {"@id" "http://example.org/field1"}
+                                           "Type2" {"@id" "http://example.org/Type2"}}}
 
-           expected {"@context" {"field1" {"@id" "http://example.org/field1"}}
-                     "@id" "http://example.org/j2"
-                     "@type" "http://example.org/Type2"
-                     "field1" {"@id" "http://example.org/value1"}
-                     "http://example.org/field2" "http://example.org/value2"}
-           ]
-       (is (= expected (json/parse-string
-                         (jsonld-compact
-                           (jsonld-to-jsonld-framed (model-to-jsonld j2-model)
-                                                    (json/generate-string j2-frame))
-                           (json/generate-string j2-context)))))))))
+                   expected {"@context" {"field1" {"@id" "http://example.org/field1"}}
+                             "@id" "http://example.org/j2"
+                             "@type" "http://example.org/Type2"
+                             "field1" {"@id" "http://example.org/value1"}
+                             "http://example.org/field2" "http://example.org/value2"}
+                   ]
+               (is (= expected (json/parse-string
+                                 (jsonld-compact
+                                   (jsonld-to-jsonld-framed (model-to-jsonld j2-model)
+                                                            (json/generate-string j2-frame))
+                                   (json/generate-string j2-context)))))))))
 
