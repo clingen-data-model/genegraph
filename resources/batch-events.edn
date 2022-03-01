@@ -3,6 +3,10 @@
   :source "gci-neo4j-archive.tar.gz"
   :type :compressed-event-files}
 
+ {:name :gci-raw-missing-data
+  :source "gene-validity-missing-curations.tar.gz"
+  :type :compressed-event-files}
+
  {:name :gci-raw-snapshot
   :source "gci_snapshot_events_may_2020.tar.gz"
   :type :compressed-event-files}

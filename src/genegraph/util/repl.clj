@@ -332,6 +332,14 @@
      (count issues))))
 
 
+
+(defn write-events-to-dir [dir events]
+  (doseq [event events]
+    (let [file-name (str dir "/" (::event/key event) ".edn")]
+      (with-open [w (io/writer file-name)]
+        (binding [*out* w]
+          (pr event))))))
+
 (defn construct-assertion-map [assertion-list keys-to-keep]
   (let [guid-regex #"[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}"]
     (reduce (fn [acc v] (assoc acc
@@ -352,3 +360,4 @@
   (let [assertion (q/resource (str "CGGV:" guid))]
     {:gene (q/ld1-> assertion [:sepio/has-subject :sepio/has-subject :skos/preferred-label])
      :disease (q/ld1-> assertion [:sepio/has-subject :sepio/has-object :rdfs/label])}))
+
