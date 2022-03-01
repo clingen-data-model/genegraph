@@ -97,6 +97,7 @@
             "authors" {"@container" "@list"}
             "recessiveZygosity" {"@type" "@vocab"}
             "sopVersion" {"@type" "@vocab"}
+            "sex" {"@type" "@vocab"}
 
 
             ;; ;; Category names
@@ -157,6 +158,13 @@
             "6" "SEPIO:0004094"
             "7" "SEPIO:0004095"
             "8" "SEPIO:0004096"
+
+            ;; Sex
+            "Ambiguous" "SEPIO:0004574"
+            "Female" "SEPIO:0004575"
+            "Intersex" "SEPIO:0004576"
+            "Male" "SEPIO:0004578"
+            "Unknown" "SEPIO:0004579"
             
             }}))))
 
@@ -207,25 +215,26 @@
                 :affbase "http://dataexchange.clinicalgenome.org/agent/"
                 :entrez_gene entrez-gene}
         unlinked-model (q/union 
-                        (construct-proposition params)
-                        (construct-evidence-level-assertion params)
-                        (construct-experimental-evidence-assertions params)
-                        (construct-genetic-evidence-assertion params)
-                        (construct-ad-variant-assertions params)
-                        (construct-ar-variant-assertions params)
-                        (construct-cc-and-seg-assertions params)
-                        (construct-proband-score params)
-                        (construct-model-systems-evidence params)
-                        (construct-functional-evidence params)
-                        (construct-functional-alteration-evidence params)
-                        (construct-rescue-evidence params)
-                        (construct-case-control-evidence params)
-                        (construct-segregation-evidence params)
-                        (construct-alleles params)
-                        (construct-articles params) 
-                        (construct-secondary-contributions params)
+                        ;; (construct-proposition params)
+                        ;; (construct-evidence-level-assertion params)
+                        ;; (construct-experimental-evidence-assertions params)
+                        ;; (construct-genetic-evidence-assertion params)
+                        ;; (construct-ad-variant-assertions params)
+                        ;; (construct-ar-variant-assertions params)
+                        ;; (construct-cc-and-seg-assertions params)
+                        ;; (construct-proband-score params)
+                        ;; (construct-model-systems-evidence params)
+                        ;; (construct-functional-evidence params)
+                        ;; (construct-functional-alteration-evidence params)
+                        ;; (construct-rescue-evidence params)
+                        ;; (construct-case-control-evidence params)
+                        ;; (construct-segregation-evidence params)
+                        ;; (construct-alleles params)
+                        ;; (construct-articles params)
+                        ;; (construct-secondary-contributions params)
                         (construct-variant-score params)
-                        (construct-unscoreable-evidence params))]
+                        ;; (construct-unscoreable-evidence params)
+                        )]
     (q/union unlinked-model
              (construct-evidence-connections 
               {::q/model
