@@ -33,6 +33,7 @@
             [genegraph.database.names :as db-names]
             [genegraph.database.property-store :as property-store])
   (:import java.time.Instant
+           java.time.temporal.ChronoUnit
            org.apache.jena.rdf.model.AnonId))
 
 ;; (defn start-rebl []
@@ -142,6 +143,43 @@
     }
   }
 }")
+
+(def curation-dates-query
+  "{
+  gene_validity_assertions(limit: null) {
+    count
+    curation_list {
+      report_date
+      curie
+    }
+  }
+}")
+
+(def gv-classifications-query
+  "{
+  gene_validity_assertions(limit: null) {
+    count
+    curation_list {
+      report_date
+      curie
+      classification {
+        curie
+        label
+      }
+    }
+  }
+}")
+(defn curations-including-date []
+  (-> (gql/gql-query curation-dates-query)
+      :data
+      :gene_validity_assertions
+      :curation_list))
+
+(defn curations-including-classification []
+  (-> (gql/gql-query gv-classifications-query)
+      :data
+      :gene_validity_assertions
+      :curation_list))
 
 
 (defn genes-for-curation-type [curation-type]
@@ -294,9 +332,32 @@
      (count issues))))
 
 
+
 (defn write-events-to-dir [dir events]
   (doseq [event events]
     (let [file-name (str dir "/" (::event/key event) ".edn")]
       (with-open [w (io/writer file-name)]
         (binding [*out* w]
           (pr event))))))
+
+(defn construct-assertion-map [assertion-list keys-to-keep]
+  (let [guid-regex #"[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}"]
+    (reduce (fn [acc v] (assoc acc
+                               (re-find guid-regex (:curie v))
+                               (select-keys v keys-to-keep)))
+         {}
+         assertion-list)))
+
+(defn construct-guid-value-tuple [assertion-list keyseq-for-tuple-value]
+  (let [guid-regex #"[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}"]
+    (->> assertion-list
+         (map (fn [v] [(re-find guid-regex (:curie v))
+                       (get-in v keyseq-for-tuple-value)]))
+         (remove #(or (nil? (first %)) (nil? (second %))))
+         set)))
+
+(defn get-gene-and-disease-given-guid [guid]
+  (let [assertion (q/resource (str "CGGV:" guid))]
+    {:gene (q/ld1-> assertion [:sepio/has-subject :sepio/has-subject :skos/preferred-label])
+     :disease (q/ld1-> assertion [:sepio/has-subject :sepio/has-object :rdfs/label])}))
+
