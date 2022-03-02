@@ -340,7 +340,7 @@
          {}
          assertion-list)))
 
-(defn construct-guid-value-tuple [assertion-list keyseq-for-tuple-value]
+(defn construct-guid-value-tuple [keyseq-for-tuple-value assertion-list]
   (let [guid-regex #"[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}"]
     (->> assertion-list
          (map (fn [v] [(re-find guid-regex (:curie v))
