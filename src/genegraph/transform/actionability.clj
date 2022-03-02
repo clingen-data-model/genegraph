@@ -109,7 +109,7 @@
        flatten
        (map :Total)
        flatten
-       (map #(re-find #"\d+" %))
+       (map #(or (re-find #"\d+" %) "0"))
        (map #(Integer/parseInt %))
        (map #(vector (:iri curation) :cg/has-total-actionability-score %))))
 
