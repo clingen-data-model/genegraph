@@ -138,10 +138,10 @@
   :target "hgnc.json",
   :format :genes,
   :fetch-opts {:accept :json}}
- {:name "https://omim.org/genemap2"
-  :source "https://data.omim.org/downloads/U7rx7IRhSIah-gm1M-yBDA/genemap2.txt"
-  :target "genemap2.txt"
-  :format :omim-genemap}
+ ;; {:name "https://omim.org/genemap2"
+ ;;  :source "https://data.omim.org/downloads/U7rx7IRhSIah-gm1M-yBDA/genemap2.txt"
+ ;;  :target "genemap2.txt"
+ ;;  :format :omim-genemap}
  {:name "http://dataexchange.clinicalgenome.org/terms"
   :source "https://raw.githubusercontent.com/clingen-data-model/clingen-terms/master/clingen-terms.ttl"
   :target "clingen-terms.ttl"
