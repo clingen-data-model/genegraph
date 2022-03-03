@@ -1054,6 +1054,9 @@
  [:ro/upstream-in-neural-circuit-with
   "http://purl.obolibrary.org/obo/RO_0000301"]
  [:sepio/activity-date "http://purl.obolibrary.org/obo/SEPIO_0000160"]
+ [:sepio/age-unit "http:///purl.obolibrary.org/obo/SEPIO_0004131"]
+ [:sepio/age-type "http:///purl.obolibrary.org/obo/SEPIO_0004132"]
+ [:sepio/age-value "http:///purl.obolibrary.org/obo/SEPIO_0004133"]
  [:sepio/agent-for "http://purl.obolibrary.org/obo/SEPIO_0000169"]
  [:sepio/aligns-with "http://purl.obolibrary.org/obo/SEPIO_0000116"]
  [:sepio/allele-frequency
@@ -1120,6 +1123,7 @@
  [:sepio/describes-study-data
   "http://purl.obolibrary.org/obo/SEPIO_0000257"]
  [:sepio/end-date "http://purl.obolibrary.org/obo/SEPIO_0000161"]
+ [:sepio/ethnicity "http:///purl.obolibrary.org/obo/SEPIO_0004134"]
  [:sepio/evaluated-by "http://purl.obolibrary.org/obo/SEPIO_0000140"]
  [:sepio/evidence-direction
   "http://purl.obolibrary.org/obo/SEPIO_0000183"]
@@ -1140,6 +1144,8 @@
   "http://purl.obolibrary.org/obo/SEPIO_0000293"]
  [:sepio/family-segregation-data
   "http://purl.obolibrary.org/obo/SEPIO_0000287"]
+ [:sepio/functional-data-support
+  "http://purl.obolibrary.org/obo/SEPIO_0004135"]
  [:sepio/gene-is-actionable-for-condition
   "http://purl.obolibrary.org/obo/SEPIO_0003012"]
  [:sepio/has-agent "http://purl.obolibrary.org/obo/SEPIO_0000017"]
@@ -1173,6 +1179,7 @@
  [:sepio/has-role "http://purl.obolibrary.org/obo/SEPIO_0000046"]
  [:sepio/has-variant "http://purl.obolibrary.org/obo/SEPIO_0004129"]
  [:sepio/sequencing-method "http://purl.obolibrary.org/obo/SEPIO_0004122"]
+ [:sepio/has-sex "http:///purl.obolibrary.org/obo/SEPIO_0004130"]
  [:sepio/has-subject "http://purl.obolibrary.org/obo/SEPIO_0000388"]
  [:sepio/has-supporting-evidence-line
   "http://purl.obolibrary.org/obo/SEPIO_0000007"]

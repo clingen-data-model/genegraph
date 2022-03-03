@@ -65,7 +65,6 @@
             "item_type" "@type"
             "uuid" "@id"
 
-            
             "gci" "http://dataexchange.clinicalgenome.org/gci/"
             "gcixform" "http://dataexchange.clinicalgenome.org/gcixform/"
 
@@ -98,7 +97,9 @@
             "recessiveZygosity" {"@type" "@vocab"}
             "sopVersion" {"@type" "@vocab"}
             "sex" {"@type" "@vocab"}
-
+            "ethnicity" {"@type" "@vocab"}
+            "ageType" {"@type" "@vocab"}
+            "ageUnit" {"@type" "@vocab"}
 
             ;; ;; Category names
             "Model Systems" "gcixform:ModelSystems"
@@ -164,8 +165,27 @@
             "Female" "SEPIO:0004575"
             "Intersex" "SEPIO:0004576"
             "Male" "SEPIO:0004578"
-            "Unknown" "SEPIO:0004579"
-            
+            ;; "Unknown" "SEPIO:0004570"
+
+            ;; ethnicity
+            "Hispanic or Latino" "SEPIO:0004568"
+            "Not Hispanic or Latino" "SEPIO:0004569"
+            "Unknown" "SEPIO:0004570"
+
+            ;; ageType
+            "Death" "SEPIO:0004562"
+            "Diagnosis" "SEPIO:0004563"
+            "Onset" "SEPIO:0004564"
+            "Report" "SEPIO:0004565"
+ 
+            ;; ageUnit
+            "Days" "SEPIO:0004552"
+            "Hours" "SEPIO:0004553"
+            "Months" "SEPIO:0004554"
+            "Weeks" "SEPIO:0004555"
+            "Weeks gestation" "SEPIO:0004556" 
+            "Years" "SEPIO:0004557" 
+
             }}))))
 
 (defn clear-associated-snapshots [gdm-json]

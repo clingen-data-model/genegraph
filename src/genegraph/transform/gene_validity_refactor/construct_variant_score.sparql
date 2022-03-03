@@ -12,16 +12,16 @@ construct {
   :dc/source ?article ;
   :geno/allele-origin ?alleleOrigin ;
   :geno/has-zygosity ?zygosity ;
-  :rdfs/label ?individualLabel ;
+  :rdfs/label ?individualLabel .
 
   ?individual a :sepio/ProbandWithVariantEvidenceItem ;
-  :sepio/??????? ?sex ;
-  :sepio/0004551 ?ageUnit ;
-  :sepio/0004561 ?ageType ;
-  :sepio/??????? ?ageValue ;
-  :sepio/0004567 ?ethnicity ; 
-  :sepio/0004131 ?prevTesting ; # TON
-  :sepio/0004132 ?prevTestingDescription ; # TON
+  :sepio/has-sex ?sex ;
+  :sepio/age-unit ?ageUnit ;
+  :sepio/age-type ?ageType ;
+  :sepio/age-value ?ageValue ;
+  :sepio/ethnicity ?ethnicity ; 
+  :sepio/0004131 ?prevTesting ;
+  :sepio/0004132 ?prevTestingDescription ;
   :sepio/0004134 ?methods ;
   :sepio/is-about-condition ?phenotypes ;
 
@@ -32,9 +32,8 @@ construct {
   :ro/has-member ?individual .
 
   ?functionEvidenceItem a :sepio/VariantFunctionalImpactEvidenceItem ;
-  :sepio/??????? ?functionalDataSupport ;
-  :dc/description ?functionalDataExplanation .
-
+  :dc/description ?functionalDataExplanation ;
+  :sepio/functional-data-support ?functionalDataSupport .
 }
 where {
 
@@ -74,17 +73,13 @@ where {
   ?individual gci:variantScores ?evidenceLine ;
   gci:label ?individualLabel ;
 
-  gci:sex ?sex ; # TON
-  gci:proband true . # TON
+  gci:sex ?sex ;
+  gci:proband true .
 
   OPTIONAL {
-    ?individual gci:countryOfOrigin ?countryOfOrigin . # TON
-  }
-
-  OPTIONAL {
-    ?individual gci:ageType ?ageType . # TON
-    ?individual gci:ageValue ?ageValue . # TON
-    ?individual gci:ageUnit ?ageUnit . # TON
+    ?individual gci:ageType ?ageType .
+    ?individual gci:ageValue ?ageValue .
+    ?individual gci:ageUnit ?ageUnit .
   }
 
   OPTIONAL {
@@ -93,21 +88,21 @@ where {
   }
 
   OPTIONAL {
-    ?individual gci:ethnicity ?ethnicity
+    ?individual gci:ethnicity ?ethnicity .
   }
 
-  ?individual gci:method ?method . # TON
+  ?individual gci:method ?method .
 
    OPTIONAL {
-    ?method gci:genotypingMethods ?methods . # TON
+    ?method gci:genotypingMethods ?methods .
   }
   
   OPTIONAL {
-    ?method gci:previousTesting ?prevTesting . # TON
+    ?method gci:previousTesting ?prevTesting .
   }
   
   OPTIONAL {
-    ?method gci:previousTestingDescription ?prevTestingDescription . # TON
+    ?method gci:previousTestingDescription ?prevTestingDescription .
   }
 
   OPTIONAL {
