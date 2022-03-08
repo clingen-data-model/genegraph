@@ -100,6 +100,7 @@
             "ethnicity" {"@type" "@vocab"}
             "ageType" {"@type" "@vocab"}
             "ageUnit" {"@type" "@vocab"}
+            "scoreStatus" {"@type" "@vocab"}
 
             ;; ;; Category names
             "Model Systems" "gcixform:ModelSystems"
@@ -184,8 +185,15 @@
             "Months" "SEPIO:0004554"
             "Weeks" "SEPIO:0004555"
             "Weeks gestation" "SEPIO:0004556" 
-            "Years" "SEPIO:0004557" 
+            "Years" "SEPIO:0004557"
 
+            ;; scoreStatus
+            "Contradicts" "SEPIO:0004581"
+            "Review" "SEPIO:0004582"
+            "Score" "SEPIO:0004583"
+            "Supports" "SEPIO:0004584"
+            "none" "SEPIO:0004585"
+            
             }}))))
 
 (defn clear-associated-snapshots [gdm-json]
@@ -235,25 +243,25 @@
                 :affbase "http://dataexchange.clinicalgenome.org/agent/"
                 :entrez_gene entrez-gene}
         unlinked-model (q/union 
-                        ;; (construct-proposition params)
-                        ;; (construct-evidence-level-assertion params)
-                        ;; (construct-experimental-evidence-assertions params)
-                        ;; (construct-genetic-evidence-assertion params)
-                        ;; (construct-ad-variant-assertions params)
-                        ;; (construct-ar-variant-assertions params)
-                        ;; (construct-cc-and-seg-assertions params)
+                        (construct-proposition params)
+                        (construct-evidence-level-assertion params)
+                        (construct-experimental-evidence-assertions params)
+                        (construct-genetic-evidence-assertion params)
+                        (construct-ad-variant-assertions params)
+                        (construct-ar-variant-assertions params)
+                        (construct-cc-and-seg-assertions params)
                         ;; (construct-proband-score params)
-                        ;; (construct-model-systems-evidence params)
-                        ;; (construct-functional-evidence params)
-                        ;; (construct-functional-alteration-evidence params)
-                        ;; (construct-rescue-evidence params)
-                        ;; (construct-case-control-evidence params)
-                        ;; (construct-segregation-evidence params)
-                        ;; (construct-alleles params)
-                        ;; (construct-articles params)
-                        ;; (construct-secondary-contributions params)
+                        (construct-model-systems-evidence params)
+                        (construct-functional-evidence params)
+                        (construct-functional-alteration-evidence params)
+                        (construct-rescue-evidence params)
+                        (construct-case-control-evidence params)
+                        (construct-segregation-evidence params)
+                        (construct-alleles params)
+                        (construct-articles params)
+                        (construct-secondary-contributions params)
                         (construct-variant-score params)
-                        ;; (construct-unscoreable-evidence params)
+                        (construct-unscoreable-evidence params)
                         )]
     (q/union unlinked-model
              (construct-evidence-connections 

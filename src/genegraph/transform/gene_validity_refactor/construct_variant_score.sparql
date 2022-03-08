@@ -5,6 +5,7 @@ construct {
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence ?evidenceItem , ?functionEvidenceItem ;
   :sepio/calculated-score ?resultCalculatedScore ;
+  :sepio/score-status ?scoreStatus ;
   :dc/description ?evidenceLineDescription .
 
   ?evidenceItem a ?evidenceItemType ;
@@ -20,9 +21,9 @@ construct {
   :sepio/age-type ?ageType ;
   :sepio/age-value ?ageValue ;
   :sepio/ethnicity ?ethnicity ; 
-  :sepio/0004131 ?prevTesting ;
-  :sepio/0004132 ?prevTestingDescription ;
-  :sepio/0004134 ?methods ;
+  :sepio/previous-testing ?prevTesting ;
+  :sepio/previous-testing-description ?prevTestingDescription ;
+  :sepio/testing-methods ?methods ;
   :sepio/is-about-condition ?phenotypes ;
 
   :sepio/has-variant ?evidenceItem .
@@ -41,6 +42,7 @@ where {
   gci:variantType ?variantType ;
   gci:variantScored ?variant ;
   gci:deNovo ?deNovo ;
+  gci:scoreStatus ?scoreStatus ;
   gci:calculatedScore ?calculatedScore ;
   gci:date_created ?date_created .
 

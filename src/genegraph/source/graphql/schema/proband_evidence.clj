@@ -14,4 +14,31 @@
                                :path [:sepio/has-variant]}
             :family {:type :Family
                      :description "Family proband is a member of."
-                     :path [:sepio/is-about-family]}}})
+                     :path [:sepio/is-about-family]}
+            :sex {:type :Resource
+                  :description "The sex of the proband."
+                  :path [:sepio/has-sex]}
+            :age_unit {:type :Resource
+                       :description "The unit of age measurement."
+                       :path [:sepio/age-unit]}
+            :age_type {:type :Resource
+                       :description "The type of age measurement."
+                       :path [:sepio/age-type]}
+            :age_value {:type 'Int
+                        :description "The age value of the proband."
+                        :path [:sepio/age-value]}
+            :ethnicity {:type :Resource
+                        :description "The ethnicity of the proband."
+                        :path [:sepio/ethnicity]}
+            :previous_testing {:type 'Boolean
+                               :description "Was there previous testing performed."
+                               :path [:sepio/previous-testing]}
+            :previous_testing_description {:type 'String
+                                           :description "Description of the previous testing"
+                                           :path [:sepio/previous-testing-description]}
+            :testing_methods {:type '(list String)
+                              :description "Testing methods performed."
+                              :path [:sepio/testing-methods]}
+            :phenotypes {:type '(list String)
+                         :description "List of phenotypes."
+                         :path [:sepio/is-about-condition]}}})
