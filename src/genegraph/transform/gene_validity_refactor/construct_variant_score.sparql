@@ -5,6 +5,8 @@ construct {
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence ?evidenceItem , ?functionEvidenceItem ;
   :sepio/calculated-score ?resultCalculatedScore ;
+  :sepio/score-status ?scoreStatus ;
+  :sepio/is-denovo ?deNovo ;
   :dc/description ?evidenceLineDescription .
 
   ?evidenceItem a ?evidenceItemType ;
@@ -15,6 +17,16 @@ construct {
   :rdfs/label ?individualLabel .
 
   ?individual a :sepio/ProbandWithVariantEvidenceItem ;
+  :sepio/has-sex ?sex ;
+  :sepio/age-unit ?ageUnit ;
+  :sepio/age-type ?ageType ;
+  :sepio/age-value ?ageValue ;
+  :sepio/ethnicity ?ethnicity ; 
+  :sepio/previous-testing ?prevTesting ;
+  :sepio/previous-testing-description ?prevTestingDescription ;
+  :sepio/testing-methods ?methods ;
+  :sepio/is-about-condition ?phenotypes ;
+
   :sepio/has-variant ?evidenceItem .
 
   ?family a :pco/Family ;
@@ -22,8 +34,8 @@ construct {
   :ro/has-member ?individual .
 
   ?functionEvidenceItem a :sepio/VariantFunctionalImpactEvidenceItem ;
-  :dc/description ?functionalDataExplanation .
-
+  :dc/description ?functionalDataExplanation ;
+  :sepio/functional-data-support ?functionalDataSupport .
 }
 where {
 
@@ -31,13 +43,19 @@ where {
   gci:variantType ?variantType ;
   gci:variantScored ?variant ;
   gci:deNovo ?deNovo ;
-  gci:calculatedScore ?calculatedScore .
+  gci:scoreStatus ?scoreStatus ;
+  gci:calculatedScore ?calculatedScore ;
+  gci:date_created ?date_created .
 
   BIND(IF(?deNovo = "Yes", :geno/DeNovoAlleleOrigin , :geno/AlleleOrigin ) AS ?alleleOrigin) .
   
   OPTIONAL {
     ?evidenceLine gci:functionalDataExplanation ?functionalDataExplanation ;
     BIND(IRI(CONCAT(STR(?evidenceLine), "_function_evidence_item")) AS ?functionEvidenceItem) .
+  }
+
+  OPTIONAL {
+    ?evidenceLine gci:functionalDataSupport ?functionalDataSupport .
   }
 
   BIND(IRI(CONCAT(STR(?evidenceLine), "_variant_evidence_item")) AS ?evidenceItem) .
@@ -56,7 +74,39 @@ where {
   BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?baseScore) .
 
   ?individual gci:variantScores ?evidenceLine ;
-  gci:label ?individualLabel .
+  gci:label ?individualLabel ;
+
+  gci:sex ?sex ;
+  gci:proband true .
+
+  OPTIONAL {
+    ?individual gci:ageType ?ageType .
+    ?individual gci:ageValue ?ageValue .
+    ?individual gci:ageUnit ?ageUnit .
+  }
+
+  OPTIONAL {
+    ?individual gci:hpoIdInDiagnosis ?phenotypeString .
+    BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", SUBSTR(?phenotypeString, STRLEN(?phenotypeString) - 7 , 7))) AS ?phenotypes) .
+  }
+
+  OPTIONAL {
+    ?individual gci:ethnicity ?ethnicity .
+  }
+
+  ?individual gci:method ?method .
+
+   OPTIONAL {
+    ?method gci:genotypingMethods ?methods .
+  }
+  
+  OPTIONAL {
+    ?method gci:previousTesting ?prevTesting .
+  }
+  
+  OPTIONAL {
+    ?method gci:previousTestingDescription ?prevTestingDescription .
+  }
 
   OPTIONAL {
     ?individual gci:recessiveZygosity ?zygosity .

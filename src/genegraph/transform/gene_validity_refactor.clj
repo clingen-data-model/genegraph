@@ -65,7 +65,6 @@
             "item_type" "@type"
             "uuid" "@id"
 
-            
             "gci" "http://dataexchange.clinicalgenome.org/gci/"
             "gcixform" "http://dataexchange.clinicalgenome.org/gcixform/"
 
@@ -97,7 +96,12 @@
             "authors" {"@container" "@list"}
             "recessiveZygosity" {"@type" "@vocab"}
             "sopVersion" {"@type" "@vocab"}
-
+            "sex" {"@type" "@vocab"}
+            "ethnicity" {"@type" "@vocab"}
+            "ageType" {"@type" "@vocab"}
+            "ageUnit" {"@type" "@vocab"}
+            "scoreStatus" {"@type" "@vocab"}
+            ;; "testingMethods" {"@type" "@vocab"}
 
             ;; ;; Category names
             "Model Systems" "gcixform:ModelSystems"
@@ -157,7 +161,56 @@
             "6" "SEPIO:0004094"
             "7" "SEPIO:0004095"
             "8" "SEPIO:0004096"
-            
+
+            ;; Sex
+            "Ambiguous" "SEPIO:0004574"
+            "Female" "SEPIO:0004575"
+            "Intersex" "SEPIO:0004576"
+            "Male" "SEPIO:0004578"
+            ;; "Unknown" "SEPIO:0004570"
+
+            ;; ethnicity
+            "Hispanic or Latino" "SEPIO:0004568"
+            "Not Hispanic or Latino" "SEPIO:0004569"
+            "Unknown" "SEPIO:0004570"
+
+            ;; ageType
+            "Death" "SEPIO:0004562"
+            "Diagnosis" "SEPIO:0004563"
+            "Onset" "SEPIO:0004564"
+            "Report" "SEPIO:0004565"
+ 
+            ;; ageUnit
+            "Days" "SEPIO:0004552"
+            "Hours" "SEPIO:0004553"
+            "Months" "SEPIO:0004554"
+            "Weeks" "SEPIO:0004555"
+            "Weeks gestation" "SEPIO:0004556" 
+            "Years" "SEPIO:0004557"
+
+            ;; scoreStatus
+            "Contradicts" "SEPIO:0004581"
+            "Review" "SEPIO:0004582"
+            "Score" "SEPIO:0004583"
+            "Supports" "SEPIO:0004584"
+            "none" "SEPIO:0004585"
+
+            ;; testingMethods
+            "Chromosomal microarray" "SEPIO:0004591"
+            "Denaturing gradient gel" "SEPIO:0004592"
+            "Exome sequencing" "SEPIO:0004593"
+            "Genotyping" "SEPIO:0004594"
+            "High resolution melting" "SEPIO:0004595"
+            "Homozygosity mapping" "SEPIO:0004596"
+            "Linkage analysis" "SEPIO:0004597"
+            "Next generation sequencing panels" "SEPIO:0004598"
+            "Other" "SEPIO:0004599"
+            "PCR" "SEPIO:0004600"
+            "Restriction digest" "SEPIO:0004601"
+            "SSCP" "SEPIO:0004602"
+            "Sanger sequencing" "SEPIO:0004603"
+            "Whole genome shotgun sequencing" "SEPIO:0004604"
+
             }}))))
 
 (defn clear-associated-snapshots [gdm-json]
@@ -222,10 +275,11 @@
                         (construct-case-control-evidence params)
                         (construct-segregation-evidence params)
                         (construct-alleles params)
-                        (construct-articles params) 
+                        (construct-articles params)
                         (construct-secondary-contributions params)
                         (construct-variant-score params)
-                        (construct-unscoreable-evidence params))]
+                        (construct-unscoreable-evidence params)
+                        )]
     (q/union unlinked-model
              (construct-evidence-connections 
               {::q/model

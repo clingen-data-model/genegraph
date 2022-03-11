@@ -94,6 +94,11 @@
     (.write model os "RDFTHRIFT")
     (.toByteArray os)))
 
+(defn to-jsonld [model]
+  (let [os (ByteArrayOutputStream.)]
+    (.write model os "JSONLD")
+    (.toString os)))
+
 (defn union
   "Create a new model that is the union of models"
   [& models]
