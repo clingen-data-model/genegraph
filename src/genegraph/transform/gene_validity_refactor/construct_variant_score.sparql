@@ -6,12 +6,12 @@ construct {
   :sepio/has-evidence ?evidenceItem , ?functionEvidenceItem ;
   :sepio/calculated-score ?resultCalculatedScore ;
   :sepio/score-status ?scoreStatus ;
+  :sepio/is-denovo ?deNovo ;
   :dc/description ?evidenceLineDescription .
 
   ?evidenceItem a ?evidenceItemType ;
   :sepio/is-about-allele ?variant ;
   :dc/source ?article ;
-  :geno/allele-origin ?alleleOrigin ;
   :geno/has-zygosity ?zygosity ;
   :rdfs/label ?individualLabel .
 

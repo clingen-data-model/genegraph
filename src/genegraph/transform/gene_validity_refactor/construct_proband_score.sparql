@@ -25,6 +25,8 @@ where {
   ?evidenceLine a gci:evidenceScore ;
   gci:caseInfoType ?gciCaseType ;
   gci:calculatedScore ?calculatedScore .
+  # gci:scoreStatus ?scoreStatus . #TON
+  
 
   OPTIONAL {
     ?evidenceLine gci:scoreExplanation ?evidenceLineDescription .
@@ -42,6 +44,17 @@ where {
   ?evidenceItem gci:scores ?evidenceLine ;
   gci:variants ?variant ;
   gci:label ?individualLabel .
+
+  #  gci:proband true ; # TON
+  # gci:sex ?sex ; # TON
+  # gci:denovo ?denovo ; # TON
+  # gci:ageUnit ?age ; # TON
+  # gci:date_created ?dateCreated ; # TON
+  # gci:hpoIdInDiagnosis ?hpoIdentifiers ; # TON
+
+  # gci:method ?method . #TON
+  # ?method gci:previousTestingDescription ?previousTesting ; #TON
+  # gci:specificMutationsGenotypedMethod ?methodsOfDetection . #TON
 
   ?annotation  gci:individuals|gci:individualIncluded ?evidenceItem ;
   ^gci:familyIncluded? / ^(gci:families|gci:groups)? / gci:article ?publication .

@@ -36,7 +36,7 @@
             :previous_testing_description {:type 'String
                                            :description "Description of the previous testing"
                                            :path [:sepio/previous-testing-description]}
-            :testing_methods {:type '(list String)
+            :testing_methods {:type '(list String) ;;'(list :Resource)
                               :description "Testing methods performed."
                               :path [:sepio/testing-methods]}
             :phenotypes {:type '(list String)

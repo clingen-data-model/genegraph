@@ -26,6 +26,9 @@
             :calculated_score {:type 'Float
                                :description "Calculated score as presented per the parameters of the SOP by the curation tool. May differ from the score if the curator selected a score apart from the default score."
                                :path [:sepio/calculated-score]}
+            :denovo {:type 'String
+                     :description "Indicator that the variant is denovo."
+                     :path [:sepio/is-denovo]}
             :specified_by {:type :Resource
                            :description "The criteria or method used to create the assertion or evidence line."
                            :path [:sepio/is-specified-by]

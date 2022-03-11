@@ -14,6 +14,9 @@
                        :args {:class {:type :Type}
                               :transitive {:type 'Boolean}}
                        :resolve common/evidence-items}
+            :score_status {:type :Resource
+                    :description "The status of the score."
+                    :path [:sepio/score-status]}
             :score {:type 'Float
                     :description "Numeric score of the statement. May be nil, used only when the applicable criteria calls for a numeric score in the assertion or critera assessment."
                     :path [:sepio/evidence-line-strength-score]}}})

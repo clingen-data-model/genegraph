@@ -101,6 +101,7 @@
             "ageType" {"@type" "@vocab"}
             "ageUnit" {"@type" "@vocab"}
             "scoreStatus" {"@type" "@vocab"}
+            ;; "testingMethods" {"@type" "@vocab"}
 
             ;; ;; Category names
             "Model Systems" "gcixform:ModelSystems"
@@ -193,7 +194,23 @@
             "Score" "SEPIO:0004583"
             "Supports" "SEPIO:0004584"
             "none" "SEPIO:0004585"
-            
+
+            ;; testingMethods
+            "Chromosomal microarray" "SEPIO:0004591"
+            "Denaturing gradient gel" "SEPIO:0004592"
+            "Exome sequencing" "SEPIO:0004593"
+            "Genotyping" "SEPIO:0004594"
+            "High resolution melting" "SEPIO:0004595"
+            "Homozygosity mapping" "SEPIO:0004596"
+            "Linkage analysis" "SEPIO:0004597"
+            "Next generation sequencing panels" "SEPIO:0004598"
+            "Other" "SEPIO:0004599"
+            "PCR" "SEPIO:0004600"
+            "Restriction digest" "SEPIO:0004601"
+            "SSCP" "SEPIO:0004602"
+            "Sanger sequencing" "SEPIO:0004603"
+            "Whole genome shotgun sequencing" "SEPIO:0004604"
+
             }}))))
 
 (defn clear-associated-snapshots [gdm-json]
@@ -250,7 +267,7 @@
                         (construct-ad-variant-assertions params)
                         (construct-ar-variant-assertions params)
                         (construct-cc-and-seg-assertions params)
-                        ;; (construct-proband-score params)
+                        (construct-proband-score params)
                         (construct-model-systems-evidence params)
                         (construct-functional-evidence params)
                         (construct-functional-alteration-evidence params)
