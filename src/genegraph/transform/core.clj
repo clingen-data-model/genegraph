@@ -8,6 +8,7 @@
             [genegraph.transform.omim]
             [genegraph.transform.gci-legacy]
             [genegraph.transform.gci-legacy-report-only]
+            [genegraph.transform.gci-neo4j-report-only]
             [genegraph.transform.features]
             [genegraph.transform.gci-express]
             [genegraph.transform.affiliations]
