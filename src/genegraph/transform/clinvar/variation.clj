@@ -104,14 +104,16 @@
     (letfn [(hgvs-syntax-from-change
               ; Takes a change string like g.119705C>T and returns a VRS syntax string like "hgvs.g"
               [^String change]
-              (when change
+              (if change
                 (cond (.startsWith change "g.") "hgvs.g"
                       (.startsWith change "c.") "hgvs.c"
                       (.startsWith change "p.") "hgvs.p"
                       :default (let [e (ex-info "Unknown hgvs change syntax" {:change change})]
                                  (log/error :message (ex-message e) :data (ex-data e))
                                  (log/error :message "Defaulting to 'hgvs' for change" :change change)
-                                 "hgvs"))))
+                                 "hgvs"))
+                (do (log/warn :message "No change provided, falling back to text syntax" :change change)
+                    "text")))
             (nucleotide-hgvs [hgvs-obj]
               {:expression (-> hgvs-obj (get "NucleotideExpression") (get "Expression") (get "$"))
                :assembly (-> hgvs-obj (get "NucleotideExpression") (get "Assembly"))
@@ -212,7 +214,7 @@
         (let [members (let [exprs (get-all-expressions msg)]
                         (doall
                           (for [expr exprs]
-                            (do (log/trace :fn ::variation-triples :msg "Making members" :expr expr)
+                            (do (log/debug :fn ::variation-triples :msg "Making members" :expr expr)
                                 (make-member vd-iri
                                              (:expression expr)
                                              (:syntax expr)
