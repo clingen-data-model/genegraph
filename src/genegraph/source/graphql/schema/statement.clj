@@ -20,6 +20,9 @@
             :qualifier {:type '(list :Resource)
                         :description "Additional elements limiting the scope of the statement"
                         :path [:sepio/has-qualifier]}
+            :score_status {:type :Resource
+                           :description "The status of the score."
+                           :path [:sepio/score-status]}
             :score {:type 'Float
                     :description "Numeric score of the statement. May be nil, used only when the applicable criteria calls for a numeric score in the statement or critera assessment."
                     :path [:sepio/evidence-line-strength-score]}
