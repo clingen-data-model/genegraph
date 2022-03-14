@@ -199,6 +199,7 @@ LIMIT 1")
   "Attempts to obtain the resource immediately preceding the given resource :dc/is-version-of value.
   Returns the model again for use in threading."
   [iri-resource rdf-type]
+  (log/debug :fn ::get-previous-resource :iri-resource iri-resource :rdf-type rdf-type)
   (let [;rdf-type (q/resource (ns-cg "ClinVarVCVStatement"))
         ; Get the resource of the thing this model is a version of
         ; For variation archive this is the unversioned iri
@@ -224,6 +225,7 @@ LIMIT 1")
   This function will try to find the previous RDFResource of the same rdf/type, and add two triples
   to this Model, one marking it as replacing the prior, and one marking the prior as being replaced by this."
   ([^Model model ^RDFResource rdf-type]
+   (log/debug :fn ::mark-prior-replaced :model model :rdf-type rdf-type)
    (let [iri-resource (first (iri-for-type rdf-type model))
          previous-resource (get-previous-resource iri-resource rdf-type)]
      (when previous-resource

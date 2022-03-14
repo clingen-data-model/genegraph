@@ -2,6 +2,7 @@
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q]
             [genegraph.database.names :refer [local-property-names
+                                              local-class-names
                                               property-uri->keyword
                                               prefix-ns-map]]
             [genegraph.transform.clinvar.common :as common]
@@ -16,7 +17,7 @@
             [clj-http.client :as http]
             [io.pedestal.log :as log]
             [genegraph.transform.clinvar.util :as util])
-  (:import (org.apache.jena.rdf.model Model)
+  (:import (org.apache.jena.rdf.model Model Statement)
            (java.io ByteArrayInputStream)))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
@@ -36,6 +37,9 @@
 ;    (if spdi
 ;      spdi
 ;      (let [hgvs-list (get nested-content "HGVSlist")]))))
+
+
+; TODO when no 'canonical' expressions found, fall back to Text VRS type
 (defn prioritized-variation-expression
   "Attempts to return a 'canonical' expression of the variation in ClinVar.
   Takes a clinvar-raw variation message. Returns one string expression.
@@ -43,10 +47,10 @@
 
   NOTE: .content.content should be parsed already, but it tries to parse it again if not."
   [variation-msg]
-  (log/info :variation-msg variation-msg)
+  (log/info :fn ::prioritized-variation-expression :variation-msg variation-msg)
   (let [nested-content (-> variation-msg (util/parse-nested-content) :content :content)]
     (letfn [(get-hgvs [nested-content assembly-name]
-              (let [hgvs-list (-> nested-content (get "HGVSlist") (get "HGVS"))
+              (let [hgvs-list (-> nested-content (get "HGVSlist") (get "HGVS") util/into-sequential-if-not)
                     filtered (filter #(= assembly-name (get-in % ["NucleotideExpression" "@Assembly"])) hgvs-list)]
                 (if (< 1 (count filtered)) (log/warn :fn ::prioritized-variation-expression
                                                      :msg (str "Multiple expressions for variation for assembly: " assembly-name)
@@ -59,12 +63,85 @@
                                  {:fn #(get-hgvs nested-content "GRCh38")
                                   :type :hgvs}
                                  {:fn #(get-hgvs nested-content "GRCh37")
-                                  :type :hgvs}]]
+                                  :type :hgvs}
+                                 ; Fallback to using the variation id
+                                 {:fn #(-> variation-msg :content :id)
+                                  :type :text}]]
                     (let [expr ((get val-opt :fn))]
                       (when expr {:expr expr :type (:type val-opt)})))]
         ; Return first non-nil
         (some identity exprs)))))
 
+
+(defn get-all-expressions
+  "Attempts to return a 'canonical' expression of the variation in ClinVar.
+  Takes a clinvar-raw variation message. Returns one string expression.
+  Tries GRCh38, GRCh37, may add additional options in the future.
+
+  Returns
+  :expression
+  :syntax
+  :syntax-version
+
+  TODO differentiate hgvs syntaxes
+
+  ProteinExpression:
+  {\"@Type\" \"protein\",
+   \"ProteinExpression\"
+      {\"@change\" \"p.Thr380Met\",
+       \"@sequenceAccession\" \"P00439\",
+       \"@sequenceAccessionVersion\" \"P00439\",
+       \"Expression\"
+          {\"$\" \"P00439:p.Thr380Met\"}}}
+
+  NucleotideExpression is similar format.
+
+  NOTE: .content.content should be parsed already, but it tries to parse it again if not."
+  [variation-msg]
+  (log/debug :fn ::get-all-expressions :variation-msg variation-msg)
+  (let [nested-content (-> variation-msg (util/parse-nested-content) :content :content)
+        hgvs-list (-> nested-content (get "HGVSlist") (get "HGVS") util/into-sequential-if-not)]
+    (letfn [(hgvs-syntax-from-change
+              ; Takes a change string like g.119705C>T and returns a VRS syntax string like "hgvs.g"
+              [^String change]
+              (when change
+                (cond (.startsWith change "g.") "hgvs.g"
+                      (.startsWith change "c.") "hgvs.c"
+                      (.startsWith change "p.") "hgvs.p"
+                      :default (let [e (ex-info "Unknown hgvs change syntax" {:change change})]
+                                 (log/error :message (ex-message e) :data (ex-data e))
+                                 (log/error :message "Defaulting to 'hgvs' for change" :change change)
+                                 "hgvs"))))
+            (nucleotide-hgvs [hgvs-obj]
+              {:expression (-> hgvs-obj (get "NucleotideExpression") (get "Expression") (get "$"))
+               :assembly (-> hgvs-obj (get "NucleotideExpression") (get "Assembly"))
+               :syntax (hgvs-syntax-from-change (-> hgvs-obj (get "NucleotideExpression") (get "@change")))})
+            (protein-hgvs [hgvs-obj]
+              {:expression (-> hgvs-obj (get "ProteinExpression") (get "Expression") (get "$"))
+               :syntax (hgvs-syntax-from-change (-> hgvs-obj (get "ProteinExpression") (get "@change")))})]
+      (let [expressions
+            (filter
+              #(not (nil? %))
+              (concat
+                (->> hgvs-list
+                     (map (fn [hgvs-obj]
+                            (log/debug :fn ::get-all-expressions :hgvs-obj hgvs-obj)
+                            (let [outputs (cond->
+                                            []
+                                            (get hgvs-obj "NucleotideExpression") (conj (nucleotide-hgvs hgvs-obj))
+                                            (get hgvs-obj "ProteinExpression") (conj (protein-hgvs hgvs-obj)))]
+                              (if (empty? outputs)
+                                (let [e (ex-info "Found no HGVS expressions" {:hgvs-obj hgvs-obj :variation-msg variation-msg})]
+                                  (log/error :message (ex-message e) :data (ex-data e))
+                                  ;(throw e)
+                                  ))
+                              outputs)))
+                     (apply concat))
+                [(let [spdi-expr (-> nested-content (get "CanonicalSPDI") (get "$"))]
+                   (when spdi-expr
+                     {:expression spdi-expr
+                      :syntax "spdi"}))]))]
+        expressions))))
 
 (defn variation-triples [msg]
   (let [msg (util/parse-nested-content msg)
@@ -84,7 +161,7 @@
       [; VRS Variation Descriptor
        ;[vrd-versioned :rdf/type (ccommon/variation-geno-type (:subclass_type content))]
        ;[vrd-versioned :rdf/type (ccommon/variation-vrs-type (:subclass_type content))]
-       [vd-iri :rdf/type :vrs/VariationDescriptor]
+       [vd-iri :rdf/type :vrs/CategoricalVariationDescriptor]
        [vd-iri :rdf/type (q/resource (ns-cg "ClinVarVariation"))]
        ; For tracking clinvar objects and identifying the named graph
        [vd-iri :rdf/type (q/resource (ns-cg "ClinVarObject"))]
@@ -97,6 +174,9 @@
        [canonical-variation-expression :rdf/type canonical-variation-expression-type]
 
        [vd-iri :dc/is-version-of (q/resource vrd-unversioned)]
+       ; TODO set this to version
+       ; Add clinvar's version field to extensions
+       [vd-iri :owl/version-info (:release_date msg)]
        [vd-iri :cg/release-date (:release_date msg)]
 
 
@@ -109,6 +189,37 @@
        ;[variation-rule-descriptor-iri :vrs/xref clinvar-variation-iri]]
        ]
       ; TODO Label (variant name?) should be added to this same VariationRuleDescriptor when received from variation record
+
+      ; TODO members
+      ; include the hgvs expressions
+      (letfn [(make-member [node-iri expression syntax syntax-version]
+                (log/debug :fn :make-member :node-iri node-iri
+                           :expression expression
+                           :syntax syntax
+                           :syntax-version syntax-version)
+                (let [member-iri (l/blank-node)
+                      expression-iri (l/blank-node)]
+                  (concat
+                    [[node-iri :vrs/member member-iri]
+                     [member-iri :rdf/type :vrs/VariationMember]
+                     [member-iri :vrs/expression expression-iri]
+                     [expression-iri :rdf/type :vrs/Expression]
+                     [expression-iri :vrs/syntax syntax]
+                     [expression-iri :rdf/value expression]]
+                    (if (seq syntax-version)
+                      [[expression-iri :vrs/syntax-version syntax-version]]))))]
+
+        (let [members (let [exprs (get-all-expressions msg)]
+                        (doall
+                          (for [expr exprs]
+                            (do (log/trace :fn ::variation-triples :msg "Making members" :expr expr)
+                                (make-member vd-iri
+                                             (:expression expr)
+                                             (:syntax expr)
+                                             (:syntax-version expr)))))
+                        )]
+          (log/trace :members members)
+          (apply concat members)))
 
       ; Extensions
       (common/fields-to-extensions vd-iri (merge (dissoc content :id :release_date)
@@ -127,6 +238,12 @@
 (defn string->InputStream [s]
   (ByteArrayInputStream. (.getBytes s)))
 
+(defn ^Statement triple-to-statement
+  "Takes a [s p o] triple such as that used by genegraph.database.load/statements-to-model.
+  Returns a single Statement."
+  [triple]
+  (.nextStatement (.listStatements (l/statements-to-model [triple]))))
+
 (defn add-vrs-model [model]
   (let [object-exprs (q/select "SELECT ?object WHERE { ?iri :sepio/has-object ?object }" {} model)]
     (when (< 1 (count object-exprs)) (let [e (ex-info "More than 1 object in model" {:model model
@@ -134,7 +251,6 @@
                                        (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
     (let [object-expr (first object-exprs)
           object-expr-type (q/ld1-> object-expr [:rdf/type])
-          _ (log/info :object-expr-type object-expr-type)
           vrs-obj (vicc/vrs-variation-for-expression object-expr (keyword (str object-expr-type)))]
       (if (empty? vrs-obj)
         (do (let [e (ex-info "No variation received from VRS normalization" {:fn ::add-vrs-model :object-expr object-expr})]
@@ -157,6 +273,13 @@
               (when (empty? variation-i)
                 (let [e (ex-info "Could not determine variation descriptor iri" {:model vrs-model})]
                   (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
+              (let [stmt-to-delete [i :sepio/has-object object-expr]]
+                (log/debug :msg "Deleting previous object triple" :stmt-to-delete stmt-to-delete)
+                (if (not (.contains model (triple-to-statement stmt-to-delete)))
+                  (let [e (ex-info "Prior object statement not found!"
+                                   {:fn ::add-vrs-model :model model :stmt-to-delete stmt-to-delete})]
+                    (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
+                (.remove model (l/statements-to-model [stmt-to-delete])))
               (log/debug :msg "Joining model, vrs model, and linking model" :link-model link-model)
               (q/union model vrs-model link-model))
             ))))))
@@ -166,31 +289,66 @@
   (let [model (-> event
                   :genegraph.transform.clinvar.core/parsed-value
                   variation-triples
-                  (#(do (log/info :triples %) %))
+                  (#(do (log/debug :triples %) %))
                   l/statements-to-model
                   add-vrs-model
-                  (#(do (log/info :model %) %))
+                  (#(do (log/debug :model %) %))
                   (#(common/mark-prior-replaced % (q/resource clinvar-variation-type))))]
     (log/debug :fn ::clinvar-to-model :model model)
     model))
 
 (def variation-context
-  {"@context" {; Properties
-               "object" {"@id" (str (get local-property-names :sepio/has-object))
-                         "@type" "@id"}
-               "is_version_of" {"@id" (str (get local-property-names :dc/is-version-of))
-                                "@type" "@id"}
-               "type" {"@id" "@type"
-                       "@type" "@id"}
-               "release_date" {"@id" (str (get local-property-names :cg/release-date))}
-               "extension" {"@id" (str (get local-property-names :vrs/extension))}
-               "name" {"@id" (str (get local-property-names :vrs/name))}
-               "value" {"@id" (str (get local-property-names :vrs/value))}
+  {; Properties
+   "object" {"@id" (str (get local-property-names :sepio/has-object))
+             "@type" "@id"}
+   "is_version_of" {"@id" (str (get local-property-names :dc/is-version-of))
+                    "@type" "@id"}
+   "type" {"@id" "@type"
+           "@type" "@id"}
+   ;"release_date" {"@id" (str (get local-property-names :cg/release-date))}
+   "extension" {"@id" (str (get local-property-names :vrs/extension))}
+   "name" {"@id" (str (get local-property-names :vrs/name))}
+   "value" {"@id" (str (get local-property-names :vrs/value))}
+   "replaces" {"@id" (str (get local-property-names :dc/replaces))
+               "@type" "@id"}
+   "is_replaced_by" {"@id" (str (get local-property-names :dc/is-replaced-by))
+                     "@type" "@id"}
+   "version" {"@id" (str (get local-property-names :owl/version-info))}
+   "_id" {"@id" "@id"
+          "@type" "@id"}
+   "Extension" {"@id" (str (get local-class-names :vrs/Extension))}
+   "CategoricalVariationDescriptor" {"@id" (str (get local-class-names :vrs/CategoricalVariationDescriptor))}
 
-               ; Prefixes
-               "vrs" {"@id" (get prefix-ns-map "vrs")       ;"https://vrs.ga4gh.org/terms/"
-                      "@prefix" true}
-               }})
+   ; eliminate vrs prefixes on vrs variation terms
+   ; VRS properties
+   "variation" {"@id" (str (get prefix-ns-map "vrs") "variation")}
+   "complement" {"@id" (str (get prefix-ns-map "vrs") "complement")}
+   "interval" {"@id" (str (get prefix-ns-map "vrs") "interval")}
+   "start" {"@id" (str (get prefix-ns-map "vrs") "start")}
+   "end" {"@id" (str (get prefix-ns-map "vrs") "end")}
+   "location" {"@id" (str (get prefix-ns-map "vrs") "location")}
+   "state" {"@id" (str (get prefix-ns-map "vrs") "state")}
+   "sequence_id" {"@id" (str (get prefix-ns-map "vrs") "sequence_id")}
+   "sequence" {"@id" (str (get prefix-ns-map "vrs") "sequence")}
+   ; VRS entities
+   "CanonicalVariation" {"@id" (str (get prefix-ns-map "vrs") "CanonicalVariation")
+                         "@type" "@id"}
+   "Allele" {"@id" (str (get prefix-ns-map "vrs") "Allele")
+             "@type" "@id"}
+   "SequenceLocation" {"@id" (str (get prefix-ns-map "vrs") "SequenceLocation")
+                       "@type" "@id"}
+   "SequenceInterval" {"@id" (str (get prefix-ns-map "vrs") "SequenceInterval")
+                       "@type" "@id"}
+   "Number" {"@id" (str (get prefix-ns-map "vrs") "Number")
+             "@type" "@id"}
+   "LiteralSequenceExpression" {"@id" (str (get prefix-ns-map "vrs") "LiteralSequenceExpression")
+                                "@type" "@id"}
+
+   ; Prefixes
+   ;"https://vrs.ga4gh.org/terms/"
+   "vrs" {"@id" (get prefix-ns-map "vrs")
+          "@prefix" true}
+   })
 
 
 (defmethod common/clinvar-model-to-jsonld :variation [event]
@@ -198,4 +356,6 @@
     (-> model
         (jsonld/model-to-jsonld)
         (jsonld/jsonld-to-jsonld-framed (json/generate-string variation-frame))
-        (jsonld/jsonld-compact (json/generate-string variation-context)))))
+        ; TODO may consider adding scoped context to the vrs variation object, with vocab=vrs
+        (jsonld/jsonld-compact (json/generate-string {"@context"
+                                                      (merge variation-context)})))))

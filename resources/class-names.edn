@@ -387,5 +387,8 @@
  [:vrs/Allele "https://vrs.ga4gh.org/terms/Allele"]
  [:vrs/TextUtilityVariation "https://vrs.ga4gh.org/terms/TextUtilityVariation"]
  [:vrs/VariationDescriptor "https://vrs.ga4gh.org/terms/VariationDescriptor"]
+ [:vrs/CategoricalVariationDescriptor "https://vrs.ga4gh.org/terms/CategoricalVariationDescriptor"]
+ [:vrs/VariationMember "https://vrs.ga4gh.org/terms/VariationMember"]
+ [:vrs/Expression "https://vrs.ga4gh.org/terms/Expression"]
  [:chebi/Drug "http://purl.obolibrary.org/obo/CHEBI_23888"]]
 

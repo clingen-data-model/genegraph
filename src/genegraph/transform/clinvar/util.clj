@@ -81,6 +81,9 @@
               [:content :content]
               nested-content)))
 
+(defn into-sequential-if-not [val]
+  (if (not (sequential? val)) [val] val))
+
 ;(defmacro log-and-throw- [& args]
 ;  (let [m (into {} (partition-all 2 args))]
 ;    (eval (log/error args))
