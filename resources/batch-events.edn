@@ -3,6 +3,10 @@
   :source "gci-neo4j-archive.tar.gz"
   :type :compressed-event-files}
 
+ {:name :gci-neo4j-report-only
+  :source "gci-neo4j-report-only.tar.gz"
+  :type :compressed-event-files}
+
  {:name :gci-raw-missing-data
   :source "gene-validity-missing-curations.tar.gz"
   :type :compressed-event-files}
