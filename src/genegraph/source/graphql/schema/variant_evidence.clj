@@ -12,6 +12,9 @@
             :zygosity {:type :Resource
                        :description "Zygosity of this allele in the patient genome"
                        :path [:geno/has-zygosity]}
+            :variant_type {:type 'String
+                           :description "The variant type of this variant"
+                           :path [:rdf/type]}
             :proband {:type :ProbandEvidence
                       :description "Proband in which this variant is present"
                       :path [[:sepio/has-variant :<]]}}})
