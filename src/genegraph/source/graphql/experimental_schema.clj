@@ -10,6 +10,7 @@
             [genegraph.source.graphql.schema.variant-evidence :as model-variant-evidence]
             [genegraph.source.graphql.schema.family :as family]
             [genegraph.source.graphql.schema.variation-descriptor :as model-variation]
+            [genegraph.source.graphql.schema.value-set :as value-set]
             [genegraph.source.graphql.schema.bibliographic-resource :as model-bibliographic-resource]
             [genegraph.source.graphql.schema.segregation :as model-segregation]
             [com.walmartlabs.lacinia :as lacinia]
@@ -35,6 +36,7 @@
    model-find/find-query
    model-find/query-result
    model-find/find-query
+   value-set/value-set
    family/family
    model-segregation/segregation
    model-bibliographic-resource/bibliographic-resource])

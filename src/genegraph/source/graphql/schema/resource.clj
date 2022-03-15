@@ -44,6 +44,9 @@
             :used_as_evidence_by {:type :Statement
                                   :description "Statements that use this resource as evidence"
                                   :path [[:sepio/has-evidence :<]]}
+            :in_scheme {:type '(list :ValueSet)
+                        :description "Relates a resource (for example a concept) to a concept scheme in which it is included."
+                        :path [:skos/is-in-scheme]}
             :subject_of {:type '(list :Statement)
                          :description "Assertions (or propositions) that have this resource as a subject (or object)."
                          ;; TODO implement as path when inverse; optional paths are done

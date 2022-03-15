@@ -11,6 +11,7 @@
     [:sepio/VariantEvidenceItem :VariantEvidence]
     [:ga4gh/VariationDescriptor :VariationDescriptor]
     [:sepio/FamilyCosegregation :Segregation]
+    [:sepio/ValueSet :ValueSet]
     [:pco/Family :Family]]
    :default-type-mapping :GenericResource})
 
