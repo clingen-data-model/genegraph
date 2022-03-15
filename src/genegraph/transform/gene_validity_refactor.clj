@@ -211,6 +211,10 @@
             "Sanger sequencing" "SEPIO:0004603"
             "Whole genome shotgun sequencing" "SEPIO:0004604"
 
+            ;; variantType
+            "OTHER_VARIANT_TYPE" "SEPIO:0004611"
+            "PREDICTED_OR_PROVEN_NULL" "SEPIO:0004612"
+
             }}))))
 
 (defn clear-associated-snapshots [gdm-json]
