@@ -235,7 +235,7 @@ LIMIT 1")
      model)))
 
 (defn fields-to-extensions
-  "Takes a map, converts all fields to VRS Extension triples.
+  "Takes a map, converts all fields to sets of VRS Extension triples.
   `node-iri` is the subject to link each extension to."
   [node-iri m]
   (apply concat
@@ -246,7 +246,7 @@ LIMIT 1")
                (for [v1 v]
                  (fields-to-extensions node-iri {k v1})))
              (let [ext-iri (l/blank-node)]
-               [[node-iri :vrs/extension ext-iri]
+               [[node-iri :vrs/extensions ext-iri]
                 [ext-iri :rdf/type :vrs/Extension]
                 [ext-iri :vrs/name (name k)]
-                [ext-iri :vrs/value v]])))))
+                [ext-iri :rdf/value v]])))))

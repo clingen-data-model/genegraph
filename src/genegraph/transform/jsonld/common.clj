@@ -47,10 +47,16 @@
 
 (defn ^String jsonld-compact
   [^String input-str ^String context-str]
-  (log/debug :fn :jsonld-compact :input-str input-str :context-str context-str)
+  (log/trace :fn :jsonld-compact :input-str input-str :context-str context-str)
   (let [titanium-doc (string->JsonDocument input-str)
         titanium-context (string->JsonDocument context-str)
+        ; Returns jakarta.json.JsonArray, which has a .getJsonObject(int index) method.
+        ;expanded (string->JsonDocument
+        ;           (.toString (.get (JsonLd/expand titanium-doc))))
         compacting (JsonLd/compact titanium-doc titanium-context)]
+    ; expanding and setting compactArrays=false is too broad, turning too many
+    ; things into arrays. We may just want specific things to be arrays.
+    ;(.compactArrays compacting false)
     ; .get returns jakarta.json.JsonObject
     (-> compacting .get .toString)))
 
@@ -58,7 +64,7 @@
   "Takes a JSON-LD (1.0 or 1.1) string and a framing string. Returns a JSON-LD 1.1 string of the
   original object, with the frame applied."
   [^String input-str ^String frame-str]
-  (log/debug :fn :to-jsonld-1-1-framed :input-str input-str :frame-str frame-str)
+  (log/trace :fn :to-jsonld-1-1-framed :input-str input-str :frame-str frame-str)
   (let [titanium-doc (string->JsonDocument input-str)
         titanium-frame (string->JsonDocument frame-str)
         framing (JsonLd/frame titanium-doc titanium-frame)]
@@ -67,9 +73,9 @@
 (defn ^String model-to-jsonld
   "Takes a Jena Model object and a JSON-LD Framing 1.1 map.
   Returns a string of the model converted to JSON-LD 1.1, framed with the frame map."
-  ;([^Model model]
-  ; (model-to-jsonld model nil))
   ([^Model model]
+   (model-to-jsonld model nil))
+  ([^Model model ^String frame-str]
    (let [writer (JsonLDWriter. RDFFormat/JSONLD_COMPACT_PRETTY)
          sw (StringWriter.)
          ds (DatasetGraphInMemory.)
