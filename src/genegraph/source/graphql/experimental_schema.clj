@@ -27,6 +27,8 @@
    model-resource/resource-query
    model-resource/record-metadata-query
    model-resource/record-metadata-query-result
+   model-resource/pattern-tuple
+   model-resource/pattern-query
    model-statement/statement
    model-evidence-line/evidence-line
    model-contribution/contribution

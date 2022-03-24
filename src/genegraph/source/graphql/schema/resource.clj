@@ -1,6 +1,7 @@
 (ns genegraph.source.graphql.schema.resource
   "Definitions for model of RDFResource objects"
   (:require [genegraph.database.query :as q]
+            [io.pedestal.log :as log]
             [clojure.string :as s]))
 
 
@@ -107,6 +108,30 @@
    :args {:iri {:type 'String}}
    :resolve (fn [context args value]
               (q/resource (:iri args)))})
+
+(defn pattern-query-resolver
+  "Takes a pattern tuple in :pattern arg field. Returns resource IRIs which match this."
+  [context args value]
+  (let [{:keys [predicate object]} (:pattern args)
+        spql (str "SELECT ?iri WHERE { ?iri ?pred ?obj }")]
+    (log/debug :fn ::pattern-query-resolver :predicate predicate :object object)
+    (q/select spql {:pred (q/resource predicate)
+                    :obj (str (q/resource object))})))
+
+(def pattern-tuple
+  {:name :PatternTuple
+   :graphql-type :input-object
+   :description "A graph pattern tuple (predicate, object) to match IRIs"
+   :fields {:predicate {:type 'String}
+            :object {:type 'String}}})
+
+(def pattern-query
+  {:name :pattern_query
+   :graphql-type :query
+   :description "Find resources which match pattern"
+   :type '(list :Resource)
+   :args {:pattern {:type :PatternTuple}}
+   :resolve pattern-query-resolver})
 
 (def resource-query
   {:name :resource
