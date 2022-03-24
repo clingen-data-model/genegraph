@@ -25,6 +25,8 @@
    model-resource/resource-interface
    model-resource/generic-resource
    model-resource/resource-query
+   model-resource/record-metadata-query
+   model-resource/record-metadata-query-result
    model-statement/statement
    model-evidence-line/evidence-line
    model-contribution/contribution
