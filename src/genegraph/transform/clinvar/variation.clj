@@ -181,6 +181,10 @@
        [vd-iri :owl/version-info (:release_date msg)]
        [vd-iri :cg/release-date (:release_date msg)]
 
+       ; xrefs
+       [vd-iri :vrs/xrefs (str (get prefix-ns-map "clinvar")
+                               (:id content))]
+       [vd-iri :vrs/xrefs (str clinvar-variation-iri)]
 
        ;(q/resource (str iri/clinvar-variation (:variation_id msg)))
        ; TODO reverse link to VCV? Or rely on VCV->variation that should be added by VCV
