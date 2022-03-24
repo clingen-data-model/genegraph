@@ -103,6 +103,9 @@
 (defn- compose-enum [entity]
   (select-keys entity [:description :values]))
 
+(defn- compose-input-object [entity]
+  (select-keys entity [:description :fields]))
+
 (defn- add-entity-to-schema [schema entity]
   (case (:graphql-type entity)
     :interface (assoc-in schema
@@ -117,6 +120,9 @@
     :enum (assoc-in schema
                     [:enums (:name entity)]
                     (compose-enum entity))
+    :input-object (assoc-in schema
+                            [:input-objects (:name entity)]
+                            (compose-input-object entity))
     (merge schema entity)))
 
 (defn schema-description [entities]
