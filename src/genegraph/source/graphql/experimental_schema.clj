@@ -31,6 +31,13 @@
    model-proband/proband-evidence
    model-variant-evidence/variant-evidence
    model-variation/variation-descriptor
+   model-variation/categorical-variation-descriptor
+   model-variation/vrs-extension
+   model-variation/vrs-allele
+   model-variation/vrs-literal-sequence-expression
+   model-variation/vrs-sequence-location
+   model-variation/vrs-sequence-interval
+   model-variation/vrs-number
    model-agent/agent
    model-find/types-enum
    model-find/find-query
