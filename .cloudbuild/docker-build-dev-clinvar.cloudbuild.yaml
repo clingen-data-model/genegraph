@@ -10,21 +10,21 @@ steps:
     args: [ 'build', '.', '-t', 'genegraph:$COMMIT_SHA']
   - name: 'gcr.io/cloud-builders/docker'
     args: [ 'tag', 'genegraph:$COMMIT_SHA', 'gcr.io/clingen-dev/genegraph:clinvar.${COMMIT_SHA}']
-#  - name: 'gcr.io/clingen-dev/git-image-updater'
-#    secretEnv: ["GITHUB_TOKEN"]
-#    args:
-#      - '-c'
-#      - |
-#        git clone https://clingen-ci:$$GITHUB_TOKEN@github.com/clingen-data-model/architecture \
-#        && cd architecture \
-#        && git checkout -b image-update-$SHORT_SHA \
-#        && /usr/bin/yq eval -i ".genegraph_docker_image_tag = \"clinvar.${COMMIT_SHA}\"" ./helm/values/genegraph-clinvar/values-dev.yaml \
-#        && date "+%Y-%m-%dT%H%M" > /workspace/DATETIME.txt \
-#        && /usr/bin/yq eval -i ".genegraph_data_version = \"$(tr -d '\n' < /workspace/DATETIME.txt)\"" ./helm/values/genegraph-clinvar/values-dev.yaml \
-#        && git add -u \
-#        && git -c user.name="Clingen CI Automation" -c user.email="clingendevs@broadinstitute.org" commit -m "bumping docker image for genegraph-clinvar" \
-#        && git push origin image-update-$SHORT_SHA \
-#        && gh pr create --fill -l automation
+  - name: 'gcr.io/clingen-dev/git-image-updater'
+    secretEnv: ["GITHUB_TOKEN"]
+    args:
+      - '-c'
+      - |
+        git clone https://clingen-ci:$$GITHUB_TOKEN@github.com/clingen-data-model/architecture \
+        && cd architecture \
+        && git checkout -b image-update-clinvar.$SHORT_SHA \
+        && /usr/bin/yq eval -i ".genegraph_docker_image_tag = \"clinvar.${COMMIT_SHA}\"" ./helm/values/genegraph-clinvar/values-dev.yaml \
+        && date "+%Y-%m-%dT%H%M" > /workspace/DATETIME.txt \
+        && /usr/bin/yq eval -i ".genegraph_data_version = \"$(tr -d '\n' < /workspace/DATETIME.txt)\"" ./helm/values/genegraph-clinvar/values-dev.yaml \
+        && git add -u \
+        && git -c user.name="Clingen CI Automation" -c user.email="clingendevs@broadinstitute.org" commit -m "bumping docker image for genegraph-clinvar" \
+        && git push origin image-update-clinvar.$SHORT_SHA \
+        && gh pr create --fill -l automation
 
 availableSecrets:
   secretManager:
