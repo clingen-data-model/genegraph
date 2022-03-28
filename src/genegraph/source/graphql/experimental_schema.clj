@@ -38,10 +38,12 @@
    model-variation/categorical-variation-descriptor
    model-variation/vrs-extension
    model-variation/vrs-allele
+   model-variation/vrs-canonical-variation
    model-variation/vrs-literal-sequence-expression
    model-variation/vrs-sequence-location
    model-variation/vrs-sequence-interval
    model-variation/vrs-number
+   model-variation/variation-descriptor-query
    model-agent/agent
    model-find/types-enum
    model-find/find-query

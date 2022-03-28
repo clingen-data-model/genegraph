@@ -385,6 +385,7 @@
  [:sepio/Assertion "http://purl.obolibrary.org/obo/SEPIO_0000001"]
  [:vrs/Extension "https://vrs.ga4gh.org/terms/Extension"]
  [:vrs/Allele "https://vrs.ga4gh.org/terms/Allele"]
+ [:vrs/CanonicalVariation "https://vrs.ga4gh.org/terms/CanonicalVariation"]
  [:vrs/TextUtilityVariation "https://vrs.ga4gh.org/terms/TextUtilityVariation"]
  [:vrs/VariationDescriptor "https://vrs.ga4gh.org/terms/VariationDescriptor"]
  [:vrs/CategoricalVariationDescriptor "https://vrs.ga4gh.org/terms/CategoricalVariationDescriptor"]
