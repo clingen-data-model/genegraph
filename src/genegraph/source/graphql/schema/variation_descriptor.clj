@@ -103,6 +103,8 @@
             ; TODO may consider using more unions to self-document what types these may be
             :object {:type :Resource
                      :path [:sepio/has-object]}
+            :xrefs {:type '(list String)
+                    :path [:vrs/xrefs]}
             :extensions {:type '(list :Extension)
                          :path [:vrs/extensions]}
             }})
