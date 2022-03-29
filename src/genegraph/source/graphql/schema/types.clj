@@ -18,6 +18,7 @@
     [:vrs/LiteralSequenceExpression :LiteralSequenceExpression]
     [:vrs/Number :Number]
     [:vrs/Expression :Expression]
+    [:vrs/Extension :Extension]
     [:vrs/VariationMember :VariationMember]
     [:sepio/FamilyCosegregation :Segregation]
     [:sepio/ValueSet :ValueSet]
