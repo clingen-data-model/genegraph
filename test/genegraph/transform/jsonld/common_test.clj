@@ -9,16 +9,6 @@
   (:import (java.io ByteArrayInputStream)
            (java.nio.charset Charset)))
 
-(defn get-variant-messages []
-  (-> "genegraph/transform/clinvar/variants-with-spdi.txt"
-      io/resource
-      slurp
-      (clojure.string/split #"\n")
-      (->> (map #(json/parse-string % true)))))
-
-(defn get-variant-messages-by-id [id]
-  (filter #(= id (str (:id (:content %)))) (get-variant-messages)))
-
 (defn string->InputStream [s]
   (ByteArrayInputStream. (.getBytes s)))
 (def basename "http://example.org/")
