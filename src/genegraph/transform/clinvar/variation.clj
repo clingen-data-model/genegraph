@@ -230,7 +230,7 @@
       ; Extensions
       (common/fields-to-extensions vd-iri (merge (dissoc content :id :release_date :name)
                                                  ; Put this back into a string
-                                                 (assoc content :content (json/generate-string (:content content)))
+                                                 {:content (json/generate-string (:content content))}
                                                  {:clinvar_variation clinvar-variation-iri})))))
 
 (defn resource-to-out-triples
