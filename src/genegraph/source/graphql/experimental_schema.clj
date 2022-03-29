@@ -36,6 +36,8 @@
    model-variant-evidence/variant-evidence
    model-variation/variation-descriptor
    model-variation/categorical-variation-descriptor
+   model-variation/vrs-expression
+   model-variation/vrs-variation-member
    model-variation/vrs-extension
    model-variation/vrs-allele
    model-variation/vrs-canonical-variation

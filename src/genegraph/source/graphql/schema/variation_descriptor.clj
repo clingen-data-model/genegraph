@@ -91,6 +91,30 @@
             :end {:type :Number
                   :path [:vrs/end]}}})
 
+(def vrs-expression
+  {:name :Expression
+   :graphql-type :object
+   :description "Expressions of a variation"
+   :implements [:Resource]
+   :fields {:value {:type 'String
+                    :description "Value of the expression"
+                    :path [:rdf/value]}
+            :syntax {:type 'String
+                     :description "A syntax identifier indicating what form the expression is in."
+                     :path [:vrs/syntax]}
+            :syntax_version {:type 'String
+                             :description "A version of the syntax. (Often not provided)"
+                             :path [:vrs/syntax-version]}}})
+
+(def vrs-variation-member
+  {:name :VariationMember
+   :graphql-type :object
+   :description "A VariationMember of an grouping of variation representations."
+   :implements [:Resource]
+   :fields {:expressions {:type '(list :Expression)
+                          :description "Expressions for a single variation representation"
+                          :path [:vrs/expressions]}}})
+
 (def categorical-variation-descriptor
   {:name :CategoricalVariationDescriptor
    :graphql-type :object
@@ -105,6 +129,9 @@
                      :path [:sepio/has-object]}
             :xrefs {:type '(list String)
                     :path [:vrs/xrefs]}
+            :members {:type '(list :VariationMember)
+                      :description "Noncanonical variation representations. Exists alongside the canonical representation of the variation."
+                      :path [:vrs/members]}
             :extensions {:type '(list :Extension)
                          :path [:vrs/extensions]}
             }})

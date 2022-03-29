@@ -17,6 +17,8 @@
     [:vrs/SequenceInterval :SequenceInterval]
     [:vrs/LiteralSequenceExpression :LiteralSequenceExpression]
     [:vrs/Number :Number]
+    [:vrs/Expression :Expression]
+    [:vrs/VariationMember :VariationMember]
     [:sepio/FamilyCosegregation :Segregation]
     [:sepio/ValueSet :ValueSet]
     [:pco/Family :Family]]
