@@ -167,6 +167,7 @@
        [vd-iri :rdf/type (q/resource (ns-cg "ClinVarVariation"))]
        ; For tracking clinvar objects and identifying the named graph
        [vd-iri :rdf/type (q/resource (ns-cg "ClinVarObject"))]
+       [vd-iri :rdfs/label (:name content)]
 
        ; Variation Descriptor describes object: variation
        ;[vd-iri :sepio/has-object clinvar-variation-iri]
@@ -227,7 +228,7 @@
           (apply concat members)))
 
       ; Extensions
-      (common/fields-to-extensions vd-iri (merge (dissoc content :id :release_date)
+      (common/fields-to-extensions vd-iri (merge (dissoc content :id :release_date :name)
                                                  ; Put this back into a string
                                                  (assoc content :content (json/generate-string (:content content)))
                                                  {:clinvar_variation clinvar-variation-iri})))))
