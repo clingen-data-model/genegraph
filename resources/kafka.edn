@@ -1,86 +1,78 @@
-{:clusters {:dx-ccloud {:common {"ssl.endpoint.identification.algorithm" "https"
-                                 "sasl.mechanism" "PLAIN"
-                                 "request.timeout.ms" "20000"
-                                 "bootstrap.servers" "pkc-4yyd6.us-east1.gcp.confluent.cloud:9092"
-                                 "retry.backoff.ms" "500"
-                                 "security.protocol" "SASL_SSL"
-                                 "sasl.jaas.config" genegraph.env/dx-jaas-config}
+{:clusters {:dx-ccloud {:common { "ssl.endpoint.identification.algorithm" "https"
+                                  "sasl.mechanism" "PLAIN"
+                                  "request.timeout.ms" "20000"
+                                  "bootstrap.servers" "pkc-4yyd6.us-east1.gcp.confluent.cloud:9092"
+                                  "retry.backoff.ms" "500"
+                                  "security.protocol" "SASL_SSL"
+                                  "sasl.jaas.config" genegraph.env/dx-jaas-config}
                         :consumer {"key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
                                    "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}
                         :producer {"key.serializer" "org.apache.kafka.common.serialization.StringSerializer"
                                    "value.serializer" "org.apache.kafka.common.serialization.StringSerializer"}}}
- :topics {:actionability {:name "actionability"
-                          :format :actionability-v1
-                          :root-type :sepio/ActionabilityReport
-                          :cluster :dx-ccloud}
-          :actionability-dev {:name "actionability_dev"
-                              :format :actionability-v1
-                              :root-type :sepio/ActionabilityReport
-                              :cluster :dx-ccloud}
-          :gene-dosage-stage {:name "gene_dosage_sepio_in"
-                              :format :json-ld
-                              :reader-opts {:format :json-ld}
-                              :root-type :sepio/GeneDosageReport
-                              :cluster :dx-ccloud}
-          :gene-dosage-jira {:name "gene_dosage_raw"
-                             :format :gene-dosage-jira
-                             :root-type :sepio/GeneDosageReport
+ :topics   {:actionability {:name "actionability"
+                            :format :actionability-v1
+                            :root-type :sepio/ActionabilityReport
+                            :cluster :dx-ccloud}
+            :actionability-dev {:name "actionability_dev"
+                                :format :actionability-v1
+                                :root-type :sepio/ActionabilityReport
+                                :cluster :dx-ccloud}
+            :gene-dosage-stage {:name "gene_dosage_sepio_in"
+                                :format :json-ld
+                                :reader-opts {:format :json-ld}
+                                :root-type :sepio/GeneDosageReport
+                                :cluster :dx-ccloud}
+            :gene-dosage-jira {:name "gene_dosage_raw"
+                               :format :gene-dosage-jira
+                               :root-type :sepio/GeneDosageReport
+                               :cluster :dx-ccloud}
+;;            :gene-dosage-jira {:name "gene_dosage_raw"
+;;                               :format :gene-dosage-jira
+;;                               :root-type :sepio/GeneDosageReport
+;;                               :cluster :dx-ccloud
+;;                               :producer-topic :test-public-v1}
+            :gene-dosage-jira-clone {:name "gene_dosage_raw_clone"
+                                     :format :gene-dosage-jira
+                                     :root-type :sepio/GeneDosageReport
+                                     :cluster :dx-ccloud}
+            :gene-validity  {:format :gene-validity-v1
+                             :name "gene_validity"
+                             :root-type :sepio/GeneValidityReport
                              :cluster :dx-ccloud}
-          ;;            :gene-dosage-jira {:name "gene_dosage_raw"
-          ;;                               :format :gene-dosage-jira
-          ;;                               :root-type :sepio/GeneDosageReport
-          ;;                               :cluster :dx-ccloud
-          ;;                               :producer-topic :test-public-v1}
-          :gene-dosage-jira-clone {:name "gene_dosage_raw_clone"
-                                   :format :gene-dosage-jira
-                                   :root-type :sepio/GeneDosageReport
-                                   :cluster :dx-ccloud}
-          :gene-validity {:format :gene-validity-v1
+            :gene-validity-dev  {:format :gene-validity-v1
+                                 :name "gene_validity_dev"
+                                 :root-type :sepio/GeneValidityReport
+                                 :cluster :dx-ccloud}
+            :gene-validity-raw {:format :gene-validity-v1
+                                :name "gene_validity_raw"
+                                :cluster :dx-ccloud}
+            :gene-validity-raw-dev {:format :gene-validity-v1
+                                    :name "gene_validity_raw_dev"
+                                    :cluster :dx-ccloud}
+            :gci-legacy  {:format :gci-legacy
                           :name "gene_validity"
                           :root-type :sepio/GeneValidityReport
                           :cluster :dx-ccloud}
-          :gene-validity-dev {:format :gene-validity-v1
+            :gci-legacy-report-only  {:format :gci-legacy-report-only
+                                      :name "gene_validity"
+                                      :root-type :sepio/GeneValidityReport
+                                      :cluster :dx-ccloud}
+            :gci-legacy-dev  {:format :gci-legacy
                               :name "gene_validity_dev"
                               :root-type :sepio/GeneValidityReport
                               :cluster :dx-ccloud}
-          :gene-validity-raw {:format :gene-validity-v1
-                              :name "gene_validity_raw"
-                              :cluster :dx-ccloud}
-          :gene-validity-raw-dev {:format :gene-validity-v1
-                                  :name "gene_validity_raw_dev"
-                                  :cluster :dx-ccloud}
-          :gci-legacy {:format :gci-legacy
-                       :name "gene_validity"
-                       :root-type :sepio/GeneValidityReport
-                       :cluster :dx-ccloud}
-          :gci-legacy-report-only {:format :gci-legacy-report-only
-                                   :name "gene_validity"
-                                   :root-type :sepio/GeneValidityReport
-                                   :cluster :dx-ccloud}
-          :gci-legacy-dev {:format :gci-legacy
-                           :name "gene_validity_dev"
-                           :root-type :sepio/GeneValidityReport
-                           :cluster :dx-ccloud}
-          :gene-validity-events-dev {:name "gene_validity_events_dev"
-                                     :cluster :dx-ccloud}
-          :gene-tracker-test {:name "gt-precuration-events-test"
-                              :cluster :dx-ccloud}
-          ;:clinvar-raw {:name "clinvar-raw"
-          ;              :cluster :dx-ccloud
-          ;              :format :clinvar-raw
-          ;              ;:producer-topic :test-public-v1
-          ;              }
-          :clinvar-raw {:name "clinvar-raw-testdata_20210412"
-                        :cluster :dx-ccloud
-                        :format :clinvar-raw
-                        ;:producer-topic :test-public-v1
-                        }
-          :clinvar-combined {:name "clinvar-combined"
-                             :cluster :dx-ccloud
-                             :format :clinvar-combined}
-          :test-public-v1 {:name "test-public-v1"
-                           :cluster :dx-ccloud}
-          :genegraph-public {:name "genegraph-public"
-                             :cluster :dx-cloud
-                             :format :json-ld}
-          }}
+            :gene-validity-events-dev {:name "gene_validity_events_dev"
+                                       :cluster :dx-ccloud}
+            :gene-tracker-test {:name "gt-precuration-events-test"
+                                :cluster :dx-ccloud}
+            :clinvar-raw {:name "clinvar-raw-testdata_20210412"
+                          :cluster :dx-ccloud
+                          :format :clinvar-raw
+                          :producer-topic :test-public-v1}
+            :clinvar-combined {:name "clinvar-combined"
+                               :cluster :dx-ccloud
+                               :format :clinvar-combined}
+            :test-public-v1 {:name "test-public-v1"
+                              :cluster :dx-ccloud}}}
+
+
