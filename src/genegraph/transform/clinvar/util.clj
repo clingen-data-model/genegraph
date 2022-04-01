@@ -1,5 +1,7 @@
 (ns genegraph.transform.clinvar.util
-  (:require [clojure.spec.alpha :as spec]))
+  (:require [clojure.spec.alpha :as spec]
+            [cheshire.core :as json]
+            [io.pedestal.log :as log]))
 
 (defn string-is-int?
   "Returns true if input string `s` is an arbitrarily large integer"
@@ -47,3 +49,48 @@
 
 (defn in? [coll e]
   (some #(= % e) coll))
+
+(defn simplify-dollar-map [m]
+  "Return (get m :$) if m is a map and :$ is the only key. Otherwise return m.
+  Useful for BigQuery JSON serialization where single values may be turned into $ maps"
+  (if (and (map? m)
+           (= '(:$) (keys m)))
+    (:$ m)
+    m))
+
+(defn simplify-dollar-map-recur [m]
+  (if (map? m)
+    (if (get m :$)
+      (simplify-dollar-map-recur (simplify-dollar-map m))
+      (into {} (for [[k v] m]
+                 [k (simplify-dollar-map-recur v)])))
+    (if (coll? m)
+      (map simplify-dollar-map-recur m)
+      m)))
+
+(defn parse-json-if-not-parsed [val]
+  (if (string? val)
+    (json/parse-string val)
+    val))
+
+(defn parse-nested-content [val]
+  ;(log/info :fn ::parse-nested-content :val val)
+  (let [nested-content (-> val :content :content parse-json-if-not-parsed simplify-dollar-map-recur)]
+    ;(log/info :fn ::parse-nested-content :nested-content nested-content)
+    (assoc-in val
+              [:content :content]
+              nested-content)))
+
+(defn into-sequential-if-not [val]
+  (if (not (sequential? val)) [val] val))
+
+;(defmacro log-and-throw- [& args]
+;  (let [m (into {} (partition-all 2 args))]
+;    (eval (log/error args))
+;    (throw (ex-info (str m) m))))
+
+;(defn log-and-throw [& args]
+;  (println (str (into '() (partition-all 2 args))))
+;  (let [m (into {} (partition-all 2 args))]
+;    (eval (log/-error args))
+;    (throw (ex-info (str m) m))))

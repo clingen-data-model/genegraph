@@ -1,15 +1,9 @@
 (ns genegraph.transform.clinvar.variation-archive
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q]
-            [genegraph.transform.clinvar.common :refer [transform-clinvar
-                                                        clinvar-to-model
-                                                        variation-geno-type
-                                                        genegraph-kw-to-iri
-                                                        json-prettify
-                                                        mark-prior-replaced
-                                                        clinvar-model-to-jsonld
-                                                        model-framed-to-jsonld]]
-            [genegraph.transform.clinvar.iri :as iri]
+            [genegraph.transform.clinvar.common :as common]
+            [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
+            [genegraph.transform.jsonld.common :as jsonld]
             [clojure.pprint :refer [pprint]]
             [clojure.datafy :refer [datafy]]
             [clojure.string :as s]
@@ -20,7 +14,6 @@
 
 (def prefix-vrs-1-2-0 "https://vrs.ga4gh.org/en/1.2.0/")
 (defn ns-vrs [term] (str prefix-vrs-1-2-0 term))
-(defn ns-cg [term] (str iri/cgterms term))
 
 (def variation-archive-frame
   "Frame map for VCV"
@@ -29,22 +22,10 @@
    "@type" "http://dataexchange.clinicalgenome.org/terms/ClinVarVCVStatement"
    })
 
-; test data load
-(defn test-fn-titanium []
-  (let [kafka-messages (-> "vcv-messages.txt" io/file slurp (#(s/split % #"\n")) (->> (map #(json/parse-string % true))))
-        triples (-> kafka-messages first ((eval 'variation-archive-v1)))
-        model ^Model (l/statements-to-model triples)]
-    (model-framed-to-jsonld model variation-archive-frame)))
-
-
 ; TODO
 ; make VariationRuleDescriptor
 ; add fields to VariationDescriptor
 ; promote xrefs to Resource graphql type
-
-; TODO This should be in the variation transformer, not variation archive
-(defn vrs-allele-for-variation [variation]
-  ())
 
 (defn variation-archive-v1-triples [msg]
   (let [msg (assoc-in msg [:content :release_date] (:release_date msg))
@@ -94,29 +75,20 @@
        [variation-rule-descriptor-iri :vrs/xref clinvar-variation-iri]]
       ; TODO Label (variant name?) should be added to this same VariationRuleDescriptor when received from variation record
 
-
-      ; Add extension for each field not mapped above
-      (let [leftover (dissoc msg :id :release_date :version :review_status :interp_description)
-            extensions (into []
-                             ; flatten one level
-                             (apply concat
-                                    (map (fn [[k v]]
-                                           (let [ext-iri (q/resource (str vcv-statement-iri "_" (name k)))]
-                                             [[vcv-statement-iri :vrs/extension ext-iri]
-                                              [ext-iri (ns-cg (name k)) v]]))
-                                         leftover)))]
-        (log/trace :extensions extensions)
-        extensions)
-      )))
+      ; Extensions
+      (common/fields-to-extensions
+        vcv-statement-iri
+        (dissoc msg :id :release_date :version :review_status :interp_description)))))
 
 (defn resource-to-out-triples
   "Uses steppable interface of RDFResource to obtain all the out properties and load
   them into a Model. These triples can be used as input to l/statements-to-model.
   NOTE: that only works when all the properties of the resource are in property-names.edn"
   [resource]
+  ; [k v] -> [r k v]
   (map #(cons resource %) (into {} resource)))
 
-(defmethod clinvar-to-model :variation_archive [event]
+(defmethod common/clinvar-to-model :variation_archive [event]
   (log/debug :fn ::clinvar-to-model :event event)
   (let [model (-> event
                   :genegraph.transform.clinvar.core/parsed-value
@@ -124,10 +96,13 @@
                   (#(do (log/info :triples %) %))
                   l/statements-to-model
                   (#(do (log/info :model %) %))
-                  (#(mark-prior-replaced % (q/resource (ns-cg "ClinVarVCVStatement")))))]
+                  (#(common/mark-prior-replaced % (q/resource (ns-cg "ClinVarVCVStatement")))))]
     (log/debug :fn ::clinvar-to-model :model model)
     model))
 
-(defmethod clinvar-model-to-jsonld :variation_archive [event]
+(defmethod common/clinvar-model-to-jsonld :variation_archive [event]
   (let [model (::q/model event)]
-    (model-framed-to-jsonld model variation-archive-frame)))
+    (-> model
+        (jsonld/model-to-jsonld)
+        (jsonld/jsonld-to-jsonld-framed (json/generate-string variation-archive-frame))
+        (jsonld/jsonld-compact (json/generate-string {"@context" {}})))))

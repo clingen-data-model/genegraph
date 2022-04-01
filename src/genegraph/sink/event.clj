@@ -30,7 +30,7 @@
    update of the db, annotates the event with :genegraph.sink.event/added-to-db
   true or false"
   [event]
-  (let [iri  (::ann/iri event)
+  (let [iri (::ann/iri event)
         root-type (::ann/root-type event)]
     (when (= :publish (::ann/action event))
       (log/debug :fn :add-to-db! :root-type root-type :iri iri :msg :loading)
@@ -68,8 +68,8 @@
 (def log-result-interceptor
   {:name ::log-result
    :leave (fn [e] (log/debug
-                   :fn :log-result-interceptor
-                   :event (select-keys e [::ann/iri ::ann/subjects ::ann/did-validate])) e)})
+                    :fn :log-result-interceptor
+                    :event (select-keys e [::ann/iri ::ann/subjects ::ann/did-validate])) e)})
 
 (def abort-on-dry-run-interceptor
   {:name ::abort-on-dry-run
@@ -82,16 +82,16 @@
   (log/info :fn :stream-producer :action (::ann/action event) :iri (::ann/iri event))
   (if-let [topic-key (::ann/producer-topic event)]
     (when (= :publish (::ann/action event))
-      (let [iri (::ann/iri event)
-            turtle-model (-> event ::q/model q/to-turtle)
-            producer (stream/producer-for-topic! topic-key)
-            producer-topic-name (-> stream/config :topics topic-key :name)
-            producer-record (stream/producer-record-for producer-topic-name iri turtle-model)
-            future (.send producer producer-record)]
-        (log/debug :fn :stream-producer :producer-topic-name producer-topic-name :key iri :value turtle-model)
-        (->> (.get future)
-             ((fn [f] {:timestamp (.timestamp f) :offset (.offset f) :partition (.partition f) :topic (.topic f)}))
-             (assoc event ::producer-metadata))))
+      (let [iri (::ann/iri event)]
+        (when-let [serialized-model (::ann/jsonld event)]
+          (let [producer (stream/producer-for-topic! topic-key)
+                producer-topic-name (-> stream/config :topics topic-key :name)
+                producer-record (stream/producer-record-for producer-topic-name iri serialized-model)
+                future (.send producer producer-record)]
+            (log/debug :fn :stream-producer :producer-topic-name producer-topic-name :key iri :value serialized-model)
+            (->> (.get future)
+                 ((fn [f] {:timestamp (.timestamp f) :offset (.offset f) :partition (.partition f) :topic (.topic f)}))
+                 (assoc event ::producer-metadata))))))
     event))
 
 (def stream-producer-interceptor
@@ -144,26 +144,26 @@
   the :executed-interceptors vector in the event for tracking purposes."
   [interceptors]
   (reduce (fn [vec intercept]
-            (conj vec 
+            (conj vec
                   (helper/before (fn [e] (let [now-ms (inst-ms (java.util.Date.))]
                                            (assoc e :executed-interceptors
-                                                  (conj (get e :executed-interceptors [])
-                                                        (:name intercept))
-                                                  :interceptor-start-ms now-ms))))
+                                                    (conj (get e :executed-interceptors [])
+                                                          (:name intercept))
+                                                    :interceptor-start-ms now-ms))))
                   intercept
                   (helper/before (fn [e] (let [now-ms (inst-ms (java.util.Date.))
                                                start-ms (:interceptor-start-ms e)]
                                            (if start-ms
                                              (assoc e :executed-interceptors
-                                                    (conj (:executed-interceptors e)
-                                                          (keyword (str (- now-ms start-ms) "ms"))))
+                                                      (conj (:executed-interceptors e)
+                                                            (keyword (str (- now-ms start-ms) "ms"))))
                                              e))))))
           []
           interceptors))
 
 (defn process-event! [event]
   (log/debug :fn :process-event! :event event :msg :event-received)
-  (-> event 
+  (-> event
       (chain/enqueue (map #(intercept/interceptor %)
                           (inject-trace-into-interceptor-chain (interceptor-chain))))
       chain/execute))
@@ -172,13 +172,12 @@
   ([event-seq]
    (process-event-seq! event-seq {}))
   ([event-seq opts]
-   (write-tx 
-    (doseq [e event-seq]
-      (process-event! (merge e opts))))))
+   (write-tx
+     (doseq [e event-seq]
+       (process-event! (merge e opts))))))
 
 (defstate stream-processing
   :start (do
            (stream/start-consumers!)
            (stream/run-consumers! process-event-seq!))
   :stop (stream/stop-consumers!))
-

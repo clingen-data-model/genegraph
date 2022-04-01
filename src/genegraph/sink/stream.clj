@@ -53,7 +53,7 @@
 (defonce consumers (atom {}))
 
 (defn consumer-record-to-clj [consumer-record spec]
-  {::annotate/format spec 
+  {::annotate/format spec
    :genegraph.sink.event/key (.key consumer-record)
    :genegraph.sink.event/value (.value consumer-record)
    ::timestamp (.timestamp consumer-record)

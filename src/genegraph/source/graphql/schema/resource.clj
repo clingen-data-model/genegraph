@@ -1,6 +1,8 @@
 (ns genegraph.source.graphql.schema.resource
   "Definitions for model of RDFResource objects"
-  (:require [genegraph.database.query :as q]))
+  (:require [genegraph.database.query :as q]
+            [io.pedestal.log :as log]
+            [clojure.string :as s]))
 
 
 (defn subject-of [_ args value]
@@ -58,6 +60,54 @@
    :graphql-type :object
    :description "A generic implementation of an RDF Resource, suitable when no other type can be found or is appropriate"
    :implements [:Resource]})
+
+(defn record-metadata-query-resolver
+  "Given an iri (which can be in CURIE form), return version information:
+  - version
+  - replaces
+  - replaced_by
+  - is_version_of"
+  [context args value]
+  (let [r (q/resource (:iri args))]
+    r)
+  ;(let [[_ curie-prefix rest] (re-find #"^([a-zA-Z]+)[:_](.*)$" curie)]
+  ;  (if curie-prefix
+  ;    (if-let [iri-prefix (-> curie-prefix s/lower-case prefix-ns-map)]
+  ;     (str iri-prefix rest)
+  ;     r)))
+  )
+
+(def record-metadata-query-result
+  {:name :RecordMetadataQueryResult
+   :graphql-type :object
+   :description "A struct for metadata query results"
+   :fields {:iri {:type 'String
+                  :description "IRI of the resource. May be slightly different than the IRI used in a query."
+                  :resolve (fn [context args value] (str value))}
+            :version {:type 'String
+                      :description "Version information"
+                      :path [:owl/version-info]}
+            :is_version_of {:type 'String
+                            :description "Unversioned IRI this record is a version of"
+                            :path [:dc/is-version-of]}
+            :has_versions {:type '(list String)
+                           :description "Versions this record has. This is only a downward relation, does not represent lateral relations."
+                           :path [[:dc/is-version-of :<]]}
+            :replaces {:type 'String
+                       :description "IRI of the record replaced by this record"
+                       :path [:dc/replaces]}
+            :replaced_by {:type 'String
+                          :description "IRI of the record which replaces this record"
+                          :path [:dc/is-replaced-by]}}})
+
+(def record-metadata-query
+  {:name :record_metadata_query
+   :graphql-type :query
+   :description "Find resources via common record-level metadata. Results can be used in follow-up queries to obtain details."
+   :type :RecordMetadataQueryResult
+   :args {:iri {:type 'String}}
+   :resolve (fn [context args value]
+              (q/resource (:iri args)))})
 
 (def resource-query
   {:name :resource

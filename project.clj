@@ -29,7 +29,7 @@
                  [org.topbraid/shacl "1.3.2" :exclusions [org.antlr/antlr4-runtime]]
                  [mount "0.1.16"]
                  [com.velisco/clj-ftp "0.3.9"] ;; For downloading ftp docs
-                 [clj-http "3.9.1"] ;; For downloading 
+                 [clj-http "3.9.1"] ;; For downloading
                  [com.walmartlabs/lacinia-pedestal "0.15.0"]
                  [clj-commons/fs "1.5.2"]
                  ;; Dirwatch for updating base files in development
@@ -64,8 +64,9 @@
                    :dependencies [[io.pedestal/pedestal.service-tools "0.5.5"]]}
              :uberjar {:aot [genegraph.server]
                        :uberjar-name "app.jar"}}
+  :repl-options {:caught clojure.repl/pst}
   :plugins [[lein-codox "0.10.7"]]
   :codox {:output-path "docs"}
-  :jvm-opts ["-XX:MaxRAMPercentage=50"] 
+  :jvm-opts ["-XX:MaxRAMPercentage=50"]
   :main ^{:skip-aot true} genegraph.server)
 

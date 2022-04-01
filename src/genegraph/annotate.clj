@@ -7,7 +7,7 @@
             [genegraph.env :as env]
             [genegraph.interceptor :as intercept :refer [interceptor-enter-def]]
             [genegraph.transform.core :as transform]
-            [genegraph.transform.types :as xform-types :refer [model-to-jsonld]]
+            [genegraph.transform.types :as xform-types :refer [add-model-jsonld]]
             [genegraph.transform.gci-legacy :as gci-legacy]
             [genegraph.transform.actionability :as aci]
             [genegraph.transform.gci-neo4j :as gci-neo4j]
@@ -200,6 +200,4 @@
 
 (def add-jsonld-interceptor
   {:name ::add-jsonld-interceptor
-   :enter (fn [e]
-            (let [j (xform-types/model-to-jsonld e)]
-              (if j (assoc e ::jsonld j) e)))})
+   :enter (fn [e] (xform-types/add-model-jsonld e))})

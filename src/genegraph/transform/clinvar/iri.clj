@@ -9,6 +9,7 @@
 
 ; clingen terms
 (def cgterms (prefix-ns-map "cgterms"))
+(defn ns-cg [term] (str cgterms term))
 ;(def prefix-cv "https://www.ncbi.nlm.nih.gov/clinvar/")
 
 (def submitter (path-join cgterms "clinvar.submitter/"))

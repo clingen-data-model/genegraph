@@ -25,12 +25,25 @@
    model-resource/resource-interface
    model-resource/generic-resource
    model-resource/resource-query
+   model-resource/record-metadata-query
+   model-resource/record-metadata-query-result
    model-statement/statement
    model-evidence-line/evidence-line
    model-contribution/contribution
    model-proband/proband-evidence
    model-variant-evidence/variant-evidence
    model-variation/variation-descriptor
+   model-variation/categorical-variation-descriptor
+   model-variation/vrs-expression
+   model-variation/vrs-variation-member
+   model-variation/vrs-extension
+   model-variation/vrs-allele
+   model-variation/vrs-canonical-variation
+   model-variation/vrs-literal-sequence-expression
+   model-variation/vrs-sequence-location
+   model-variation/vrs-sequence-interval
+   model-variation/vrs-number
+   model-variation/variation-descriptor-query
    model-agent/agent
    model-find/types-enum
    model-find/find-query

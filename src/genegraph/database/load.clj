@@ -27,9 +27,9 @@
 (defn read-rdf
   ([src] (read-rdf src {}))
   ([src opts] (-> (ModelFactory/createDefaultModel)
-                  (.read src nil (jena-rdf-format (:format opts :rdf-xml)))))) 
+                  (.read src nil (jena-rdf-format (:format opts :rdf-xml))))))
 
-(defn store-rdf 
+(defn store-rdf
   "Expects src to be compatible with Model.read(src, nil). A java.io.InputStream is
   likely the most appropriate type. :name parameter required in opts."
   ([src opts]
@@ -39,27 +39,31 @@
       (.replaceNamedModel db (:name opts) in))
     true)))
 
-(defn- construct-statement 
+(defn- construct-statement
   ([stmt] (construct-statement stmt {}))
   ([stmt opts]
-   (let [[s p o] stmt
-         subject (cond
-                   (keyword? s) (local-class-names s)
-                   (string? s) (ResourceFactory/createResource s)
-                   (q/resource? s) (q/as-jena-resource s)
-                   :else s)
-         predicate (if (keyword? p)
-                     (local-property-names p)
-                     (ResourceFactory/createProperty p))
-         object (cond 
-                  (keyword? o) (local-class-names o)
-                  (= :Resource (:object (meta stmt))) (ResourceFactory/createResource o)
-                  (or (string? o)
-                      (int? o)
-                      (float? o)) (ResourceFactory/createTypedLiteral o)
-                  (q/resource? o) (q/as-jena-resource o)
-                  :else o)]
-     (ResourceFactory/createStatement subject predicate object))))
+   (try
+     (let [[s p o] stmt
+           subject (cond
+                     (keyword? s) (local-class-names s)
+                     (string? s) (ResourceFactory/createResource s)
+                     (q/resource? s) (q/as-jena-resource s)
+                     :else s)
+           predicate (if (keyword? p)
+                       (local-property-names p)
+                       (ResourceFactory/createProperty p))
+           object (cond
+                    (keyword? o) (local-class-names o)
+                    (= :Resource (:object (meta stmt))) (ResourceFactory/createResource o)
+                    (or (string? o)
+                        (int? o)
+                        (float? o)) (ResourceFactory/createTypedLiteral o)
+                    (q/resource? o) (q/as-jena-resource o)
+                    :else o)]
+       (ResourceFactory/createStatement subject predicate object))
+     (catch Exception e
+       (do (log/error :msg "Failed to create statement" :fn ::construct-statement :exception e :statement stmt)
+           (throw e))))))
 
 (defn statements-to-model
   [stmts]
@@ -67,7 +71,7 @@
         constructed-statements (into-array Statement (map construct-statement stmts))]
     (.add m constructed-statements)))
 
-(defn load-model 
+(defn load-model
   "Store model in the local, persistent database as named graph with name. Replace named graph if already present. Optionally, accepts an options map. At present the only option is :validate true/false. Defaults to false. If true, load-model will attempt to validate the model in the context of the local persistent data with whatever SHACL constraints are loaded in the database. If any constraints fail, will rollback the transaction, log an error, and return a structure signaling the failure, the reason, and a report with the result."
   ([model name]
    (load-model model name {}))

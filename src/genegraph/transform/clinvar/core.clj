@@ -1,19 +1,18 @@
 (ns genegraph.transform.clinvar.core
-  (:require [genegraph.database.load :as l]
-            [genegraph.database.query :as q]
+  (:require [genegraph.database.query :as q]
             [genegraph.transform.types :as xform-types :refer [add-model]]
 
             [genegraph.database.names :refer [prefix-ns-map]]
             [cheshire.core :as json]
             [clojure.java.io :as io]
             [io.pedestal.log :as log]
-            [genegraph.transform.clinvar.iri :as iri]
             [genegraph.transform.clinvar.common :refer [transform-clinvar
                                                         clinvar-to-model
                                                         clinvar-model-to-jsonld]]
-
-            [genegraph.transform.clinvar.variation-archive])
-  (:import (java.io StringReader)))
+            [genegraph.transform.clinvar.util :as util]
+    ;[genegraph.transform.clinvar.variation-archive]
+            [genegraph.transform.clinvar.variation]
+            [genegraph.database.load :as l]))
 
 ;(defmethod clinvar-to-jsonld :release_sentinel
 ;  [msg]
@@ -47,24 +46,36 @@
                    (fn [m-key] (nil? (some #(= m-key %) exclude-ks)))
                    (keys m))))
 
+(defmethod clinvar-to-model :default [event]
+  (log/debug :fn ::clinvar-to-model :dispatch :default :msg "No multimethod defined for event" :event event)
+  ; Avoids NPE on downstream interceptors expecting a model to exist
+  (l/statements-to-model [])
+  ;(assoc event ::q/model )
+  )
+
 (defmethod add-model :clinvar-raw [event]
   "Construct an Apache Jena Model for the message contained in event under :genegraph.sink.event/value.
   Set it to key :genegraph.database.query/model."
-  ;(let [info-keys [:genegraph.transform.core/format
-  ;                 :genegraph.sink.stream/topic
-  ;                 :genegraph.sink.stream/partition
-  ;                 :genegraph.sink.stream/offset]]
-  ;  (log/info :fn ::add-model :dispatch :clinvar-raw :value (select-keys event info-keys))
-  ;  (log/debug :fn ::add-model :dispatch :clinvar-raw :value (select-other-keys event info-keys)))
-  (let [event (-> event
-                  (#(assoc % ::parsed-value (-> %
-                                                :genegraph.sink.event/value
-                                                (json/parse-string true))))
-                  (#(assoc % :genegraph.transform.clinvar/format (get-clinvar-format (::parsed-value %))))
-                  (#(assoc % ::q/model (clinvar-to-model %))))]
-    (log/info :fn ::add-model :event event)
-    event))
+  (try
+    (let [event (-> event
+                    (#(assoc % ::parsed-value (-> %
+                                                  :genegraph.sink.event/value
+                                                  (json/parse-string true))))
+                    ;((fn [event] (log/info :event event) event))
+                    ;(#(assoc % ::parsed-value (-> % ::parsed-value util/parse-nested-content)))
+                    ;((fn [event] (log/info :msg "parsed content" :parsed-value (::parsed-value event)) event))
+                    (#(assoc % :genegraph.transform.clinvar/format (get-clinvar-format (::parsed-value %))))
+                    (#(assoc % ::q/model (clinvar-to-model %))))]
+      (log/debug :fn ::add-model :event event)
+      event)
+    (catch Exception e
+      (log/error :fn ::add-model :msg "Exception in clinvar add-model" :exception e)
+      (assoc event :exception e))))
 
-(defmethod xform-types/model-to-jsonld :clinvar-raw [event]
-  (log/debug :fn ::model-to-jsonld :event event)
-  (clinvar-model-to-jsonld event))
+(defmethod clinvar-model-to-jsonld :default [event]
+  (log/debug :fn ::clinvar-model-to-jsonld :dispatch :default :msg "No multimethod defined for event" :event event))
+
+(defmethod xform-types/add-model-jsonld :clinvar-raw [event]
+  (log/debug :fn ::add-model-jsonld :event event)
+  (let [j (clinvar-model-to-jsonld event)]
+    (assoc event :genegraph.annotate/jsonld j)))

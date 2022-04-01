@@ -50,6 +50,7 @@
  "gci" "http://gci.clinicalgenome.org/"
  "cgterms" "http://dataexchange.clinicalgenome.org/terms/"
  "cg" "https://search.clinicalgenome.org/r/cg_"
+ "vrs" "https://vrs.ga4gh.org/terms/"
  "cggciex" "http://dataexchange.clinicalgenome.org/gci-express/"
  "cggv" "http://dataexchange.clinicalgenome.org/gci/"
  "cgacta" "https://actionability.clinicalgenome.org/ac/Adult/api/sepio/doc/"
