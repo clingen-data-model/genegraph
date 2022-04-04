@@ -1238,8 +1238,6 @@
   "http://purl.obolibrary.org/obo/SEPIO_0000283"]
  [:sepio/is-consistent-with
   "http://purl.obolibrary.org/obo/SEPIO_0000099"]
- [:sepio/is-denovo
-  "http://purl.obolibrary.org/obo/SEPIO_0004605"]
  [:sepio/is-described-by
   "http://purl.obolibrary.org/obo/SEPIO_0000178"]
  [:sepio/is-equilavent-to

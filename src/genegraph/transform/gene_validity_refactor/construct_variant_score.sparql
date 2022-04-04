@@ -1,32 +1,34 @@
+# Handles SOP7.v2 and SOP8
 prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
 construct {
   ?evidenceLine a ?evidenceLineType ;
   :sepio/evidence-line-strength-score ?score ;
-  :sepio/has-evidence ?evidenceItem , ?functionEvidenceItem ;
+  :sepio/has-evidence ?evidenceItem , ?functionEvidenceItem ; # evidence about variant
   :sepio/calculated-score ?resultCalculatedScore ;
   :sepio/score-status ?scoreStatus ;
-  :sepio/is-denovo ?deNovo ;
   :dc/description ?evidenceLineDescription .
 
+# Variant evidence item
   ?evidenceItem a ?evidenceItemType ;
   :sepio/is-about-allele ?variant ;
   :dc/source ?article ;
   :geno/allele-origin ?alleleOrigin ;
-  :geno/has-zygosity ?zygosity ;
-  :rdfs/label ?individualLabel .
-
+  :geno/has-zygosity ?zygosity .
+  
+# Proband with variant evidence item
   ?individual a :sepio/ProbandWithVariantEvidenceItem ;
   :sepio/has-sex ?sex ;
   :sepio/age-unit ?ageUnit ;
   :sepio/age-type ?ageType ;
   :sepio/age-value ?ageValue ;
   :sepio/ethnicity ?ethnicity ; 
+  :rdfs/label ?individualLabel ;
   :sepio/previous-testing ?prevTesting ;
   :sepio/previous-testing-description ?prevTestingDescription ;
   :sepio/testing-methods ?methods ;
+  :sepio/has-textual-part ?phenotypeFreeText ;
   :sepio/is-about-condition ?phenotypes ;
-
   :sepio/has-variant ?evidenceItem .
 
   ?family a :pco/Family ;
@@ -47,8 +49,8 @@ where {
   gci:calculatedScore ?calculatedScore ;
   gci:date_created ?date_created .
 
-  BIND(IF(?deNovo = "Yes", :geno/DeNovoAlleleOrigin , :geno/AlleleOrigin ) AS ?alleleOrigin) .
-  
+  BIND(IF(?deNovo = "Yes", :geno/DeNovoAlleleOrigin , IF(?deNovo = "No", :geno/GermlineAlleleOrigin , :geno/AlleleOrigin ) ) AS ?alleleOrigin) .
+
   OPTIONAL {
     ?evidenceLine gci:functionalDataExplanation ?functionalDataExplanation ;
     BIND(IRI(CONCAT(STR(?evidenceLine), "_function_evidence_item")) AS ?functionEvidenceItem) .
@@ -106,6 +108,10 @@ where {
   
   OPTIONAL {
     ?method gci:previousTestingDescription ?prevTestingDescription .
+  }
+
+  OPTIONAL {
+     ?individual gci:termsInDiagnosis ?phenotypeFreeText .
   }
 
   OPTIONAL {
