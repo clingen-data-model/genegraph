@@ -2,11 +2,9 @@
   (:require [genegraph.database.names :as names :refer [prefix-ns-map]]
             [genegraph.rocksdb :as rocksdb]
             [genegraph.util.http-client :as ghttp :refer [http-get-with-cache]]
-            ;[clj-http.client :as http]
             [io.pedestal.log :as log]
             [cheshire.core :as json])
-  (:import (clojure.lang Keyword)
-           (org.rocksdb RocksDB)))
+  (:import (clojure.lang Keyword)))
 
 (def cancer-variants-normalize-url
   "URL for cancervariants.org VRSATILE normalization.
@@ -32,24 +30,6 @@
   (assoc val "@context" vicc-context))
 
 (def vicc-db-name "cancervariants-cache.db")
-
-;(defn http-get-with-cache
-;  "Performs an http get, storing the response in rocksdb and retrieving from there on future requests with the same parameters.
-;  Due to need to serialize, drops the :http-client clj-http response field."
-;  [cache-db-name url & [req & r]]
-;  (let [cache-db ^RocksDB (rocksdb/open cache-db-name)]
-;    (try
-;      (let [key-obj {:url url :req req :r r}
-;            cached-value (rocksdb/rocks-get cache-db key-obj)]
-;        (log/info :cached-value cached-value)
-;        (if (not= ::rocksdb/miss cached-value)
-;          (do (log/info :fn ::http-get-with-cache :msg "Returning cached value for request" :key-obj key-obj)
-;              cached-value)
-;          (let [response (dissoc (apply #(http/get url req) r) :http-client)]
-;            (log/info :msg "Caching response in rocksdb" :response response)
-;            (rocksdb/rocks-put! cache-db key-obj response)
-;            response)))
-;      (finally (rocksdb/close cache-db)))))
 
 (defn normalize-spdi [^String spdi-expression]
   (log/info :fn ::normalize-spdi :variation-expression spdi-expression)

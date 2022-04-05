@@ -39,7 +39,7 @@
       (.replaceNamedModel db (:name opts) in))
     true)))
 
-(defn- construct-statement
+(defn construct-statement
   ([stmt] (construct-statement stmt {}))
   ([stmt opts]
    (try
