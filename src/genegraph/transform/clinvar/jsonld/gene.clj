@@ -2,7 +2,7 @@
   (:require [genegraph.database.load :as l]
             [genegraph.database.query :as q]
             [genegraph.transform.clinvar.common :refer [transform-clinvar
-                                                        clinvar-to-jsonld
+                                                        clinvar-model-to-jsonld
                                                         variation-geno-type
                                                         genegraph-kw-to-iri]]
             [genegraph.transform.clinvar.iri :as iri]))
@@ -36,5 +36,5 @@
         (-> msg (dissoc
                   :full_name))))))
 
-(defmethod clinvar-to-jsonld :gene [msg]
+(defmethod clinvar-model-to-jsonld :gene [msg]
   (gene-to-jsonld msg))

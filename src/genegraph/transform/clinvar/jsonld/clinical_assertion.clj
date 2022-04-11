@@ -3,7 +3,7 @@
             [genegraph.database.names :refer [local-property-names local-class-names prefix-ns-map]]
             [genegraph.database.query :as q]
             [genegraph.transform.clinvar.common :refer [transform-clinvar
-                                                        clinvar-to-jsonld
+                                                        clinvar-model-to-jsonld
                                                         variation-geno-type
                                                         genegraph-kw-to-iri
                                                         vcv-review-status-to-evidence-strength-map
@@ -14,7 +14,7 @@
             [genegraph.transform.clinvar.iri :as iri]
             [genegraph.transform.clinvar.util :refer [in?]]
             [io.pedestal.log :as log]
-    ;[clojure.set :as set]
+            ;;[clojure.set :as set]
             [clojure.string :as s]))
 
 (def genes-for-variation-byversion-query "
@@ -208,7 +208,7 @@ ORDER BY ?s_variant ?gene_id"
          }
         ))))
 
-(defmethod clinvar-to-jsonld :clinical_assertion [msg]
+(defmethod clinvar-model-to-jsonld :clinical_assertion [msg]
   (clinical-assertion-to-jsonld msg))
 
 ;(defmethod transform-clinvar :clinical_assertion [msg]
