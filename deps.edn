@@ -68,7 +68,8 @@
   org.apache.jena/jena-tdb2                       {:mvn/version "3.17.0"}
   org.apache.jena/jena-text                       {:mvn/version "3.17.0"}
   org.apache.kafka/kafka-clients                  {:mvn/version "3.1.0"}
-  org.apache.lucene/lucene-suggest                {:mvn/version "9.1.0"} ; jena 3.14.0 includes lucene 7.4.0
+  ;; Jena 3.17.0 includes codecs from Lucene 7.7.3.
+  org.apache.lucene/lucene-suggest                {:mvn/version "7.7.3"}
   org.codehaus.janino/janino                      {:mvn/version "3.1.6"}
   ;; for generating jsonld context
   org.flatland/ordered                            {:mvn/version "1.15.10"}
