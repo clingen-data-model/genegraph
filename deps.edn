@@ -23,17 +23,12 @@
                 org.openjfx/javafx-web            {:mvn/version "18"}}
    :main-opts ["-m" "cognitect.rebl"]}}
  :deps
- {
-  org.clojure/clojure                             {:mvn/version "1.11.1"}
-  org.clojure/core.async                          {:mvn/version "1.5.648"
-                                                   :exclusions
-                                                   [org.clojure/tools.reader]}
+ {org.clojure/clojure                             {:mvn/version "1.11.1"}
+  org.clojure/core.async                          {:mvn/version "1.5.648"}
   org.clojure/data.csv                            {:mvn/version "1.0.1"}
   buddy/buddy-sign                                {:mvn/version "3.4.333"}
   camel-snake-kebab/camel-snake-kebab             {:mvn/version "0.4.2"}
-  ch.qos.logback/logback-classic                  {:mvn/version "1.2.11"
-                                                   :exclusions
-                                                   [org.slf4j/slf4j-api]}
+  ch.qos.logback/logback-classic                  {:mvn/version "1.2.11"}
   cheshire/cheshire                               {:mvn/version "5.10.2"}
   clj-commons/fs                                  {:mvn/version "1.6.310"}
   clj-http/clj-http                               {:mvn/version "3.12.3"} ; For downloading
@@ -70,12 +65,9 @@
   org.apache.jena/jena-iri                        {:mvn/version "3.17.0"}
   org.apache.jena/jena-tdb                        {:mvn/version "3.17.0"}
   org.apache.jena/jena-tdb2                       {:mvn/version "3.17.0"}
-  org.apache.jena/jena-text                       {:mvn/version "3.17.0"
-                                                   :exclusions
-                                                   [#_org.apache.jena/jena-cmds
-                                                    org.apache.jena/apache-jena-libs]}
+  org.apache.jena/jena-text                       {:mvn/version "3.17.0"}
   org.apache.kafka/kafka-clients                  {:mvn/version "3.1.0"}
-  org.apache.lucene/lucene-suggest                {:mvn/version "9.1.0"} ;; jena 3.14.0 includes lucene 7.4.0
+  org.apache.lucene/lucene-suggest                {:mvn/version "9.1.0"} ; jena 3.14.0 includes lucene 7.4.0
   org.codehaus.janino/janino                      {:mvn/version "3.1.6"}
   ;; for generating jsonld context
   org.flatland/ordered                            {:mvn/version "1.15.10"}
@@ -84,8 +76,4 @@
   org.slf4j/jul-to-slf4j                          {:mvn/version "1.7.36"}
   org.slf4j/log4j-over-slf4j                      {:mvn/version "1.7.36"}
   ;; dependency superceeded by antlr provided via lacinia dependency
-  org.topbraid/shacl                              {:mvn/version "1.4.2"
-                                                   :exclusions
-                                                   [org.antlr/antlr4-runtime]}
-  }
- }
+  org.topbraid/shacl                              {:mvn/version "1.4.2"}}}
