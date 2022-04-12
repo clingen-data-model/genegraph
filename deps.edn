@@ -37,6 +37,7 @@
   com.fasterxml.jackson.core/jackson-databind     {:mvn/version "2.13.2"}
   com.github.danielwegener/logback-kafka-appender {:mvn/version "0.2.0-RC2"}
   com.google.cloud/google-cloud-storage           {:mvn/version "2.6.0"}
+  ;; :exclusions works around LICENSE/license filename case conflict in build.
   com.google.firebase/firebase-admin              {:mvn/version "8.1.0"
                                                    :exclusions
                                                    [io.grpc/grpc-netty-shaded]}
