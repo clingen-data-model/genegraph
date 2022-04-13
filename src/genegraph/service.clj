@@ -1,31 +1,30 @@
 (ns genegraph.service
-  (:require [hiccup.page :refer [html5]]
-            [io.pedestal.interceptor :as pedestal-interceptor]
-            [io.pedestal.interceptor.chain :as pedestal-chain]
-            [io.pedestal.http :as http]
-            [io.pedestal.http.route :as route]
-            [io.pedestal.http.body-params :as body-params]
-            [ring.util.response :as ring-resp]
-            [genegraph.source.html.common :as cg-html]
-            [com.walmartlabs.lacinia.pedestal :as lacinia]
-            [com.walmartlabs.lacinia.pedestal2 :as lacinia-pedestal]
-            [com.walmartlabs.lacinia.pedestal.subscriptions :as lacinia-subs]
-            [com.walmartlabs.lacinia.schema :as schema]
-            [com.walmartlabs.lacinia.util :as util]
-            [genegraph.source.graphql.core :as gql]
-            [genegraph.source.graphql.experimental-schema :as experimental-schema]
-            [genegraph.auth :as auth]
-            [genegraph.response-cache :refer [response-cache-interceptor]]
-            [genegraph.env :as env]
-            [mount.core :refer [defstate]]
+  (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.edn :as edn]
             [clojure.set :as set]
             [clojure.string :as str]
+            [com.walmartlabs.lacinia.pedestal :as lacinia]
+            [com.walmartlabs.lacinia.pedestal.subscriptions :as lacinia-subs]
+            [com.walmartlabs.lacinia.pedestal2 :as lacinia-pedestal]
+            [com.walmartlabs.lacinia.schema :as schema]
+            [com.walmartlabs.lacinia.util :as util]
+            [genegraph.auth :as auth]
             [genegraph.database.util :refer [begin-read-tx close-read-tx]]
-            [io.pedestal.log :as log])
-  (:import java.net.InetAddress
-           (javax.servlet.http HttpServletRequest HttpServletResponse)))
+            [genegraph.env :as env]
+            [genegraph.response-cache :refer [response-cache-interceptor]]
+            [genegraph.source.graphql.core :as gql]
+            [genegraph.source.graphql.experimental-schema :as experimental-schema]
+            [genegraph.source.html.common :as cg-html]
+            [io.pedestal.http :as http]
+            [io.pedestal.http.body-params :as body-params]
+            [io.pedestal.http.route :as route]
+            [io.pedestal.interceptor :as pedestal-interceptor]
+            [io.pedestal.interceptor.chain :as pedestal-chain]
+            [io.pedestal.log :as log]
+            [mount.core :refer [defstate]]
+            [ring.util.response :as ring-resp])
+  (:import [java.net InetAddress]
+           [javax.servlet.http HttpServletRequest HttpServletResponse]))
 
 
 ;; Currently just makes sure :error doesn't reach Pedestal
@@ -106,7 +105,7 @@
                (log/info :fn :request-logging-interceptor
                             :uri uri
                             :request-method (str/upper-case request-method)
-                            :hostname (.getHostName host) 
+                            :hostname (.getHostName host)
                             :request-ip-addr (get-in ctx [:request :remote-addr])
                             :servlet-request (.toString (.getRequestURL (get-in ctx [:request :servlet-request])))
                             :servlet-request-body (get-in ctx [:request :body])
@@ -114,7 +113,7 @@
                                                     .getStatus)
                             :response-time (str total "ms"))
                ctx))}))
-    
+
 (defn dev-interceptors [gql-schema]
   (-> (lacinia-pedestal/default-interceptors gql-schema {})
       (lacinia/inject nil :replace ::lacinia-pedestal/body-data)
@@ -169,7 +168,7 @@
                             :before
                             ::lacinia-pedestal/body-data))]
     (cond-> interceptor-chain
-      env/use-response-cache (lacinia/inject 
+      env/use-response-cache (lacinia/inject
                               (pedestal-interceptor/interceptor
                                (response-cache-interceptor))
                               :after
@@ -198,7 +197,7 @@
       ))
 
 (defn prod-subscription-interceptors [gql-schema]
-  (let [interceptor-chain 
+  (let [interceptor-chain
         (-> (lacinia-subs/default-subscription-interceptors gql-schema {})
             (lacinia/inject request-gate-interceptor
                             :before
@@ -217,7 +216,7 @@
             ;;                 ::lacinia-subs/inject-app-context)
             )]
     (cond-> interceptor-chain
-      env/use-response-cache (lacinia/inject 
+      env/use-response-cache (lacinia/inject
                               (pedestal-interceptor/interceptor
                                (response-cache-interceptor))
                               :before
@@ -253,14 +252,14 @@
   (-> base-service-map
       (assoc :io.pedestal.http/routes (graphql-routes interceptors))
       lacinia-pedestal/enable-graphiql
-      (lacinia-pedestal/enable-subscriptions 
+      (lacinia-pedestal/enable-subscriptions
        gql-schema
        {:subscription-interceptors subscription-interceptors})))
 
 (defn transformer-service []
   base-service-map)
 
-(defn dev-service 
+(defn dev-service
   "Service map to be used for development mode."
   ([] (dev-service (if env/use-experimental-schema
                      experimental-schema/merged-schema
@@ -279,4 +278,3 @@
    (service-map (prod-interceptors gql-schema)
                 (prod-subscription-interceptors gql-schema)
                 gql-schema)))
-
