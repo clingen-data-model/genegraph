@@ -44,7 +44,6 @@
   com.taoensso/nippy                              {:mvn/version "3.1.1"}
   com.velisco/clj-ftp                             {:mvn/version "0.3.17"} ; For downloading ftp docs
   com.walmartlabs/lacinia-pedestal                {:mvn/version "1.0"}
-  commons-codec/commons-codec                     {:mvn/version "1.15"} ; Req by Jena--not in deps
   digest/digest                                   {:mvn/version "1.4.10"}
   ;; alternative to REBL
   djblue/portal                                   {:mvn/version "0.23.0"}
