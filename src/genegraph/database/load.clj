@@ -1,20 +1,19 @@
 (ns genegraph.database.load
-  (:require [mount.core :as mount :refer [defstate]]
+  (:require [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
-            [camel-snake-kebab.core :as csk]
-            [clojure.java.io :as io]
             [genegraph.database.instance :refer [db]]
-            [genegraph.database.property-store :as property-store]
-            [genegraph.database.util :refer [property tx write-tx]]
             [genegraph.database.names :refer [local-property-names local-class-names]]
+            [genegraph.database.property-store :as property-store]
             [genegraph.database.query :as q]
+            [genegraph.database.util :refer [property tx write-tx]]
             [genegraph.database.validation :as v]
-            [io.pedestal.log :as log])
-  (:import [org.apache.jena.tdb2 TDB2Factory]
+            [io.pedestal.log :as log]
+            [mount.core :as mount :refer [defstate]])
+  (:import [org.apache.jena.ontology OntResource]
            [org.apache.jena.query TxnType Dataset]
-           [org.apache.jena.rdf.model Model ModelFactory Literal Resource ResourceFactory
-            Statement]
-           [org.apache.jena.ontology OntResource]))
+           [org.apache.jena.rdf.model Model ModelFactory Literal Resource
+            ResourceFactory Statement]
+           [org.apache.jena.tdb2 TDB2Factory]))
 
 (def jena-rdf-format
   {:rdf-xml "RDF/XML"
