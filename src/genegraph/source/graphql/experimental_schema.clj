@@ -70,7 +70,7 @@
 (defn schema-description []
   (schema-builder/schema-description model))
 
-(defn query 
+(defn query
   "Function not used except for evaluating queries in the REPL
   may consider moving into test namespace in future"
   ([query-str]

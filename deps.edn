@@ -28,7 +28,9 @@
   org.clojure/data.csv                            {:mvn/version "1.0.1"}
   camel-snake-kebab/camel-snake-kebab             {:mvn/version "0.4.2"}
   ch.qos.logback/logback-classic                  {:mvn/version "1.2.11"}
+  ;; Why not just clojure.data.json? =tbl
   cheshire/cheshire                               {:mvn/version "5.10.2"}
+  ;; fs included for delete-dir and mkdirs. =tbl
   clj-commons/fs                                  {:mvn/version "1.6.310"}
   clj-http/clj-http                               {:mvn/version "3.12.3"} ; For downloading
   com.apicatalog/titanium-json-ld                 {:mvn/version "1.3.0"}
@@ -41,7 +43,7 @@
                                                    :exclusions
                                                    [io.grpc/grpc-netty-shaded]}
   com.taoensso/nippy                              {:mvn/version "3.1.1"}
-  ;; For downloading ftp docs with miner.ftp.
+  ;; Included for downloading ftp docs with miner.ftp. =tbl
   com.velisco/clj-ftp                             {:mvn/version "0.3.17"}
   com.walmartlabs/lacinia-pedestal                {:mvn/version "1.0"}
   digest/digest                                   {:mvn/version "1.4.10"}
@@ -56,6 +58,7 @@
   io.pedestal/pedestal.service                    {:mvn/version "0.5.10"}
   ;; dirwatch for updating base files in development
   juxt/dirwatch                                   {:mvn/version "0.2.5"}
+  ;; medley included for filter-keys and deep-merge. =tbl
   medley/medley                                   {:mvn/version "1.4.0"}
   mount/mount                                     {:mvn/version "0.1.16"}
   org.apache.jena/jena-arq                        {:mvn/version "3.17.0"}
@@ -65,10 +68,10 @@
   org.apache.jena/jena-tdb2                       {:mvn/version "3.17.0"}
   org.apache.jena/jena-text                       {:mvn/version "3.17.0"}
   org.apache.kafka/kafka-clients                  {:mvn/version "3.1.0"}
-  ;; Jena 3.17.0 includes codecs from Lucene 7.7.3.
+  ;; Jena 3.17.0 includes codecs from Lucene 7.7.3. =tbl
   org.apache.lucene/lucene-suggest                {:mvn/version "7.7.3"}
   org.codehaus.janino/janino                      {:mvn/version "3.1.6"}
-  ;; for generating jsonld context
+  ;; ordered included for generating jsonld context with ordered-map. =tbl
   org.flatland/ordered                            {:mvn/version "1.15.10"}
   org.glassfish/jakarta.json                      {:mvn/version "2.0.1"}
   org.slf4j/jcl-over-slf4j                        {:mvn/version "1.7.36"}
