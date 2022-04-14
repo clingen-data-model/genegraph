@@ -1,6 +1,7 @@
 (ns genegraph.source.graphql.schema.variation-descriptor
   (:require [genegraph.database.query :as q]
-            [io.pedestal.log :as log]))
+            [io.pedestal.log :as log]
+            [genegraph.database.names :as names]))
 
 (def variation-descriptor
   {:name :VariationDescriptor
@@ -158,8 +159,24 @@
         {variation-iri :variation_iri} args
         variation-resource (q/resource variation-iri)
         ;descriptor-resources (q/ld-> variation-resource [[:vrs/xrefs :<]])
-        descriptor-resources (q/select "SELECT ?descriptor WHERE { ?descriptor :vrs/xrefs ?variation_iri }"
-                                       {:variation_iri (str variation-resource)})
+
+
+        ;by-iri (q/select "SELECT ?iri WHERE { ?iri a :vrs/CategoricalVariationDescriptor }"
+        ;                 {:iri (str variation)})
+        resource-has-type? (fn [r class-kw]
+                             (let [type-qualified (str (get names/local-class-names class-kw))]
+                               (log/debug :fn :resource-has-type? :r r :class-kw class-kw :type-qualified type-qualified)
+                               (let [hasit? (not-empty (q/select "SELECT ?iri WHERE { ?iri a ?type }"
+                                                                 {:iri r
+                                                                  :type (q/resource type-qualified)}))]
+                                 (log/debug :fn :resource-has-type? :hasit? hasit?)
+                                 hasit?
+                                 )))
+        descriptor-resources
+        (if (resource-has-type? variation-resource :vrs/CategoricalVariationDescriptor)
+          [variation-resource]
+          (q/select "SELECT ?descriptor WHERE { ?descriptor :vrs/xrefs ?variation_iri }"
+                    {:variation_iri (str variation-resource)}))
         ]
     (log/info :variation-iri variation-iri)
     (log/info :variation-resource variation-resource)
@@ -178,6 +195,7 @@
     ;           last)
     ;      )))
     ))
+
 
 (def variation-descriptor-query
   {:name :variation_descriptor_query
