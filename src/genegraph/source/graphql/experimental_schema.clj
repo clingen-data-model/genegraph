@@ -13,6 +13,8 @@
             [genegraph.source.graphql.schema.value-set :as value-set]
             [genegraph.source.graphql.schema.bibliographic-resource :as model-bibliographic-resource]
             [genegraph.source.graphql.schema.segregation :as model-segregation]
+            [genegraph.source.graphql.schema.case-control-evidence :as model-case-control]
+            [genegraph.source.graphql.schema.cohort :as model-cohort]
             [com.walmartlabs.lacinia :as lacinia]
             [genegraph.database.util :refer [tx]]
             [genegraph.source.graphql.common.schema :as schema-builder]
@@ -52,6 +54,8 @@
    value-set/value-set
    family/family
    model-segregation/segregation
+   model-case-control/case-control-evidence
+   model-cohort/cohort
    model-bibliographic-resource/bibliographic-resource])
 
 
