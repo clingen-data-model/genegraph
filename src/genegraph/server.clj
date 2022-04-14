@@ -28,6 +28,7 @@
      :route-name ::env]]})
 
 (defn start-server! []
+  (log/info :fn ::start-server! :env/mode env/mode)
   (let [service-map (case env/mode
                       "production" (service/prod-service)
                       "transformer" (service/transformer-service)

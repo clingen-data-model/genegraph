@@ -106,7 +106,7 @@
                (log/info :fn :request-logging-interceptor
                             :uri uri
                             :request-method (str/upper-case request-method)
-                            :hostname (.getHostName host) 
+                            :hostname (.getHostName host)
                             :request-ip-addr (get-in ctx [:request :remote-addr])
                             :servlet-request (.toString (.getRequestURL (get-in ctx [:request :servlet-request])))
                             :servlet-request-body (get-in ctx [:request :body])
@@ -114,7 +114,7 @@
                                                     .getStatus)
                             :response-time (str total "ms"))
                ctx))}))
-    
+
 (defn dev-interceptors [gql-schema]
   (-> (lacinia-pedestal/default-interceptors gql-schema {})
       (lacinia/inject nil :replace ::lacinia-pedestal/body-data)
@@ -169,7 +169,7 @@
                             :before
                             ::lacinia-pedestal/body-data))]
     (cond-> interceptor-chain
-      env/use-response-cache (lacinia/inject 
+      env/use-response-cache (lacinia/inject
                               (pedestal-interceptor/interceptor
                                (response-cache-interceptor))
                               :after
@@ -198,7 +198,7 @@
       ))
 
 (defn prod-subscription-interceptors [gql-schema]
-  (let [interceptor-chain 
+  (let [interceptor-chain
         (-> (lacinia-subs/default-subscription-interceptors gql-schema {})
             (lacinia/inject request-gate-interceptor
                             :before
@@ -217,7 +217,7 @@
             ;;                 ::lacinia-subs/inject-app-context)
             )]
     (cond-> interceptor-chain
-      env/use-response-cache (lacinia/inject 
+      env/use-response-cache (lacinia/inject
                               (pedestal-interceptor/interceptor
                                (response-cache-interceptor))
                               :before
@@ -253,14 +253,14 @@
   (-> base-service-map
       (assoc :io.pedestal.http/routes (graphql-routes interceptors))
       lacinia-pedestal/enable-graphiql
-      (lacinia-pedestal/enable-subscriptions 
-       gql-schema
-       {:subscription-interceptors subscription-interceptors})))
+      (lacinia-pedestal/enable-subscriptions
+        gql-schema
+        {:subscription-interceptors subscription-interceptors})))
 
 (defn transformer-service []
   base-service-map)
 
-(defn dev-service 
+(defn dev-service
   "Service map to be used for development mode."
   ([] (dev-service (if env/use-experimental-schema
                      experimental-schema/merged-schema

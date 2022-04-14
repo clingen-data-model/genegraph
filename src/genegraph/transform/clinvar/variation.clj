@@ -5,11 +5,13 @@
                                               local-class-names
                                               property-uri->keyword
                                               prefix-ns-map]]
+            [genegraph.database.util :refer [tx]]
             [genegraph.transform.clinvar.common :as common]
-            [genegraph.transform.clinvar.util :refer [string->InputStream]]
+            [genegraph.transform.clinvar.util :as util :refer [string->InputStream]]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.jsonld.common :as jsonld]
             [genegraph.transform.clinvar.cancervariants :as vicc]
+            [genegraph.source.graphql.experimental-schema :as experimental-schema]
             [clojure.pprint :refer [pprint]]
             [clojure.datafy :refer [datafy]]
             [clojure.string :as s]
@@ -17,7 +19,7 @@
             [cheshire.core :as json]
             [clj-http.client :as http]
             [io.pedestal.log :as log]
-            [genegraph.transform.clinvar.util :as util])
+            [com.walmartlabs.lacinia :as lacinia])
   (:import (org.apache.jena.rdf.model Model Statement)
            (java.io ByteArrayInputStream)
            (clojure.lang Keyword)))
@@ -270,11 +272,11 @@
   (let [expr-kw :rdf/value
         descriptor-resource (first (q/select "SELECT ?iri WHERE { ?iri a :vrs/CategoricalVariationDescriptor }" {} model))
         expressions (q/select "SELECT ?object WHERE { ?iri :rdf/value ?object }"
-                               {:iri descriptor-resource}
-                               model)]
+                              {:iri descriptor-resource}
+                              model)]
     (when (< 1 (count expressions)) (let [e (ex-info "More than 1 object in model" {:model model
-                                                                                     :object-exprs expressions})]
-                                       (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
+                                                                                    :object-exprs expressions})]
+                                      (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
     (let [expression (first expressions)
           expression-type (q/ld1-> expression [:rdf/type])
           vrs-obj (vicc/vrs-variation-for-expression expression (keyword (str expression)))]
@@ -388,6 +390,83 @@
                "@prefix" true}
 
     }})
+
+
+;(def graphql-schema (genegraph.source.graphql.experimental-schema/schema))
+;(defn graphql-query
+;  "Function not used except for evaluating queries in the REPL
+;  may consider moving into test namespace in future"
+;  ([query-str]
+;   (graphql-query query-str nil))
+;  ([query-str variables]
+;   (tx (lacinia/execute graphql-schema query-str variables nil))))
+
+
+(def variation-descriptor-query
+  "
+query($variation_iri:String) {
+  variation_descriptor_query(variation_iri: $variation_iri) {
+    id: iri
+    type: __typename
+    ... on CategoricalVariationDescriptor {
+      label
+      object {
+        id: iri
+        type: __typename
+        ... on CanonicalVariation {
+          complement
+          variation {
+            ... alleleFields
+          }
+        }
+        ... on Allele {
+          ...alleleFields
+        }
+      }
+      xrefs
+      members {
+        id: iri
+        type: __typename
+        expressions {
+          type: __typename
+          value
+          syntax
+          syntax_version
+        }
+      }
+      extensions {
+        type: __typename
+        name
+        value
+      }
+    }
+  }
+}
+
+fragment alleleFields on Allele {
+  location {
+    id: iri
+    type: __typename
+    interval {
+      type: __typename
+      start {
+        type: __typename
+        value
+      }
+      end {
+        type: __typename
+        value
+      }
+    }
+  }
+}
+")
+
+(defmethod common/clinvar-add-event-graphql :variation [event]
+  (let [iri (:genegraph.annotate/iri event)]
+    (assoc event :graphql-params {:query variation-descriptor-query
+                                  :variables {:variation_iri (str iri)}})))
+
 
 (defmethod common/clinvar-model-to-jsonld :variation [event]
   (let [model (::q/model event)]
