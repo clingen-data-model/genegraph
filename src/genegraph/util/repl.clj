@@ -360,4 +360,3 @@
   (let [assertion (q/resource (str "CGGV:" guid))]
     {:gene (q/ld1-> assertion [:sepio/has-subject :sepio/has-subject :skos/preferred-label])
      :disease (q/ld1-> assertion [:sepio/has-subject :sepio/has-object :rdfs/label])}))
-
