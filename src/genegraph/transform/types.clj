@@ -8,6 +8,13 @@
           Uses transform format to dispatch."
           :genegraph.transform.core/format)
 
+(defmulti add-event-graphql
+          "Adds a :genegraph.annotate/graphql field containing:
+
+          :query - string of the graphql query
+          :variables - a map of query variables (keys should be keywords, or as expected by resolvers involved)"
+          :genegraph.transform.core/format)
+
 (defmulti transform-doc :format)
 
 (defn target-base []

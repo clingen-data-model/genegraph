@@ -11,6 +11,7 @@
             [genegraph.transform.gci-legacy :as gci-legacy]
             [genegraph.transform.actionability :as aci]
             [genegraph.transform.gci-neo4j :as gci-neo4j]
+            [genegraph.source.graphql.experimental-schema :as experimental-schema]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [io.pedestal.log :as log]
@@ -72,12 +73,12 @@
   (if (and env/validate-events
            (not (contains? event ::validation-shape)))
     (assoc event
-           ::validation-shape
-           (some-> event
-                   ::root-type
-                   shapes
-                   :graph-name
-                   q/get-named-graph))
+      ::validation-shape
+      (some-> event
+              ::root-type
+              shapes
+              :graph-name
+              q/get-named-graph))
     event))
 
 (def add-validation-shape-interceptor
@@ -94,8 +95,8 @@
              (not (::validation-context event))
              context-graph-list)
       (assoc event
-             ::validation-context
-             (apply q/union (map q/get-named-graph context-graph-list)))
+        ::validation-context
+        (apply q/union (map q/get-named-graph context-graph-list)))
       event)))
 
 (def add-validation-context-interceptor
@@ -201,3 +202,16 @@
 (def add-jsonld-interceptor
   {:name ::add-jsonld-interceptor
    :enter (fn [e] (xform-types/add-model-jsonld e))})
+
+(def add-graphql-serialization-interceptor
+  "Interceptor for attaching graphql query information for an event"
+  {:name ::add-graphql-serialization-interceptor
+   :enter (fn [e] (let [e-with-params (xform-types/add-event-graphql e)
+                        gql-params (:graphql-params e-with-params)]
+                    (if (not-empty gql-params)
+                      (assoc e-with-params
+                        ::graphql-serialization
+                        (experimental-schema/query
+                          (:query gql-params)
+                          (:variables gql-params)))
+                      e)))})
