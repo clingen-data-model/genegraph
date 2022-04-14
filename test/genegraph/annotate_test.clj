@@ -6,7 +6,7 @@
             [clojure.test :refer :all]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.string :as string])
+            [clojure.string :as string]))
 
 (use-fixtures :each mount-database-fixture)  
 
