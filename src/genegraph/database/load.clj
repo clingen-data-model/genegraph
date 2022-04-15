@@ -78,7 +78,7 @@
   ([model name opts]
    (write-tx
     (.replaceNamedModel db name model)
-    (property-store/put-model! model)
+    ;; (property-store/put-model! model)
     {:succeeded true})))
 
 (defn remove-model
