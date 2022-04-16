@@ -83,6 +83,7 @@
             "diseaseId" {"@type" "@id"}
             "caseInfoType" {"@type" "@id"}
             "variantType" {"@type" "@id"}
+            "caseControl" {"@type" "@id"}                           
             ;; "experimental_scored" {"@type" "@id"}
             ;; "caseControl_scored" {"@type" "@id"}
             ;; "variants" {"@type" "@id"}
