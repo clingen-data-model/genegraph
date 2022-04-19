@@ -282,7 +282,9 @@
           vrs-obj (vicc/vrs-variation-for-expression expression (keyword (str expression)))]
       (if (empty? vrs-obj)
         (do (let [e (ex-info "No variation received from VRS normalization" {:fn ::add-vrs-model :expression expression})]
-              (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
+              (log/error :message (ex-message e) :data (ex-data e))
+              ;; (throw e)
+              ))
         (let [vrs-id (get vrs-obj "_id")
               vrs-model (l/read-rdf (string->InputStream (json/generate-string vrs-obj)) {:format :json-ld})]
           (log/debug :fn ::add-vrs-model

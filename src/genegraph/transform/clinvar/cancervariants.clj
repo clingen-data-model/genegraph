@@ -10,7 +10,7 @@
   "URL for cancervariants.org VRSATILE normalization.
   Returns a JSON document containing a variation_descriptor field along with other metadata."
   ;"https://normalize.cancervariants.org/variation/normalize"
-  "https://normalize.cancervariants.org/variation/toVRS")
+  "https://normalize.cancervariants.org/variation/to_vrs")
 
 (def canonical_spdi_to_categorical_variation
   "https://normalize.cancervariants.org/variation/canonical_spdi_to_categorical_variation")
@@ -39,10 +39,10 @@
         status (:status response)]
     (case status
       200 (let [body (-> response :body json/parse-string)]
-            (log/info :fn ::vrs-allele-for-variation :body body)
+            (log/debug :fn ::vrs-allele-for-variation :body body)
             (-> body (get "categorical_variation") add-vicc-context))
       ; Error case
-      (log/error :fn ::vrs-allele-for-variation :msg "Error in VRS normalization request" :status status :response response))))
+      (log/error :fn ::normalize-spdi :msg "Error in VRS normalization request" :status status :response response))))
 
 (defn normalize-general
   [^String variation-expression]
@@ -53,10 +53,10 @@
         status (:status response)]
     (case status
       200 (let [body (-> response :body json/parse-string)]
-            (log/info :fn ::vrs-allele-for-variation :body body)
+            (log/debug :fn ::vrs-allele-for-variation :body body)
             (-> body (get "variations") first add-vicc-context))
       ; Error case
-      (log/error :fn ::vrs-allele-for-variation :msg "Error in VRS normalization request" :status status :response response))))
+      (log/error :fn ::normalize-general :msg "Error in VRS normalization request" :status status :response response))))
 
 (defn vrs-variation-for-expression
   "`variation` should be a string understood by the VICC variant normalization service.
