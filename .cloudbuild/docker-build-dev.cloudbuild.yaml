@@ -17,13 +17,13 @@ steps:
     - |
       git clone https://clingen-ci:$$GITHUB_TOKEN@github.com/clingen-data-model/architecture \
       && cd architecture \
-      && git checkout -b image-update-$SHORT_SHA \
+      && git checkout -b image-update-dev-$SHORT_SHA \
       && /usr/bin/yq eval -i ".genegraph_docker_image_tag = \"$COMMIT_SHA\"" ./helm/values/genegraph/values-dev.yaml \
       && date "+%Y-%m-%dT%H%M" > /workspace/DATETIME.txt \
       && /usr/bin/yq eval -i ".genegraph_data_version = \"$(tr -d '\n' < /workspace/DATETIME.txt)\"" ./helm/values/genegraph/values-dev.yaml \
       && git add -u \
       && git -c user.name="Clingen CI Automation" -c user.email="clingendevs@broadinstitute.org" commit -m "bumping docker image for genegraph" \
-      && git push origin image-update-$SHORT_SHA \
+      && git push origin image-update-dev-$SHORT_SHA \
       && gh pr create --fill -l automation
 
 availableSecrets:
