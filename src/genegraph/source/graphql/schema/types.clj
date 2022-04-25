@@ -12,6 +12,7 @@
     [:ga4gh/VariationDescriptor :VariationDescriptor]
     [:vrs/CategoricalVariationDescriptor :CategoricalVariationDescriptor]
     [:vrs/Allele :Allele]
+    [:vrs/Text :Text]
     [:vrs/CanonicalVariation :CanonicalVariation]
     [:vrs/SequenceLocation :SequenceLocation]
     [:vrs/SequenceInterval :SequenceInterval]

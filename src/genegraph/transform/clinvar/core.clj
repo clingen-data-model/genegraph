@@ -68,7 +68,7 @@
                     ;((fn [event] (log/info :msg "parsed content" :parsed-value (::parsed-value event)) event))
                     (#(assoc % :genegraph.transform.clinvar/format (get-clinvar-format (::parsed-value %))))
                     (#(assoc % ::q/model (clinvar-to-model %))))]
-      (log/debug :fn ::add-model :event event)
+      (log/trace :fn ::add-model :event event)
       event)
     (catch Exception e
       (log/error :fn ::add-model :msg "Exception in clinvar add-model" :exception e)

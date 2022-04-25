@@ -87,7 +87,7 @@
                      (log/error :message (ex-message e) :data (ex-data e))
                      (log/error :message "Defaulting to 'hgvs' for change" :change change)
                      "hgvs"))
-    (do (log/warn :message "No change provided, falling back to text syntax" :change change)
+    (do (log/warn :message "No change provided, falling back to text syntax")
         "text")))
 
 (defn nucleotide-hgvs
@@ -279,7 +279,7 @@
                                       (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
     (let [expression (first expressions)
           expression-type (q/ld1-> expression [:rdf/type])
-          vrs-obj (vicc/vrs-variation-for-expression expression (keyword (str expression)))]
+          vrs-obj (vicc/vrs-variation-for-expression expression (keyword (str expression-type)))]
       (if (empty? vrs-obj)
         (do (let [e (ex-info "No variation received from VRS normalization" {:fn ::add-vrs-model :expression expression})]
               (log/error :message (ex-message e) :data (ex-data e))
@@ -315,9 +315,9 @@
                   (#(do (log/debug :triples %) %))
                   l/statements-to-model
                   add-vrs-model
-                  (#(do (log/debug :model %) %))
+                  ;(#(do (log/debug :model %) %))
                   (#(common/mark-prior-replaced % (q/resource clinvar-variation-type))))]
-    (log/debug :fn ::clinvar-to-model :model model)
+    ;(log/debug :fn ::clinvar-to-model :model model)
     model))
 
 (def variation-context

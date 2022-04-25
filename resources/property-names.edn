@@ -242,6 +242,7 @@
  [:vrs/start "https://vrs.ga4gh.org/terms/start"]
  [:vrs/end "https://vrs.ga4gh.org/terms/end"]
  [:vrs/sequence_id "https://vrs.ga4gh.org/terms/end"]
+ [:vrs/definition "https://vrs.ga4gh.org/terms/definition"]
  [:cnt/chars "http://www.w3.org/2011/content#chars"]
  [:data/genome-build-identifier "http://edamontology.org/data_2340"]
  [:dc/abstract "http://purl.org/dc/terms/abstract"]
