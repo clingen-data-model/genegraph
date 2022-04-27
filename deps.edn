@@ -14,73 +14,84 @@
   {:extra-deps {io.github.clojure/tools.build     {:tag "v0.8.1"
                                                    :sha "7d40500"}}
    :ns-default build}
+
   :format
   {:extra-deps {cljfmt/cljfmt {:mvn/version "0.8.0"}}
    :main-opts  ["-m" "cljfmt.main" "fix"]}
+
   :rebl                                 ; for JDK 11+
-  {:extra-deps {com.cognitect/rebl                {:mvn/version "0.9.245"}
-                org.openjfx/javafx-base           {:mvn/version "18"}
-                org.openjfx/javafx-controls       {:mvn/version "18"}
-                org.openjfx/javafx-fxml           {:mvn/version "18"}
-                org.openjfx/javafx-swing          {:mvn/version "18"}
-                org.openjfx/javafx-web            {:mvn/version "18"}}
-   :main-opts ["-m" "cognitect.rebl"]}}
+  {:extra-deps {com.cognitect/rebl                  {:mvn/version "0.9.245"}
+                org.openjfx/javafx-base             {:mvn/version "18"}
+                org.openjfx/javafx-controls         {:mvn/version "18"}
+                org.openjfx/javafx-fxml             {:mvn/version "18"}
+                org.openjfx/javafx-swing            {:mvn/version "18"}
+                org.openjfx/javafx-web              {:mvn/version "18"}}
+   :main-opts ["-m" "cognitect.rebl"]}
+
+  :run
+  {:extra-deps  {io.pedestal/pedestal.service-tools {:mvn/version "0.5.5"}}
+   :main-opts   ["-m" "genegraph.server/run-dev"]}
+
+  :test
+  {:extra-deps  {lambdaisland/kaocha                {:mvn/version "1.66.1034"}}
+   :extra-paths ["test"]
+   :main-opts   ["-m" "kaocha.runner"]}}
 
  :deps
- {org.clojure/clojure                             {:mvn/version "1.11.1"}
-  org.clojure/core.async                          {:mvn/version "1.5.648"}
-  org.clojure/data.csv                            {:mvn/version "1.0.1"}
-  camel-snake-kebab/camel-snake-kebab             {:mvn/version "0.4.2"}
-  ch.qos.logback/logback-classic                  {:mvn/version "1.2.11"}
+ {org.clojure/clojure                               {:mvn/version "1.11.1"}
+  org.clojure/core.async                            {:mvn/version "1.5.648"}
+  org.clojure/data.csv                              {:mvn/version "1.0.1"}
+  camel-snake-kebab/camel-snake-kebab               {:mvn/version "0.4.2"}
+  ch.qos.logback/logback-classic                    {:mvn/version "1.2.11"}
   ;; Why not just clojure.data.json? =tbl
-  cheshire/cheshire                               {:mvn/version "5.10.2"}
+  cheshire/cheshire                                 {:mvn/version "5.10.2"}
   ;; fs included for delete-dir and mkdirs. =tbl
-  clj-commons/fs                                  {:mvn/version "1.6.310"}
+  clj-commons/fs                                    {:mvn/version "1.6.310"}
   ;; For downloading
-  clj-http/clj-http                               {:mvn/version "3.12.3"}
-  com.apicatalog/titanium-json-ld                 {:mvn/version "1.3.0"}
-  com.fasterxml.jackson.core/jackson-core         {:mvn/version "2.13.2"}
-  com.fasterxml.jackson.core/jackson-databind     {:mvn/version "2.13.2"}
-  com.github.danielwegener/logback-kafka-appender {:mvn/version "0.2.0-RC2"}
-  com.google.cloud/google-cloud-storage           {:mvn/version "2.6.0"}
+  clj-http/clj-http                                 {:mvn/version "3.12.3"}
+  com.apicatalog/titanium-json-ld                   {:mvn/version "1.3.0"}
+  com.fasterxml.jackson.core/jackson-core           {:mvn/version "2.13.2"}
+  com.fasterxml.jackson.core/jackson-databind       {:mvn/version "2.13.2"}
+  com.github.danielwegener/logback-kafka-appender   {:mvn/version "0.2.0-RC2"}
+  com.google.cloud/google-cloud-storage             {:mvn/version "2.6.0"}
   ;; :exclusions works around LICENSE/license filename case conflict in build.
-  com.google.firebase/firebase-admin              {:mvn/version "8.1.0"
-                                                   :exclusions
-                                                   [io.grpc/grpc-netty-shaded]}
-  com.taoensso/nippy                              {:mvn/version "3.1.1"}
+  com.google.firebase/firebase-admin                {:mvn/version "8.1.0"
+                                                     :exclusions
+                                                     [io.grpc/grpc-netty-shaded]}
+  com.taoensso/nippy                                {:mvn/version "3.1.1"}
   ;; Included for downloading ftp docs with miner.ftp. =tbl
-  com.velisco/clj-ftp                             {:mvn/version "0.3.17"}
-  com.walmartlabs/lacinia-pedestal                {:mvn/version "1.0"}
-  digest/digest                                   {:mvn/version "1.4.10"}
+  com.velisco/clj-ftp                               {:mvn/version "0.3.17"}
+  com.walmartlabs/lacinia-pedestal                  {:mvn/version "1.0"}
+  digest/digest                                     {:mvn/version "1.4.10"}
   ;; alternative to REBL
-  djblue/portal                                   {:mvn/version "0.23.0"}
+  djblue/portal                                     {:mvn/version "0.23.0"}
   ;; rocksjni for everything else -- is there an arch switch in deps?
   ;; org.rocksdb/rocksdbjni {:mvn/version "6.25.3"}
-  ;; rocksjni for apple silicon--will not work on Intel
-  io.maryk.rocksdb/rocksdbjni                     {:mvn/version "6.25.3"}
-  io.pedestal/pedestal.interceptor                {:mvn/version "0.5.10"}
-  io.pedestal/pedestal.jetty                      {:mvn/version "0.5.10"}
-  io.pedestal/pedestal.service                    {:mvn/version "0.5.10"}
-  ;; dirwatch for updating base files in development
-  juxt/dirwatch                                   {:mvn/version "0.2.5"}
+  ;; rocksjni for apple silicon--will not work onIntel
+  io.maryk.rocksdb/rocksdbjni                       {:mvn/version "6.25.3"}
+  io.pedestal/pedestal.interceptor                  {:mvn/version "0.5.10"}
+  io.pedestal/pedestal.jetty                        {:mvn/version "0.5.10"}
+  io.pedestal/pedestal.service                      {:mvn/version "0.5.10"}
+  ;; dirwatch for updating base files in developme  nt
+  juxt/dirwatch                                     {:mvn/version "0.2.5"}
   ;; medley included for filter-keys and deep-merge. =tbl
-  medley/medley                                   {:mvn/version "1.4.0"}
-  mount/mount                                     {:mvn/version "0.1.16"}
-  org.apache.jena/jena-arq                        {:mvn/version "3.17.0"}
-  org.apache.jena/jena-core                       {:mvn/version "3.17.0"}
-  org.apache.jena/jena-iri                        {:mvn/version "3.17.0"}
-  org.apache.jena/jena-tdb                        {:mvn/version "3.17.0"}
-  org.apache.jena/jena-tdb2                       {:mvn/version "3.17.0"}
-  org.apache.jena/jena-text                       {:mvn/version "3.17.0"}
-  org.apache.kafka/kafka-clients                  {:mvn/version "3.1.0"}
+  medley/medley                                     {:mvn/version "1.4.0"}
+  mount/mount                                       {:mvn/version "0.1.16"}
+  org.apache.jena/jena-arq                          {:mvn/version "3.17.0"}
+  org.apache.jena/jena-core                         {:mvn/version "3.17.0"}
+  org.apache.jena/jena-iri                          {:mvn/version "3.17.0"}
+  org.apache.jena/jena-tdb                          {:mvn/version "3.17.0"}
+  org.apache.jena/jena-tdb2                         {:mvn/version "3.17.0"}
+  org.apache.jena/jena-text                         {:mvn/version "3.17.0"}
+  org.apache.kafka/kafka-clients                    {:mvn/version "3.1.0"}
   ;; Jena 3.17.0 includes codecs from Lucene 7.7.3. =tbl
-  org.apache.lucene/lucene-suggest                {:mvn/version "7.7.3"}
-  org.codehaus.janino/janino                      {:mvn/version "3.1.6"}
+  org.apache.lucene/lucene-suggest                  {:mvn/version "7.7.3"}
+  org.codehaus.janino/janino                        {:mvn/version "3.1.6"}
   ;; ordered included for generating jsonld context with ordered-map. =tbl
-  org.flatland/ordered                            {:mvn/version "1.15.10"}
-  org.glassfish/jakarta.json                      {:mvn/version "2.0.1"}
-  org.slf4j/jcl-over-slf4j                        {:mvn/version "1.7.36"}
-  org.slf4j/jul-to-slf4j                          {:mvn/version "1.7.36"}
-  org.slf4j/log4j-over-slf4j                      {:mvn/version "1.7.36"}
+  org.flatland/ordered                              {:mvn/version "1.15.10"}
+  org.glassfish/jakarta.json                        {:mvn/version "2.0.1"}
+  org.slf4j/jcl-over-slf4j                          {:mvn/version "1.7.36"}
+  org.slf4j/jul-to-slf4j                            {:mvn/version "1.7.36"}
+  org.slf4j/log4j-over-slf4j                        {:mvn/version "1.7.36"}
   ;; dependency superceeded by antlr provided via lacinia dependency
-  org.topbraid/shacl                              {:mvn/version "1.4.2"}}}
+  org.topbraid/shacl                                {:mvn/version "1.4.2"}}}
