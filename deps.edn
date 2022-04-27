@@ -27,7 +27,7 @@
    :extra-paths ["test"]
    :main-opts  ["-m" "cljfmt.main" "fix"]}
 
-  :kondo                                ; clj -M:kondo
+  :kondo                                ; clj -M:kondo --lint .
   {:extra-deps {clj-kondo/clj-kondo                 {:mvn/version "2022.04.25"}}
    :main-opts ["-m" "clj-kondo.main"]}
 
