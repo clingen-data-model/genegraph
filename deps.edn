@@ -7,12 +7,14 @@
   {:url "https://repo.clojars.org/"}
   "cognitect-dev-tools"
   {:url "https://dev-tools.cognitect.com/maven/releases/"}}
- :paths
- ["src" "resources" "config"]
+
+ :paths ["src" "resources" "config"]
+
  :aliases
+
  {:build
-  {:extra-deps {io.github.clojure/tools.build     {:tag "v0.8.1"
-                                                   :sha "7d40500"}}
+  {:extra-deps {io.github.clojure/tools.build       {:tag "v0.8.1"
+                                                     :sha "7d40500"}}
    :ns-default build}
 
   :format
