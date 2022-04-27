@@ -34,7 +34,7 @@
   {:extra-deps  {io.pedestal/pedestal.service-tools {:mvn/version "0.5.5"}}
    :main-opts   ["-m" "genegraph.server/run-dev"]}
 
-  :test
+  :test                                 ; clj -M:test all
   {:extra-deps  {lambdaisland/kaocha                {:mvn/version "1.66.1034"}}
    :extra-paths ["test"]
    :main-opts   ["-m" "kaocha.runner"]}}
