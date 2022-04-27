@@ -3,7 +3,7 @@
             [genegraph.env :as env]
             [mount.core :as mount :refer [defstate]]
             [genegraph.rocksdb :as rocksdb :refer [rocks-get rocks-put! rocks-delete!]]
-            [genegraph.database.query :refer [resource]]))
+            [genegraph.database.query :as q :refer [resource]]))
 
 (defstate resolver-cache-db
   :start (rocksdb/open "graphql_resolver_cache")
@@ -47,8 +47,8 @@
 (defn expire-resolver-cache-on-event! [event]
   (when (running?)
     (rocksdb/rocks-delete-with-prefix! resolver-cache-db ::expire-always)
-    (doseq [topic (-> event :genegraph.annotate/subjects vals flatten)]
-      (rocksdb/rocks-delete-with-prefix! resolver-cache-db (resource topic))))
+    (doseq [topic (-> event ::q/model q/referenced-resources)]
+      (rocksdb/rocks-delete-with-prefix! resolver-cache-db topic)))
   event)
 
 (def expire-resolver-cache-interceptor
