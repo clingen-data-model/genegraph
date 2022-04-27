@@ -20,7 +20,7 @@
   :eastwood                             ; clj -M:eastwood
   {:extra-deps {jonase/eastwood                     {:mvn/version "1.2.3"}}
    :extra-paths ["test"]
-   :main-opts ["-m" "eastwood.lint" :source-paths ["src" "test"]]}
+   :main-opts ["-m" "eastwood.lint" {:source-paths ["src" "test"]}]}
 
   :format                               ; clj -M:format
   {:extra-deps {cljfmt/cljfmt                       {:mvn/version "0.8.0"}}
