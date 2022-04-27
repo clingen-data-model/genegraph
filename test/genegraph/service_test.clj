@@ -16,9 +16,10 @@
                                  :body (json/generate-string {:query request :variables variables}))]
       (assoc response :json (json/parse-string (:body response) true)))))
 
+#_
 (deftest request-gating-test
   (let [schema (schema/compile
-                {:queries 
+                {:queries
                  {:hello
                   {:type 'String
                    :resolve (fn  [& _]
@@ -32,4 +33,4 @@
       (doseq [r result]
         (.start (Thread. #(deliver r (query "{hello}" {})))))
       (testing "Request gate should have one unique result"
-          (is (= 1 (->> result (map #(:body @%)) (into #{}) count)))))))
+        (is (= 1 (->> result (map #(:body @%)) (into #{}) count)))))))
