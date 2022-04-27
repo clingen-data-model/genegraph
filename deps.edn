@@ -32,7 +32,8 @@
   cheshire/cheshire                               {:mvn/version "5.10.2"}
   ;; fs included for delete-dir and mkdirs. =tbl
   clj-commons/fs                                  {:mvn/version "1.6.310"}
-  clj-http/clj-http                               {:mvn/version "3.12.3"} ; For downloading
+  ;; For downloading
+  clj-http/clj-http                               {:mvn/version "3.12.3"}
   com.apicatalog/titanium-json-ld                 {:mvn/version "1.3.0"}
   com.fasterxml.jackson.core/jackson-core         {:mvn/version "2.13.2"}
   com.fasterxml.jackson.core/jackson-databind     {:mvn/version "2.13.2"}
@@ -50,7 +51,7 @@
   ;; alternative to REBL
   djblue/portal                                   {:mvn/version "0.23.0"}
   ;; rocksjni for everything else -- is there an arch switch in deps?
-  ;;  org.rocksdb/rocksdbjni {:mvn/version "6.25.3"}
+  ;; org.rocksdb/rocksdbjni {:mvn/version "6.25.3"}
   ;; rocksjni for apple silicon--will not work on Intel
   io.maryk.rocksdb/rocksdbjni                     {:mvn/version "6.25.3"}
   io.pedestal/pedestal.interceptor                {:mvn/version "0.5.10"}
