@@ -2,7 +2,6 @@
   (:require [genegraph.database.query.types :as types]
             [clojure.java.io :as io]
             [clojure.string :as s]
-            [clojure.set :as set]
             [genegraph.database.instance :refer [db]]
             [genegraph.database.names :as names]
             [genegraph.database.query.resource :as resource]
@@ -153,18 +152,14 @@ use io/slurp"
      [node1 rdf-rest
       (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")]]))
 
-(defn- node-iter->resource-set [node-iterator]
-  (->> node-iterator
-       iterator-seq
-       (filter #(and (.isResource %) (not (.isAnon %))))
-       (map resource)
-       set))
-
 (defn referenced-resources
-  "Returns a set of the resources referenced by the given model
-  (excluding predicates). Useful for expiring cache objects when
-  a model containing new objects is recieved."
+  "Return the set of objects and subjects referenced by MODEL (excluding
+  predicates). Useful for expiring cache objects when a model
+  containing new objects is received."
   [model]
-  (let [model-objects (node-iter->resource-set (.listObjects model))
-        model-subjects (node-iter->resource-set (.listSubjects model))]
-    (set/union model-objects model-subjects)))
+  (with-open [objects  (.listObjects  model)
+              subjects (.listSubjects model)]
+    (->> (concat (iterator-seq objects) (iterator-seq subjects))
+         (filter #(and (.isResource %) (not (.isAnon %))))
+         (map resource)
+         set)))
