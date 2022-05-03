@@ -51,7 +51,8 @@
    "5" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP5
    "6" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP6
    "7" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP7
-   "8" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP8})
+   "8" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP8
+   "9" :sepio/ClinGenGeneValidityEvaluationCriteriaSOP9})
 
 (defn contribution [report iri]
   [[iri :bfo/realizes :sepio/ApproverRole]
