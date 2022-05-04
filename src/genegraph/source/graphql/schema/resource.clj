@@ -16,6 +16,13 @@
     (type-query {:resource value})
     (q/ld-> value [:rdf/type])))
 
+(defn- description [_ _ value]
+  (or (q/ld1-> value [:dc/description])
+      (q/ld1-> value [:iao/definition])))
+
+;; TODO Document schema format
+;; Would also be a good use of spec for validiation
+
 (def resource-interface
   {:name :Resource
    :graphql-type :interface
@@ -39,7 +46,9 @@
                    :resolve rdf-types}
             :description {:type 'String
                           :description "Textual description of this resource"
-                          :path [:dc/description]}
+                          ;; :path [:dc/description]
+                          :resolve description
+                          }
             :source {:type :BibliographicResource
                      :description "A related resource from which the described resource is derived."
                      :path [:dc/source]}
