@@ -64,7 +64,7 @@ query($variation_iri:String) {
     type: __typename
     ... on CategoricalVariationDescriptor {
       label
-      value: object {
+      value {
         id: iri
         type: __typename
         ... on CanonicalVariation {
@@ -118,13 +118,13 @@ fragment alleleFields on Allele {
 
 (defn variation-descriptors-as-of-date
   [{:keys [until]}]
-  (let [
-        max-date-string "9999-99-99"
-        date-parser (fn [date-string] ())
-        ]
+  (let [max-date-string "9999-99-99"
+        date-parser (fn [date-string] ())]
     (let [date-pattern #"\d{4}-\d{2}-\d{2}"]
+      (assert (re-matches date-pattern until)
+              (format "date string %s did not match pattern %s" until date-pattern))
       (assert (re-matches date-pattern max-date-string)
-              (format "date string %s did not match %s pattern" max-date-string date-pattern)))
+              (format "date string %s did not match pattern %s" max-date-string date-pattern)))
     (log/info :fn ::variation-descriptor :until until)
     ; Get descriptors as of a date which are not replaced
     (let [descriptor-resources (q/select (str sparql-prefixes "\n" variation-descriptors-as-of-date-sparql)

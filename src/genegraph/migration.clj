@@ -111,13 +111,19 @@
     (with-open [to (.writer gc-storage blob-info (make-array Storage$BlobWriteOption 0))]
       (ByteStreams/copy from to))))
 
-(defn create-migration
-  "Populate a new database, package and upload to Google Cloud"
+(defn get-version-id
+  "Generates a version id string based on env/data-version (or a timestamp) plus the docker image version of the code"
   []
   (let [data-version-id (if (some? env/data-version) env/data-version (new-version-identifier))
         version-id (if (some? env/genegraph-image-version)
                      (str data-version-id ":" env/genegraph-image-version)
-                     data-version-id)
+                     data-version-id)]
+    version-id))
+
+(defn create-migration
+  "Populate a new database, package and upload to Google Cloud"
+  []
+  (let [version-id (get-version-id)
         dest-database-path (str env/base-dir "/" version-id)
         dest-archive-path (str dest-database-path ".tar.gz")]
     (build-database dest-database-path)
@@ -163,3 +169,37 @@
       (retrieve-migration env/genegraph-bucket archive-file env/data-vol)
       (decompress-database env/data-vol archive-path))))
 
+(defn load-stream-data
+  "Loads stream data from scratch into an existing database"
+  [dest-path]
+  (log/info :fn :load-stream-data :msg (str "Loading stream data into database at " dest-path))
+  (with-redefs [env/data-vol dest-path]
+    (stop #'event/stream-processing)
+    (populate-data-vol-if-needed)
+    ;(fs/mkdirs env/data-vol)
+    (start #'db/db)
+    (start #'property-store/property-store)
+    ;(base/initialize-db!)
+    ;(batch/process-batched-events!)
+    (log/info :fn :load-stream-data :msg "Resetting topic offsets...")
+    (fs/delete (stream/offset-file))
+    (stream/initialize-current-offsets!)
+    (start #'event/stream-processing)
+    (log/info :fn :load-stream-data :msg "Processing streams...")
+    (stream/wait-for-topics-up-to-date)
+    (log/info :fn :load-stream-data :msg "Stopping streams...")
+    (stop #'event/stream-processing)
+    (log/info :fn :load-stream-data :msg "Waiting for streams to close...")
+    (stream/wait-for-topics-closed)
+    ;(when-not (env/transformer-mode?)
+    ;  (log/info :fn :load-stream-data :msg "Starting resolver cache...")
+    ;  (start #'cache/resolver-cache-db)
+    ;  (warm-resolver-cache)
+    ;  (stop #'cache/resolver-cache-db)
+    ;  (start #'suggest/suggestions)
+    ;  (log/info :fn :load-stream-data :msg "Building suggesters...")
+    ;  (suggest/build-all-suggestions)
+    ;  (stop #'suggest/suggestions))
+    ;(stop #'property-store/property-store)
+    ;(stop #'db/db)
+    ))
