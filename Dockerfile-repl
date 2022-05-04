@@ -1,0 +1,21 @@
+# For more information on these images, and use of Clojure in Docker
+# https://hub.docker.com/_/clojure
+FROM clojure:openjdk-11-lein-2.9.8 AS builder
+
+# Copying and building deps as a separate step in order to mitigate
+# the need to download new dependencies every build.
+COPY project.clj /usr/src/app/project.clj
+WORKDIR /usr/src/app
+RUN lein deps 
+
+EXPOSE 8888
+EXPOSE 60001
+
+COPY src src
+COPY test test
+COPY resources resources
+COPY config config
+COPY jars jars
+COPY project.clj project.clj
+
+CMD ["lein", "run", "-m", "genegraph.server/-main-repl"]

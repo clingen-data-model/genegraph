@@ -7,7 +7,10 @@
             [genegraph.sink.base :as base]
             [genegraph.sink.stream :as stream]
             [genegraph.migration :as migration]
+            [genegraph.source.snapshot.core :as snapshot]
             [genegraph.env :as env]
+            [nrepl.core :as nrepl]
+            [nrepl.server]
             [io.pedestal.log :as log])
   (:import com.google.firebase.FirebaseApp))
 
@@ -116,5 +119,20 @@
     (if (env/transformer-mode?)
       (run-server-transformer nil)
       (run-server-genegraph nil))
-    (run-migration)))
+    (if (= "snapshot" (first args))
+      (do (snapshot/run-snapshots (rest args)))
+      (run-migration))))
 
+
+
+(defstate
+  repl-server
+  :start (nrepl.server/start-server
+           :init-ns 'genegraph.server
+           :bind "127.0.0.1"
+           :port 60001)
+  :stop (nrepl.server/stop-server repl-server))
+
+(defn -main-repl [& args]
+  (mount.core/start #'repl-server)
+  (apply -main args))

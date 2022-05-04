@@ -55,7 +55,8 @@
                  [com.taoensso/nippy "3.1.1"]
                  [digest "1.4.9"]
                  [com.google.firebase/firebase-admin "7.0.1"]
-                 [org.codehaus.janino/janino "3.1.3"]]
+                 [org.codehaus.janino/janino "3.1.3"]
+                 [nrepl "0.8.3"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources", "jars/rebl-0.9.242.jar"]
   ;; If you use HTTP/2 or ALPN, use the java-agent to pull in the correct alpn-boot dependency
@@ -63,7 +64,9 @@
   :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "genegraph.server/run-dev"]}
                    :dependencies [[io.pedestal/pedestal.service-tools "0.5.5"]]}
              :uberjar {:aot [genegraph.server]
-                       :uberjar-name "app.jar"}}
+                       :uberjar-name "app.jar"}
+             :uberjar-repl {:uberjar-name "app.jar"
+                            :main genegraph.server/-main-repl}}
   :repl-options {:caught clojure.repl/pst}
   :plugins [[lein-codox "0.10.7"]]
   :codox {:output-path "docs"}
