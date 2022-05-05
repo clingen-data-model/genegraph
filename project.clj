@@ -66,7 +66,8 @@
              :uberjar {:aot [genegraph.server]
                        :uberjar-name "app.jar"}
              :uberjar-repl {:uberjar-name "app.jar"
-                            :main genegraph.server/-main-repl}}
+                            :aot [genegraph.server-repl]
+                            :main genegraph.server-repl}}
   :repl-options {:caught clojure.repl/pst}
   :plugins [[lein-codox "0.10.7"]]
   :codox {:output-path "docs"}
