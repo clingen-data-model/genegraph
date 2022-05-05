@@ -100,16 +100,22 @@
 ;; TODO should be able to remove first part after
 ;; releasing full GCI
 (defresolver ^:expire-by-value report-id [_ value]
-  (or 
-   (-> (legacy-json nil nil value)
-       (json/parse-string true)
-       :report_id)
-   (when-let [proposition-id (-> (ld1-> value [:sepio/has-subject])
-                                 str
-                                 (s/split #"/")
-                                 last)]
-     (re-find #"[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$"
-              proposition-id))))
+  (let [curie (q/curie value)]
+    ;; match vintage style curie with date time stamp at the end
+    (if (re-find #"\.\d{3}Z$" curie)
+      (-> (legacy-json nil nil value)
+          (json/parse-string true)
+          :report_id)
+      ;; match GCI Express is always nil
+      (if (re-find #"^CGGCIEX:assertion_\d+$" curie)
+        nil
+        ;; match gci refactor
+        (when-let [proposition-id (-> (ld1-> value [:sepio/has-subject])
+                                      str
+                                      (s/split #"/")
+                                      last)]
+          (re-find #"[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$"
+                   proposition-id))))))
               
 (defresolver ^:expire-by-value animal-model [args value]
   (let [res (first (q/select "select ?s where {
