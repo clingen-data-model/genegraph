@@ -22,9 +22,10 @@
              [org.apache.jena.graph Node NodeFactory Triple Node_Variable Node_Blank]
              [org.apache.jena.sparql.algebra.op OpDistinct OpProject OpFilter OpBGP OpConditional OpDatasetNames OpDiff OpDisjunction OpDistinctReduced OpExtend OpGraph OpGroup OpJoin OpLabel OpLeftJoin OpList OpMinus OpNull OpOrder OpQuad OpQuadBlock OpQuadPattern OpReduced OpSequence OpSlice OpTopN OpUnion OpTable ]
              [org.apache.jena.sparql.core BasicPattern Var VarExprList QuadPattern Quad]
-             org.apache.jena.riot.writer.JsonLDWriter
              org.apache.jena.sparql.core.Prologue
-             org.apache.jena.riot.RDFFormat$JSONLDVariant
+             ;; missing in latest jena, remove? = tn
+             ;;org.apache.jena.riot.writer.JsonLDWriter
+             ;;org.apache.jena.riot.RDFFormat$JSONLDVariant
              java.io.ByteArrayOutputStream))
 
 (defn- var-seq [vars]

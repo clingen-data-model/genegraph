@@ -15,10 +15,11 @@
             [genegraph.transform.hi-index]
             [genegraph.transform.loss-intolerance]
             [genegraph.transform.gci-neo4j]
-            ;;[genegraph.transform.gene-validity]
+            ;; [genegraph.transform.gene-validity]
             [genegraph.transform.gene-validity-refactor]
             [genegraph.transform.actionability]
-            [genegraph.transform.clinvar.core]
+            ;; need to fix to be compatible with latest jena =tristan
+            ;; [genegraph.transform.clinvar.core] 
             [genegraph.transform.rxnorm]
             [genegraph.env :as env]
             [io.pedestal.log :as log]))

@@ -12,7 +12,7 @@
            (java.io StringWriter ByteArrayInputStream)
            (java.nio.charset Charset)
            (org.apache.jena.rdf.model Model)
-           (org.apache.jena.riot.writer JsonLDWriter)
+           ;; (org.apache.jena.riot.writer JsonLDWriter) ; can remove? =tristan
            (org.apache.jena.sparql.util Context)
            (org.apache.jena.sparql.core.mem DatasetGraphInMemory)
            (org.apache.jena.riot RDFFormat)

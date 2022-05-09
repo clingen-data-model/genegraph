@@ -84,7 +84,8 @@
   ;; rocksjni for everything else -- is there an arch switch in deps?
   ;; org.rocksdb/rocksdbjni {:mvn/version "6.25.3"}
   ;; rocksjni for apple silicon--will not work onIntel
-  io.maryk.rocksdb/rocksdbjni                       {:mvn/version "6.25.3"}
+  ;; io.maryk.rocksdb/rocksdbjni                       {:mvn/version "6.25.3"}
+  org.rocksdb/rocksdbjni                            {:mvn/version "7.1.2"}
   io.pedestal/pedestal.interceptor                  {:mvn/version "0.5.10"}
   io.pedestal/pedestal.jetty                        {:mvn/version "0.5.10"}
   io.pedestal/pedestal.service                      {:mvn/version "0.5.10"}
@@ -93,12 +94,13 @@
   ;; medley included for filter-keys and deep-merge. =tbl
   medley/medley                                     {:mvn/version "1.4.0"}
   mount/mount                                       {:mvn/version "0.1.16"}
-  org.apache.jena/jena-arq                          {:mvn/version "3.17.0"}
-  org.apache.jena/jena-core                         {:mvn/version "3.17.0"}
-  org.apache.jena/jena-iri                          {:mvn/version "3.17.0"}
-  org.apache.jena/jena-tdb                          {:mvn/version "3.17.0"}
-  org.apache.jena/jena-tdb2                         {:mvn/version "3.17.0"}
-  org.apache.jena/jena-text                         {:mvn/version "3.17.0"}
+  org.apache.jena/jena-arq                          {:mvn/version "4.5.0"}
+  org.apache.jena/jena-core                         {:mvn/version "4.5.0"}
+  org.apache.jena/jena-iri                          {:mvn/version "4.5.0"}
+  org.apache.jena/jena-tdb                          {:mvn/version "4.5.0"}
+  org.apache.jena/jena-tdb2                         {:mvn/version "4.5.0"}
+  org.apache.jena/jena-text                         {:mvn/version "4.5.0"}
+  org.apache.jena/jena-shacl                        {:mvn/version "4.5.0"}
   org.apache.kafka/kafka-clients                    {:mvn/version "3.1.0"}
   ;; Jena 3.17.0 includes codecs from Lucene 7.7.3. =tbl
   org.apache.lucene/lucene-suggest                  {:mvn/version "7.7.3"}
@@ -110,4 +112,5 @@
   org.slf4j/jul-to-slf4j                            {:mvn/version "1.7.36"}
   org.slf4j/log4j-over-slf4j                        {:mvn/version "1.7.36"}
   ;; dependency superceeded by antlr provided via lacinia dependency
-  org.topbraid/shacl                                {:mvn/version "1.4.2"}}}
+  ;; org.topbraid/shacl                                {:mvn/version "1.4.2"}
+  }}
