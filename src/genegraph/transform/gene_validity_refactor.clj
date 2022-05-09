@@ -162,6 +162,8 @@
             "6" "http://purl.obolibrary.org/obo/SEPIO_0004094"
             "7" "http://purl.obolibrary.org/obo/SEPIO_0004095"
             "8" "http://purl.obolibrary.org/obo/SEPIO_0004096"
+            "9" "http://purl.obolibrary.org/obo/SEPIO_0004171"
+
 
             ;; Sex
             "Ambiguous" "http://purl.obolibrary.org/obo/SEPIO_0004574"
