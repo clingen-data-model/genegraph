@@ -14,6 +14,8 @@ RUN clojure -T:build uber
 FROM eclipse-temurin:17-alpine
 LABEL maintainer="Tristan Nelson <thnelson@geisinger.edu>"
 
+RUN apk add --no-cache libstdc++
+
 COPY --from=builder /usr/src/app/target/genegraph.jar /app/app.jar
 
 EXPOSE 8888
