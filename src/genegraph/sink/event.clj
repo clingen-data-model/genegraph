@@ -5,7 +5,6 @@
             [genegraph.database.util :refer [begin-write-tx close-write-tx write-tx]]
             [genegraph.source.graphql.common.cache :as cache]
             [genegraph.response-cache :as response-cache]
-            [genegraph.database.validation :as v]
             [genegraph.interceptor :as ggintercept :refer [interceptor-enter-def]]
             [genegraph.annotate :as ann :refer [add-model-interceptor
                                                 add-iri-interceptor

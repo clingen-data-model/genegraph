@@ -9,7 +9,7 @@
   (b/delete {:path "target"}))
 
 (defn uber [_]
-  (clean nil)
+  (clean _)
   (b/copy-dir {:src-dirs ["src" "resources" "config"]
                :target-dir class-dir})
   (b/compile-clj {:basis basis

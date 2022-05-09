@@ -4,6 +4,7 @@
             [clojure.pprint :refer [pprint]]
             [clojure.string :as s]
             [flatland.ordered.map :refer [ordered-map]]
+
             [camel-snake-kebab.core :refer :all]
             [genegraph.database.query :as q]
             [genegraph.database.load :as l]
@@ -28,7 +29,7 @@
 
 (spec/def ::resolution #(= "Complete" (:name %)))
 
-(spec/def ::fields (spec/keys :req-un [::resolutiondate 
+(spec/def ::fields (spec/keys :req-un [::resolutiondate
                                        ::status
                                        ::resolution]))
 
@@ -85,7 +86,7 @@
                           "Y" "https://www.ncbi.nlm.nih.gov/nucore/NC_000024.10"}})
 
 (def build-location {:grch38 :customfield-10532
-                     :grch37 :customfield-10160}) 
+                     :grch37 :customfield-10160})
 
 
 
@@ -132,8 +133,8 @@
     (let [[_ chr start-coord end-coord] (re-find #"(\w+):(.+)-(.+)$" loc-str)
           iri (l/blank-node)
           interval-iri (l/blank-node)
-          reference-sequence (get-in chr-to-ref 
-                                     [build 
+          reference-sequence (get-in chr-to-ref
+                                     [build
                                       (subs chr 3)])]
       [iri [[iri :rdf/type :geno/SequenceFeatureLocation]
             ;; TODO reference sequence should be a resource
@@ -184,7 +185,7 @@
 
 (defn- finding-data [curation dosage]
   (->> (get evidence-field-map dosage)
-       (map (fn [row] 
+       (map (fn [row]
          (map #(get-in curation [:fields %]) row)))
        (remove #(nil? (first %)))))
 
@@ -285,9 +286,9 @@
 
 (defn- assertion [curation dosage]
   (if (dosage-assertion-value curation dosage)
-    (conj 
+    (conj
      (if (and (= 1 dosage)
-              (= "30: Gene associated with autosomal recessive phenotype" 
+              (= "30: Gene associated with autosomal recessive phenotype"
                  (get-in curation [:fields :customfield-10165 :value])))
        (scope-assertion curation dosage)
        (evidence-strength-assertion curation dosage))
@@ -314,6 +315,3 @@
     (if (spec/invalid? (spec/conform ::fields (:fields jira-json)))
       (assoc event ::spec/invalid true)
       (assoc event ::q/model (-> jira-json gene-dosage-report l/statements-to-model)))))
-
-
-

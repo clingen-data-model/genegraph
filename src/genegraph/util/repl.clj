@@ -34,7 +34,8 @@
             [genegraph.database.property-store :as property-store])
   (:import java.time.Instant
            java.time.temporal.ChronoUnit
-           org.apache.jena.rdf.model.AnonId))
+           org.apache.jena.rdf.model.AnonId
+           org.apache.jena.rdf.model.Model))
 
 ;; (defn start-rebl []
 ;;   (rebl/ui))

@@ -151,3 +151,15 @@ use io/slurp"
      [node1 rdf-first text]
      [node1 rdf-rest
       (NodeFactory/createURI "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")]]))
+
+(defn referenced-resources
+  "Return the set of objects and subjects referenced by MODEL (excluding
+  predicates). Useful for expiring cache objects when a model
+  containing new objects is received."
+  [model]
+  (with-open [objects  (.listObjects  model)
+              subjects (.listSubjects model)]
+    (->> (concat (iterator-seq objects) (iterator-seq subjects))
+         (filter #(and (.isResource %) (not (.isAnon %))))
+         (map resource)
+         set)))

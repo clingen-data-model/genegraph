@@ -1,3 +1,5 @@
+;; Does not work as advertised in current JENA
+;; Removing from dep tree until resolved =tristan
 (ns genegraph.transform.jsonld.common
   (:require [genegraph.database.names :refer [local-property-names
                                               property-uri->keyword]]

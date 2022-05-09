@@ -3,7 +3,7 @@
             [genegraph.database.names :refer [local-property-names local-class-names prefix-ns-map]]
             [genegraph.database.query :as q]
             [genegraph.transform.clinvar.common :refer [transform-clinvar
-                                                        clinvar-to-jsonld
+                                                        clinvar-model-to-jsonld
                                                         variation-geno-type
                                                         genegraph-kw-to-iri
                                                         vcv-review-status-to-evidence-strength-map
@@ -27,5 +27,5 @@
         {"@type" (str iri/cgterms "AssertionSet")}
         msg))))
 
-(defmethod clinvar-to-jsonld :submission [msg]
+(defmethod clinvar-model-to-jsonld :submission [msg]
   (submission-to-jsonld msg))
