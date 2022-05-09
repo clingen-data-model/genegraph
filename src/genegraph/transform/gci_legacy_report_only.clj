@@ -23,11 +23,14 @@
         iri (resource (str gci-root id "_report"))
         content-id (l/blank-node)
         assertion-id (resource (str gci-root id))
+        animal-model (get-in report [:scoreJson :summary :AnimalModelOnly])
         result (concat [[iri :rdf/type :sepio/GeneValidityReport]
                         [iri :bfo/has-part content-id]
                         [iri :bfo/has-part assertion-id]]
-                       (json-content-node report content-id))]
-    result)) 
+                      (json-content-node report content-id))]
+    (if (some? animal-model)
+      (concat result [[iri :cg/is-animal-model-only animal-model]])
+      result)))
 
 (defmethod transform-doc :gci-legacy-report-only [doc-def]
   (let [report-json (json/parse-string (:document doc-def) true)]

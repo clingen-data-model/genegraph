@@ -2,7 +2,7 @@
 prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
 construct {
-  ?evidenceLine a ?evidenceLineType ;
+  ?probandScoreEvidenceLine a ?evidenceLineType ;
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence ?individual ; # evidence about proband
   :sepio/calculatedScore ?calculatedScore ;
@@ -43,6 +43,8 @@ where {
   gci:scoreStatus ?scoreStatus ;
   gci:date_created ?dateCreated ;
   gci:calculatedScore ?calculatedScore .
+
+  BIND (IRI(CONCAT(str(?evidenceLine), "_proband_score_evidence_line")) AS ?probandScoreEvidenceLine) 
 
   OPTIONAL {
     ?evidenceLine gci:scoreExplanation ?evidenceLineDescription .

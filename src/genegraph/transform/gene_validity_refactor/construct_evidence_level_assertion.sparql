@@ -14,8 +14,6 @@ construct {
   :sepio/is-specified-by ?sopVersion ;
   :sepio/evidence-line-strength-score ?evidencePointsTotal .
 
-  ?legacy_report :bfo/has-part ?classification .
-
   ?contribution :sepio/has-agent ?affiliation ;
   :bfo/realizes :sepio/ApproverRole ;
   :sepio/activity-date ?date .
@@ -36,8 +34,6 @@ where {
   OPTIONAL {
     ?proposition gci:affiliation ?gdmAffiliationID ;
   }
-  
-  BIND(IRI(CONCAT(STR(?proposition), "_legacy_report")) AS ?legacy_report) .
   
   ?classification a gci:provisionalClassification ;
   gci:approvedClassification true ;

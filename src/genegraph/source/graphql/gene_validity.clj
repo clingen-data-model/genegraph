@@ -86,25 +86,47 @@
   (:sepio/qualified-contribution value))
 
 (defresolver ^:expire-by-value specified-by [args value]
+  ;; this returns a resource
   (ld1-> value [:sepio/is-specified-by]))
 
 (defresolver ^:expire-by-value has-format [args value]
-  (ld1-> value [:dc/has-format]))
+  ;; this returns a string
+  (ld1-> value [:sepio/is-specified-by]))
 
 (defn legacy-json [_ _ value]
   (ld1-> value [[:bfo/has-part :<] :bfo/has-part :cnt/chars]))
 
-(defn report-id [_ _ value]
-  (-> (legacy-json nil nil value)
-      (json/parse-string true)
-      :report_id))
 
-(defn animal-model [_ _ value]
-  (let [animal-model (-> (legacy-json nil nil value)
-                        (json/parse-string true)
-                        (get-in [:scoreJson :summary :AnimalModelOnly]))]
-    (case animal-model
+;; TODO should be able to remove first part after
+;; releasing full GCI
+(defresolver ^:expire-by-value report-id [_ value]
+  (let [curie (q/curie value)]
+    ;; match vintage style curie with date time stamp at the end
+    (if (re-find #"\.\d{3}Z$" curie)
+      (-> (legacy-json nil nil value)
+          (json/parse-string true)
+          :report_id)
+      ;; match GCI Express is always nil
+      (if (re-find #"^CGGCIEX:assertion_\d+$" curie)
+        nil
+        ;; match gci refactor
+        (when-let [proposition-id (-> (ld1-> value [:sepio/has-subject])
+                                      str
+                                      (s/split #"/")
+                                      last)]
+          (re-find #"[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$"
+                   proposition-id))))))
+              
+(defresolver ^:expire-by-value animal-model [args value]
+  (let [res (first (q/select "select ?s where {
+                                  ?s :bfo/has-part ?resource ;
+                                  a :sepio/GeneValidityReport ;
+                                  :cg/is-animal-model-only ?animal }"
+                             {:resource value}))]
+    (if res
+      (case (ld1-> res [:cg/is-animal-model-only])
         "YES" true
         "NO"  false
-        nil)))
+        nil)
+      nil)))
 
