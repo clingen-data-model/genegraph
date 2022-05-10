@@ -133,7 +133,10 @@ fragment alleleFields on Allele {
         (do (println (str descriptor-resource))
             (let [gql-response (experimental-schema/query variation-descriptor-graphql-query {:variation_iri (str descriptor-resource)})]
               (log/info :gql-response gql-response)
-              gql-response))))))
+              (if (empty? (:errors gql-response))
+                (-> gql-response :data :variation_descriptor_query)
+                (do (log/error :fn :variation-descriptors-as-of-date :msg "Errors in graphql query" :response gql-response)
+                    gql-response))))))))
 
 (defn write-variation-descriptors
   "Takes a seq of variation_descriptor_query response objects, writes them to a file"

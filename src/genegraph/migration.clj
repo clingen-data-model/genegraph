@@ -22,29 +22,29 @@
            [java.io InputStream OutputStream FileInputStream File]
            [com.google.common.io ByteStreams]
            [com.google.cloud.storage Bucket BucketInfo Storage StorageOptions
-            BlobId BlobInfo Blob]
+                                     BlobId BlobInfo Blob]
            [com.google.cloud.storage Storage$BlobWriteOption
-            Storage$BlobTargetOption
-            Storage$BlobSourceOption
-            Blob$BlobSourceOption]))
+                                     Storage$BlobTargetOption
+                                     Storage$BlobSourceOption
+                                     Blob$BlobSourceOption]))
 
 (defn- new-version-identifier
   "Generate a new identifier for a migration"
   []
-  (.format (ZonedDateTime/now ZoneOffset/UTC) 
+  (.format (ZonedDateTime/now ZoneOffset/UTC)
            (DateTimeFormatter/ofPattern "yyyy-MM-dd'T'HHmm")))
 
 (defn warm-resolver-cache []
   (when env/use-gql-cache
     (let [gql-file-names (-> "resolver-cache-warm.edn" io/resource slurp edn/read-string)]
       (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache..." :resources gql-file-names)
-      (doall (pmap (fn [query-file] 
+      (doall (pmap (fn [query-file]
                      (let [results (-> query-file io/resource slurp core/gql-query)]
                        (when-let [errors (:errors results)]
                          (log/error :fn :warm-resolver-cache
                                     :msg (str "Resolver cache warmer script has errors: " query-file)
                                     :errors errors)))
-                     (log/debug :fn :warm-resolver-cache :msg (str query-file " complete.")))  gql-file-names))
+                     (log/debug :fn :warm-resolver-cache :msg (str query-file " complete."))) gql-file-names))
       (log/info :fn :warm-resolver-cache :msg "Warming the resolver cache...complete."))))
 
 (defn build-base-database
@@ -171,35 +171,26 @@
 
 (defn load-stream-data
   "Loads stream data from scratch into an existing database"
-  [dest-path]
-  (log/info :fn :load-stream-data :msg (str "Loading stream data into database at " dest-path))
-  (with-redefs [env/data-vol dest-path]
-    (stop #'event/stream-processing)
-    (populate-data-vol-if-needed)
-    ;(fs/mkdirs env/data-vol)
-    (start #'db/db)
-    (start #'property-store/property-store)
-    ;(base/initialize-db!)
-    ;(batch/process-batched-events!)
-    (log/info :fn :load-stream-data :msg "Resetting topic offsets...")
-    (fs/delete (stream/offset-file))
-    (stream/initialize-current-offsets!)
-    (start #'event/stream-processing)
-    (log/info :fn :load-stream-data :msg "Processing streams...")
-    (stream/wait-for-topics-up-to-date)
-    (log/info :fn :load-stream-data :msg "Stopping streams...")
-    (stop #'event/stream-processing)
-    (log/info :fn :load-stream-data :msg "Waiting for streams to close...")
-    (stream/wait-for-topics-closed)
-    ;(when-not (env/transformer-mode?)
-    ;  (log/info :fn :load-stream-data :msg "Starting resolver cache...")
-    ;  (start #'cache/resolver-cache-db)
-    ;  (warm-resolver-cache)
-    ;  (stop #'cache/resolver-cache-db)
-    ;  (start #'suggest/suggestions)
-    ;  (log/info :fn :load-stream-data :msg "Building suggesters...")
-    ;  (suggest/build-all-suggestions)
-    ;  (stop #'suggest/suggestions))
-    ;(stop #'property-store/property-store)
-    ;(stop #'db/db)
-    ))
+  ([dest-path] (load-stream-data dest-path {}))
+  ([dest-path {from-scratch :from-scratch}]
+   (log/info :fn :load-stream-data :msg (str "Loading stream data into database at " dest-path))
+   (with-redefs [env/data-vol dest-path]
+     (stop #'event/stream-processing)
+     (populate-data-vol-if-needed)
+     ;(fs/mkdirs env/data-vol)
+     (start #'db/db)
+     (start #'property-store/property-store)
+
+     (log/info :fn :load-stream-data :msg "Resetting topic offsets...")
+     (if from-scratch
+       (do (base/initialize-db!)
+           (batch/process-batched-events!)
+           (fs/delete (stream/offset-file))))
+     (stream/initialize-current-offsets!)
+     (start #'event/stream-processing)
+     (log/info :fn :load-stream-data :msg "Processing streams...")
+     (stream/wait-for-topics-up-to-date)
+     (log/info :fn :load-stream-data :msg "Stopping streams...")
+     (stop #'event/stream-processing)
+     (log/info :fn :load-stream-data :msg "Waiting for streams to close...")
+     (stream/wait-for-topics-closed))))

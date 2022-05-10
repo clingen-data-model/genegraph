@@ -38,11 +38,17 @@
 
 (defn ^WriteChannel get-bucket-write-channel
   "Returns a function which when called returns an open WriteChannel to blob-name within env/genegraph-bucket"
-  [blob-name]
-  (let [gc-storage (.getService (StorageOptions/getDefaultInstance))
-        blob-id (BlobId/of env/genegraph-bucket blob-name)
-        blob-info (-> blob-id BlobInfo/newBuilder (.setContentType (:content-type "application/gzip")) .build)]
-    (fn [] (.writer gc-storage blob-info (make-array Storage$BlobWriteOption 0)))))
+  ([^String blob-name]
+   (get-bucket-write-channel env/genegraph-bucket blob-name))
+  ([^String bucket-name ^String blob-name]
+   (let [gc-storage (.getService (StorageOptions/getDefaultInstance))
+         blob-id (BlobId/of bucket-name blob-name)
+         blob-info (-> blob-id BlobInfo/newBuilder (.setContentType (:content-type "application/gzip")) .build)]
+     (fn [] (.writer gc-storage blob-info (make-array Storage$BlobWriteOption 0))))))
 
-(defn channel-write-string [^WritableByteChannel channel ^String input-string]
-  (.write channel (ByteBuffer/wrap (.getBytes input-string StandardCharsets/UTF_8))))
+(defn channel-write-string!
+  "Write a string in UTF-8 to a WriteableByteChannel.
+  Returns the channel for use in threading."
+  [^WritableByteChannel channel ^String input-string]
+  (.write channel (ByteBuffer/wrap (.getBytes input-string StandardCharsets/UTF_8)))
+  channel)

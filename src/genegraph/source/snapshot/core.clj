@@ -39,20 +39,34 @@
   "Accepts an args seq of key-value pairs.
   E.g. [:until \"2020-01-01\"]"
   [args]
-  (log/info :fn :run-snapshots :msg "Building database...")
+  (log/info :fn :run-snapshots :args args)
   (let [version-id (migration/get-version-id)
         database-path (join-dedup-delimiters "/" [env/base-dir version-id])]
     ;(migration/build-database database-path)
     (with-redefs [env/data-vol database-path]
       (log/info :fn :run-snapshots :msg (str "Redefined data-vol as " env/data-vol))
       (migration/populate-data-vol-if-needed)
+      (log/info :fn :run-snapshots :msg "Loading stream data...")
       (migration/load-stream-data env/data-vol)
 
-      (let [params (apply hash-map args)
-            descriptors-graphql (genegraph.source.snapshot.variation-descriptor/variation-descriptors-as-of-date {:until (:until params)})
-            descriptors-json (map json/generate-string descriptors-graphql)]
-        (let [blob-path-in-bucket (join-dedup-delimiters "/" ["snapshots" version-id "CategoricalVariationDescriptor" "00000000"])
-              write-channel (gcs/get-bucket-write-channel blob-path-in-bucket)]
-          ;(gcs/channel-write-string write-channel descriptors-json)
-          (log/info :fn :run-snapshots :msg "Writing json to ")
-          )))))
+
+      (let [params (->> args
+                        (partition-all 2)
+                        (map (fn [[a b]]
+                               [(if (.startsWith a ":") (keyword (.substring a 1)) a)
+                                b]))
+                        (map #(apply vector %))
+                        (into {}))
+            descriptors-graphql (genegraph.source.snapshot.variation-descriptor/variation-descriptors-as-of-date {:until (:until params)})]
+        (let [descriptors-json (map json/generate-string descriptors-graphql)
+              output-string (s/join "\n" descriptors-json)]
+          (let [blob-path-in-bucket (join-dedup-delimiters "/" ["snapshots" version-id "CategoricalVariationDescriptor" "00000000"])
+                write-channel-fn (gcs/get-bucket-write-channel blob-path-in-bucket)]
+            (log/info :fn :run-snapshots
+                      :msg (format "Writing json (%d bytes) to %s"
+                                   (count output-string)
+                                   blob-path-in-bucket))
+            (with-open [write-channel (write-channel-fn)]
+              (gcs/channel-write-string! write-channel output-string))
+            (log/info :fn :run-snapshots :msg "Done writing snapshot output")
+            descriptors-json))))))
