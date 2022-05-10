@@ -81,10 +81,6 @@
   digest/digest                                     {:mvn/version "1.4.10"}
   ;; alternative to REBL
   djblue/portal                                     {:mvn/version "0.23.0"}
-  ;; rocksjni for everything else -- is there an arch switch in deps?
-  ;; org.rocksdb/rocksdbjni {:mvn/version "6.25.3"}
-  ;; rocksjni for apple silicon--will not work onIntel
-  ;; io.maryk.rocksdb/rocksdbjni                       {:mvn/version "6.25.3"}
   org.rocksdb/rocksdbjni                            {:mvn/version "7.1.2"}
   io.pedestal/pedestal.interceptor                  {:mvn/version "0.5.10"}
   io.pedestal/pedestal.jetty                        {:mvn/version "0.5.10"}
@@ -103,14 +99,11 @@
   org.apache.jena/jena-shacl                        {:mvn/version "4.5.0"}
   org.apache.kafka/kafka-clients                    {:mvn/version "3.1.0"}
   ;; Jena 3.17.0 includes codecs from Lucene 7.7.3. =tbl
-  org.apache.lucene/lucene-suggest                  {:mvn/version "7.7.3"}
+  org.apache.lucene/lucene-suggest                  {:mvn/version "8.11.1"}
   org.codehaus.janino/janino                        {:mvn/version "3.1.6"}
   ;; ordered included for generating jsonld context with ordered-map. =tbl
   org.flatland/ordered                              {:mvn/version "1.15.10"}
   org.glassfish/jakarta.json                        {:mvn/version "2.0.1"}
   org.slf4j/jcl-over-slf4j                          {:mvn/version "1.7.36"}
   org.slf4j/jul-to-slf4j                            {:mvn/version "1.7.36"}
-  org.slf4j/log4j-over-slf4j                        {:mvn/version "1.7.36"}
-  ;; dependency superceeded by antlr provided via lacinia dependency
-  ;; org.topbraid/shacl                                {:mvn/version "1.4.2"}
-  }}
+  org.slf4j/log4j-over-slf4j                        {:mvn/version "1.7.36"}}}
