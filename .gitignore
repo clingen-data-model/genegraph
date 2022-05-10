@@ -55,7 +55,7 @@ lucene_index/
 suggestions/
 
 # intellij
-doc/.idea/
+.idea/
 
 # saves
 tdb.baseline/
