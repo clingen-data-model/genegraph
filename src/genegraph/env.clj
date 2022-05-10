@@ -1,5 +1,6 @@
 (ns genegraph.env
-  (:require [io.pedestal.log :as log]))
+  (:require [io.pedestal.log :as log]
+            [clojure.string :as s]))
 
 (def base-dir (or (System/getenv "GENEGRAPH_DATA_PATH")
                   (System/getenv "CG_SEARCH_DATA_VOL")))
@@ -50,3 +51,5 @@
 (defn transformer-mode? []
   (= "transformer" mode))
 
+(defn topic-seq []
+  (s/split dx-topics #";"))
