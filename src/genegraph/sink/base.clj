@@ -19,7 +19,8 @@
             [genegraph.transform.rxnorm]
             [genegraph.env :as env]
             [io.pedestal.log :as log]
-            [juxt.dirwatch :refer [watch-dir]])
+            [juxt.dirwatch :refer [watch-dir]]
+            [genegraph.util.gcs :as gcs])
   (:import java.io.PushbackReader
            java.time.Instant))
 
@@ -57,12 +58,6 @@
                  (db/load-model (transform-doc d) (:name d)))
                documents)))
 
-(defn initialize-db! []
-  (let [res (read-base-resources)]
-    (retrieve-base-data! res)
-    (import-documents! res)
-    (log/debug :fn :initialize-db! :msg :initialization-complete)))
-
 (defn import-document [name documents]
   (import-documents! (filter #(= name (:name %)) documents)))
 
@@ -76,3 +71,16 @@
        (import-documents! changed-documents)))
    (io/file (target-base))))
 
+;; May want to refer to an environment variable in future
+;; if multiple potential base origins are desired
+(defn retrieve-base-data-from-gcp! []
+  (gcs/get-files-with-prefix! "current-base/" (target-base)))
+
+(defn push-base-data-to-gcp! []
+  (gcs/push-directory-to-bucket! (target-base) "current-base/"))
+
+(defn initialize-db! []
+  (let [res (read-base-resources)]
+    (retrieve-base-data-from-gcp!)
+    (import-documents! res)
+    (log/debug :fn :initialize-db! :msg :initialization-complete)))

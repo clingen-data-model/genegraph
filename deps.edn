@@ -77,7 +77,7 @@
   buddy/buddy-sign {:mvn/version "3.2.0"}
   com.fasterxml.jackson.core/jackson-core {:mvn/version "2.11.0"}
   com.fasterxml.jackson.core/jackson-databind {:mvn/version "2.11.0"}
-  com.google.cloud/google-cloud-storage {:mvn/version "1.108.0"}
+  com.google.cloud/google-cloud-storage {:mvn/version "2.6.1"}
   ;; rocksjni for everything else -- is there an arch switch in deps?
   ;;  org.rocksdb/rocksdbjni {:mvn/version "6.25.3"}
   ;; rocksjni for apple silicon--will not work on Intel
