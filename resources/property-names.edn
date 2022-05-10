@@ -206,6 +206,8 @@
  [:bfo/realizes "http://purl.obolibrary.org/obo/BFO_0000055"]
  [:bibo/digital-object-identifier-doi
   "http://purl.org/ontology/bibo/doi"]
+ [:cg/is-animal-model-only
+  "http://dataexchange.clinicalgenome.org/terms/is_animal_model_only"]
  [:cg/is-in-model
   "http://dataexchange.clinicalgenome.org/terms/is_in_model"]
  [:cg/resource "http://dataexchange.clinicalgenome.org/terms/resourceProps"]

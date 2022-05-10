@@ -162,6 +162,7 @@
             "6" "SEPIO:0004094"
             "7" "SEPIO:0004095"
             "8" "SEPIO:0004096"
+            "9" "SEPIO:0004171"
 
             ;; Sex
             "Ambiguous" "SEPIO:0004574"

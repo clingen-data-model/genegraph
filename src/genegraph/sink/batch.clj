@@ -66,4 +66,3 @@
         :compressed-event-files (process-compressed-event-file! descriptor)
         :json-event-sequence (process-json-event-sequence! descriptor)))))
 
-
