@@ -42,7 +42,7 @@
                 org.openjfx/javafx-fxml             {:mvn/version "18"}
                 org.openjfx/javafx-swing            {:mvn/version "18"}
                 org.openjfx/javafx-web              {:mvn/version "18"}}
-   :main-opts ["-m" "cognitect.rebl"]}
+   :main-opts  ["-e" "((requiring-resolve,'cognitect.rebl/ui))" "-m" "nrepl.cmdline"]}
 
   :run                                  ; This doesn't work yet.
   {:extra-deps  {io.pedestal/pedestal.service-tools {:mvn/version "0.5.5"}}
@@ -81,10 +81,7 @@
   digest/digest                                     {:mvn/version "1.4.10"}
   ;; alternative to REBL
   djblue/portal                                     {:mvn/version "0.23.0"}
-  ;; rocksjni for everything else -- is there an arch switch in deps?
-  ;; org.rocksdb/rocksdbjni {:mvn/version "6.25.3"}
-  ;; rocksjni for apple silicon--will not work onIntel
-  io.maryk.rocksdb/rocksdbjni                       {:mvn/version "6.25.3"}
+  org.rocksdb/rocksdbjni                            {:mvn/version "7.1.2"}
   io.pedestal/pedestal.interceptor                  {:mvn/version "0.5.10"}
   io.pedestal/pedestal.jetty                        {:mvn/version "0.5.10"}
   io.pedestal/pedestal.service                      {:mvn/version "0.5.10"}
@@ -110,11 +107,4 @@
   org.slf4j/jul-to-slf4j                            {:mvn/version "1.7.36"}
   org.slf4j/log4j-over-slf4j                        {:mvn/version "1.7.36"}
   ;; dependency superceeded by antlr provided via lacinia dependency
-  org.topbraid/shacl                                {:mvn/version "1.4.2"}
-  ;; Support running REBL from the REPL.
-  com.cognitect/rebl                                {:mvn/version "0.9.245"}
-  org.openjfx/javafx-base                           {:mvn/version "18"}
-  org.openjfx/javafx-controls                       {:mvn/version "18"}
-  org.openjfx/javafx-fxml                           {:mvn/version "18"}
-  org.openjfx/javafx-swing                          {:mvn/version "18"}
-  org.openjfx/javafx-web                            {:mvn/version "18"}}}
+  org.topbraid/shacl                                {:mvn/version "1.4.2"}}}

@@ -1,24 +1,21 @@
-# For more information on these images, and use of Clojure in Docker
-# https://hub.docker.com/_/clojure
-FROM clojure:openjdk-11-lein-2.9.8 AS builder
+FROM clojure:temurin-17-tools-deps-alpine AS builder
 
 # Copying and building deps as a separate step in order to mitigate
 # the need to download new dependencies every build.
-COPY project.clj /usr/src/app/project.clj
+COPY deps.edn /usr/src/app/deps.edn
 WORKDIR /usr/src/app
-RUN lein deps 
-
-
+RUN clojure -P
 COPY . /usr/src/app
-RUN lein uberjar
+RUN clojure -T:build uber
 
 # Using image without lein for deployment.
-FROM openjdk:11
+FROM eclipse-temurin:17-alpine
 LABEL maintainer="Tristan Nelson <thnelson@geisinger.edu>"
 
-COPY --from=builder /usr/src/app/target/app.jar /app/app.jar
-COPY keys/dev.serveur.keystore.jks /keys/dev.serveur.keystore.jks
-COPY keys/serveur.truststore.jks /keys/serveur.truststore.jks
+# libstdc++ needed for rocksdbjni, not otherwise present in alpine
+RUN apk add --no-cache libstdc++~=10
+
+COPY --from=builder /usr/src/app/target/genegraph.jar /app/app.jar
 
 EXPOSE 8888
 
