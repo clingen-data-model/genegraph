@@ -42,7 +42,7 @@
                 org.openjfx/javafx-fxml             {:mvn/version "18"}
                 org.openjfx/javafx-swing            {:mvn/version "18"}
                 org.openjfx/javafx-web              {:mvn/version "18"}}
-   :main-opts ["-m" "cognitect.rebl"]}
+   :main-opts  ["-e" "((requiring-resolve,'cognitect.rebl/ui))" "-m" "nrepl.cmdline"]}
 
   :run                                  ; This doesn't work yet.
   {:extra-deps  {io.pedestal/pedestal.service-tools {:mvn/version "0.5.5"}}
@@ -110,11 +110,4 @@
   org.slf4j/jul-to-slf4j                            {:mvn/version "1.7.36"}
   org.slf4j/log4j-over-slf4j                        {:mvn/version "1.7.36"}
   ;; dependency superceeded by antlr provided via lacinia dependency
-  org.topbraid/shacl                                {:mvn/version "1.4.2"}
-  ;; Support running REBL from the REPL.
-  com.cognitect/rebl                                {:mvn/version "0.9.245"}
-  org.openjfx/javafx-base                           {:mvn/version "18"}
-  org.openjfx/javafx-controls                       {:mvn/version "18"}
-  org.openjfx/javafx-fxml                           {:mvn/version "18"}
-  org.openjfx/javafx-swing                          {:mvn/version "18"}
-  org.openjfx/javafx-web                            {:mvn/version "18"}}}
+  org.topbraid/shacl                                {:mvn/version "1.4.2"}}}
