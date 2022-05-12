@@ -81,10 +81,7 @@
   digest/digest                                     {:mvn/version "1.4.10"}
   ;; alternative to REBL
   djblue/portal                                     {:mvn/version "0.23.0"}
-  ;; rocksjni for everything else -- is there an arch switch in deps?
-  ;; org.rocksdb/rocksdbjni {:mvn/version "6.25.3"}
-  ;; rocksjni for apple silicon--will not work onIntel
-  io.maryk.rocksdb/rocksdbjni                       {:mvn/version "6.25.3"}
+  org.rocksdb/rocksdbjni                            {:mvn/version "7.1.2"}
   io.pedestal/pedestal.interceptor                  {:mvn/version "0.5.10"}
   io.pedestal/pedestal.jetty                        {:mvn/version "0.5.10"}
   io.pedestal/pedestal.service                      {:mvn/version "0.5.10"}
