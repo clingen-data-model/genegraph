@@ -42,7 +42,18 @@
                 org.openjfx/javafx-fxml             {:mvn/version "18"}
                 org.openjfx/javafx-swing            {:mvn/version "18"}
                 org.openjfx/javafx-web              {:mvn/version "18"}}
-   :main-opts ["-m" "cognitect.rebl"]}
+   :main-opts  ["-e" "((requiring-resolve,'cognitect.rebl/ui))" "-m" "nrepl.cmdline"]}
+<<<<<<< HEAD
+
+  :rebl-deps                                 ; for JDK 11+
+  {:extra-deps {com.cognitect/rebl                  {:mvn/version "0.9.245"}
+                org.openjfx/javafx-base             {:mvn/version "18"}
+                org.openjfx/javafx-controls         {:mvn/version "18"}
+                org.openjfx/javafx-fxml             {:mvn/version "18"}
+                org.openjfx/javafx-swing            {:mvn/version "18"}
+                org.openjfx/javafx-web              {:mvn/version "18"}}}
+=======
+>>>>>>> master
 
   :run                                  ; This doesn't work yet.
   {:extra-deps  {io.pedestal/pedestal.service-tools {:mvn/version "0.5.5"}}
@@ -69,7 +80,7 @@
   com.fasterxml.jackson.core/jackson-core           {:mvn/version "2.13.2"}
   com.fasterxml.jackson.core/jackson-databind       {:mvn/version "2.13.2"}
   com.github.danielwegener/logback-kafka-appender   {:mvn/version "0.2.0-RC2"}
-  com.google.cloud/google-cloud-storage             {:mvn/version "2.6.0"}
+  com.google.cloud/google-cloud-storage             {:mvn/version "2.6.1"}
   ;; :exclusions works around LICENSE/license filename case conflict in build.
   com.google.firebase/firebase-admin                {:mvn/version "8.1.0"
                                                      :exclusions

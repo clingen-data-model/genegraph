@@ -53,3 +53,7 @@
 
 (defn topic-seq []
   (s/split dx-topics #";"))
+
+;; Atom for getting/setting knowledge relating to application state
+
+(defonce status (atom {}))

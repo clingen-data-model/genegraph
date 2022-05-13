@@ -38,7 +38,7 @@
            org.apache.jena.rdf.model.Model))
 
 ;; (defn start-rebl []
-;;   (rebl/ui))
+;;   (cognitect.rebl/ui))
 
 (defn clear-named-grpahs-with-type [type-carrying-graph-name]
   (let [named-graphs (map str

@@ -1,5 +1,3 @@
-# For more information on these images, and use of Clojure in Docker
-# https://hub.docker.com/_/clojure
 FROM clojure:temurin-17-tools-deps-alpine AS builder
 
 # Copying and building deps as a separate step in order to mitigate
@@ -15,7 +13,7 @@ FROM eclipse-temurin:17-alpine
 LABEL maintainer="Tristan Nelson <thnelson@geisinger.edu>"
 
 # libstdc++ needed for rocksdbjni, not otherwise present in alpine
-RUN apk add --no-cache libstdc++
+RUN apk add --no-cache libstdc++~=10
 
 COPY --from=builder /usr/src/app/target/genegraph.jar /app/app.jar
 
