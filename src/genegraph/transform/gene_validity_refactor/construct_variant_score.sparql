@@ -28,6 +28,7 @@ construct {
   :sepio/previous-testing ?prevTesting ;
   :sepio/previous-testing-description ?prevTestingDescription ;
   :sepio/testing-methods ?methods ;
+  :sepio/detection-method ?methodsOfDetection ;
   :sepio/has-textual-part ?phenotypeFreeText ;
   :sepio/is-about-condition ?phenotypes ;
   :sepio/has-variant ?evidenceItem .
@@ -107,6 +108,10 @@ where {
   
   OPTIONAL {
     ?method gci:previousTesting ?prevTesting .
+  }
+
+ OPTIONAL {
+     ?method gci:specificMutationsGenotypedMethod ?methodsOfDetection .
   }
   
   OPTIONAL {

@@ -26,6 +26,7 @@ construct {
   :sepio/previous-testing ?prevTesting ;
   :sepio/previous-testing-description ?prevTestingDescription ;
   :sepio/testing-methods ?methods ;
+  :sepio/detection-method ?methodsOfDetection ;
   :sepio/has-textual-part ?phenotypeFreeText ;
   :sepio/is-about-condition ?phenotypes ;
   :sepio/has-variant ?evidenceItem .
@@ -64,9 +65,12 @@ where {
   gci:label ?individualLabel ;
 
   gci:proband true ;
-  gci:sex ?sex ;
-  gci:denovo ?deNovo .
-  
+  gci:sex ?sex .
+
+  OPTIONAL {
+      ?individual gci:denovo ?deNovo .
+  }
+
   BIND(IF(?deNovo = "Yes", :geno/DeNovoAlleleOrigin , IF(?deNovo = "No", :geno/GermlineAlleleOrigin , :geno/AlleleOrigin ) ) AS ?alleleOrigin) .
 
   OPTIONAL {
