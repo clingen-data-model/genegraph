@@ -9,14 +9,12 @@
             [genegraph.migration :as migration]
             [genegraph.source.snapshot.core :as snapshot]
             [genegraph.env :as env]
-            [nrepl.core :as nrepl]
-            [nrepl.server]
             [io.pedestal.log :as log])
   (:import com.google.firebase.FirebaseApp))
 
 (def initialized? (atom false))
 
-(def status-routes 
+(def status-routes
   {::server/routes
    [["/live"
      :get (fn [_] {:status 200 :body "server is live"})
@@ -36,7 +34,7 @@
                       "production" (service/prod-service)
                       "transformer" (service/transformer-service)
                       (service/dev-service))]
-    (server/start 
+    (server/start
      (server/create-server
       (merge-with into service-map status-routes)))))
 
@@ -108,7 +106,7 @@
   (env/log-environment)
   (when env/migration-data-version
     (with-redefs [env/data-vol env/migration-data-vol
-                  env/data-version env/migration-data-version] 
+                  env/data-version env/migration-data-version]
       (migration/populate-data-vol-if-needed)))
   (migration/create-migration))
 

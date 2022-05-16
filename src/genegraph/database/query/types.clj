@@ -253,7 +253,7 @@
   clojure.lang.IPersistentVector
   (step [edge start model]
     (let [property (kw-to-property (first edge))]
-      (if (property-store/property-in-store? property)
+      (if false ;; (property-store/property-in-store? property)
         (property-store/get-property start property)
         (tx 
          (let [out-fn (fn [n] (->> (.listObjectsOfProperty model (.resource n) property)

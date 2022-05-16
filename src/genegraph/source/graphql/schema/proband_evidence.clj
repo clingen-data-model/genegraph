@@ -27,9 +27,6 @@
             :age_value {:type 'Int
                         :description "The age value of the proband."
                         :path [:sepio/age-value]}
-            :ethnicity {:type :Resource
-                        :description "The ethnicity of the proband."
-                        :path [:sepio/ethnicity]}
             :previous_testing {:type 'Boolean
                                :description "Was there previous testing performed."
                                :path [:sepio/previous-testing]}
@@ -39,6 +36,15 @@
             :testing_methods {:type '(list String) ;;'(list :Resource)
                               :description "Testing methods performed."
                               :path [:sepio/testing-methods]}
-            :phenotypes {:type '(list String)
+            :phenotype_free_text {:type 'String
+                                :description "Free text regarding the phenotypes."
+                                :path [:sepio/has-textual-part]}
+            :phenotypes {:type '(list :Resource)
                          :description "List of phenotypes."
-                         :path [:sepio/is-about-condition]}}})
+                         :path [:sepio/is-about-condition]}
+            :genotyping_method {:type 'String
+                                :description "Genotyping method description"
+                                :path [:sepio/detection-method]}
+            :ethnicity {:type :Resource
+                        :description "The ethnicity of the proband."
+                        :path [:sepio/ethnicity]}}})

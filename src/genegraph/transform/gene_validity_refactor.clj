@@ -83,6 +83,7 @@
             "diseaseId" {"@type" "@id"}
             "caseInfoType" {"@type" "@id"}
             "variantType" {"@type" "@id"}
+            "caseControl" {"@type" "@id"}                           
             ;; "experimental_scored" {"@type" "@id"}
             ;; "caseControl_scored" {"@type" "@id"}
             ;; "variants" {"@type" "@id"}
@@ -161,6 +162,7 @@
             "6" "SEPIO:0004094"
             "7" "SEPIO:0004095"
             "8" "SEPIO:0004096"
+            "9" "SEPIO:0004171"
 
             ;; Sex
             "Ambiguous" "SEPIO:0004574"

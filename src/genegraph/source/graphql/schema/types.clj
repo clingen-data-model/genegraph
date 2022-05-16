@@ -22,6 +22,8 @@
     [:vrs/Extension :Extension]
     [:vrs/VariationMember :VariationMember]
     [:sepio/FamilyCosegregation :Segregation]
+    [:sepio/CaseControlEvidenceItem :CaseControlEvidence]
+    [:stato/Cohort :Cohort]
     [:sepio/ValueSet :ValueSet]
     [:pco/Family :Family]]
    :default-type-mapping :GenericResource})

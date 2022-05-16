@@ -18,18 +18,32 @@ where
 
   OPTIONAL {
     ?vd gci:canonicalTranscriptTitle ?canonicalTranscriptTitle .
+    FILTER regex(?canonicalTranscriptTitle, ".+")
   }
 
   OPTIONAL {
     ?vd gci:maneTranscriptTitle ?maneTranscriptTitle .
+    FILTER regex(?maneTranscriptTitle, ".+")
   }
 
   OPTIONAL {
     ?vd gci:preferredTitle ?preferredTitle .
+    FILTER regex(?preferredTitle, ".+")
   }
 
   OPTIONAL {
     ?vd gci:clinvarVariantTitle ?clinvarVariantTitle .
+    FILTER regex(?clinvarVariantTitle, ".+")
+  }
+
+  OPTIONAL {
+    ?vd gci:hgvsNames / gci:GRCh38 ?grch38 .
+    FILTER regex(?grch38, ".+")
+  }
+
+  OPTIONAL {
+    ?vd gci:hgvsNames / gci:GRCh37 ?grch37 .
+    FILTER regex(?grch37, ".+")
   }
   
   OPTIONAL {
@@ -49,5 +63,7 @@ where
   BIND(COALESCE(?canonicalTranscriptTitle,
 		?maneTranscriptTitle,
 		?preferredTitle,
-		?clinvarVariantTitle) AS ?preferred_label ) .
+		?clinvarVariantTitle,
+		?grch38,
+		?grch37) AS ?preferred_label ) .
 }

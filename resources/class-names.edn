@@ -151,6 +151,7 @@
  [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP6 "http://purl.obolibrary.org/obo/SEPIO_0004094"]
  [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP7 "http://purl.obolibrary.org/obo/SEPIO_0004095"]
  [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP8 "http://purl.obolibrary.org/obo/SEPIO_0004096"]
+ [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP9 "http://purl.obolibrary.org/obo/SEPIO_0004171"]
 [:sepio/ClinGenProteinFunctionCriteria
   "http://purl.obolibrary.org/obo/SEPIO_0004074"]
  [:sepio/NonHumanModelOrganismEvidenceItem
@@ -309,6 +310,8 @@
   "http://purl.obolibrary.org/obo/SEPIO_0004026"]
  [:sepio/ClinGenExperimentalEvidenceCriteria
   "http://purl.obolibrary.org/obo/SEPIO_0004067"]
+ [:sepio/CaseControlEvidenceItem
+  "http://purl.obolibrary.org/obo/SEPIO_0004170"]
  [:sepio/CaseControlSingleStudyEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004039"]
  [:sepio/CaseControlSingleStudyEvidenceLine
@@ -398,5 +401,6 @@
  [:vrs/Number "https://vrs.ga4gh.org/terms/Number"]
  [:vrs/SequenceLocation "https://vrs.ga4gh.org/terms/SequenceLocation"]
  [:vrs/SequenceInterval "https://vrs.ga4gh.org/terms/SequenceInterval"]
- [:chebi/Drug "http://purl.obolibrary.org/obo/CHEBI_23888"]]
+ [:chebi/Drug "http://purl.obolibrary.org/obo/CHEBI_23888"]
+ [:stato/Cohort "http://purl.obolibrary.org/obo/STATO_0000203"]]
 

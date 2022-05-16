@@ -528,6 +528,12 @@
     :legacy_json {:type String
                   :description "Legacy JSON from the GCI."
                   :resolve :gene-validity/legacy-json}
+    :animal_model {:type Boolean
+                   :description "Animal modely flag."
+                   :resolve :gene-validity/animal-model}
+    :report_id {:type String
+                :description "The report ID."
+                :resolve :gene-validity/report-id}
     :description {:type String
                   :resolve :evidence/description}}}
 
