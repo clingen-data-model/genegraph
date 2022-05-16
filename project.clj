@@ -68,10 +68,7 @@
   {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "genegraph.server/run-dev"]}
          :dependencies [[io.pedestal/pedestal.service-tools "0.5.5"]]}
    :uberjar {:aot [genegraph.server]
-             :uberjar-name "app.jar"}
-   :uberjar-repl {:uberjar-name "app.jar"
-                  :aot [genegraph.server-repl]
-                  :main genegraph.server-repl}}
+             :uberjar-name "app.jar"}}
   :repl-options {:caught clojure.repl/pst}
   :plugins [[lein-codox "0.10.7"]]
   :codox {:output-path "docs"}
