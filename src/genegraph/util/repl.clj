@@ -31,11 +31,14 @@
             [clojure.datafy :as d :refer [datafy]]
             [taoensso.nippy :as nippy]
             [genegraph.database.names :as db-names]
+            [genegraph.sink.event-recorder :as event-recorder]
+            [genegraph.util.fs :as fs]
             [genegraph.database.property-store :as property-store])
   (:import java.time.Instant
            java.time.temporal.ChronoUnit
-           org.apache.jena.rdf.model.AnonId
-           org.apache.jena.rdf.model.Model))
+           [org.apache.jena.rdf.model AnonId Model ModelFactory]
+           [org.apache.jena.riot RDFDataMgr Lang]
+           [java.io ByteArrayOutputStream ByteArrayInputStream]))
 
 ;; (defn start-rebl []
 ;;   (cognitect.rebl/ui))

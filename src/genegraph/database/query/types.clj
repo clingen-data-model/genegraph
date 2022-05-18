@@ -22,6 +22,7 @@
            [java.io
             ByteArrayOutputStream
             ByteArrayInputStream]
+           [org.apache.jena.riot RDFDataMgr Lang]
            [org.apache.jena.datatypes.xsd.impl
             XSDBaseNumericType]))
 
@@ -211,28 +212,33 @@
                 (get-all-graphs)
                 (-> resource-descriptor :bnode-id AnonId/create))))))
 
-;; Standard freeze doesn't seem to work with the model nested
-;; in anotehr object, am therefore round-tripping the model to a
-;; string, rather than writing the bytes directly to the output
+;; Jena read methods expect to read to the end of the stream
+;; when offered one as input. Since Nippy presents the
+;; model serialized with other objects in the stream, need to
+;; extract the serialized model from the stream before passing
+;; to Jena. I suppose this costs us some unnecessary memcpy.
+;; An alternative might be extending an input-stream class
+;; that can send EOF after a fixed number of bytes are read.
+;; Doesen't seem worth the work (right now)
 
 (nippy/extend-freeze
  Model ::model
  [x data-output]
- (let [string-container-stream (ByteArrayOutputStream.)]
-   (.write x string-container-stream "NTRIPLES")
-   (.writeUTF data-output
-              (-> string-container-stream
-                  .toString))))
+ (let [model-stream (ByteArrayOutputStream.)
+       _ (RDFDataMgr/write model-stream x Lang/RDFTHRIFT)
+       model-bytes (.toByteArray model-stream)]
+   (.writeLong data-output (alength model-bytes)) ; add byte count as prefix
+   (.write data-output model-bytes 0 (alength model-bytes))))
 
 (nippy/extend-thaw
  ::model
  [data-input]
- (let [input-stream (-> data-input
-                        .readUTF
-                        .getBytes
-                        ByteArrayInputStream.)]
-   (-> (ModelFactory/createDefaultModel)
-       (.read input-stream nil "NTRIPLES"))))
+ (let [model-byte-count (.readLong data-input)
+       model-bytes (make-array Byte/TYPE model-byte-count)
+       model (ModelFactory/createDefaultModel)]
+   (.read data-input model-bytes 0 model-byte-count)
+   (RDFDataMgr/read model (ByteArrayInputStream. model-bytes) Lang/RDFTHRIFT)
+   model))
 
 (defn- kw-to-property [kw]
   (if-let [prop (names/local-property-names kw)]
