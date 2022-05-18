@@ -15,4 +15,17 @@
    :implements [:Resource]
    :fields {:short_citation {:type 'String
                              :description "Short-form citation of the reference"
-                             :resolve short-citation}}})
+                             :resolve short-citation}
+            :multiple_authors {:type 'Boolean
+                               :description "Boolean indicating if there are multiple authors"
+                               :path [:sepio/multiple-authors]}
+            :first_author {:type 'String
+                           :description "First author"
+                           :path [:dc/creator]}
+            :year_published {:type 'String
+                             :description "The year the paper was published"
+                             :path [:dc/date]}
+            :abstract {:type 'String
+                       :description "The paper's abstract."
+                       :path [:dc/abstract]}}})
+            
