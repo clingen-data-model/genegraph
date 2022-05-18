@@ -1267,6 +1267,7 @@
  [:sepio/meets-inclusion-criteria "http://purl.obolibrary.org/obo/SEPIO_0004126"]
  [:sepio/median-sequencing-coverage
   "http://purl.obolibrary.org/obo/SEPIO_0000303"]
+ [:sepio/multiple-authors "http://purl.obolibrary.org/obo/SEPIO_0004160"]
  [:sepio/num-with-variant "http://purl.obolibrary.org/obo/SEPIO_0004155"]
  [:sepio/obsolete-evidence-assessed-by
   "http://purl.obolibrary.org/obo/SEPIO_0000152"]
