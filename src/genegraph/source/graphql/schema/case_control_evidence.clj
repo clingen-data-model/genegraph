@@ -21,12 +21,12 @@
             :p_value {:type 'Float
                       :description "The p-value."
                       :path  [:obi/p-value]}
-            :statitical_significance_type {:type 'String
+            :statistical_significance_type {:type 'String
                                            :description "Statistical significance type."
                                            :path [:sepio/statistical-significance-type]}
-            :statitical_significance_value_type {:type 'String
+            :statistical_significance_value_type {:type 'String
                                                  :description "Statistical significance value type."
                                                  :path [:sepio/statistical-significance-value-type]}
-            :statitical_significance_value {:type 'Float
+            :statistical_significance_value {:type 'Float
                                            :description "Statistical significance value."
                                            :path [:sepio/statistical-significance-value]}}})
