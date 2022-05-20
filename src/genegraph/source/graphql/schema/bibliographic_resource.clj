@@ -8,6 +8,11 @@
      " "
      (q/ld1-> value [:dc/date]))))
 
+(defn earliest-article [_ _ value]
+  (if (q/ld1-> value [[:sepio/earliest-article :<]])
+    true
+    false))
+
 (def bibliographic-resource
   {:name :BibliographicResource
    :graphql-type :object
@@ -27,5 +32,8 @@
                              :path [:dc/date]}
             :abstract {:type 'String
                        :description "The paper's abstract."
-                       :path [:dc/abstract]}}})
+                       :path [:dc/abstract]}
+            :earliest_article {:type 'Boolean
+                               :description "Article represents the earliest article"
+                               :resolve earliest-article}}})
             

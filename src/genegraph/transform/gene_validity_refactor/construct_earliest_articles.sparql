@@ -1,0 +1,17 @@
+prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
+
+construct
+{
+  ?proposition :sepio/earliest-article ?article .
+}
+where {
+  ?gdm a gci:gdm .
+  ?proposition a gci:provisionalClassification ;
+  gci:approvedClassification true ;
+  gci:publishClassification true .
+  ?assertion gci:earliestArticles ?publication .
+  ?publication a gci:article ;
+  gci:pmid ?pmid .
+    
+  BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
+}

@@ -40,4 +40,7 @@
                        :description "Evidence used in in support of the statement"
                        :args {:class {:type 'String}
                               :transitive {:type 'Boolean}}
-                       :resolve common/evidence-items}}})
+                       :resolve common/evidence-items}
+            :earliest_articles {:type '(list :Resource)
+                                :description "Earlist articles reported for this statement"
+                                :path [:sepio/earliest-article]}}})

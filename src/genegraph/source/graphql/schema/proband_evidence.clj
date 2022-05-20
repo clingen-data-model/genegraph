@@ -47,4 +47,7 @@
                                 :path [:sepio/detection-method]}
             :ethnicity {:type :Resource
                         :description "The ethnicity of the proband."
-                        :path [:sepio/ethnicity]}}})
+                        :path [:sepio/ethnicity]}
+            :paternity_maternity_confirmed {:type 'String
+                                            :description "Paternity/maternity confirmed."
+                                            :path [:sepio/paternity-maternity-confirmed]}}})
