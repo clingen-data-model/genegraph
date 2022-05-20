@@ -94,6 +94,14 @@
   [db]
   (.close db))
 
+(defn raw-prefix-iter
+  [db prefix]
+  (let [iter (.newIterator db 
+                           (.setIterateUpperBound (ReadOptions.)
+                                                  (Slice. (key-tail-digest prefix))))]
+    (.seek iter (key-digest prefix))
+    iter))
+
 (defn prefix-iter
   "return a RocksIterator that covers records with prefix"
   [db prefix]
@@ -127,6 +135,15 @@
   "Return a lazy-seq over all records in the database"
   [db]
   (-> db entire-db-iter rocks-iterator-seq))
+
+
+
+(defn raw-prefix-seq
+  "Return a lazy-seq over all records beginning with prefix,
+  where prefix is a byte array. Intended when record ordering
+  is significant."
+  [db prefix]
+  )
 
 (defn sample-prefix 
   "Take first n records from db given prefix"
