@@ -99,6 +99,7 @@
    :ac-assertion/source ac-assertion/source
    :ac-assertion/classification ac-assertion/classification
    :ac-assertion/attributed-to ac-assertion/attributed-to
+   :ac-assertion/report-label ac-assertion/report-label
    :affiliation/affiliation-query affiliation/affiliation-query
    :affiliation/affiliations affiliation/affiliations
    :affiliation/curated-diseases affiliation/curated-diseases
