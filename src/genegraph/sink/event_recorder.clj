@@ -6,24 +6,38 @@
             [genegraph.env :as env]
             [io.pedestal.log :as log])
   (:import [java.time Instant]
-           java.nio.ByteBuffer))
+           java.nio.ByteBuffer
+           java.security.MessageDigest))
 
 (defstate event-database
   :start (rocksdb/open "event_database")
   :stop (rocksdb/close event-database))
 
+(defn- topic-digest
+  [topic]
+  (.digest (MessageDigest/getInstance "SHA-256")
+           (.getBytes (str topic))))
+
+(def key-size (+ (* 2 Long/BYTES) ; Partition and offset
+                 32 ; length of topic digest
+                 ))
+
 (defn event-key
   "Create a key for the given event."
   [event]
-  (let [event-format-str (str (:genegraph.annotate/format event))
-        key-buffer (ByteBuffer/allocate (+ (* 2 Long/BYTES) ; Partition and offset
-                                           (count event-format-str)))]
-    (-> key-buffer
-        (.put (.getBytes event-format-str))
-        (.putLong (or (:genegraph.sink.stream/partition event) 0))
-        (.putLong (or (:genegraph.sink.stream/offset event)
-                      (.toEpochMilli (Instant/now))))
-        .array)))
+  (.array
+   (doto (ByteBuffer/allocate key-size)
+     (.put (topic-digest (:genegraph.annotate/format event)))
+     (.putLong (or (:genegraph.sink.stream/partition event) 0))
+     (.putLong (or (:genegraph.sink.stream/offset event)
+                   (.toEpochMilli (Instant/now)))))))
+
+
+(defn events-for-topic
+  "Returns a lazy-seq over the events derived from TOPIC"
+  [topic]
+  (rocksdb/raw-prefix-seq event-database
+                          (topic-digest topic)))
 
 (defn- record-event!
   "Store an event in database, using sink offset as key.
@@ -48,5 +62,4 @@
 (def record-event-interceptor
   {:name ::record-event
    :leave record-event!})
-
 
