@@ -1,6 +1,5 @@
 (ns genegraph.env
-  (:require [io.pedestal.log :as log]
-            [clojure.string :as s]))
+  (:require [io.pedestal.log :as log]))
 
 (def base-dir (or (System/getenv "GENEGRAPH_DATA_PATH")
                   (System/getenv "CG_SEARCH_DATA_VOL")))
@@ -51,9 +50,3 @@
 (defn transformer-mode? []
   (= "transformer" mode))
 
-(defn topic-seq []
-  (s/split dx-topics #";"))
-
-;; Atom for getting/setting knowledge relating to application state
-
-(defonce status (atom {}))

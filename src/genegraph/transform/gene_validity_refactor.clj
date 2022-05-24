@@ -117,7 +117,6 @@
             ;; "Candidate gene sequencing" "gcixform:CandidateGeneSequencing"
             ;; "Exome/genome or all genes sequenced in linkage region" "gcixform:ExomeSequencing"
 
-            ;; JSON-LD 1.1 parsing issue here =tristan
             "Candidate gene sequencing" "http://purl.obolibrary.org/obo/SEPIO_0004543"
             "Exome genome or all genes sequenced in linkage region" "http://purl.obolibrary.org/obo/SEPIO_0004541"
 
