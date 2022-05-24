@@ -1145,6 +1145,7 @@
  [:sepio/describes-study-data
   "http://purl.obolibrary.org/obo/SEPIO_0000257"]
  [:sepio/detection-method "http://purl.obolibrary.org/obo/SEPIO_0004157"]
+ [:sepio/earliest-article "http://purl.obolibrary.org/obo/SEPIO_0004162"]
  [:sepio/end-date "http://purl.obolibrary.org/obo/SEPIO_0000161"]
  [:sepio/ethnicity "http://purl.obolibrary.org/obo/SEPIO_0004144"]
  [:sepio/evaluated-by "http://purl.obolibrary.org/obo/SEPIO_0000140"]
@@ -1262,6 +1263,8 @@
  [:sepio/label-for "http://purl.obolibrary.org/obo/SEPIO_0000420"]
  [:sepio/lower-confidence-limit
   "http://purl.obolibrary.org/obo/SEPIO_0000306"]
+ [:sepio/paternity-maternity-confirmed
+  "http://purl.obolibrary.org/obo/SEPIO_0004161"] 
  [:sepio/measures-parameter
   "http://purl.obolibrary.org/obo/SEPIO_0000114"]
  [:sepio/meets-inclusion-criteria "http://purl.obolibrary.org/obo/SEPIO_0004126"]
