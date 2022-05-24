@@ -170,22 +170,20 @@
       (decompress-database env/data-vol archive-path))))
 
 (defn load-stream-data
-  "Loads stream data from scratch into an existing database"
+  "Loads stream data into an existing database at dest-path"
   ([dest-path] (load-stream-data dest-path {}))
   ([dest-path {from-scratch :from-scratch}]
    (log/info :fn :load-stream-data :msg (str "Loading stream data into database at " dest-path))
    (with-redefs [env/data-vol dest-path]
      (stop #'event/stream-processing)
      (populate-data-vol-if-needed)
-     ;(fs/mkdirs env/data-vol)
      (start #'db/db)
      (start #'property-store/property-store)
-
      (log/info :fn :load-stream-data :msg "Resetting topic offsets...")
-     (if from-scratch
-       (do (base/initialize-db!)
-           (batch/process-batched-events!)
-           (fs/delete (stream/offset-file))))
+     (when from-scratch
+       (base/initialize-db!)
+       (batch/process-batched-events!)
+       (fs/delete (stream/offset-file)))
      (stream/initialize-current-offsets!)
      (start #'event/stream-processing)
      (log/info :fn :load-stream-data :msg "Processing streams...")

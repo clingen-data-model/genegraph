@@ -1,6 +1,5 @@
 (ns genegraph.transform.clinvar.cancervariants
   (:require [genegraph.database.names :as names :refer [prefix-ns-map]]
-            [genegraph.rocksdb :as rocksdb]
             [genegraph.util.http-client :as ghttp :refer [http-get-with-cache]]
             [io.pedestal.log :as log]
             [cheshire.core :as json])
@@ -9,13 +8,13 @@
 (def cancer-variants-normalize-url
   "URL for cancervariants.org VRSATILE normalization.
   Returns a JSON document containing a variation_descriptor field along with other metadata."
-  ;"https://normalize.cancervariants.org/variation/normalize"
+  ;;"https://normalize.cancervariants.org/variation/normalize"
   "https://normalize.cancervariants.org/variation/to_vrs")
 
 (def cancer-variants-url-to-canonical
   "URL for cancervariants.org VRS normalization.
   Returns a JSON document containing a CanonicalVariation under the canonical_variation field, along with other metadata."
-  ;"https://normalize.cancervariants.org/variation/normalize"
+  ;;"https://normalize.cancervariants.org/variation/normalize"
   "https://normalize.cancervariants.org/variation/to_canonical_variation")
 
 (def canonical_spdi_to_categorical_variation
@@ -26,12 +25,12 @@
    "_id" {"@id" "@id"},
    "type" {"@id" "@type"
            "@type" "@id"}
-   "@vocab" (get prefix-ns-map "vrs")                       ;"https://vrs.ga4gh.org/"
+   "@vocab" (get prefix-ns-map "vrs") ;"https://vrs.ga4gh.org/"
    "normalize.variation" {"@id" "https://github.com/cancervariants/variation-normalization/"
                           "@prefix" true}})
 
-; TODO move this after vrs-variation-for-expression
-; Allow passing in an existing context, to which the VICC context will be 'smart' merged to avoid collisions
+;; TODO move this after vrs-variation-for-expression
+;; Allow passing in an existing context, to which the VICC context will be 'smart' merged to avoid collisions
 (defn add-vicc-context [val]
   (assoc val "@context" vicc-context))
 
@@ -47,7 +46,7 @@
       200 (let [body (-> response :body json/parse-string)]
             (log/debug :fn ::vrs-allele-for-variation :body body)
             (-> body (get "categorical_variation") add-vicc-context))
-      ; Error case
+      ;; Error case
       (log/error :fn ::normalize-spdi :msg "Error in VRS normalization request" :status status :response response))))
 
 (defn wrap-with-canonical-variation
@@ -67,7 +66,7 @@
       200 (let [body (-> response :body json/parse-string)]
             (log/debug :fn ::vrs-allele-for-variation :body body)
             (-> body (get "variations") first wrap-with-canonical-variation add-vicc-context))
-      ; Error case
+      ;; Error case
       (log/error :fn ::normalize-general :msg "Error in VRS normalization request" :status status :response response))))
 
 (defn normalize-canonical
@@ -82,7 +81,7 @@
       200 (let [body (-> response :body json/parse-string)]
             (log/debug :fn ::vrs-allele-for-variation :body body)
             (-> body (get "canonical_variation") add-vicc-context))
-      ; Error case
+      ;; Error case
       (log/error :fn ::normalize-canonical :msg "Error in VRS normalization request" :status status :response response))))
 
 (defn vrs-variation-for-expression
@@ -96,10 +95,5 @@
    (case expression-type
      :spdi (normalize-canonical variation-expression :spdi)
      :hgvs (normalize-canonical variation-expression :hgvs)
-     ; By default, tell the service to try hgvs. Will return as Text variation if unable to parse
-     (normalize-canonical variation-expression :hgvs))
-   ;(case expression-type
-   ;  :spdi (normalize-spdi variation-expression)
-   ;  :hgvs (normalize-general variation-expression)
-   ;  (normalize-general variation-expression))
-   ))
+     ;; By default, tell the service to try hgvs. Will return as Text variation if unable to parse
+     (normalize-canonical variation-expression :hgvs))))

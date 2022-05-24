@@ -38,7 +38,9 @@
       (.replaceNamedModel db (:name opts) in))
     true)))
 
-(defn construct-statement
+(defn ^Statement construct-statement
+  "Takes a [s p o] triple such as that used by genegraph.database.load/statements-to-model.
+  Returns a single Statement."
   ([stmt] (construct-statement stmt {}))
   ([stmt opts]
    (try

@@ -118,5 +118,5 @@
       (run-server-transformer nil)
       (run-server-genegraph nil))
     (if (= "snapshot" (first args))
-      (do (snapshot/run-snapshots (rest args)))
+      (snapshot/run-snapshots (rest args))
       (run-migration))))

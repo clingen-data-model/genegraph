@@ -17,7 +17,7 @@
 
 (defn write-json-seq-to-file [values file-handle])
 
-(defn join-dedup-delimiters
+(defn- join-dedup-delimiters
   "Joins the values seq with delim between each, not adding a delim in a location if one will already be present."
   [delim values]
   (let [processed
@@ -36,12 +36,12 @@
             (.endsWith (last values) delim) (str delim))))
 
 (defn run-snapshots
-  "Accepts an args seq of key-value pairs.
-  E.g. [:until \"2020-01-01\"]"
-  [args]
-  (log/info :fn :run-snapshots :args args)
+  "Accepts a map of params
+  E.g. {:until \"2020-01-01\"}"
+  [params]
+  (log/info :fn :run-snapshots :params params)
   (let [version-id (migration/get-version-id)
-        database-path (join-dedup-delimiters "/" [env/base-dir version-id])]
+        database-path (s/join "/" [env/base-dir version-id])]
     ;(migration/build-database database-path)
     (with-redefs [env/data-vol database-path]
       (log/info :fn :run-snapshots :msg (str "Redefined data-vol as " env/data-vol))
@@ -49,18 +49,10 @@
       (log/info :fn :run-snapshots :msg "Loading stream data...")
       (migration/load-stream-data env/data-vol)
 
-
-      (let [params (->> args
-                        (partition-all 2)
-                        (map (fn [[a b]]
-                               [(if (.startsWith a ":") (keyword (.substring a 1)) a)
-                                b]))
-                        (map #(apply vector %))
-                        (into {}))
-            descriptors-graphql (genegraph.source.snapshot.variation-descriptor/variation-descriptors-as-of-date {:until (:until params)})]
+      (let [descriptors-graphql (genegraph.source.snapshot.variation-descriptor/variation-descriptors-as-of-date {:until (:until params)})]
         (let [descriptors-json (map json/generate-string descriptors-graphql)
               output-string (s/join "\n" descriptors-json)]
-          (let [blob-path-in-bucket (join-dedup-delimiters "/" ["snapshots" version-id "CategoricalVariationDescriptor" "00000000"])
+          (let [blob-path-in-bucket (s/join "/" ["snapshots" version-id "CategoricalVariationDescriptor" "00000000"])
                 write-channel-fn (gcs/get-bucket-write-channel blob-path-in-bucket)]
             (log/info :fn :run-snapshots
                       :msg (format "Writing json (%d bytes) to %s"

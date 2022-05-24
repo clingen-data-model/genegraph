@@ -240,17 +240,11 @@
   ; [k v] -> [r k v]
   (map #(cons resource %) (into {} resource)))
 
-(defn ^Statement triple-to-statement
-  "Takes a [s p o] triple such as that used by genegraph.database.load/statements-to-model.
-  Returns a single Statement."
-  [triple]
-  (l/construct-statement triple))
-
 (defn add-triple!
   "Adds a triple to a model. Takes a triple ([s p o])."
   ([^Model model triple]
    (log/debug :fn ::add-triple :triple triple)
-   (let [stmt (triple-to-statement triple)]
+   (let [stmt (l/construct-statement triple)]
      (.add model stmt)
      model)))
 
@@ -258,7 +252,7 @@
   "Deletes a triple from a model. Takes a triple ([s p o])."
   ([^Model model triple]
    (log/debug :fn ::remove-triple :triple triple)
-   (let [stmt-to-remove (triple-to-statement triple)]
+   (let [stmt-to-remove (l/construct-statement triple)]
      (if (not (.contains model stmt-to-remove))
        (let [e (ex-info "Statement not found in model" {:fn ::remove-triple :model model :stmt-to-remove stmt-to-remove})]
          (log/error :message (ex-message e) :data (ex-data e))
