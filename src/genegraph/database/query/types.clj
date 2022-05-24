@@ -224,9 +224,9 @@
 (nippy/extend-freeze
  Model ::model
  [x data-output]
- (let [model-stream (ByteArrayOutputStream.)
-       _ (RDFDataMgr/write model-stream x Lang/RDFTHRIFT)
-       model-bytes (.toByteArray model-stream)]
+ (let [model-bytes (.toByteArray
+                    (doto (ByteArrayOutputStream.)
+                      (RDFDataMgr/write x Lang/RDFTHRIFT)))]
    (.writeLong data-output (alength model-bytes)) ; add byte count as prefix
    (.write data-output model-bytes 0 (alength model-bytes))))
 

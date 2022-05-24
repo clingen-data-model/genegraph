@@ -28,8 +28,10 @@ construct {
   :sepio/previous-testing ?prevTesting ;
   :sepio/previous-testing-description ?prevTestingDescription ;
   :sepio/testing-methods ?methods ;
+  :sepio/detection-method ?methodsOfDetection ;
   :sepio/has-textual-part ?phenotypeFreeText ;
   :sepio/is-about-condition ?phenotypes ;
+  :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed ;
   :sepio/has-variant ?evidenceItem .
 
   ?family a :pco/Family ;
@@ -53,6 +55,10 @@ where {
   BIND (IRI(CONCAT(str(?evidenceLine), "_proband_score_evidence_line")) AS ?probandScoreEvidenceLine) 
 
   BIND(IF(?deNovo = "Yes", :geno/DeNovoAlleleOrigin , IF(?deNovo = "No", :geno/GermlineAlleleOrigin , :geno/AlleleOrigin ) ) AS ?alleleOrigin) .
+
+  OPTIONAL {
+      ?evidenceLine gci:maternityPaternityConfirmed ?paternityMaternityConfirmed .
+  }
 
   OPTIONAL {
     ?evidenceLine gci:functionalDataExplanation ?functionalDataExplanation ;
@@ -107,6 +113,10 @@ where {
   
   OPTIONAL {
     ?method gci:previousTesting ?prevTesting .
+  }
+
+ OPTIONAL {
+     ?method gci:specificMutationsGenotypedMethod ?methodsOfDetection .
   }
   
   OPTIONAL {

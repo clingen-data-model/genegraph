@@ -45,6 +45,7 @@
                construct-evidence-connections
                construct-alleles
                construct-articles
+               construct-earliest-articles
                construct-secondary-contributions
                construct-variant-score
                construct-unscoreable-evidence)
@@ -286,6 +287,7 @@
                         (construct-segregation-evidence params)
                         (construct-alleles params)
                         (construct-articles params)
+                        (construct-earliest-articles params)
                         (construct-secondary-contributions params)
                         (construct-variant-score params)
                         (construct-unscoreable-evidence params)

@@ -39,9 +39,15 @@
             :phenotype_free_text {:type 'String
                                 :description "Free text regarding the phenotypes."
                                 :path [:sepio/has-textual-part]}
-            :phenotypes {:type '(list String)
+            :phenotypes {:type '(list :Resource)
                          :description "List of phenotypes."
                          :path [:sepio/is-about-condition]}
+            :genotyping_method {:type 'String
+                                :description "Genotyping method description"
+                                :path [:sepio/detection-method]}
             :ethnicity {:type :Resource
                         :description "The ethnicity of the proband."
-                        :path [:sepio/ethnicity]}}})
+                        :path [:sepio/ethnicity]}
+            :paternity_maternity_confirmed {:type 'String
+                                            :description "Paternity/maternity confirmed."
+                                            :path [:sepio/paternity-maternity-confirmed]}}})

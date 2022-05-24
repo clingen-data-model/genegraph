@@ -461,6 +461,7 @@
    :fields
    {:report_date {:type String :resolve :ac-assertion/report-date}
     :source {:type String :resolve :ac-assertion/source}
+    :report_label {:type String :resolve :ac-assertion/report-label}
     :classification {:type :Classification
                      :resolve :ac-assertion/classification
                      :description "Classification for this Actionability assertion. Members of the value set Actionability Assertion Value Set (SEPIO_0003534) are valid values for this field."}

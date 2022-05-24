@@ -58,8 +58,11 @@
                  (db/load-model (transform-doc d) (:name d)))
                documents)))
 
-(defn import-document [name documents]
-  (import-documents! (filter #(= name (:name %)) documents)))
+(defn import-document
+  ([name]
+   (import-document name (read-base-resources)))
+  ([name documents]
+   (import-documents! (filter #(= name (:name %)) documents))))
 
 (defn watch-base-dir
   "Watch for changes in directory containing base files and update triplestore whenever changes are noticed. Intended for use in development"

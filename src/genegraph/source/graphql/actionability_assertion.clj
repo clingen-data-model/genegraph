@@ -21,5 +21,8 @@
 (defresolver classification [args value]
   (q/ld1-> value [:sepio/has-predicate]))
 
+(defresolver report-label [args value]
+  (q/ld1-> value [[:bfo/has-part :<] :rdfs/label]))
+
 (defresolver attributed-to [args value]
   (q/ld1-> value [[:bfo/has-part :<] :sepio/qualified-contribution :sepio/has-agent]))
