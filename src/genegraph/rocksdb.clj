@@ -3,7 +3,8 @@
             [taoensso.nippy :as nippy :refer [freeze thaw]]
             [digest])
   (:import (org.rocksdb RocksDB Options ReadOptions Slice RocksIterator)
-           java.security.MessageDigest))
+           java.security.MessageDigest
+           java.util.Arrays))
 
 
 (defn create-db-path [db-name] 
@@ -19,12 +20,17 @@
 (defn- key-digest [k]
   (-> k freeze digest/md5 .getBytes))
 
-(defn- key-tail-digest [k]
-  (let [key-byte-array (-> k freeze digest/md5 .getBytes)
-        last-byte-idx (- (count key-byte-array) 1)
-        last-byte (aget key-byte-array last-byte-idx)]
-    (aset-byte key-byte-array last-byte-idx (+ 1 last-byte))
-    key-byte-array))
+(defn- range-upper-bound
+  "Return the key defining the (exclusive) upper bound of a scan,
+  as defined by RANGE-KEY"
+  [^bytes range-key]
+  (let [last-byte-idx (dec (alength range-key))]
+    (doto (Arrays/copyOf range-key (alength range-key))
+      (aset-byte last-byte-idx (inc (aget range-key last-byte-idx))))))
+
+(defn- key-tail-digest
+  [k]
+  (-> k freeze digest/md5 .getBytes range-upper-bound))
 
 (defn- multipart-key-digest [ks]
   (->> ks (map #(-> % freeze digest/md5)) (apply str) .getBytes))
@@ -94,14 +100,17 @@
   [db]
   (.close db))
 
+(defn raw-prefix-iter
+  [db prefix]
+  (doto (.newIterator db 
+                      (.setIterateUpperBound (ReadOptions.)
+                                             (Slice. (range-upper-bound prefix))))
+    (.seek prefix)))
+
 (defn prefix-iter
   "return a RocksIterator that covers records with prefix"
   [db prefix]
-  (let [iter (.newIterator db 
-                           (.setIterateUpperBound (ReadOptions.)
-                                                  (Slice. (key-tail-digest prefix))))]
-    (.seek iter (key-digest prefix))
-    iter))
+  (raw-prefix-iter db (key-digest prefix)))
 
 (defn entire-db-iter
   "return a RocksIterator that iterates over the entire database"
@@ -127,6 +136,13 @@
   "Return a lazy-seq over all records in the database"
   [db]
   (-> db entire-db-iter rocks-iterator-seq))
+
+(defn raw-prefix-seq
+  "Return a lazy-seq over all records in DB beginning with PREFIX,
+  where prefix is a byte array. Intended when record ordering
+  is significant."
+  [db prefix]
+  (-> db (raw-prefix-iter prefix) rocks-iterator-seq))
 
 (defn sample-prefix 
   "Take first n records from db given prefix"

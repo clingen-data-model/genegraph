@@ -1,3 +1,5 @@
+;; Does not work as advertised in current JENA
+;; Removing from dep tree until resolved =tristan
 (ns genegraph.transform.jsonld.common
   (:require [genegraph.database.names :refer [local-property-names
                                               property-uri->keyword]]
@@ -7,7 +9,7 @@
            (java.io StringWriter ByteArrayInputStream)
            (java.nio.charset Charset)
            (org.apache.jena.rdf.model Model)
-           (org.apache.jena.riot.writer JsonLDWriter)
+           ;; (org.apache.jena.riot.writer JsonLDWriter)
            (org.apache.jena.sparql.util Context)
            (org.apache.jena.sparql.core.mem DatasetGraphInMemory)
            (org.apache.jena.riot RDFFormat)
@@ -76,29 +78,31 @@
   ([^Model model]
    (model-to-jsonld model nil))
   ([^Model model ^String frame-str]
-   (let [writer (JsonLDWriter. RDFFormat/JSONLD_COMPACT_PRETTY)
-         sw (StringWriter.)
-         ds (DatasetGraphInMemory.)
-         ; prefix-map left blank
-         prefix-map (PrefixMapStd.)
-         base-uri ""
-         context (Context.)
-         jsonld-options (JsonLdOptions.)]
-     (.setUseNativeTypes jsonld-options true)
-     ;(.setCompactArrays jsonld-options false)
-     (log/trace :msg "Adding model to dataset")
-     ; we don't use the graph name on export, its value shouldn't appear in output
-     (.addGraph ds (NodeFactory/createURI "BLANK") (.getGraph model))
-     (log/trace :msg "Setting jsonld frame")
-     ; TODO this frame option appears to do nothing when writing jsonld
-     ; maybe it affects reading, not sure why it's under JsonLDWriter then though
-     ;(.set context JsonLDWriter/JSONLD_FRAME frame-str)
-     (log/trace :msg "Setting jsonld options")
-     ; TODO does nothing
-     ;(.setOmitGraph jsonld-options true)
-     ; TODO does nothing
-     ;(.setProcessingMode jsonld-options "JSON_LD_1_1")
-     (.set context JsonLDWriter/JSONLD_OPTIONS jsonld-options)
-     (log/trace :msg "Writing framed jsonld")
-     (.write writer sw ds prefix-map base-uri context)
-     (.toString sw))))
+   ;; reactivate when JSON-LD support is up-to-date with Jena 4.5   
+   (comment 
+     (let [writer (JsonLDWriter. RDFFormat/JSONLD_COMPACT_PRETTY)
+           sw (StringWriter.)
+           ds (DatasetGraphInMemory.)
+                                        ; prefix-map left blank
+           prefix-map (PrefixMapStd.)
+           base-uri ""
+           context (Context.)
+           jsonld-options (JsonLdOptions.)]
+       (.setUseNativeTypes jsonld-options true)
+                                        ;(.setCompactArrays jsonld-options false)
+       (log/trace :msg "Adding model to dataset")
+                                        ; we don't use the graph name on export, its value shouldn't appear in output
+       (.addGraph ds (NodeFactory/createURI "BLANK") (.getGraph model))
+       (log/trace :msg "Setting jsonld frame")
+                                        ; TODO this frame option appears to do nothing when writing jsonld
+                                        ; maybe it affects reading, not sure why it's under JsonLDWriter then though
+                                        ;(.set context JsonLDWriter/JSONLD_FRAME frame-str)
+       (log/trace :msg "Setting jsonld options")
+                                        ; TODO does nothing
+                                        ;(.setOmitGraph jsonld-options true)
+                                        ; TODO does nothing
+                                        ;(.setProcessingMode jsonld-options "JSON_LD_1_1")
+       (.set context JsonLDWriter/JSONLD_OPTIONS jsonld-options)
+       (log/trace :msg "Writing framed jsonld")
+       (.write writer sw ds prefix-map base-uri context)
+       (.toString sw)))))

@@ -3,15 +3,14 @@
             [genegraph.database.util :refer [tx]]
             [io.pedestal.log :as log])
   (:import [org.apache.jena.rdf.model Model Resource ModelFactory]
-           org.topbraid.jenax.util.JenaUtil
-           org.topbraid.shacl.util.ModelPrinter
-           org.topbraid.shacl.validation.ValidationUtil))
+           [org.apache.jena.shacl ShaclValidator Shapes ValidationReport]))
 
 (defn validate 
   "Validate the model passed in, given the contraints model. Return the model containing validation issues."
   [model constraints]
   (try
-    (let [results (ValidationUtil/validateModel model constraints true)]
+    (let [shapes (Shapes/parse constraints)
+          results (-> (ShaclValidator/get) (.validate shapes model))]
       (.getModel results))
     (catch Exception e# (log/error :fn :tx :msg e#))))
 

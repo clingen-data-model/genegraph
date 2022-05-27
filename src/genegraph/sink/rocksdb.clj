@@ -22,7 +22,3 @@
               (.putLong (:genegraph.sink.stream/offset event))
               .array)] 
     (rocksdb/rocks-put-raw-key! db k event)))
-
-;; (defstate topic-logs
-;;   :start (let [topics (map keyword (s/split env/dx-topics #";"))]
-;;            ))

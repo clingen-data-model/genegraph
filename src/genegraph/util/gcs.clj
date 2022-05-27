@@ -1,7 +1,8 @@
 (ns genegraph.util.gcs
   (:require [genegraph.env :as env]
             [clojure.java.io :as io]
-            [io.pedestal.log :as log])
+            [io.pedestal.log :as log]
+            [genegraph.util.fs :as fs])
   (:import [java.time ZonedDateTime ZoneOffset]
            java.time.format.DateTimeFormatter
            [java.nio ByteBuffer]
@@ -50,20 +51,10 @@
          .iterator
          iterator-seq))))
 
-(defn ensure-target-directory-exists!
-  "Create directory at PATH if it does not already exist.
-  Return false if directory cannot be created or already
-  exists as something other than a directory."
-  [path]
-  (let [dir (io/file path)]
-    (if (and (.exists dir) (.isDirectory dir))
-      true
-      (.mkdir dir))))
-
 (defn get-files-with-prefix!
   "Store all files in bucket matching PREFIX to TARGET-DIR"
   [prefix target-dir]
-  (if (ensure-target-directory-exists! target-dir)
+  (if (fs/ensure-target-directory-exists! target-dir)
     (doseq [blob (list-items-in-bucket prefix)]
       (let [target-path (Paths/get (str target-dir
                                         (re-find #"/.*$" (.getName blob)))

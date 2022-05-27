@@ -48,8 +48,7 @@
                construct-earliest-articles
                construct-secondary-contributions
                construct-variant-score
-               construct-unscoreable-evidence
-               )
+               construct-unscoreable-evidence)
 
 ;; Trim trailing }, intended to be appended to gci json
 (def context
@@ -118,8 +117,8 @@
             ;; "Candidate gene sequencing" "gcixform:CandidateGeneSequencing"
             ;; "Exome/genome or all genes sequenced in linkage region" "gcixform:ExomeSequencing"
 
-            "Candidate gene sequencing" "SEPIO:0004543"
-            "Exome/genome or all genes sequenced in linkage region" "SEPIO:0004541"
+            "Candidate gene sequencing" "http://purl.obolibrary.org/obo/SEPIO_0004543"
+            "Exome genome or all genes sequenced in linkage region" "http://purl.obolibrary.org/obo/SEPIO_0004541"
 
             ;; Experimental evidence types
             "Expression" "gcixform:Expression"
@@ -141,82 +140,83 @@
 
             ;; ;; evidence strength
             "No Modification" "gcixform:NoModification"
-            "Definitive" "SEPIO:0004504"
-            "Strong" "SEPIO:0004505"
-            "Moderate" "SEPIO:0004506"
-            "Limited" "SEPIO:0004507"
-            "No Known Disease Relationship" "SEPIO:0004508"
-            "No Reported Evidence" "SEPIO:0004508" ;; investigate the use of this
-            "Refuted" "SEPIO:0004510"
-            "Disputed" "SEPIO:0004540"
-            "No Classification" "SEPIO:0004508" ;; Maybe this should not exist in published records?
-            ;; "No Classification" "SEPIO:0004508"
+            "Definitive" "http://purl.obolibrary.org/obo/SEPIO_0004504"
+            "Strong" "http://purl.obolibrary.org/obo/SEPIO_0004505"
+            "Moderate" "http://purl.obolibrary.org/obo/SEPIO_0004506"
+            "Limited" "http://purl.obolibrary.org/obo/SEPIO_0004507"
+            "No Known Disease Relationship" "http://purl.obolibrary.org/obo/SEPIO_0004508"
+            "No Reported Evidence" "http://purl.obolibrary.org/obo/SEPIO_0004508" ;; investigate the use of this
+            "Refuted" "http://purl.obolibrary.org/obo/SEPIO_0004510"
+            "Disputed" "http://purl.obolibrary.org/obo/SEPIO_0004540"
+            "No Classification" "http://purl.obolibrary.org/obo/SEPIO_0004508" ;; Maybe this should not exist in published records?
+            ;; "No Classification" "http://purl.obolibrary.org/obo/SEPIO_0004508"
 
             ;; Zygosity
-            "Homozygous" "GENO:0000136"
-            "TwoTrans" "GENO:0000135"
-            "Hemizygous" "GENO:0000134"
+            "Homozygous" "http://purl.obolibrary.org/obo/GENO_0000136"
+            "TwoTrans" "http://purl.obolibrary.org/obo/GENO_0000135"
+            "Hemizygous" "http://purl.obolibrary.org/obo/GENO_0000134"
 
             ;; SOP versions
-            "4" "SEPIO:0004092"
-            "5" "SEPIO:0004093"
-            "6" "SEPIO:0004094"
-            "7" "SEPIO:0004095"
-            "8" "SEPIO:0004096"
-            "9" "SEPIO:0004171"
+            "4" "http://purl.obolibrary.org/obo/SEPIO_0004092"
+            "5" "http://purl.obolibrary.org/obo/SEPIO_0004093"
+            "6" "http://purl.obolibrary.org/obo/SEPIO_0004094"
+            "7" "http://purl.obolibrary.org/obo/SEPIO_0004095"
+            "8" "http://purl.obolibrary.org/obo/SEPIO_0004096"
+            "9" "http://purl.obolibrary.org/obo/SEPIO_0004171"
+
 
             ;; Sex
-            "Ambiguous" "SEPIO:0004574"
-            "Female" "SEPIO:0004575"
-            "Intersex" "SEPIO:0004576"
-            "Male" "SEPIO:0004578"
-            ;; "Unknown" "SEPIO:0004570"
+            "Ambiguous" "http://purl.obolibrary.org/obo/SEPIO_0004574"
+            "Female" "http://purl.obolibrary.org/obo/SEPIO_0004575"
+            "Intersex" "http://purl.obolibrary.org/obo/SEPIO_0004576"
+            "Male" "http://purl.obolibrary.org/obo/SEPIO_0004578"
+            ;; "Unknown" "http://purl.obolibrary.org/obo/SEPIO_0004570"
 
             ;; ethnicity
-            "Hispanic or Latino" "SEPIO:0004568"
-            "Not Hispanic or Latino" "SEPIO:0004569"
-            "Unknown" "SEPIO:0004570"
+            "Hispanic or Latino" "http://purl.obolibrary.org/obo/SEPIO_0004568"
+            "Not Hispanic or Latino" "http://purl.obolibrary.org/obo/SEPIO_0004569"
+            "Unknown" "http://purl.obolibrary.org/obo/SEPIO_0004570"
 
             ;; ageType
-            "Death" "SEPIO:0004562"
-            "Diagnosis" "SEPIO:0004563"
-            "Onset" "SEPIO:0004564"
-            "Report" "SEPIO:0004565"
+            "Death" "http://purl.obolibrary.org/obo/SEPIO_0004562"
+            "Diagnosis" "http://purl.obolibrary.org/obo/SEPIO_0004563"
+            "Onset" "http://purl.obolibrary.org/obo/SEPIO_0004564"
+            "Report" "http://purl.obolibrary.org/obo/SEPIO_0004565"
  
             ;; ageUnit
-            "Days" "SEPIO:0004552"
-            "Hours" "SEPIO:0004553"
-            "Months" "SEPIO:0004554"
-            "Weeks" "SEPIO:0004555"
-            "Weeks gestation" "SEPIO:0004556" 
-            "Years" "SEPIO:0004557"
+            "Days" "http://purl.obolibrary.org/obo/SEPIO_0004552"
+            "Hours" "http://purl.obolibrary.org/obo/SEPIO_0004553"
+            "Months" "http://purl.obolibrary.org/obo/SEPIO_0004554"
+            "Weeks" "http://purl.obolibrary.org/obo/SEPIO_0004555"
+            "Weeks gestation" "http://purl.obolibrary.org/obo/SEPIO_0004556" 
+            "Years" "http://purl.obolibrary.org/obo/SEPIO_0004557"
 
             ;; scoreStatus
-            "Contradicts" "SEPIO:0004581"
-            "Review" "SEPIO:0004582"
-            "Score" "SEPIO:0004583"
-            "Supports" "SEPIO:0004584"
-            "none" "SEPIO:0004585"
+            "Contradicts" "http://purl.obolibrary.org/obo/SEPIO_0004581"
+            "Review" "http://purl.obolibrary.org/obo/SEPIO_0004582"
+            "Score" "http://purl.obolibrary.org/obo/SEPIO_0004583"
+            "Supports" "http://purl.obolibrary.org/obo/SEPIO_0004584"
+            "none" "http://purl.obolibrary.org/obo/SEPIO_0004585"
 
             ;; testingMethods
-            "Chromosomal microarray" "SEPIO:0004591"
-            "Denaturing gradient gel" "SEPIO:0004592"
-            "Exome sequencing" "SEPIO:0004593"
-            "Genotyping" "SEPIO:0004594"
-            "High resolution melting" "SEPIO:0004595"
-            "Homozygosity mapping" "SEPIO:0004596"
-            "Linkage analysis" "SEPIO:0004597"
-            "Next generation sequencing panels" "SEPIO:0004598"
-            "Other" "SEPIO:0004599"
-            "PCR" "SEPIO:0004600"
-            "Restriction digest" "SEPIO:0004601"
-            "SSCP" "SEPIO:0004602"
-            "Sanger sequencing" "SEPIO:0004603"
-            "Whole genome shotgun sequencing" "SEPIO:0004604"
+            "Chromosomal microarray" "http://purl.obolibrary.org/obo/SEPIO_0004591"
+            "Denaturing gradient gel" "http://purl.obolibrary.org/obo/SEPIO_0004592"
+            "Exome sequencing" "http://purl.obolibrary.org/obo/SEPIO_0004593"
+            "Genotyping" "http://purl.obolibrary.org/obo/SEPIO_0004594"
+            "High resolution melting" "http://purl.obolibrary.org/obo/SEPIO_0004595"
+            "Homozygosity mapping" "http://purl.obolibrary.org/obo/SEPIO_0004596"
+            "Linkage analysis" "http://purl.obolibrary.org/obo/SEPIO_0004597"
+            "Next generation sequencing panels" "http://purl.obolibrary.org/obo/SEPIO_0004598"
+            "Other" "http://purl.obolibrary.org/obo/SEPIO_0004599"
+            "PCR" "http://purl.obolibrary.org/obo/SEPIO_0004600"
+            "Restriction digest" "http://purl.obolibrary.org/obo/SEPIO_0004601"
+            "SSCP" "http://purl.obolibrary.org/obo/SEPIO_0004602"
+            "Sanger sequencing" "http://purl.obolibrary.org/obo/SEPIO_0004603"
+            "Whole genome shotgun sequencing" "http://purl.obolibrary.org/obo/SEPIO_0004604"
 
             ;; variantType
-            "OTHER_VARIANT_TYPE" "SEPIO:0004611"
-            "PREDICTED_OR_PROVEN_NULL" "SEPIO:0004612"
+            "OTHER_VARIANT_TYPE" "http://purl.obolibrary.org/obo/SEPIO_0004611"
+            "PREDICTED_OR_PROVEN_NULL" "http://purl.obolibrary.org/obo/SEPIO_0004612"
 
             }}))))
 
@@ -227,7 +227,10 @@
 
 (defn fix-gdm-identifiers [gdm-json]
   (-> gdm-json
-      (s/replace #"MONDO_" "MONDO:")
+      (s/replace #"MONDO_" "http://purl.obolibrary.org/obo/MONDO_")
+      ;; New json-ld parser doesn't like '/' in terms
+      (s/replace #"Exome/genome or all genes sequenced in linkage region"
+                 "Exome genome or all genes sequenced in linkage region")
       (s/replace #"@id" "gciid")))
 
 (defn append-context [gdm-json]
