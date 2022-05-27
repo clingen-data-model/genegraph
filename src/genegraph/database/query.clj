@@ -163,3 +163,13 @@ use io/slurp"
          (filter #(and (.isResource %) (not (.isAnon %))))
          (map resource)
          set)))
+
+(defn difference
+  "Return the model representing the elements in MODEL-ONE not in MODEL-TWO"
+  [model-one model-two]
+  (.difference model-one model-two))
+
+(defn is-isomorphic?
+  "Return true if MODEL-ONE is isomorphic relative to MODEL-TWO"
+  [model-one model-two]
+  (.isIsomorphicWith model-one model-two))
