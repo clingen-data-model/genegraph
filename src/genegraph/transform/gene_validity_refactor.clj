@@ -117,7 +117,6 @@
             ;; "Candidate gene sequencing" "gcixform:CandidateGeneSequencing"
             ;; "Exome/genome or all genes sequenced in linkage region" "gcixform:ExomeSequencing"
 
-            ;; JSON-LD 1.1 parsing issue here =tristan
             "Candidate gene sequencing" "http://purl.obolibrary.org/obo/SEPIO_0004543"
             "Exome genome or all genes sequenced in linkage region" "http://purl.obolibrary.org/obo/SEPIO_0004541"
 
@@ -153,9 +152,9 @@
             ;; "No Classification" "http://purl.obolibrary.org/obo/SEPIO_0004508"
 
             ;; Zygosity
-            "Homozygous" "GENO:0000136"
-            "TwoTrans" "GENO:0000135"
-            "Hemizygous" "GENO:0000134"
+            "Homozygous" "http://purl.obolibrary.org/obo/GENO_0000136"
+            "TwoTrans" "http://purl.obolibrary.org/obo/GENO_0000135"
+            "Hemizygous" "http://purl.obolibrary.org/obo/GENO_0000134"
 
             ;; SOP versions
             "4" "http://purl.obolibrary.org/obo/SEPIO_0004092"
@@ -228,7 +227,7 @@
 
 (defn fix-gdm-identifiers [gdm-json]
   (-> gdm-json
-      (s/replace #"MONDO_" "MONDO:")
+      (s/replace #"MONDO_" "http://purl.obolibrary.org/obo/MONDO_")
       ;; New json-ld parser doesn't like '/' in terms
       (s/replace #"Exome/genome or all genes sequenced in linkage region"
                  "Exome genome or all genes sequenced in linkage region")
