@@ -48,7 +48,6 @@
       (migration/populate-data-vol-if-needed)
       (log/info :fn :run-snapshots :msg "Loading stream data...")
       (migration/load-stream-data env/data-vol)
-
       (let [descriptors-graphql (genegraph.source.snapshot.variation-descriptor/variation-descriptors-as-of-date {:until (:until params)})]
         (let [descriptors-json (map json/generate-string descriptors-graphql)
               output-string (s/join "\n" descriptors-json)]
@@ -62,3 +61,13 @@
               (gcs/channel-write-string! write-channel output-string))
             (log/info :fn :run-snapshots :msg "Done writing snapshot output")
             descriptors-json))))))
+
+(defn keywordize
+  "Return string S or keyword :k when string S starts with :."
+  [s]
+  (if (.startsWith s ":") (keyword (subs s 1)) s))
+
+(defn -main [& args]
+  (let [m (apply hash-map args)
+        params (zipmap (map keywordize (keys m)) (vals m))]
+    (run-snapshots params)))
