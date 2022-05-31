@@ -4,6 +4,7 @@
             [genegraph.env :as env]
             [me.raynes.fs :as fs]
             [genegraph.sink.base :as base]
+            [genegraph.sink.event-recorder :as event-recorder]
             [genegraph.database.instance :as db]
             [genegraph.database.property-store :as property-store]
             [genegraph.sink.event :as event]
@@ -53,6 +54,7 @@
   (with-redefs [env/data-vol path]
     (fs/mkdirs env/data-vol)
     (start #'db/db)
+    (start #'event-recorder/event-database)
     (start #'property-store/property-store)
     (base/initialize-db!)
     ;; (batch/process-batched-events!)
@@ -61,6 +63,7 @@
       (suggest/build-all-suggestions)
       (stop #'suggest/suggestions))
     (stop #'property-store/property-store)
+    (stop #'event-recorder/event-database)
     (stop #'db/db)))
 
 (defn build-database
@@ -70,6 +73,7 @@
   (with-redefs [env/data-vol dest-path]
     (fs/mkdirs env/data-vol)
     (start #'db/db)
+    (start #'event-recorder/event-database)
     (start #'property-store/property-store)
     (base/initialize-db!)
     (batch/process-batched-events!)
@@ -90,6 +94,7 @@
       (suggest/build-all-suggestions)
       (stop #'suggest/suggestions))
     (stop #'property-store/property-store)
+    (stop #'event-recorder/event-database)
     (stop #'db/db)))
 
 (defn compress-database
