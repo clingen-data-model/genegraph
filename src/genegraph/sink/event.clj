@@ -5,7 +5,7 @@
             [genegraph.database.util :refer [begin-write-tx close-write-tx write-tx]]
             [genegraph.source.graphql.common.cache :as cache]
             [genegraph.response-cache :as response-cache]
-            [genegraph.database.validation :as v]
+            [genegraph.sink.event-recorder :as event-recorder]
             [genegraph.interceptor :as ggintercept :refer [interceptor-enter-def]]
             [genegraph.annotate :as ann :refer [add-model-interceptor
                                                 add-iri-interceptor
@@ -100,7 +100,8 @@
   {:name ::stream-producer-interceptor
    :enter stream-producer})
 
-(def transformer-interceptor-chain [ann/add-metadata-interceptor
+(def transformer-interceptor-chain [event-recorder/record-event-interceptor
+                                    ann/add-metadata-interceptor
                                     ann/add-model-interceptor
                                     ann/add-iri-interceptor
                                     ann/add-validation-shape-interceptor
@@ -117,7 +118,8 @@
                                     ser/add-graphql-serialization-interceptor
                                     stream-producer-interceptor])
 
-(def web-interceptor-chain [log-result-interceptor
+(def web-interceptor-chain [event-recorder/record-event-interceptor
+                            log-result-interceptor
                             ann/add-metadata-interceptor
                             ann/add-model-interceptor
                             ann/add-iri-interceptor
@@ -178,8 +180,12 @@
      (doseq [e event-seq]
        (process-event! (merge e opts))))))
 
+(defn event-options []
+  {::event-recorder/record-event true})
+
 (defstate stream-processing
   :start (do
            (stream/start-consumers!)
-           (stream/run-consumers! process-event-seq!))
+           (stream/run-consumers!
+            #(process-event-seq! % (event-options))))
   :stop (stream/stop-consumers!))

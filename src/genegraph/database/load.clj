@@ -6,7 +6,6 @@
             [genegraph.database.property-store :as property-store]
             [genegraph.database.query :as q]
             [genegraph.database.util :refer [property tx write-tx]]
-            [genegraph.database.validation :as v]
             [io.pedestal.log :as log]
             [mount.core :as mount :refer [defstate]])
   (:import [org.apache.jena.ontology OntResource]

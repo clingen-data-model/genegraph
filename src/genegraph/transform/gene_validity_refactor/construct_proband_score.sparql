@@ -29,6 +29,7 @@ construct {
   :sepio/detection-method ?methodsOfDetection ;
   :sepio/has-textual-part ?phenotypeFreeText ;
   :sepio/is-about-condition ?phenotypes ;
+  :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed ;
   :sepio/has-variant ?evidenceItem .
 
   ?family a :pco/Family ;
@@ -72,6 +73,10 @@ where {
   }
 
   BIND(IF(?deNovo = "Yes", :geno/DeNovoAlleleOrigin , IF(?deNovo = "No", :geno/GermlineAlleleOrigin , :geno/AlleleOrigin ) ) AS ?alleleOrigin) .
+
+  OPTIONAL {
+      ?individual gci:maternityPaternityConfirmed ?paternityMaternityConfirmed .
+  }
 
   OPTIONAL {
      ?individual gci:termsInDiagnosis ?phenotypeFreeText .
