@@ -18,8 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: DeLaGuardo/setup-clj-kondo@v1
+      - uses: DeLaGuardo/clojure-lint-action@master
         with:
-          version: "2022.05.31"
-      - name: clj-kondo src/
-        run: clj-kondo --lint src
+          clj-kondo-args: --lint src
+          github_token: ${{ secrets.GITHUB_TOKEN }}
