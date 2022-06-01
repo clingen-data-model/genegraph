@@ -57,6 +57,6 @@ jobs:
           cli: 1.11.1.1113
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run tests
-        run: clj -M:test
+        run: clojure -M:test
       - name: compile
-        run: clj -M:build uber
+        run: clojure -M:build uber
