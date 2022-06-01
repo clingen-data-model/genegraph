@@ -1,11 +1,30 @@
-# Pull request checks for clinvar-submitter
+# Pull request checks for genegraph
 #
 # Command line test usage:
 # gcloud builds submit --project=clingen-stage --config .cloudbuild/pull-request.cloudbuild.yaml \
 # .
 
-# Builds clinvar-submitter and tags for both stage and prod image repositories
 steps:
 - name: 'hadolint/hadolint'
   entrypoint: '/bin/hadolint'
   args: [ './Dockerfile']
+- name: 'clojure:temurin-17-tools-deps-alpine'
+  id: deps
+  args:
+    - bash
+    - -c
+    - clojure -P
+  waitFor: ['-']
+- name: 'cljkondo/clj-kondo:2022.05.31'
+  args:
+    - bash
+    - -c
+    - clj-kondo --lint src || exit 0
+  waitFor: ['deps']
+- name: 'clojure:temurin-17-tools-deps-alpine'
+  args:
+    - bash
+    - -c
+    - clojure -T:build uber
+  waitFor: ['deps']
+
