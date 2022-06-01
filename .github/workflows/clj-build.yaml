@@ -22,4 +22,4 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: cljfmt check
         run: |
-          clojure -Sdeps '{:deps {cljfmt {:mvn/version "0.8.0"}}}' -m cljfmt.main check
+          clj -Sdeps '{:deps {cljfmt {:mvn/version "0.8.0"}}}' -m cljfmt.main check
