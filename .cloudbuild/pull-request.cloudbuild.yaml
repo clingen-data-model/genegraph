@@ -20,11 +20,17 @@ steps:
     - bash
     - -c
     - clj-kondo --lint src || exit 0
-  waitFor: ['deps']
+  waitFor: ['-']
+- name: 'clojure:temurin-17-tools-deps-alpine'
+  args:
+    - bash
+    - -c
+    - clojure -Sdeps '{:deps {cljfmt {:mvn/version "0.8.0"}}}' -m cljfmt.main check || exit 0
+  waitFor: ['-']
 - name: 'clojure:temurin-17-tools-deps-alpine'
   args:
     - bash
     - -c
     - clojure -T:build uber
-  waitFor: ['deps']
+  waitFor: ['-']
 
