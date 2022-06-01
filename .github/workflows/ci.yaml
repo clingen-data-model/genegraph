@@ -61,4 +61,4 @@ jobs:
       # - name: Run tests
       #   run: clojure -M:test
       - name: compile
-        run: clojure -M:build uber
+        run: clojure -T:build uber
