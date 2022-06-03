@@ -1,0 +1,37 @@
+# Needed for composing variants in autosomal recessive
+# SOP v8 and above. These scores reflect a cap of 3
+# points per proband that needs to be represented as
+# a distinct evidence line
+
+
+# TODO pick up here. should calculate the proband score based on some combination of the variant scores. Ideally can keep remaining code from variant scores
+
+# Will need to configure evidence line connections appropriately afterwards
+
+
+prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
+prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+construct {
+  ?probandScoreEvidenceLine a :sepio/ProbandEvidenceLine ;
+  :sepio/has-evidence ?variantEvidenceLine .
+  
+  ?variantEvidenceLine a ?evidenceLineType .
+} where {
+  ?variantEvidenceLine a gci:variantScore ;
+  gci:variantType ?variantType .
+
+  ?variantType gcixform:hasEvidenceLineType ?evidenceLineType ;
+  gcixform:hasEvidenceItemType ?evidenceItemType .
+  
+  ?individual gci:variantScores ?variantEvidenceLine .
+
+  # Need to construct evidence line for individual
+  BIND(IRI(CONCAT(STR(?individual), "_proband_score_evidence_line")) AS ?probandScoreEvidenceLine ) .
+
+  # Limit results to autosomal recessive MOI
+  ?gdm a gci:gdm ;
+  gci:modeInheritance ?moistr .
+
+  FILTER regex(?moistr, "0000007") .
+}
+

@@ -48,6 +48,7 @@
                construct-earliest-articles
                construct-secondary-contributions
                construct-variant-score
+               construct-ar-variant-score
                construct-unscoreable-evidence)
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -289,6 +290,7 @@
                         (construct-earliest-articles params)
                         (construct-secondary-contributions params)
                         (construct-variant-score params)
+                        ;; (construct-ar-variant-score params)
                         (construct-unscoreable-evidence params)
                         )]
     (q/union unlinked-model
