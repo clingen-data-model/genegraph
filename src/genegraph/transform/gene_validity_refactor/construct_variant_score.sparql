@@ -2,7 +2,7 @@
 prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
 construct {
-  ?probandScoreEvidenceLine a ?evidenceLineType ;
+  ?evidenceLine a ?evidenceLineType ;
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence ?evidenceItem , ?functionEvidenceItem ; # evidence about variant
   :sepio/calculated-score ?resultCalculatedScore ;
@@ -52,7 +52,9 @@ where {
   gci:calculatedScore ?calculatedScore ;
   gci:date_created ?date_created .
 
-  BIND (IRI(CONCAT(str(?evidenceLine), "_proband_score_evidence_line")) AS ?probandScoreEvidenceLine) 
+  # This is not actually a proband score, but rather a variant score
+  # Should name it as such =tristan
+  # BIND (IRI(CONCAT(str(?evidenceLine), "_proband_score_evidence_line")) AS ?probandScoreEvidenceLine) 
 
   BIND(IF(?deNovo = "Yes", :geno/DeNovoAlleleOrigin , IF(?deNovo = "No", :geno/GermlineAlleleOrigin , :geno/AlleleOrigin ) ) AS ?alleleOrigin) .
 
@@ -146,5 +148,18 @@ where {
 
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
+
+  # TODO remove this before commit 
+
+  # Bind a proband score if MOI is AR. Needed because there is a cap on the proband score
+  # in case of autosomal recessive inheritance. 
+
+  # ?gdm a gci:gdm ;
+  # gci:modeInheritance ?moistr .
+
+  # BIND(IF(REGEX(?moistr, "0000007"),
+  # 	  IRI(CONCAT(STR(?individual), "_proband_evidence_line")),
+  # 	  ?undefined)
+  #      AS ?proband_evidence_line) .p
   
 }
