@@ -2,7 +2,6 @@
   (:require [clojure.string :as str]
             [mount.core :as mount :refer [defstate]]
             [genegraph.env :as env]
-            [genegraph.annotate :as ann]
             [genegraph.database.query :as q]
             [genegraph.interceptor :as intercept :refer [interceptor-enter-def]]
             [genegraph.source.graphql.common.curation :as curation]
@@ -190,7 +189,7 @@
 (defn update-suggesters [event]
   (when (running?)
     (log/debug :fn :update-suggesters :event event :msg :received-event)
-    (when-let [subjects (::ann/subjects event)]
+    (when-let [subjects (:genegraph.annotate/subjects event)]
       (doseq [gene (:gene-iris subjects)]
         (process-event-resource! gene :gene))
       (doseq [disease (:disease-iris subjects)]

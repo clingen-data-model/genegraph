@@ -72,12 +72,12 @@
   (if (and env/validate-events
            (not (contains? event ::validation-shape)))
     (assoc event
-           ::validation-shape
-           (some-> event
-                   ::root-type
-                   shapes
-                   :graph-name
-                   q/get-named-graph))
+      ::validation-shape
+      (some-> event
+              ::root-type
+              shapes
+              :graph-name
+              q/get-named-graph))
     event))
 
 (def add-validation-shape-interceptor
@@ -94,8 +94,8 @@
              (not (::validation-context event))
              context-graph-list)
       (assoc event
-             ::validation-context
-             (apply q/union (map q/get-named-graph context-graph-list)))
+        ::validation-context
+        (apply q/union (map q/get-named-graph context-graph-list)))
       event)))
 
 (def add-validation-context-interceptor
@@ -200,4 +200,4 @@
 
 (def add-jsonld-interceptor
   {:name ::add-jsonld-interceptor
-   :enter (fn [e] (xform-types/add-model-jsonld e))})
+   :enter (fn [event] (xform-types/add-model-jsonld event))})

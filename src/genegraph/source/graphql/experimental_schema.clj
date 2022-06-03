@@ -40,6 +40,7 @@
    model-variation/vrs-variation-member
    model-variation/vrs-extension
    model-variation/vrs-allele
+   model-variation/vrs-text
    model-variation/vrs-canonical-variation
    model-variation/vrs-literal-sequence-expression
    model-variation/vrs-sequence-location

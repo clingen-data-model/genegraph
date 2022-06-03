@@ -8,11 +8,13 @@
             [io.pedestal.log :as log]
             [genegraph.transform.clinvar.common :refer [transform-clinvar
                                                         clinvar-to-model
-                                                        clinvar-model-to-jsonld]]
+                                                        clinvar-model-to-jsonld
+                                                        clinvar-add-event-graphql]]
             [genegraph.transform.clinvar.util :as util]
             ;;[genegraph.transform.clinvar.variation-archive]
             [genegraph.transform.clinvar.variation]
-            [genegraph.database.load :as l]))
+            [genegraph.database.load :as l]
+            [genegraph.transform.clinvar.common :as common]))
 
 ;;(defmethod clinvar-model-to-jsonld :release_sentinel
 ;;  [msg]
@@ -66,7 +68,7 @@
                     ;;((fn [event] (log/info :msg "parsed content" :parsed-value (::parsed-value event)) event))
                     (#(assoc % :genegraph.transform.clinvar/format (get-clinvar-format (::parsed-value %))))
                     (#(assoc % ::q/model (clinvar-to-model %))))]
-      (log/debug :fn ::add-model :event event)
+      (log/trace :fn ::add-model :event event)
       event)
     (catch Exception e
       (log/error :fn ::add-model :msg "Exception in clinvar add-model" :exception e)
@@ -74,6 +76,11 @@
 
 (defmethod clinvar-model-to-jsonld :default [event]
   (log/debug :fn ::clinvar-model-to-jsonld :dispatch :default :msg "No multimethod defined for event" :event event))
+
+
+(defmethod xform-types/add-event-graphql :clinvar-raw [event]
+  (log/info :fn ::add-event-graphql :event event)
+  (clinvar-add-event-graphql event))
 
 (defmethod xform-types/add-model-jsonld :clinvar-raw [event]
   (log/debug :fn ::add-model-jsonld :event event)
