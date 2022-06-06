@@ -5,9 +5,10 @@
                                               local-class-names
                                               property-uri->keyword
                                               prefix-ns-map]]
+            [genegraph.util :refer [str->bytestream]]
             [genegraph.database.util :refer [tx]]
             [genegraph.transform.clinvar.common :as common]
-            [genegraph.transform.clinvar.util :as util :refer [string->InputStream]]
+            [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.jsonld.common :as jsonld]
             [genegraph.transform.clinvar.cancervariants :as vicc]
@@ -18,8 +19,7 @@
             [clojure.java.io :as io]
             [cheshire.core :as json]
             [clj-http.client :as http]
-            [io.pedestal.log :as log]
-            [com.walmartlabs.lacinia :as lacinia])
+            [io.pedestal.log :as log])
   (:import (org.apache.jena.rdf.model Model Statement)
            (java.io ByteArrayInputStream)
            (clojure.lang Keyword)))
@@ -280,7 +280,7 @@
               ;; (throw e)
               ))
         (let [vrs-id (get vrs-obj "_id")
-              vrs-model (l/read-rdf (string->InputStream (json/generate-string vrs-obj)) {:format :json-ld})]
+              vrs-model (l/read-rdf (str->bytestream (json/generate-string vrs-obj)) {:format :json-ld})]
           (log/debug :fn ::add-vrs-model
                      :vrs-id vrs-id
                      :vrs-obj vrs-obj

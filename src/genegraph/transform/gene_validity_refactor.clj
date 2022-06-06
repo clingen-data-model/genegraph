@@ -1,12 +1,12 @@
 (ns genegraph.transform.gene-validity-refactor
   (:require [genegraph.database.load :as l]
+            [genegraph.util :refer [str->bytestream]]
             [genegraph.database.query :as q :refer [select construct ld-> ld1-> declare-query]]
             [genegraph.transform.types :refer [transform-doc src-path add-model]]
             [cheshire.core :as json]
             [clojure.walk :refer [postwalk]]
             [clojure.string :as s]
-            [clojure.java.io :as io :refer [resource]])
-  (:import java.io.ByteArrayInputStream ))
+            [clojure.java.io :as io :refer [resource]]))
 
 (def base "http://dataexchange.clinicalgenome.org/gci/")
 
@@ -235,9 +235,6 @@
 
 (defn append-context [gdm-json]
   (str context "," (subs gdm-json 1)))
-
-(defn str->bytestream [s]
-  (-> s .getBytes ByteArrayInputStream.))
 
 (defn parse-gdm [gdm-json]
   (-> gdm-json

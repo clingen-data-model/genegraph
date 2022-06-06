@@ -3,29 +3,28 @@
 (ns genegraph.transform.jsonld.common
   (:require [genegraph.database.names :refer [local-property-names
                                               property-uri->keyword]]
+            [genegraph.util :refer [str->bytestream]]
             [io.pedestal.log :as log]
             [cheshire.core :as json])
   (:import (genegraph.database.query.types RDFResource)
-           (java.io StringWriter ByteArrayInputStream)
-           (java.nio.charset Charset)
            (org.apache.jena.rdf.model Model)
-           ;; (org.apache.jena.riot.writer JsonLDWriter)
+    ;; (org.apache.jena.riot.writer JsonLDWriter)
            (org.apache.jena.sparql.util Context)
            (org.apache.jena.sparql.core.mem DatasetGraphInMemory)
-           (org.apache.jena.riot RDFFormat)
+           (org.apache.jena.riot RDFFormat RDFDataMgr Lang)
            (org.apache.jena.graph NodeFactory)
            (org.apache.jena.riot.system PrefixMapStd)
            (com.github.jsonldjava.core JsonLdOptions)
            (com.apicatalog.jsonld.document JsonDocument)
-           (com.apicatalog.jsonld JsonLd)))
+           (com.apicatalog.jsonld JsonLd)
+           (java.io StringWriter)))
 
 
 (defn ^com.apicatalog.jsonld.document.JsonDocument string->JsonDocument
   "Converts a JSON string to a titanium-json-ld JsonDocument"
   [^String input-str]
   (-> input-str
-      (.getBytes (Charset/forName "UTF-8"))
-      (ByteArrayInputStream.)
+      (str->bytestream)
       (JsonDocument/of)))
 
 (defn add-properties-to-context
@@ -79,7 +78,7 @@
    (model-to-jsonld model nil))
   ([^Model model ^String frame-str]
    ;; reactivate when JSON-LD support is up-to-date with Jena 4.5   
-   (comment 
+   (comment
      (let [writer (JsonLDWriter. RDFFormat/JSONLD_COMPACT_PRETTY)
            sw (StringWriter.)
            ds (DatasetGraphInMemory.)
@@ -106,3 +105,8 @@
        (log/trace :msg "Writing framed jsonld")
        (.write writer sw ds prefix-map base-uri context)
        (.toString sw)))))
+
+(defn model-to-jsonld-4.5 [^Model model]
+  (let [sw (doto (StringWriter.)
+             (RDFDataMgr/write model Lang/JSONLD))]
+    (.toString sw)))
