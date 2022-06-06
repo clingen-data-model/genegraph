@@ -12,7 +12,8 @@
            [org.apache.jena.query TxnType Dataset]
            [org.apache.jena.rdf.model Model ModelFactory Literal Resource
             ResourceFactory Statement]
-           [org.apache.jena.tdb2 TDB2Factory]))
+           [org.apache.jena.tdb2 TDB2Factory]
+           (java.io ByteArrayInputStream)))
 
 (def jena-rdf-format
   {:rdf-xml "RDF/XML"
@@ -22,10 +23,18 @@
 (defn blank-node []
   (ResourceFactory/createResource))
 
-(defn read-rdf
+(defn str->InputStream
+  "If s is a string, return an input stream of its contents, else return s"
+  [^String s]
+  (if (string? s)
+    (ByteArrayInputStream. (.getBytes s))
+    s))
+
+(defn ^Model read-rdf
+  "Accepts an InputStream or String to read into a Model"
   ([src] (read-rdf src {}))
   ([src opts] (-> (ModelFactory/createDefaultModel)
-                  (.read src nil (jena-rdf-format (:format opts :rdf-xml))))))
+                  (.read (str->InputStream src) nil (jena-rdf-format (:format opts :rdf-xml))))))
 
 (defn store-rdf
   "Expects src to be compatible with Model.read(src, nil). A java.io.InputStream is
