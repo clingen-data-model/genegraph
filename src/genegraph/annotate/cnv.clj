@@ -20,7 +20,7 @@
                                        ::start
                                        ::total_copies]))
 
-(def ^:private longs
+(def ^:private the-counts
   "These fields have integer values."
   [:start :end :total_copies])
 
@@ -30,7 +30,7 @@
            ::reference          "([^ /]*)"
            ::cytogenic-location "([^()]*)"
            :chr                 "([^:]+)"]
-          (interleave longs (repeat "(\\d+)"))))
+          (interleave the-counts (repeat "(\\d+)"))))
 
 (def ^:private field-pairs
   "Pair up field keys and their regular expressions."
@@ -40,15 +40,15 @@
   "Order the keys in the parsed CNV."
   (cons ::string (map first field-pairs)))
 
-(def ^:private re
+(def ^:private the-regular-expression
   "Parse CNV strings with this regular expression."
   (re-pattern (apply (partial format "^%s/%s %s\\(chr%s:%s-%s\\)x%s$")
                      (map second field-pairs))))
 
-(defn ^:private raw
+(defn ^:private raw-parse
   "Nil or the CNV string S parsed into a map with FIELD-KEYS."
   [s]
-  (let [[match & more] (re-seq re s)]
+  (let [[match & more] (re-seq the-regular-expression s)]
     (when (and (empty? more)
                (== 8 (count match)))
       (->> match
@@ -56,15 +56,15 @@
            (filter (comp seq second))
            (into {})))))
 
-(defn ^:private longify
-  "Parse the LONGS into integer values in the RAW-MAP."
+(defn ^:private longify-the-counts
+  "Parse the THE-COUNTS into integer values in the RAW-MAP."
   [raw-map]
-  (reduce (fn [m k] (update m k parse-long)) raw-map longs))
+  (reduce (fn [m k] (update m k parse-long)) raw-map the-counts))
 
 (defn parse
   "Nil or the CNV string S parsed into a map."
   [s]
-  (let [result (some-> s raw longify)]
+  (let [result (some-> s raw-parse longify-the-counts)]
     (when (s/valid? ::cnv result)
       result)))
 
