@@ -49,7 +49,10 @@
                construct-secondary-contributions
                construct-variant-score
                construct-ar-variant-score
-               construct-unscoreable-evidence)
+               construct-unscoreable-evidence
+               unlink-variant-scores-when-proband-scores-exist)
+
+
 
 ;; Trim trailing }, intended to be appended to gci json
 (def context
@@ -258,6 +261,30 @@
 (def hgnc-has-equiv-entrez-gene-query
   (q/create-query "select ?gene where { ?gene :owl/same-as ?hgnc_gene }"))
 
+(defn add-proband-scores
+  "Return model contributing the evidence line scores for proband scores
+  when needed in SOPv8 + autosomal recessive variants. May need a mechanism
+  to feed a new cap in, should that change."
+  [model]
+  (let [proband-evidence-lines
+        (q/select "select ?x where 
+{ ?prop :sepio/has-qualifier :hpo/AutosomalRecessiveInheritance ;
+ ^( :sepio/has-subject ) / ( :sepio/has-evidence )+ ?x .
+ ?x a :sepio/ProbandEvidenceLine . }" {} model)]
+    (q/union
+     model
+     (l/statements-to-model
+      (map
+       #(vector 
+         %
+         :sepio/evidence-line-strength-score
+         (min 3 ; current cap on sop v8+ proband scores
+              (reduce
+               + 
+               (ld-> % [:sepio/has-evidence
+                        :sepio/evidence-line-strength-score]))))
+       proband-evidence-lines)))))
+
 (defn transform-gdm [gdm]
   (.setNsPrefixes gdm ns-prefixes)
   (let [gdm-is-about-gene (first (gdm-is-about-gene-query {::q/model gdm}))
@@ -290,14 +317,16 @@
                         (construct-earliest-articles params)
                         (construct-secondary-contributions params)
                         (construct-variant-score params)
-                        ;; (construct-ar-variant-score params)
+                        (construct-ar-variant-score params)
                         (construct-unscoreable-evidence params)
-                        )]
-    (q/union unlinked-model
-             (construct-evidence-connections 
-              {::q/model
-               (q/union unlinked-model
-                        gdm-sepio-relationships)}))))
+                        )
+        linked-model (q/union unlinked-model
+                              (construct-evidence-connections 
+                               {::q/model
+                                (q/union unlinked-model
+                                         gdm-sepio-relationships)}))]
+    (unlink-variant-scores-when-proband-scores-exist
+     {::q/model (add-proband-scores linked-model)})))
 
 (defmethod add-model :gci-refactor
   [event]

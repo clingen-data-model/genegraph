@@ -8,21 +8,13 @@
 
 # Will need to configure evidence line connections appropriately afterwards
 
-
 prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
 construct {
   ?probandScoreEvidenceLine a :sepio/ProbandEvidenceLine ;
-  :sepio/has-evidence ?variantEvidenceLine .
-  
-  ?variantEvidenceLine a ?evidenceLineType .
+  :sepio/has-evidence ?individual , ?variantEvidenceLine .
 } where {
-  ?variantEvidenceLine a gci:variantScore ;
-  gci:variantType ?variantType .
 
-  ?variantType gcixform:hasEvidenceLineType ?evidenceLineType ;
-  gcixform:hasEvidenceItemType ?evidenceItemType .
-  
   ?individual gci:variantScores ?variantEvidenceLine .
 
   # Need to construct evidence line for individual

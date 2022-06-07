@@ -47,6 +47,13 @@
     (::q/model event)
     (-> event transform/add-model ::q/model))))
 
+(defn model-sizes
+  "return the size of the existing model in triples, as
+   well as the current transformation."
+  [event]
+  {:previous (.size (::q/model event))
+   :current (-> event transform/add-model ::q/model .size)})
+
 (defn statistics
   "Summary statistics of event processing over the topic."
   [topic]
