@@ -9,8 +9,6 @@ construct {
 
   ?evidenceItem  a ?evidenceItemType ;
   :dc/description ?evidenceDescription ;
-  #:sepio/is-described-by ?experimentalSubCategory ; #TON
-  :sepio/is-described-by ?proteinInteractionSubCategory ; #TON
   :dc/source ?article ;
   :rdfs/label ?evidenceLabel .
 }
@@ -50,13 +48,6 @@ where {
   ?evidenceLineType gcixform:hasGCIType ?gciType ;
   gcixform:hasEvidenceItemType ?evidenceItemType ;
   gcixform:usedIn gcixform:Functional .
-
-  # Need alternatives for :sepio/is-described-by for BiochemicalFunctions and Expression
-  OPTIONAL {
-     ?evidenceItem gci:proteinInteractions / gci:interactionType ?proteinInteractionSubCategory . #TON
-  }
-  # Need alternatives for :sepio/is-described-by for BiochemicalFunctions and Expression
-  #BIND(COALESCE(?proteinInteractionSubCategory, "FIX ME") AS ?experimentalSubCategory) . #TON
 
   ?annotation gci:experimentalData ?evidenceItem ;
   gci:article ?publication .
