@@ -1198,6 +1198,8 @@
   "http://purl.obolibrary.org/obo/SEPIO_0000398"]
  [:sepio/has-inconclusive-evidence-line
   "http://purl.obolibrary.org/obo/SEPIO_0000009"]
+ [:sepio/has-mode-of-inheritance
+  "http://purl.obolibrary.org/obo/SEPIO_0004171"]
  [:sepio/has-object "http://purl.obolibrary.org/obo/SEPIO_0000390"]
  [:sepio/has-ordinal-position "http://purl.obolibrary.org/obo/SEPIO_0002506"]
  [:sepio/has-predicate "http://purl.obolibrary.org/obo/SEPIO_0000389"]
