@@ -82,7 +82,6 @@
              ::reference "hg19"
              ::string "GRCh37/hg19 1q21.1(chr1:143134063-143284670)x3"
              ::variation-id 145208
-             :accession "VCV000145208.1"
              :assembly "GRCh37"
              :chr "1"
              :end 143284670
