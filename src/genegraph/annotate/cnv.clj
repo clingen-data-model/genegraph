@@ -76,7 +76,6 @@
                "GRCh37/hg19 Xp22.33(chrX:697169-1238257)x0"
                "GRCh37/hg19 13q31.3(chr13:93244802-93269486)x0"
                "GRCh38/hg38 6q16.1-16.2(chr6:98770647-99813111)x1"])
-  (pos-int?)
   "For example ..."
   (s/valid? ::cnv
             {::cytogenetic-location "1q21.1"
