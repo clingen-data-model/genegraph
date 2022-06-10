@@ -7,6 +7,9 @@
             [genegraph.transform.core :as transform]
             [clojure.data :as data]))
 
+(defn add-new-model [event]
+  (when-not (::new-model event)
+    (assoc event ::new-model (transform/add-model (::q/model event)))))
 
 (defn resource-type-counts [event]
   (->> (q/select "select ?type where { ?x a ?type }" {} (::q/model event))
@@ -44,6 +47,13 @@
     (::q/model event)
     (-> event transform/add-model ::q/model))))
 
+(defn model-sizes
+  "return the size of the existing model in triples, as
+   well as the current transformation."
+  [event]
+  {:previous (.size (::q/model event))
+   :current (-> event transform/add-model ::q/model .size)})
+
 (defn statistics
   "Summary statistics of event processing over the topic."
   [topic]
@@ -54,3 +64,10 @@
        frequencies))
 
 
+(comment
+  (->> (event-recorder/events-for-topic :gene-validity-raw)
+       (take-last 10)
+       (pmap #(assoc % ::model-changed (event-analyzer/model-changed? %)))
+       (filter ::model-changed)
+       (map event-analyzer/resource-type-diff))
+  )
