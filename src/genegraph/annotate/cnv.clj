@@ -1,6 +1,7 @@
 (ns genegraph.annotate.cnv
   "Parse copy number variation (CNV) syntax."
-  (:require [clojure.spec.alpha :as s]))
+  (:require [clojure.spec.alpha :as s]
+            [clojure.string     :as str]))
 
 (s/def ::string       (s/and string? seq))
 (s/def ::accession    ::string)
@@ -32,6 +33,14 @@
            :chr                 "([^:]+)"]
           (interleave the-counts (repeat "(\\d+)"))))
 
+(def ^:private unparse-template
+  "The basic syntax of CNV strings."
+  "%s/%s %s(chr%s:%s-%s)x%s")
+
+(def ^:private parse-template
+  "Escape the syntax of CNV strings for a regular expression."
+  (str/escape unparse-template {\( "\\(" \) "\\)"}))
+
 (def ^:private field-pairs
   "Pair up field keys and their regular expressions."
   (partition 2 regular-expressions))
@@ -42,7 +51,7 @@
 
 (def ^:private the-regular-expression
   "Parse CNV strings with this regular expression."
-  (re-pattern (apply (partial format "^%s/%s %s\\(chr%s:%s-%s\\)x%s$")
+  (re-pattern (apply (partial format (str "^" parse-template "$"))
                      (map second field-pairs))))
 
 (defn ^:private raw-parse
@@ -61,21 +70,33 @@
   [raw-map]
   (reduce (fn [m k] (update m k parse-long)) raw-map the-counts))
 
+(def ^:private project
+  "Project the fields of a CNV map into a sequence."
+  (apply juxt (rest field-keys)))
+
 (defn parse
   "Nil or the CNV string S parsed into a map."
   [s]
+  {:pre [(string? s)]}
   (let [result (some-> s raw-parse longify-the-counts)]
     (when (s/valid? ::cnv result)
       result)))
 
+(defn unparse
+  "Return the string representation of the CNV map."
+  [cnv]
+  {:pre [(s/valid? ::cnv cnv)]}
+  (apply format unparse-template (project cnv)))
+
 (comment
-  (mapv parse ["GRCh37/hg19 1q21.1(chr1:143134063-143284670)x3"
-               "GRCh38/hg38 1p36.33(chr1:1029317-1072906)x4"
-               "GRCh37/hg19 Yp11.32(chrY:21267-39498)x0"
-               "NCBI36/hg18 Xq21.31(chrX:88399122-88520760)x1"
-               "GRCh37/hg19 Xp22.33(chrX:697169-1238257)x0"
-               "GRCh37/hg19 13q31.3(chr13:93244802-93269486)x0"
-               "GRCh38/hg38 6q16.1-16.2(chr6:98770647-99813111)x1"])
+  (def examples ["GRCh37/hg19 1q21.1(chr1:143134063-143284670)x3"
+                 "GRCh38/hg38 1p36.33(chr1:1029317-1072906)x4"
+                 "GRCh37/hg19 Yp11.32(chrY:21267-39498)x0"
+                 "NCBI36/hg18 Xq21.31(chrX:88399122-88520760)x1"
+                 "GRCh37/hg19 Xp22.33(chrX:697169-1238257)x0"
+                 "GRCh37/hg19 13q31.3(chr13:93244802-93269486)x0"
+                 "GRCh38/hg38 6q16.1-16.2(chr6:98770647-99813111)x1"])
+  (assert (= examples (mapv (comp unparse parse) examples)))
   "For example ..."
   (s/valid? ::cnv
             {::cytogenetic-location "1q21.1"
