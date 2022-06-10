@@ -12,6 +12,7 @@
                                                 add-metadata-interceptor
                                                 add-validation-interceptor
                                                 add-subjects-interceptor]]
+            [genegraph.annotate.serialization :as ser]
             [genegraph.sink.stream :as stream]
             [genegraph.suggest.suggesters :as suggest :refer [update-suggesters-interceptor]]
             [mount.core :as mount :refer [defstate]]
@@ -114,6 +115,7 @@
                                     unpublish-interceptor
                                     replace-interceptor
                                     ann/add-jsonld-interceptor
+                                    ser/add-graphql-serialization-interceptor
                                     stream-producer-interceptor])
 
 (def web-interceptor-chain [event-recorder/record-event-interceptor

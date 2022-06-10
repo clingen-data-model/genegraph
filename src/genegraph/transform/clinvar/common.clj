@@ -31,6 +31,10 @@
           Takes an event, returns it annotated with the JSON-LD representation of the model."
           :genegraph.transform.clinvar/format)
 
+(defmulti clinvar-add-event-graphql
+          "Takes an event, returns it annotated with :graphql {:query :variables}"
+          :genegraph.transform.clinvar/format)
+
 (def clinvar-jsonld-context {"@context" {"@vocab" iri/cgterms
                                          "clingen" iri/cgterms
                                          "sepio" "http://purl.obolibrary.org/obo/SEPIO_"

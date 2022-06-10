@@ -13,11 +13,13 @@ construct {
   :sepio/phenotype-negative-allele-negative ?unaffected ;
   :sepio/meets-inclusion-criteria ?meetsCriteria ;
   :sepio/is-about-condition ?phenotypes ;
-  :rdfs/label ?evidenceLabel .
+  :rdfs/label ?evidenceLabel ;
+  :sepio/is-about-proband ?proband .
 
   ?family a :pco/Family ;
-  :rdfs/label ?evidenceLabel .
-
+  :rdfs/label ?evidenceLabel ;
+  :sepio/has-mode-of-inheritance ?familyMoi ;
+  :sepio/ethnicity ?familyEthnicity .
 }
 where {
   
@@ -62,9 +64,22 @@ where {
     BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", SUBSTR(?phenotypeString, STRLEN(?phenotypeString) - 7 , 7))) AS ?phenotypes) .
   }
 
+  OPTIONAL {
+    ?family gci:ethnicity ?familyEthnicity
+  }
+
   # NB, this seems specific to AR curations, don't forget to check AD .
   optional {
     ?segregation gci:numberOfUnaffectedWithoutBiallelicGenotype ?unaffected .
+  }
+
+  OPTIONAL {
+    ?segregation gci:moiDisplayedForFamily ?familyMoi .
+  }
+
+  OPTIONAL {
+    ?family gci:individualIncluded ?proband .
+    ?proband gci:proband true .
   }
   
 }

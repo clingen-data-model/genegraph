@@ -10,12 +10,16 @@
            [java.io InputStream OutputStream FileInputStream File]
            [com.google.common.io ByteStreams]
            [com.google.cloud.storage Bucket BucketInfo Storage StorageOptions
-            BlobId BlobInfo Blob]
+                                     BlobId BlobInfo Blob]
            [com.google.cloud.storage Storage$BlobWriteOption
-            Storage$BlobTargetOption
-            Storage$BlobSourceOption
-            Storage$BlobListOption
-            Blob$BlobSourceOption]))
+                                     Storage$BlobTargetOption
+                                     Storage$BlobSourceOption
+                                     Storage$BlobListOption
+                                     Blob$BlobSourceOption]
+           (com.google.cloud WriteChannel)
+           (java.nio.channels WritableByteChannel)
+           (java.nio.charset StandardCharsets)))
+
 
 (defn- storage []
   (.getService (StorageOptions/getDefaultInstance)))
@@ -37,6 +41,23 @@
         blob (.get (storage)
                    (BlobId/of env/genegraph-bucket source-blob))]
     (.downloadTo blob target-path)))
+
+(defn ^WriteChannel get-bucket-write-channel
+  "Returns a function which when called returns an open WriteChannel to blob-name within env/genegraph-bucket"
+  ([^String blob-name]
+   (get-bucket-write-channel env/genegraph-bucket blob-name))
+  ([^String bucket-name ^String blob-name]
+   (let [gc-storage (.getService (StorageOptions/getDefaultInstance))
+         blob-id (BlobId/of bucket-name blob-name)
+         blob-info (-> blob-id BlobInfo/newBuilder (.setContentType (:content-type "application/gzip")) .build)]
+     (fn [] (.writer gc-storage blob-info (make-array Storage$BlobWriteOption 0))))))
+
+(defn channel-write-string!
+  "Write a string in UTF-8 to a WriteableByteChannel.
+  Returns the channel for use in threading."
+  [^WritableByteChannel channel ^String input-string]
+  (.write channel (ByteBuffer/wrap (.getBytes input-string StandardCharsets/UTF_8)))
+  channel)
 
 (defn list-items-in-bucket
   ([] (list-items-in-bucket nil))
