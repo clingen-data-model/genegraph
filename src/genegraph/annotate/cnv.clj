@@ -39,7 +39,7 @@
 
 (def ^:private parse-template
   "Escape the syntax of CNV strings for a regular expression."
-  (str/escape unparse-template {\( "\\(" \) "\\)"}))
+  (str "^" (str/escape unparse-template {\( "\\(" \) "\\)"}) "$"))
 
 (def ^:private field-pairs
   "Pair up field keys and their regular expressions."
@@ -51,7 +51,7 @@
 
 (def ^:private the-regular-expression
   "Parse CNV strings with this regular expression."
-  (re-pattern (apply (partial format (str "^" parse-template "$"))
+  (re-pattern (apply (partial format parse-template)
                      (map second field-pairs))))
 
 (defn ^:private raw-parse
