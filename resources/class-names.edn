@@ -97,6 +97,7 @@
  [:cgagent/crc-curator "http://dataexchange.clinicalgenome.org/agent/crc-curator"]
  [:so/ProteinCodingGene "http://purl.obolibrary.org/obo/SO_0001217"]
  [:so/SequenceFeature "http://purl.obolibrary.org/obo/SO_0000110"]
+ [:so/ChromosomeBand "http://purl.obolibrary.org/obo/SO_0000341"]
  [:sepio/GeneDosageReport "http://purl.obolibrary.org/obo/SEPIO_0002015"]
  [:sepio/GeneDosageRecord "http://purl.obolibrary.org/obo/SEPIO_0002016"]
  [:ga4gh/VariationDescriptor "https://terms.ga4gh.org/VariationDescriptor"]
