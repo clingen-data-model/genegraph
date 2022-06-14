@@ -7,6 +7,7 @@
             [genegraph.sink.base :as base]
             [genegraph.sink.stream :as stream]
             [genegraph.migration :as migration]
+            [genegraph.source.snapshot.core :as snapshot]
             [genegraph.env :as env]
             [io.pedestal.log :as log])
   (:import com.google.firebase.FirebaseApp))
@@ -28,6 +29,7 @@
      :route-name ::env]]})
 
 (defn start-server! []
+  (log/info :fn ::start-server! :env/mode env/mode)
   (let [service-map (case env/mode
                       "production" (service/prod-service)
                       "transformer" (service/transformer-service)
@@ -116,4 +118,6 @@
     (if (env/transformer-mode?)
       (run-server-transformer nil)
       (run-server-genegraph nil))
-    (run-migration)))
+    (if (= "snapshot" (first args))
+      (apply snapshot/-main (rest args))
+      (run-migration))))

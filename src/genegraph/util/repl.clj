@@ -15,6 +15,7 @@
             [genegraph.migration :as migrate]
             [genegraph.sink.rocksdb :as rocks-sink]
             [genegraph.transform.gene-validity :as gene-validity]
+            [genegraph.transform.core :as transform]
             [genegraph.transform.gene-validity-refactor :as gene-validity-refactor]
             [medley.core :as medley]
             [cheshire.core :as json]

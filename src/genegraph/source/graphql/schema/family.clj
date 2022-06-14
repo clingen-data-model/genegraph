@@ -11,4 +11,10 @@
                        :path [:ro/has-member]}
             :segregation {:type :Segregation
                           :description "Segregation evidence for a family relative to a specific phenotype"
-                          :path [[:sepio/is-about-family :<]]}}})
+                          :path [[:sepio/is-about-family :<]]}
+            :ethnicity {:type :Resource
+                        :description "The familiy ethnicity"
+                        :path [:sepio/ethnicity]}
+            :mode_of_inheritance {:type 'String
+                                  :description "Family mode of inheritence"
+                                  :path [:sepio/has-mode-of-inheritance]}}})
