@@ -106,6 +106,7 @@
             "ageType" {"@type" "@vocab"}
             "ageUnit" {"@type" "@vocab"}
             "scoreStatus" {"@type" "@vocab"}
+            "interactionType" {"@type" "@vocab"}
             ;; "testingMethods" {"@type" "@vocab"}
 
             ;; ;; Category names
@@ -221,6 +222,12 @@
             ;; variantType
             "OTHER_VARIANT_TYPE" "http://purl.obolibrary.org/obo/SEPIO_0004611"
             "PREDICTED_OR_PROVEN_NULL" "http://purl.obolibrary.org/obo/SEPIO_0004612"
+
+            ;; interactionTypes
+            "genetic interaction (MI:0208)" "SEPIO:0004616"
+            "negative genetic interaction (MI:0933)" "SEPIO:0004617"
+            "physical association (MI:0915)" "SEPIO:0004618"
+            "positive genetic interaction (MI:0935)" "SEPIO:0004619"
 
             }}))))
 

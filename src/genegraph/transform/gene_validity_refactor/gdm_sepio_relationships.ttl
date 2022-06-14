@@ -37,19 +37,52 @@ gci:OTHER_VARIANT_TYPE :hasEvidenceLineType sepio:0004121 ;
 
 ## TODO
 
-# biochemical function
-sepio:0004022 :hasEvidenceItemType sepio:0004041 ;
+# biochemical function A
+sepio:0004180 :hasEvidenceItemType sepio:0004041 ;
     :hasGCIType :BiochemicalFunction ;
+    :hasGCISubType :A ;
     :usedIn :Functional .
-    
-# protein interaction
-sepio:0004023 :hasEvidenceItemType sepio:0004042 ;
+
+# biochemical function B
+sepio:0004181 :hasEvidenceItemType sepio:0004041 ;
+    :hasGCIType :BiochemicalFunction ;
+    :hasGCISubType :B ;
+    :usedIn :Functional .
+
+# protein interaction genetic interaction (MI:0208)
+sepio:0004182 :hasEvidenceItemType sepio:0004042 ;
     :hasGCIType :ProteinInteraction ;
+    :hasGCISubType sepio:0004616 ;
     :usedIn :Functional .
-    
-# gene expression
-sepio:0004024 :hasEvidenceItemType sepio:0004043 ;
+
+# protein interaction negative genetic interaction (MI:0933)
+sepio:0004183 :hasEvidenceItemType sepio:0004042 ;
+    :hasGCIType :ProteinInteraction ;
+    :hasGCISubType sepio:0004617 ;
+    :usedIn :Functional .
+
+# protein interaction physical association (MI:0915)
+sepio:0004184 :hasEvidenceItemType sepio:0004042 ;
+    :hasGCIType :ProteinInteraction ;
+    :hasGCISubType sepio:0004618 ;
+    :usedIn :Functional .
+
+# protein interaction positive genetic interaction (MI:0935)
+sepio:0004185 :hasEvidenceItemType sepio:0004042 ;
+    :hasGCIType :ProteinInteraction ;
+    :hasGCISubType sepio:0004619 ;
+    :usedIn :Functional .
+
+# gene expression A
+sepio:0004188 :hasEvidenceItemType sepio:0004043 ;
     :hasGCIType :Expression ;
+    :hasGCISubType :A ;
+    :usedIn :Functional .
+
+# gene expression B
+sepio:0004189 :hasEvidenceItemType sepio:0004043 ;
+    :hasGCIType :Expression ;
+    :hasGCISubType :B ;
     :usedIn :Functional .
 
 # patient cell functional alteration
