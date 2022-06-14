@@ -27,10 +27,10 @@
 
 (def ^:private regular-expressions
   "Order the parsed result keys and their regular expression strings."
-  (concat [:assembly            "([^ /]+)"
-           ::reference          "([^ /]*)"
-           ::cytogenic-location "([^()]*)"
-           :chr                 "([^:]+)"]
+  (concat [:assembly            "([^\\p{Blank}/]+)"
+           ::reference          "([^\\p{Blank}/]*)"
+           ::cytogenic-location "([^\\p{Blank}()]*)"
+           :chr                 "([^\\p{Blank}:]+)"]
           (interleave the-counts (repeat "(\\d+)"))))
 
 (def ^:private unparse-template
