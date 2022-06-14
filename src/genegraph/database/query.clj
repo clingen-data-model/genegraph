@@ -185,7 +185,8 @@ use io/slurp"
                            (set (map #(.getObject %) statements)))]
     (println
      (reduce (fn [model-str [iri kw]]
-               (s/replace model-str (str "<" iri ">")
+               (s/replace model-str
+                          (str "<" iri ">")
                           (str kw)))
              (to-turtle model)
              (filter second ; remove when no mapping exists
