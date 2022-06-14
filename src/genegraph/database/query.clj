@@ -173,3 +173,20 @@ use io/slurp"
   "Return true if MODEL-ONE is isomorphic relative to MODEL-TWO"
   [model-one model-two]
   (.isIsomorphicWith model-one model-two))
+
+(defn pp-model
+  "Print a turtle-like string of model, with iri values
+  substituted for local keywords when available."
+  [model]
+  (let [statements (iterator-seq (.listStatements model))
+        predicate-iri-kw (map #(vector % (names/property-uri->keyword %))
+                              (set (map #(.getPredicate %) statements)))
+        object-iri-kw (map #(vector % (names/class-uri->keyword %))
+                           (set (map #(.getObject %) statements)))]
+    (println
+     (reduce (fn [model-str [iri kw]]
+               (s/replace model-str (str "<" iri ">")
+                          (str kw)))
+             (to-turtle model)
+             (filter second ; remove when no mapping exists
+                     (concat predicate-iri-kw object-iri-kw))))))
