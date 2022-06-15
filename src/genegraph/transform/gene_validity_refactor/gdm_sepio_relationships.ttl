@@ -52,25 +52,25 @@ sepio:0004181 :hasEvidenceItemType sepio:0004041 ;
 # protein interaction genetic interaction (MI:0208)
 sepio:0004182 :hasEvidenceItemType sepio:0004042 ;
     :hasGCIType :ProteinInteraction ;
-    :hasGCISubType sepio:0004616 ;
+    :hasGCISubType :GeneticInteraction ;
     :usedIn :Functional .
 
 # protein interaction negative genetic interaction (MI:0933)
 sepio:0004183 :hasEvidenceItemType sepio:0004042 ;
     :hasGCIType :ProteinInteraction ;
-    :hasGCISubType sepio:0004617 ;
+    :hasGCISubType :NegativeGeneticInteraction ;
     :usedIn :Functional .
 
 # protein interaction physical association (MI:0915)
 sepio:0004184 :hasEvidenceItemType sepio:0004042 ;
     :hasGCIType :ProteinInteraction ;
-    :hasGCISubType sepio:0004618 ;
+    :hasGCISubType :PhysicalAssociation ;
     :usedIn :Functional .
 
 # protein interaction positive genetic interaction (MI:0935)
 sepio:0004185 :hasEvidenceItemType sepio:0004042 ;
     :hasGCIType :ProteinInteraction ;
-    :hasGCISubType sepio:0004619 ;
+    :hasGCISubType :PositiveGeneticInteraction ;
     :usedIn :Functional .
 
 # gene expression A
