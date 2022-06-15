@@ -13,6 +13,7 @@ construct {
   :sepio/phenotype-negative-allele-negative ?unaffected ;
   :sepio/meets-inclusion-criteria ?meetsCriteria ;
   :sepio/is-about-condition ?phenotypes ;
+  :sepio/has-textual-part ?phenotypeFreeText ;
   :rdfs/label ?evidenceLabel ;
   :sepio/is-about-proband ?proband .
 
@@ -65,7 +66,11 @@ where {
   }
 
   OPTIONAL {
-    ?family gci:ethnicity ?familyEthnicity
+     ?family gci:termsInDiagnosis ?phenotypeFreeText .
+  }
+
+  OPTIONAL {
+    ?family gci:ethnicity ?familyEthnicity .
   }
 
   # NB, this seems specific to AR curations, don't forget to check AD .
