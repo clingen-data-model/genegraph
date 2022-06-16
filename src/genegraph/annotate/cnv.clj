@@ -21,6 +21,14 @@
                                        ::start
                                        ::total_copies]))
 
+(s/fdef parse
+  :args ::string
+  :ret  ::cnv)
+
+(s/fdef unparse
+  :args ::cnv
+  :ret  ::string)
+
 (def ^:private the-counts
   "These fields have integer values."
   [:start :end :total_copies])
@@ -74,20 +82,12 @@
   "Project the fields of a CNV map into a sequence."
   (apply juxt (rest field-keys)))
 
-(s/fdef parse
-  :args ::string
-  :ret  ::cnv)
-
 (defn parse
   "Nil or the CNV string S parsed into a map."
   [s]
   (let [result (some-> s raw-parse longify-the-counts)]
     (when (s/valid? ::cnv result)
       result)))
-
-(s/fdef unparse
-  :args ::cnv
-  :ret  ::string)
 
 (defn unparse
   "Return the string representation of the CNV map."
