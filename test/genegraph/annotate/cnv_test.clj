@@ -15,6 +15,9 @@
    "GRCh38/hg38 6q16.1-16.2(chr6:98770647-99813111)x1"
    "NCBI36/hg18 Xq21.31(chrX:88399122-88520760)x1"])
 
+(st/instrument `cnv/parse)
+(st/instrument `cnv/unparse)
+
 (deftest satisfy-examples
   (testing "round-trip all the example strings"
     (is (= examples (map (comp cnv/unparse cnv/parse) examples)))))
@@ -26,3 +29,5 @@
              (every? true?))))
   (testing "nil is not a ::cnv"
     (is (not (s/valid? ::cnv/cnv nil)))))
+
+(comment (clojure.test/test-all-vars *ns*))

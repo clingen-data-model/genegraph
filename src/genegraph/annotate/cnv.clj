@@ -84,12 +84,12 @@
 ;; parse and unparse do not support ::cnv-accession yet.
 
 (s/fdef parse
-  :args ::string
+  :args (s/cat :s ::string)
   :ret  (s/or :bad nil?
               :ok  ::cnv-chr))
 
 (s/fdef unparse
-  :args ::cnv-chr
+  :args (s/cat :cnv ::cnv-chr)
   :ret  ::string)
 
 (defn parse
