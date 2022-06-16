@@ -1,7 +1,7 @@
 (ns genegraph.transform.clinvar.variation-test
   (:require [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.transform.clinvar.variation :as variation]
-            [genegraph.transform.clinvar.util :as util :refer [string->InputStream]]
+            [genegraph.transform.clinvar.util :as util :refer [str->bytestream]]
             [genegraph.transform.types :as xform-types]
             [genegraph.transform.jsonld.common :as jsonld]
             [genegraph.database.names :refer [local-property-names
