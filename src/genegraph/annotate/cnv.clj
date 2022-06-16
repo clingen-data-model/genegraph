@@ -3,27 +3,29 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.string     :as str]))
 
-(s/def ::string       (s/and string? seq))
-(s/def ::accession    ::string)
-(s/def ::assembly     ::string)
-(s/def ::chr          ::string)
-(s/def ::end          nat-int?)
-(s/def ::reference    ::string)
-(s/def ::start        nat-int?)
-(s/def ::total_copies nat-int?)
-(s/def ::cnv          (s/keys :opt    [::cytogenetic-location
-                                       ::reference
-                                       ::string]
-                              :opt-un [::accession]
-                              :req-un [::assembly
-                                       ::chr
-                                       ::end
-                                       ::start
-                                       ::total_copies]))
+(s/def ::string               (s/and string? seq))
+(s/def ::accession            ::string)
+(s/def ::assembly             ::string)
+(s/def ::chr                  ::string)
+(s/def ::cytogenetic-location ::string)
+(s/def ::end                  nat-int?)
+(s/def ::reference            ::string)
+(s/def ::start                nat-int?)
+(s/def ::total_copies         nat-int?)
+(s/def ::cnv                  (s/keys :opt    [::cytogenetic-location
+                                               ::reference
+                                               ::string]
+                                      :opt-un [::accession]
+                                      :req-un [::assembly
+                                               ::chr
+                                               ::end
+                                               ::start
+                                               ::total_copies]))
 
 (s/fdef parse
   :args ::string
-  :ret  ::cnv)
+  :ret  (s/or :bad  nil?
+              :good ::cnv))
 
 (s/fdef unparse
   :args ::cnv
