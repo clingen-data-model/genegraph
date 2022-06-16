@@ -12,24 +12,21 @@
 (s/def ::reference            ::string)
 (s/def ::start                nat-int?)
 (s/def ::total_copies         nat-int?)
-(s/def ::cnv                  (s/keys :opt    [::cytogenetic-location
+
+;; A parsed CNV has either :accession or :assembly and :chr.
+;;
+(s/def ::cnv-base             (s/keys :opt    [::cytogenetic-location
                                                ::reference
                                                ::string]
-                                      :opt-un [::accession]
-                                      :req-un [::assembly
-                                               ::chr
-                                               ::end
+                                      :req-un [::end
                                                ::start
                                                ::total_copies]))
-
-(s/fdef parse
-  :args ::string
-  :ret  (s/or :bad  nil?
-              :good ::cnv))
-
-(s/fdef unparse
-  :args ::cnv
-  :ret  ::string)
+(s/def ::cnv-accession        (s/and ::cnv-base
+                                     (s/keys  :req-un [::accession])))
+(s/def ::cnv-chr              (s/and ::cnv-base
+                                     (s/keys  :req-un [::assembly ::chr])))
+(s/def ::cnv                  (s/or  :accession ::cnv-accession
+                                     :chr       ::cnv-chr))
 
 (def ^:private the-counts
   "These fields have integer values."
@@ -84,11 +81,22 @@
   "Project the fields of a CNV map into a sequence."
   (apply juxt (rest field-keys)))
 
+;; parse and unparse do not support ::cnv-accession yet.
+
+(s/fdef parse
+  :args ::string
+  :ret  (s/or :bad nil?
+              :ok  ::cnv-chr))
+
+(s/fdef unparse
+  :args ::cnv-chr
+  :ret  ::string)
+
 (defn parse
   "Nil or the CNV string S parsed into a map."
   [s]
   (let [result (some-> s raw-parse longify-the-counts)]
-    (when (s/valid? ::cnv result)
+    (when (s/valid? ::cnv-chr result)
       result)))
 
 (defn unparse
