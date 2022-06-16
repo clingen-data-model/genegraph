@@ -12,9 +12,9 @@
 (s/def ::start        nat-int?)
 (s/def ::total_copies nat-int?)
 (s/def ::cnv          (s/keys :opt    [::cytogenetic-location
-                                       ::reference]
+                                       ::reference
+                                       ::string]
                               :opt-un [::accession]
-                              :req    [::string]
                               :req-un [::assembly
                                        ::chr
                                        ::end
