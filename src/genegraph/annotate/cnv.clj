@@ -74,38 +74,22 @@
   "Project the fields of a CNV map into a sequence."
   (apply juxt (rest field-keys)))
 
+(s/fdef parse
+  :args ::string
+  :ret  ::cnv)
+
 (defn parse
   "Nil or the CNV string S parsed into a map."
   [s]
-  {:pre [(string? s)]}
   (let [result (some-> s raw-parse longify-the-counts)]
     (when (s/valid? ::cnv result)
       result)))
 
+(s/fdef unparse
+  :args ::cnv
+  :ret  ::string)
+
 (defn unparse
   "Return the string representation of the CNV map."
   [cnv]
-  {:pre [(s/valid? ::cnv cnv)]}
   (apply format unparse-template (project cnv)))
-
-(comment
-  (def examples ["GRCh37/hg19 1q21.1(chr1:143134063-143284670)x3"
-                 "GRCh38/hg38 1p36.33(chr1:1029317-1072906)x4"
-                 "GRCh37/hg19 Yp11.32(chrY:21267-39498)x0"
-                 "NCBI36/hg18 Xq21.31(chrX:88399122-88520760)x1"
-                 "GRCh37/hg19 Xp22.33(chrX:697169-1238257)x0"
-                 "GRCh37/hg19 13q31.3(chr13:93244802-93269486)x0"
-                 "GRCh38/hg38 6q16.1-16.2(chr6:98770647-99813111)x1"])
-  (assert (= examples (mapv (comp unparse parse) examples)))
-  "For example ..."
-  (s/valid? ::cnv
-            {::cytogenetic-location "1q21.1"
-             ::reference "hg19"
-             ::string "GRCh37/hg19 1q21.1(chr1:143134063-143284670)x3"
-             ::variation-id 145208
-             :assembly "GRCh37"
-             :chr "1"
-             :end 143284670
-             :start 143134063
-             :total_copies 3})
-  (s/valid? ::cnv nil))
