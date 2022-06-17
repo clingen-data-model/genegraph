@@ -11,6 +11,7 @@
             [genegraph.sink.event :as event]
             [genegraph.source.graphql.core :as gql]
             [genegraph.annotate :as ann]
+            [genegraph.source.graphql.schema.find :as gql-find]
             [genegraph.rocksdb :as rocks]
             [genegraph.migration :as migrate]
             [genegraph.sink.rocksdb :as rocks-sink]
