@@ -2,7 +2,7 @@
   "Test copy number variation parsing."
   (:require [clojure.test            :refer [is deftest testing]]
             [clojure.spec.alpha      :as s]
-            [clojure.spec.test.alpha :as st]
+            [clojure.spec.test.alpha :as stest]
             [genegraph.annotate.cnv  :as cnv]))
 
 (def ^:private examples
@@ -15,8 +15,8 @@
    "GRCh38/hg38 6q16.1-16.2(chr6:98770647-99813111)x1"
    "NCBI36/hg18 Xq21.31(chrX:88399122-88520760)x1"])
 
-(st/instrument `cnv/parse)
-(st/instrument `cnv/unparse)
+(stest/instrument `cnv/parse)
+(stest/instrument `cnv/unparse)
 
 (deftest satisfy-examples
   (testing "round-trip all the example strings"
@@ -29,3 +29,28 @@
              (every? true?))))
   (testing "nil is not a ::cnv"
     (is (not (s/valid? ::cnv/cnv nil)))))
+
+(defn round-trip-ok?
+  "True when EXPECTED equals round-tripped INPUT ignoring ::cnv/string."
+  [[expected input]]
+  (letfn [(unstring [s] (dissoc s ::cnv/string))]
+    (= (unstring expected)
+       (-> input cnv/unparse cnv/parse unstring))))
+
+(deftest generated-properties
+  (testing "round-trip with generated properties"
+    (is (-> ::cnv/cnv s/exercise
+            (->> (map round-trip-ok?)
+                 (every? true?))))))
+
+(defn check-ok?
+  "True when SYNTAX-QUOTED-FN pass?es all of its tests."
+  [syntax-quoted-fn]
+  (-> syntax-quoted-fn stest/check
+      (->> (map (comp :pass? :clojure.spec.test.check/ret))
+           (every? true?))))
+
+(deftest check
+  (testing "with spec's test check"
+    (is (check-ok? `cnv/parse))
+    (is (check-ok? `cnv/unparse))))

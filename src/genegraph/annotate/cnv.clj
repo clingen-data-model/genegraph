@@ -13,20 +13,14 @@
 (s/def ::start                nat-int?)
 (s/def ::total_copies         nat-int?)
 
-;; A parsed CNV has either :accession or :assembly and :chr.
-;;
-(s/def ::cnv-base             (s/keys :opt    [::cytogenetic-location
-                                               ::reference
-                                               ::string]
-                                      :req-un [::end
+(s/def ::cnv                  (s/keys :opt    [::string]
+                                      :req    [::cytogenetic-location
+                                               ::reference]
+                                      :req-un [::assembly
+                                               ::chr
+                                               ::end
                                                ::start
                                                ::total_copies]))
-(s/def ::cnv-accession        (s/and ::cnv-base
-                                     (s/keys  :req-un [::accession])))
-(s/def ::cnv-chr              (s/and ::cnv-base
-                                     (s/keys  :req-un [::assembly ::chr])))
-(s/def ::cnv                  (s/or  :accession ::cnv-accession
-                                     :chr       ::cnv-chr))
 
 (def ^:private the-counts
   "These fields have integer values."
@@ -34,11 +28,11 @@
 
 (def ^:private regular-expressions
   "Order the parsed result keys and their regular expression strings."
-  (concat [:assembly            "([^\\p{Blank}/]+)"
-           ::reference          "([^\\p{Blank}/]*)"
-           ::cytogenic-location "([^\\p{Blank}()]*)"
-           :chr                 "([^\\p{Blank}:]+)"]
-          (interleave the-counts (repeat "(\\d+)"))))
+  (concat [:assembly              "([^\\p{Blank}/]+)"
+           ::reference            "([^\\p{Blank}/]*)"
+           ::cytogenetic-location "([^\\p{Blank}()]*)"
+           :chr                   "([^\\p{Blank}:]+)"]
+          (interleave the-counts  (repeat "(\\d+)"))))
 
 (def ^:private unparse-template
   "The basic syntax of CNV strings."
@@ -86,17 +80,17 @@
 (s/fdef parse
   :args (s/cat :s ::string)
   :ret  (s/or :bad nil?
-              :ok  ::cnv-chr))
+              :ok  ::cnv))
 
 (s/fdef unparse
-  :args (s/cat :cnv ::cnv-chr)
+  :args (s/cat :cnv ::cnv)
   :ret  ::string)
 
 (defn parse
   "Nil or the CNV string S parsed into a map."
   [s]
   (let [result (some-> s raw-parse longify-the-counts)]
-    (when (s/valid? ::cnv-chr result)
+    (when (s/valid? ::cnv result)
       result)))
 
 (defn unparse
