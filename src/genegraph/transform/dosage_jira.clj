@@ -36,54 +36,54 @@
 (def cg-prefix "http://dx.clinicalgenome.org/entities/")
 (def region-prefix (str cg-prefix "region-"))
 
-(def chr-to-ref {:grch37 {"1" "https://www.ncbi.nlm.nih.gov/nucore/NC_000001.10"
-                          "2" "https://www.ncbi.nlm.nih.gov/nucore/NC_000002.11"
-                          "3" "https://www.ncbi.nlm.nih.gov/nucore/NC_000003.11"
-                          "4" "https://www.ncbi.nlm.nih.gov/nucore/NC_000004.11"
-                          "5" "https://www.ncbi.nlm.nih.gov/nucore/NC_000005.9"
-                          "6" "https://www.ncbi.nlm.nih.gov/nucore/NC_000006.11"
-                          "7" "https://www.ncbi.nlm.nih.gov/nucore/NC_000007.13"
-                          "8" "https://www.ncbi.nlm.nih.gov/nucore/NC_000008.10"
-                          "9" "https://www.ncbi.nlm.nih.gov/nucore/NC_000009.11"
-                          "10" "https://www.ncbi.nlm.nih.gov/nucore/NC_000010.10"
-                          "11" "https://www.ncbi.nlm.nih.gov/nucore/NC_000011.9"
-                          "12" "https://www.ncbi.nlm.nih.gov/nucore/NC_000012.11"
-                          "13" "https://www.ncbi.nlm.nih.gov/nucore/NC_000013.10"
-                          "14" "https://www.ncbi.nlm.nih.gov/nucore/NC_000014.8"
-                          "15" "https://www.ncbi.nlm.nih.gov/nucore/NC_000015.9"
-                          "16" "https://www.ncbi.nlm.nih.gov/nucore/NC_000016.9"
-                          "17" "https://www.ncbi.nlm.nih.gov/nucore/NC_000017.10"
-                          "18" "https://www.ncbi.nlm.nih.gov/nucore/NC_000018.9"
-                          "19" "https://www.ncbi.nlm.nih.gov/nucore/NC_000019.9"
-                          "20" "https://www.ncbi.nlm.nih.gov/nucore/NC_000020.10"
-                          "21" "https://www.ncbi.nlm.nih.gov/nucore/NC_000021.8"
-                          "22" "https://www.ncbi.nlm.nih.gov/nucore/NC_000022.10"
-                          "X" "https://www.ncbi.nlm.nih.gov/nucore/NC_000023.10"
-                          "Y" "https://www.ncbi.nlm.nih.gov/nucore/NC_000024.9"}
-                 :grch38 {"1" "https://www.ncbi.nlm.nih.gov/nucore/NC_000001.11"
-                          "2" "https://www.ncbi.nlm.nih.gov/nucore/NC_000002.12"
-                          "3" "https://www.ncbi.nlm.nih.gov/nucore/NC_000003.12"
-                          "4" "https://www.ncbi.nlm.nih.gov/nucore/NC_000004.12"
-                          "5" "https://www.ncbi.nlm.nih.gov/nucore/NC_000005.10"
-                          "6" "https://www.ncbi.nlm.nih.gov/nucore/NC_000006.12"
-                          "7" "https://www.ncbi.nlm.nih.gov/nucore/NC_000007.14"
-                          "8" "https://www.ncbi.nlm.nih.gov/nucore/NC_000008.11"
-                          "9" "https://www.ncbi.nlm.nih.gov/nucore/NC_000009.12"
-                          "10" "https://www.ncbi.nlm.nih.gov/nucore/NC_000010.11"
-                          "11" "https://www.ncbi.nlm.nih.gov/nucore/NC_000011.10"
-                          "12" "https://www.ncbi.nlm.nih.gov/nucore/NC_000012.12"
-                          "13" "https://www.ncbi.nlm.nih.gov/nucore/NC_000013.11"
-                          "14" "https://www.ncbi.nlm.nih.gov/nucore/NC_000014.9"
-                          "15" "https://www.ncbi.nlm.nih.gov/nucore/NC_000015.10"
-                          "16" "https://www.ncbi.nlm.nih.gov/nucore/NC_000016.10"
-                          "17" "https://www.ncbi.nlm.nih.gov/nucore/NC_000017.11"
-                          "18" "https://www.ncbi.nlm.nih.gov/nucore/NC_000018.10"
-                          "19" "https://www.ncbi.nlm.nih.gov/nucore/NC_000019.10"
-                          "20" "https://www.ncbi.nlm.nih.gov/nucore/NC_000020.11"
-                          "21" "https://www.ncbi.nlm.nih.gov/nucore/NC_000021.9"
-                          "22" "https://www.ncbi.nlm.nih.gov/nucore/NC_000022.11"
-                          "X" "https://www.ncbi.nlm.nih.gov/nucore/NC_000023.11"
-                          "Y" "https://www.ncbi.nlm.nih.gov/nucore/NC_000024.10"}})
+(def chr-to-ref {:grch37 {"1" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000001.10"
+                          "2" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000002.11"
+                          "3" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000003.11"
+                          "4" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000004.11"
+                          "5" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000005.9"
+                          "6" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000006.11"
+                          "7" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000007.13"
+                          "8" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000008.10"
+                          "9" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000009.11"
+                          "10" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000010.10"
+                          "11" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000011.9"
+                          "12" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000012.11"
+                          "13" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000013.10"
+                          "14" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000014.8"
+                          "15" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000015.9"
+                          "16" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000016.9"
+                          "17" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000017.10"
+                          "18" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000018.9"
+                          "19" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000019.9"
+                          "20" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000020.10"
+                          "21" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000021.8"
+                          "22" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000022.10"
+                          "X" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000023.10"
+                          "Y" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000024.9"}
+                 :grch38 {"1" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000001.11"
+                          "2" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000002.12"
+                          "3" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000003.12"
+                          "4" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000004.12"
+                          "5" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000005.10"
+                          "6" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000006.12"
+                          "7" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000007.14"
+                          "8" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000008.11"
+                          "9" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000009.12"
+                          "10" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000010.11"
+                          "11" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000011.10"
+                          "12" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000012.12"
+                          "13" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000013.11"
+                          "14" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000014.9"
+                          "15" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000015.10"
+                          "16" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000016.10"
+                          "17" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000017.11"
+                          "18" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000018.10"
+                          "19" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000019.10"
+                          "20" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000020.11"
+                          "21" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000021.9"
+                          "22" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000022.11"
+                          "X" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000023.11"
+                          "Y" "https://www.ncbi.nlm.nih.gov/nuccore/NC_000024.10"}})
 
 (def build-location {:grch38 :customfield-10532
                      :grch37 :customfield-10160})
@@ -138,7 +138,7 @@
                                       (subs chr 3)])]
       [iri [[iri :rdf/type :geno/SequenceFeatureLocation]
             ;; TODO reference sequence should be a resource
-            [iri :geno/has-reference-sequence reference-sequence]
+            [iri :geno/has-reference-sequence (q/resource reference-sequence)]
             [iri :geno/has-interval interval-iri]
             [interval-iri :rdf/type :geno/SequenceInterval]
             [interval-iri :geno/start-position (-> start-coord (s/replace #"\D" "") Integer.)]
@@ -195,7 +195,11 @@
               (let [finding-iri (l/blank-node)]
                 [[assertion-iri :sepio/has-evidence finding-iri]
                  [finding-iri :rdf/type :sepio/StudyFinding]
-                 [finding-iri :dc/source (str "PMID:" (re-find #"\d+" pmid))]
+                 [finding-iri
+                  :dc/source
+                  (q/resource
+                   (str "https://pubmed.ncbi.nlm.nih.gov/"
+                        (re-find #"\d+" pmid)))]
                  [finding-iri :dc/description (or description "")]]))
             findings)))
 

@@ -27,7 +27,10 @@
               (conj triples
                     [(q/resource gene-uri) :geno/has-location location-blank]
                     [location-blank :rdf/type :geno/SequenceFeatureLocation]
-                    [location-blank :so/assembly (q/resource assembly-uri)]
+                    [location-blank :so/assembly (q/resource assembly-uri)] ; deprecated? =tristan
+                    [location-blank
+                     :geno/has-reference-sequence
+                     (q/resource assembly-uri)]
                     [location-blank :geno/on-strand strand]
                     [location-blank :geno/has-interval interval-blank]
                     [interval-blank :rdf/type :geno/SequenceInterval]
