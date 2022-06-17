@@ -29,5 +29,3 @@
              (every? true?))))
   (testing "nil is not a ::cnv"
     (is (not (s/valid? ::cnv/cnv nil)))))
-
-(comment (clojure.test/test-all-vars *ns*))
