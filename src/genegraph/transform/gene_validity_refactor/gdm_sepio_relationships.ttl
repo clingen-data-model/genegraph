@@ -172,7 +172,14 @@ sepio:0004008 :hasEvidenceLineType sepio:0004019 , sepio:0004018 .
 sepio:0004007 :hasEvidenceLineType sepio:0004020, sepio:0004021 .
 
 # :sepio/FunctionalCriterionAssessment
-sepio:0004013 :hasEvidenceLineType sepio:0004022 , sepio:0004023 , sepio:0004024 .
+sepio:0004013 :hasEvidenceLineType sepio:0004180,
+        sepio:0004181,
+        sepio:0004182,
+        sepio:0004183,
+        sepio:0004184,
+        sepio:0004185,
+        sepio:0004188,
+        sepio:0004189  .
 
 # :sepio/FunctionalAlterationCriterionAssessment
 sepio:0004014 :hasEvidenceLineType sepio:0004025 , sepio:0004026 .
