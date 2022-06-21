@@ -1,13 +1,10 @@
 (ns genegraph.database.load
   (:require [clojure.java.io :as io]
-            [clojure.pprint :refer [pprint]]
-            [genegraph.database.instance :refer [db]]
             [genegraph.database.names :refer [local-property-names local-class-names]]
             [genegraph.database.property-store :as property-store]
             [genegraph.database.query :as q]
             [genegraph.database.util :refer [property tx write-tx]]
-            [io.pedestal.log :as log]
-            [mount.core :as mount :refer [defstate]])
+            [io.pedestal.log :as log])
   (:import [org.apache.jena.rdf.model
             Model ModelFactory ResourceFactory Statement]))
 
