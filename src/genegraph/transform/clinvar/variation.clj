@@ -5,7 +5,6 @@
                                               local-class-names
                                               property-uri->keyword
                                               prefix-ns-map]]
-            [genegraph.util :refer [str->bytestream]]
             [genegraph.database.util :refer [tx]]
             [genegraph.transform.clinvar.common :as common]
             [genegraph.transform.clinvar.util :as util]
@@ -261,8 +260,9 @@
      model)))
 
 (defn add-vrs-model
-  "Takes a model containing 1 :vrs/CategoricalVariationDescriptor, if tries to convert the :rdf/value
-   triple to a node of the VRS variation representation of the expression."
+  "Convert :rdf/triple in MODEL containing
+  one :vrs/CategoricalVariationDescriptor
+  to a node of the VRS variation representation of the expression."
   [model]
   (let [expr-kw :rdf/value
         descriptor-resource (first (q/select "SELECT ?iri WHERE { ?iri a :vrs/CategoricalVariationDescriptor }" {} model))
@@ -281,7 +281,10 @@
               ;; (throw e)
               ))
         (let [vrs-id (get vrs-obj "_id")
-              vrs-model (l/read-rdf (str->bytestream (json/generate-string vrs-obj)) {:format :json-ld})]
+              vrs-model (-> vrs-obj
+                            json/generate-string
+                            (->> (map byte) byte-array io/input-stream)
+                            (l/read-rdf {:format :json-ld}))]
           (log/debug :fn ::add-vrs-model
                      :vrs-id vrs-id
                      :vrs-obj vrs-obj)
@@ -289,13 +292,13 @@
             (let [e (ex-info "Could not determine variation descriptor iri" {:vrs-obj vrs-obj :model vrs-model})]
               (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
           (let [link-triple [descriptor-resource :rdf/value (q/resource vrs-id)]]
-            ; Remove the previous object, which is just the expression and syntax
+                                        ; Remove the previous object, which is just the expression and syntax
             (let [triples-to-remove [[descriptor-resource :rdf/value expression]
                                      [expression :rdf/type expression-type]]]
               (log/debug :msg "Deleting previous expression triples" :triples-to-remove triples-to-remove)
               (doseq [triple triples-to-remove]
                 (remove-triple! model triple)))
-            ; Join the descriptor and the VRS variation
+                                        ; Join the descriptor and the VRS variation
             (-> (q/union model vrs-model)
                 (add-triple! link-triple))))))))
 

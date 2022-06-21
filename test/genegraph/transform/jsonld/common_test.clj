@@ -1,6 +1,5 @@
 (ns genegraph.transform.jsonld.common-test
   (:require [genegraph.database.load :as l]
-            [genegraph.util :refer [str->bytestream]]
             [genegraph.transform.jsonld.common :refer :all]
             [clojure.test :as t :refer [deftest testing is]]
             [cheshire.core :as json]
@@ -12,8 +11,10 @@
 (defn ns-term [term] (str basename term))
 
 (defn jsonld-map-to-model [m]
-  (l/read-rdf (str->bytestream (json/generate-string m)) {:format :json-ld}))
-
+  "Return the model specified by the JSON-LD object M."
+  (-> m json/generate-string
+      (->> (map byte) byte-array io/input-stream)
+      (l/read-rdf {:format :json-ld})))
 
 (def j1 {"@id" "http://example.org/j1"
          "@type" "http://example.org/Type1"

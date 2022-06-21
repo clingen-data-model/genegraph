@@ -1,6 +1,5 @@
 (ns genegraph.transform.gene-validity-refactor
   (:require [genegraph.database.load :as l]
-            [genegraph.util :refer [str->bytestream]]
             [genegraph.database.query :as q :refer [select construct ld-> ld1-> declare-query]]
             [genegraph.transform.types :refer [transform-doc src-path add-model]]
             [cheshire.core :as json]
@@ -59,7 +58,7 @@
   (s/join ""
         (drop-last
          (json/generate-string
-          {"@context" 
+          {"@context"
            {
             ;; frontmatter
             "@vocab" "http://dataexchange.clinicalgenome.org/gci/"
@@ -78,7 +77,7 @@
             "SEPIO" "http://purl.obolibrary.org/obo/SEPIO_"
             "GENO" "http://purl.obolibrary.org/obo/GENO_"
             "NCIT" "http://purl.obolibrary.org/obo/NCIT_"
-            
+
             ;; ;; declare attributes with @id, @vocab types
             "hgncId" {"@type" "@id"}
 
@@ -87,7 +86,7 @@
             "diseaseId" {"@type" "@id"}
             "caseInfoType" {"@type" "@id"}
             "variantType" {"@type" "@id"}
-            "caseControl" {"@type" "@id"}                           
+            "caseControl" {"@type" "@id"}
             ;; "experimental_scored" {"@type" "@id"}
             ;; "caseControl_scored" {"@type" "@id"}
             ;; "variants" {"@type" "@id"}
@@ -187,13 +186,13 @@
             "Diagnosis" "http://purl.obolibrary.org/obo/SEPIO_0004563"
             "Onset" "http://purl.obolibrary.org/obo/SEPIO_0004564"
             "Report" "http://purl.obolibrary.org/obo/SEPIO_0004565"
- 
+
             ;; ageUnit
             "Days" "http://purl.obolibrary.org/obo/SEPIO_0004552"
             "Hours" "http://purl.obolibrary.org/obo/SEPIO_0004553"
             "Months" "http://purl.obolibrary.org/obo/SEPIO_0004554"
             "Weeks" "http://purl.obolibrary.org/obo/SEPIO_0004555"
-            "Weeks gestation" "http://purl.obolibrary.org/obo/SEPIO_0004556" 
+            "Weeks gestation" "http://purl.obolibrary.org/obo/SEPIO_0004556"
             "Years" "http://purl.obolibrary.org/obo/SEPIO_0004557"
 
             ;; scoreStatus
@@ -239,7 +238,7 @@
 (defn fix-gdm-identifiers [gdm-json]
   (-> gdm-json
       (s/replace #"MONDO_" "http://purl.obolibrary.org/obo/MONDO_")
-      ;; New json-ld parser doesn't like '/' or parenthesis in terms 
+      ;; New json-ld parser doesn't like '/' or parenthesis in terms
       (s/replace #"Exome/genome or all genes sequenced in linkage region"
                  "Exome genome or all genes sequenced in linkage region")
       ;; these are the interactionType MI codes only -  MI codes are used
@@ -256,12 +255,12 @@
       clear-associated-snapshots
       fix-gdm-identifiers
       append-context
-      str->bytestream
+      (->> (map byte) byte-array io/input-stream)
       (l/read-rdf {:format :json-ld})))
 
 (def gdm-is-about-gene-query
   (q/create-query "prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
-  select ?hgnc where { 
+  select ?hgnc where {
  ?gdm a gci:gdm .
  ?gdm gci:gene ?gene .
  ?gene gci:hgncId ?hgnc }"))
@@ -275,7 +274,7 @@
   to feed a new cap in, should that change."
   [model]
   (let [proband-evidence-lines
-        (q/select "select ?x where 
+        (q/select "select ?x where
 { ?prop :sepio/has-qualifier :hpo/AutosomalRecessiveInheritance ;
  ^( :sepio/has-subject ) / ( :sepio/has-evidence )+ ?x .
  ?x a :sepio/ProbandEvidenceLine . }" {} model)]
@@ -283,12 +282,12 @@
      model
      (l/statements-to-model
       (map
-       #(vector 
+       #(vector
          %
          :sepio/evidence-line-strength-score
          (min 3 ; current cap on sop v8+ proband scores
               (reduce
-               + 
+               +
                (ld-> % [:sepio/has-evidence
                         :sepio/evidence-line-strength-score]))))
        proband-evidence-lines)))))
@@ -305,7 +304,7 @@
                 :pmbase "https://pubmed.ncbi.nlm.nih.gov/"
                 :affbase "http://dataexchange.clinicalgenome.org/agent/"
                 :entrez_gene entrez-gene}
-        unlinked-model (q/union 
+        unlinked-model (q/union
                         (construct-proposition params)
                         (construct-evidence-level-assertion params)
                         (construct-experimental-evidence-assertions params)
@@ -329,7 +328,7 @@
                         (construct-unscoreable-evidence params)
                         )
         linked-model (q/union unlinked-model
-                              (construct-evidence-connections 
+                              (construct-evidence-connections
                                {::q/model
                                 (q/union unlinked-model
                                          gdm-sepio-relationships)}))]
