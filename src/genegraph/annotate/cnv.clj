@@ -4,7 +4,6 @@
             [clojure.string     :as str]))
 
 (s/def ::string               (s/and string? seq))
-(s/def ::accession            ::string)
 (s/def ::assembly             ::string)
 (s/def ::chr                  ::string)
 (s/def ::cytogenetic-location ::string)
@@ -74,8 +73,6 @@
 (def ^:private project
   "Project the fields of a CNV map into a sequence."
   (apply juxt (rest field-keys)))
-
-;; parse and unparse do not support ::cnv-accession yet.
 
 (s/fdef parse
   :args (s/cat :s ::string)
