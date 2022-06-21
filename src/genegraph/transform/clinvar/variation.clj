@@ -261,7 +261,8 @@
      model)))
 
 (defn add-vrs-model
-  "Takes a model, and "
+  "Takes a model containing 1 :vrs/CategoricalVariationDescriptor, if tries to convert the :rdf/value
+   triple to a node of the VRS variation representation of the expression."
   [model]
   (let [expr-kw :rdf/value
         descriptor-resource (first (q/select "SELECT ?iri WHERE { ?iri a :vrs/CategoricalVariationDescriptor }" {} model))
