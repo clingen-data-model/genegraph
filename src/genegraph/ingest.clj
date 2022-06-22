@@ -41,16 +41,17 @@
    "descendant_ids" []
    "protein_change" ["N1355fs" "N1308fs"]})
 
-(defn order
+(defn disorder
+  "Return EDN with any vectors converted to sets."
   [edn]
   (letfn [(branch? [node] (or (map? node) (vector? node)))
+          (map-entry? [node] (isa? (type node) clojure.lang.MapEntry))
           (make [node children]
-            (into (if (isa? (type node) clojure.lang.MapEntry) [] (empty node))
-                  children))]
+            (into (if (map-entry? node) [] (empty node)) children))]
     (let [zipper (clojure.zip/zipper branch? seq make edn)]
       (->> zipper
            (iterate clojure.zip/next)
            (take-while (complement clojure.zip/end?))
            (map clojure.zip/node)))))
 
-(order {:a [0 1] :b [2 3]})
+(disorder {:a [0 1] :b [2 3]})
