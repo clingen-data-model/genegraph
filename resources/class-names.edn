@@ -302,6 +302,10 @@
   "http://purl.obolibrary.org/obo/SEPIO_0004019"]
  [:sepio/BiochemicalFunctionEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004041"]
+ [:sepio/BiochemicalFunctionTypeAEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004180"]
+ [:sepio/BiochemicalFunctionTypeBEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004181"]
  [:sepio/FunctionalEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004013"]
  [:sepio/CaseControlEvidenceCriterionAssessment
@@ -316,6 +320,10 @@
   "http://purl.obolibrary.org/obo/SEPIO_0004039"]
  [:sepio/CaseControlSingleStudyEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004020"]
+ [:sepio/ExpressionTypeAEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004188"]
+ [:sepio/ExpressionTypeBEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004189"]
  [:sepio/FunctionalAlterationCriterionAssessment
   "http://purl.obolibrary.org/obo/SEPIO_0004061"]
  [:sepio/ProbandWithDeNovoVariantEvidenceItem
@@ -331,6 +339,14 @@
  [:sepio/ProbandWithVariantEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004081"]
  [:sepio/ProbandEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004097"]
+ [:sepio/ProteinInteractionGeneticInteractionEvidenceLine
+   "http://purl.obolibrary.org/obo/SEPIO_0004182"]
+ [:sepio/ProteinInteractionNegativeGeneticInteractionEvidenceLine
+   "http://purl.obolibrary.org/obo/SEPIO_0004183"]
+ [:sepio/ProteinInteractionPhysicalAssociationEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004184"]
+ [:sepio/ProteinInteractionPositiveGeneticInteractionEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004185"]
  ;;
  [:sepio/NullVariantEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004120"]
  [:sepio/NonNullVariantEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004121"]
