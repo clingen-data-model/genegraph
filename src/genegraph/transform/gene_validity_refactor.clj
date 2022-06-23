@@ -106,6 +106,7 @@
             "ageType" {"@type" "@vocab"}
             "ageUnit" {"@type" "@vocab"}
             "scoreStatus" {"@type" "@vocab"}
+            "interactionType" {"@type" "@vocab"}
             ;; "testingMethods" {"@type" "@vocab"}
 
             ;; ;; Category names
@@ -222,6 +223,12 @@
             "OTHER_VARIANT_TYPE" "http://purl.obolibrary.org/obo/SEPIO_0004611"
             "PREDICTED_OR_PROVEN_NULL" "http://purl.obolibrary.org/obo/SEPIO_0004612"
 
+            ;; interactionTypes
+            "genetic interaction" "gcixform:GeneticInteraction"
+            "negative genetic interaction" "gcixform:NegativeGeneticInteraction"
+            "physical association" "gcixform:PhysicalAssociation"
+            "positive genetic interaction" "gcixform:PositiveGeneticInteraction"
+
             }}))))
 
 (defn clear-associated-snapshots [gdm-json]
@@ -232,9 +239,13 @@
 (defn fix-gdm-identifiers [gdm-json]
   (-> gdm-json
       (s/replace #"MONDO_" "http://purl.obolibrary.org/obo/MONDO_")
-      ;; New json-ld parser doesn't like '/' in terms
+      ;; New json-ld parser doesn't like '/' or parenthesis in terms 
       (s/replace #"Exome/genome or all genes sequenced in linkage region"
                  "Exome genome or all genes sequenced in linkage region")
+      ;; these are the interactionType MI codes only -  MI codes are used
+      ;; in at least one other field in the json. Removing the MI code
+      ;; completely as we are not preserving the actual interactionType
+      (s/replace #" \(MI:0208\)| \(MI:0915\)| \(MI:0933\)| \(MI:0935\)" "")
       (s/replace #"@id" "gciid")))
 
 (defn append-context [gdm-json]

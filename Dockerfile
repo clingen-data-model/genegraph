@@ -1,4 +1,4 @@
-FROM clojure:temurin-17-tools-deps-alpine AS builder
+FROM clojure:temurin-17-tools-deps-focal AS builder
 
 # Copying and building deps as a separate step in order to mitigate
 # the need to download new dependencies every build.
@@ -9,11 +9,8 @@ COPY . /usr/src/app
 RUN clojure -T:build uber
 
 # Using image without lein for deployment.
-FROM eclipse-temurin:17-alpine
+FROM eclipse-temurin:17-focal
 LABEL maintainer="Tristan Nelson <thnelson@geisinger.edu>"
-
-# libstdc++ needed for rocksdbjni, not otherwise present in alpine
-RUN apk add --no-cache libstdc++~=10
 
 COPY --from=builder /usr/src/app/target/genegraph.jar /app/app.jar
 

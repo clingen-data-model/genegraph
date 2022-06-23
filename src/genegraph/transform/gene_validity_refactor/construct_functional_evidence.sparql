@@ -4,7 +4,7 @@ construct {
   ?evidenceLine  a ?evidenceLineType ;
   :dc/description ?scoreDescription ;
   :sepio/has-evidence ?evidenceItem ;
-  :sepio/calculated-score ?calcuatedScore ;
+  :sepio/calculated-score ?calculatedScore ;
   :sepio/evidence-line-strength-score ?score .
 
   ?evidenceItem  a ?evidenceItemType ;
@@ -41,17 +41,43 @@ where {
   OPTIONAL {
     ?evidenceItem gci:expression / ( gci:alteredExpression | gci:normalExpression )  / gci:evidence ?expressionDescription .
   }
-  
-  
+
   BIND(COALESCE(?expressionDescription, ?proteinInteractionDescription, ?biochemicalFunctionDescription) AS ?evidenceDescription) .
-  
+
+  OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction ?biochemicalFunction .
+     OPTIONAL {
+       ?biochemicalFunction gci:geneWithSameFunctionSameDisease ?geneWithSameFuncAndDisease .
+     }
+  }
+
+  OPTIONAL {
+    ?evidenceItem gci:expression ?expression .
+    OPTIONAL {
+      ?expression gci:normalExpression ?normalExpression .
+    }
+  }
+
+  OPTIONAL {
+    ?evidenceItem gci:proteinInteractions ?proteinInteractions .
+    ?proteinInteractions gci:interactionType ?proteinSubType .
+  }
+
+  BIND(COALESCE(
+      IF(BOUND(?proteinSubType), ?proteinSubType,
+        IF(BOUND(?expression) && BOUND(?normalExpression), gcixform:A,
+          IF(BOUND(?biochemicalFunction) && BOUND(?geneWithSameFuncAndDisease), gcixform:A,
+            IF(BOUND(?expression), gcixform:B,
+              IF(BOUND(?biochemicalFunction), gcixform:B, 1/0)))))) AS ?gciSubType) .
+
   ?evidenceLineType gcixform:hasGCIType ?gciType ;
+  gcixform:hasGCISubType ?gciSubType ;
   gcixform:hasEvidenceItemType ?evidenceItemType ;
   gcixform:usedIn gcixform:Functional .
 
   ?annotation gci:experimentalData ?evidenceItem ;
   gci:article ?publication .
-  
+
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
  }
