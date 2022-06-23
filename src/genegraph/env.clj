@@ -1,8 +1,12 @@
 (ns genegraph.env
   (:require [io.pedestal.log :as log]))
 
-(def base-dir (or (System/getenv "GENEGRAPH_DATA_PATH")
-                  (System/getenv "CG_SEARCH_DATA_VOL")))
+(def base-dir (let [base-dir-env (or (System/getenv "GENEGRAPH_DATA_PATH")
+                                     (System/getenv "CG_SEARCH_DATA_VOL"))]
+                (if (empty? base-dir-env)
+                  (do (log/warn :msg "'genegraph.env/base-dir is defaulting to user.dir")
+                      (System/getProperty "user.dir"))
+                  base-dir-env)))
 (def data-version (System/getenv "GENEGRAPH_DATA_VERSION"))
 ;; May be rebound in the course of a migration
 (def ^:dynamic data-vol (if data-version
@@ -49,4 +53,3 @@
 
 (defn transformer-mode? []
   (= "transformer" mode))
-
