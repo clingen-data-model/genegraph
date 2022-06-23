@@ -4,6 +4,7 @@ construct {
   ?evidenceLine  a ?evidenceLineType ;
   :dc/description ?scoreDescription ;
   :sepio/has-evidence ?evidenceItem ;
+  :sepio/score-status ?scoreStatus ;
   :sepio/calculated-score ?calculatedScore ;
   :sepio/evidence-line-strength-score ?score .
 
@@ -14,7 +15,8 @@ construct {
 }
 where {
   ?evidenceLine a gci:evidenceScore ;
-  gci:calculatedScore ?calculatedScore .
+  gci:calculatedScore ?calculatedScore ;
+  gci:scoreStatus ?scoreStatus .
 
   OPTIONAL {
     ?evidenceLine gci:scoreExplanation ?scoreDescription .
