@@ -5,9 +5,10 @@
                                               local-class-names
                                               property-uri->keyword
                                               prefix-ns-map]]
+            [genegraph.util :refer [str->bytestream]]
             [genegraph.database.util :refer [tx]]
             [genegraph.transform.clinvar.common :as common]
-            [genegraph.transform.clinvar.util :as util :refer [string->InputStream]]
+            [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.jsonld.common :as jsonld]
             [genegraph.transform.clinvar.cancervariants :as vicc]
@@ -18,8 +19,7 @@
             [clojure.java.io :as io]
             [cheshire.core :as json]
             [clj-http.client :as http]
-            [io.pedestal.log :as log]
-            [com.walmartlabs.lacinia :as lacinia])
+            [io.pedestal.log :as log])
   (:import (org.apache.jena.rdf.model Model Statement)
            (java.io ByteArrayInputStream)
            (clojure.lang Keyword)))
@@ -136,24 +136,24 @@
         hgvs-list (-> nested-content (get "HGVSlist") (get "HGVS") util/into-sequential-if-not)]
     (let [expressions
           (filter
-            #(not (nil? %))
-            (concat
-              (->> hgvs-list
-                   (map (fn [hgvs-obj]
-                          (log/trace :fn ::get-all-expressions :hgvs-obj hgvs-obj)
-                          (let [outputs (filter not-empty [(nucleotide-hgvs hgvs-obj)
-                                                           (protein-hgvs hgvs-obj)])]
-                            (if (empty? outputs)
-                              (let [e (ex-info "Found no HGVS expressions" {:hgvs-obj hgvs-obj :variation-msg variation-msg})]
-                                (log/error :message (ex-message e) :data (ex-data e))
+           #(not (nil? %))
+           (concat
+            (->> hgvs-list
+                 (map (fn [hgvs-obj]
+                        (log/trace :fn ::get-all-expressions :hgvs-obj hgvs-obj)
+                        (let [outputs (filter not-empty [(nucleotide-hgvs hgvs-obj)
+                                                         (protein-hgvs hgvs-obj)])]
+                          (if (empty? outputs)
+                            (let [e (ex-info "Found no HGVS expressions" {:hgvs-obj hgvs-obj :variation-msg variation-msg})]
+                              (log/error :message (ex-message e) :data (ex-data e))
                                 ;(throw e)
-                                ))
-                            outputs)))
-                   (apply concat))
-              [(let [spdi-expr (-> nested-content (get "CanonicalSPDI") (get "$"))]
-                 (when spdi-expr
-                   {:expression spdi-expr
-                    :syntax "spdi"}))]))]
+                              ))
+                          outputs)))
+                 (apply concat))
+            [(let [spdi-expr (-> nested-content (get "CanonicalSPDI") (get "$"))]
+               (when spdi-expr
+                 {:expression spdi-expr
+                  :syntax "spdi"}))]))]
       expressions)))
 
 (defn make-member
@@ -167,14 +167,14 @@
   (let [member-iri (l/blank-node)
         expression-iri (l/blank-node)]
     (concat
-      [[node-iri :vrs/members member-iri]
-       [member-iri :rdf/type :vrs/VariationMember]
-       [member-iri :vrs/expressions expression-iri]
-       [expression-iri :rdf/type :vrs/Expression]
-       [expression-iri :vrs/syntax syntax]
-       [expression-iri :rdf/value expression]]
-      (if (seq syntax-version)
-        [[expression-iri :vrs/syntax-version syntax-version]]))))
+     [[node-iri :vrs/members member-iri]
+      [member-iri :rdf/type :vrs/VariationMember]
+      [member-iri :vrs/expressions expression-iri]
+      [expression-iri :rdf/type :vrs/Expression]
+      [expression-iri :vrs/syntax syntax]
+      [expression-iri :rdf/value expression]]
+     (if (seq syntax-version)
+       [[expression-iri :vrs/syntax-version syntax-version]]))))
 
 (defn variation-triples
   "Returns a collection of triples"
@@ -189,48 +189,48 @@
         canonical-variation-expression (q/resource (:expr canonical-variation-obj))
         canonical-variation-expression-type (q/resource (name (:type canonical-variation-obj)))]
     (concat
-      [; VRS Variation Descriptor
-       [vd-iri :rdf/type :vrs/CategoricalVariationDescriptor]
-       [vd-iri :rdf/type (q/resource (ns-cg "ClinVarVariation"))]
+     [; VRS Variation Descriptor
+      [vd-iri :rdf/type :vrs/CategoricalVariationDescriptor]
+      [vd-iri :rdf/type (q/resource (ns-cg "ClinVarVariation"))]
        ; For tracking clinvar objects and identifying the named graph in add-iri
-       [vd-iri :rdf/type (q/resource (ns-cg "ClinVarObject"))]
-       [vd-iri :rdfs/label (:name content)]
+      [vd-iri :rdf/type (q/resource (ns-cg "ClinVarObject"))]
+      [vd-iri :rdfs/label (:name content)]
 
        ; Variation Descriptor describes object: variation
        ; TODO more gracefully handle nil/exception from normalization service
        ;[vd-iri :sepio/has-object (vicc/vrs-allele-for-variation (prioritized-variation-expression msg))]
-       [vd-iri :rdf/value canonical-variation-expression]
+      [vd-iri :rdf/value canonical-variation-expression]
        ; This identifies the type of expression to downstream processes that need/benefit from that information
-       [canonical-variation-expression :rdf/type canonical-variation-expression-type]
+      [canonical-variation-expression :rdf/type canonical-variation-expression-type]
 
-       [vd-iri :dc/is-version-of (q/resource vrd-unversioned)]
+      [vd-iri :dc/is-version-of (q/resource vrd-unversioned)]
        ; TODO set this to version
        ; Add clinvar's version field to extensions
-       [vd-iri :owl/version-info (:release_date msg)]
-       [vd-iri :cg/release-date (:release_date msg)]
+      [vd-iri :owl/version-info (:release_date msg)]
+      [vd-iri :cg/release-date (:release_date msg)]
 
        ; xrefs
-       [vd-iri :vrs/xrefs (str (get prefix-ns-map "clinvar")
-                               (:id content))]
-       [vd-iri :vrs/xrefs (str clinvar-variation-iri)]]
+      [vd-iri :vrs/xrefs (str (get prefix-ns-map "clinvar")
+                              (:id content))]
+      [vd-iri :vrs/xrefs (str clinvar-variation-iri)]]
       ; TODO reverse link to VCV? Or rely on VCV->variation that should be added by VCV
 
       ; include all genomic, protein, spdi expressions as variation members
-      (let [members (let [exprs (get-all-expressions msg)]
-                      (doall
-                        (for [expr exprs]
-                          (do (log/trace :fn ::variation-triples :msg "Making members" :expr expr)
-                              (make-member vd-iri
-                                           (:expression expr)
-                                           (:syntax expr)
-                                           (:syntax-version expr))))))]
-        (apply concat members))
+     (let [members (let [exprs (get-all-expressions msg)]
+                     (doall
+                      (for [expr exprs]
+                        (do (log/trace :fn ::variation-triples :msg "Making members" :expr expr)
+                            (make-member vd-iri
+                                         (:expression expr)
+                                         (:syntax expr)
+                                         (:syntax-version expr))))))]
+       (apply concat members))
 
       ; Extensions
-      (common/fields-to-extensions vd-iri (merge (dissoc content :id :release_date :name)
+     (common/fields-to-extensions vd-iri (merge (dissoc content :id :release_date :name)
                                                  ; Put this back into a string
-                                                 {:content (json/generate-string (:content content))}
-                                                 {:clinvar_variation clinvar-variation-iri})))))
+                                                {:content (json/generate-string (:content content))}
+                                                {:clinvar_variation clinvar-variation-iri})))))
 
 (defn resource-to-out-triples
   "Uses steppable interface of RDFResource to obtain all the out properties and load
@@ -261,7 +261,14 @@
      model)))
 
 (defn add-vrs-model
-  "Takes a model, and "
+  "Convert the :rdf/value triple in a Model containing one :vrs/CategoricalVariationDescriptor
+   to a node of the VRS variation representation of the expression.
+
+   The :rdf/value triple will contain a iri which itself has an :rdf/type of either :hgvs or :spdi or :text
+
+   Example:
+   [descriptor-iri :rdf/value object]
+   [object :rdf/type :hgvs]"
   [model]
   (let [expr-kw :rdf/value
         descriptor-resource (first (q/select "SELECT ?iri WHERE { ?iri a :vrs/CategoricalVariationDescriptor }" {} model))
@@ -280,13 +287,10 @@
               ;; (throw e)
               ))
         (let [vrs-id (get vrs-obj "_id")
-              vrs-model (l/read-rdf (string->InputStream (json/generate-string vrs-obj)) {:format :json-ld})]
+              vrs-model (l/read-rdf (str->bytestream (json/generate-string vrs-obj)) {:format :json-ld})]
           (log/debug :fn ::add-vrs-model
                      :vrs-id vrs-id
-                     :vrs-obj vrs-obj
-                     :vrs-jsonld-framed (jsonld/jsonld-to-jsonld-framed
-                                          (jsonld/model-to-jsonld vrs-model)
-                                          (json/generate-string {"@id" vrs-id})))
+                     :vrs-obj vrs-obj)
           (when (empty? vrs-id)
             (let [e (ex-info "Could not determine variation descriptor iri" {:vrs-obj vrs-obj :model vrs-model})]
               (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
@@ -383,9 +387,7 @@
     "vrs" {"@id" (get prefix-ns-map "vrs")
            "@prefix" true}
     "cgterms" {"@id" (get prefix-ns-map "cgterms")
-               "@prefix" true}
-
-    }})
+               "@prefix" true}}})
 
 
 ;(def graphql-schema (genegraph.source.graphql.experimental-schema/schema))

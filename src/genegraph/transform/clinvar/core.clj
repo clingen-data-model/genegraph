@@ -13,8 +13,7 @@
             [genegraph.transform.clinvar.util :as util]
             ;;[genegraph.transform.clinvar.variation-archive]
             [genegraph.transform.clinvar.variation]
-            [genegraph.database.load :as l]
-            [genegraph.transform.clinvar.common :as common]))
+            [genegraph.database.load :as l]))
 
 ;;(defmethod clinvar-model-to-jsonld :release_sentinel
 ;;  [msg]
