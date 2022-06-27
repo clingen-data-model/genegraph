@@ -31,4 +31,10 @@
                                   :path [:sepio/published-lod-score]}
             :meets_inclusion_criteria {:type 'Boolean
                                        :description "Whether the segregation described meets the criteria for inclusion in the overall score."
-                                       :path [:sepio/meets-inclusion-criteria]}}})
+                                       :path [:sepio/meets-inclusion-criteria]}
+            :phenotype_free_text {:type 'String
+                                  :description "Free text regarding the phenotypes."
+                                  :path [:sepio/has-textual-part]}
+            :proband {:type :Resource
+                      :description "Associated proband"
+                      :path [:sepio/is-about-proband]}}})

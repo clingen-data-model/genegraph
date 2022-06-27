@@ -48,7 +48,11 @@
                construct-earliest-articles
                construct-secondary-contributions
                construct-variant-score
-               construct-unscoreable-evidence)
+               construct-ar-variant-score
+               construct-unscoreable-evidence
+               unlink-variant-scores-when-proband-scores-exist)
+
+
 
 ;; Trim trailing }, intended to be appended to gci json
 (def context
@@ -102,6 +106,7 @@
             "ageType" {"@type" "@vocab"}
             "ageUnit" {"@type" "@vocab"}
             "scoreStatus" {"@type" "@vocab"}
+            "interactionType" {"@type" "@vocab"}
             ;; "testingMethods" {"@type" "@vocab"}
 
             ;; ;; Category names
@@ -218,6 +223,12 @@
             "OTHER_VARIANT_TYPE" "http://purl.obolibrary.org/obo/SEPIO_0004611"
             "PREDICTED_OR_PROVEN_NULL" "http://purl.obolibrary.org/obo/SEPIO_0004612"
 
+            ;; interactionTypes
+            "genetic interaction" "gcixform:GeneticInteraction"
+            "negative genetic interaction" "gcixform:NegativeGeneticInteraction"
+            "physical association" "gcixform:PhysicalAssociation"
+            "positive genetic interaction" "gcixform:PositiveGeneticInteraction"
+
             }}))))
 
 (defn clear-associated-snapshots [gdm-json]
@@ -228,9 +239,13 @@
 (defn fix-gdm-identifiers [gdm-json]
   (-> gdm-json
       (s/replace #"MONDO_" "http://purl.obolibrary.org/obo/MONDO_")
-      ;; New json-ld parser doesn't like '/' in terms
+      ;; New json-ld parser doesn't like '/' or parenthesis in terms 
       (s/replace #"Exome/genome or all genes sequenced in linkage region"
                  "Exome genome or all genes sequenced in linkage region")
+      ;; these are the interactionType MI codes only -  MI codes are used
+      ;; in at least one other field in the json. Removing the MI code
+      ;; completely as we are not preserving the actual interactionType
+      (s/replace #" \(MI:0208\)| \(MI:0915\)| \(MI:0933\)| \(MI:0935\)" "")
       (s/replace #"@id" "gciid")))
 
 (defn append-context [gdm-json]
@@ -253,6 +268,30 @@
 
 (def hgnc-has-equiv-entrez-gene-query
   (q/create-query "select ?gene where { ?gene :owl/same-as ?hgnc_gene }"))
+
+(defn add-proband-scores
+  "Return model contributing the evidence line scores for proband scores
+  when needed in SOPv8 + autosomal recessive variants. May need a mechanism
+  to feed a new cap in, should that change."
+  [model]
+  (let [proband-evidence-lines
+        (q/select "select ?x where 
+{ ?prop :sepio/has-qualifier :hpo/AutosomalRecessiveInheritance ;
+ ^( :sepio/has-subject ) / ( :sepio/has-evidence )+ ?x .
+ ?x a :sepio/ProbandEvidenceLine . }" {} model)]
+    (q/union
+     model
+     (l/statements-to-model
+      (map
+       #(vector 
+         %
+         :sepio/evidence-line-strength-score
+         (min 3 ; current cap on sop v8+ proband scores
+              (reduce
+               + 
+               (ld-> % [:sepio/has-evidence
+                        :sepio/evidence-line-strength-score]))))
+       proband-evidence-lines)))))
 
 (defn transform-gdm [gdm]
   (.setNsPrefixes gdm ns-prefixes)
@@ -286,13 +325,16 @@
                         (construct-earliest-articles params)
                         (construct-secondary-contributions params)
                         (construct-variant-score params)
+                        (construct-ar-variant-score params)
                         (construct-unscoreable-evidence params)
-                        )]
-    (q/union unlinked-model
-             (construct-evidence-connections 
-              {::q/model
-               (q/union unlinked-model
-                        gdm-sepio-relationships)}))))
+                        )
+        linked-model (q/union unlinked-model
+                              (construct-evidence-connections 
+                               {::q/model
+                                (q/union unlinked-model
+                                         gdm-sepio-relationships)}))]
+    (unlink-variant-scores-when-proband-scores-exist
+     {::q/model (add-proband-scores linked-model)})))
 
 (defmethod add-model :gci-refactor
   [event]

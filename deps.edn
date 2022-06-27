@@ -82,6 +82,7 @@
  {org.clojure/clojure                               {:mvn/version "1.11.1"}
   org.clojure/core.async                            {:mvn/version "1.5.648"}
   org.clojure/data.csv                              {:mvn/version "1.0.1"}
+  org.clojure/test.check                            {:mvn/version "1.1.1"}
   camel-snake-kebab/camel-snake-kebab               {:mvn/version "0.4.2"}
   ch.qos.logback/logback-classic                    {:mvn/version "1.2.11"}
   ;; Why not just clojure.data.json? =tbl
