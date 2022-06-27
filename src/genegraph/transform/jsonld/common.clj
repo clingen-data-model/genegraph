@@ -74,9 +74,9 @@
     (-> framing .get .toString)))
 
 (defn model-to-jsonld [^Model model]
-  (let [sw (doto (StringWriter.)
-             (RDFDataMgr/write model RDFFormat/JSONLD_COMPACT_PRETTY))]
-    (.toString sw)))
+  (.toString
+   (doto (StringWriter.)
+     (RDFDataMgr/write model RDFFormat/JSONLD_COMPACT_PRETTY))))
 
 (comment
   ;; There is a frame field on the Jena Context object, but it is not used
