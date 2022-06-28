@@ -36,15 +36,23 @@
              (spit out-file)))))
 
 (def canonicalized
+  "Write CANONICALIZEd message files to same directory."
   (doseq [in messages]
     (let [path (str/split in #"/")
           leaf (-> path last (str/split #"-") first)
           out  (str/join \/ (conj (vec (butlast path)) (str leaf "-canonical.json")))]
       (canonicalize in out))))
 
-(def was (-> "./canonicaljson/20191105-canonical.json" slurp decode))
-(def now (-> "./canonicaljson/20191202-canonical.json" slurp decode))
+(def was
+  "EDN content of canonicalized message file."
+  (-> "./canonicaljson/20191105-canonical.json" slurp decode))
+
+(def now
+  "EDN content of another canonicalized message file."
+  (-> "./canonicaljson/20191202-canonical.json" slurp decode))
+
 (def msg
+  "EDN for a shorter message to ease testing."
   {"child_ids" []
    "name" "NM_007294.3(BRCA1):c.4065_4068del (p.Asn1355fs)"
    "content"
