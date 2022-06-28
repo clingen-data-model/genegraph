@@ -191,3 +191,14 @@ use io/slurp"
              (to-turtle model)
              (filter second ; remove when no mapping exists
                      (concat predicate-iri-kw object-iri-kw))))))
+
+
+(comment
+  (genegraph.database.query/pp-model
+   (genegraph.database.load/statements-to-model
+    [["http://example.com/example" :rdf/type :rdfs/Class]
+     ["http://example.com/example" :rdfs/label "My Class"]]))
+  "  (genegraph.database.query/pp-model
+   (genegraph.database.load/statements-to-model
+    [["http://example.com/example" :rdf/type :rdfs/Class]
+     ["http://example.com/example" :rdfs/label "My Class"]]))")
