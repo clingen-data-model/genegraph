@@ -4,8 +4,8 @@
 (def base-dir (let [base-dir-env (or (System/getenv "GENEGRAPH_DATA_PATH")
                                      (System/getenv "CG_SEARCH_DATA_VOL"))]
                 (if (empty? base-dir-env)
-                  (do (log/warn :msg "'genegraph.env/base-dir is defaulting to user.dir")
-                      (System/getProperty "user.dir"))
+                  (do (log/warn :msg "'genegraph.env/base-dir is defaulting to user.dir/data")
+                      (str (System/getProperty "user.dir") "/data"))
                   base-dir-env)))
 (def data-version (System/getenv "GENEGRAPH_DATA_VERSION"))
 ;; May be rebound in the course of a migration
