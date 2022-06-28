@@ -1,7 +1,9 @@
 (ns genegraph.ingest
   "Experiment with ingest ideas."
-  (:require [clojure.data.json :as json]
-            [clojure.zip :as zip]))
+  (:require [clojure.data      :as data]
+            [clojure.data.json :as json]
+            [clojure.zip       :as zip]
+            [genegraph.debug]))
 
 (defn decode
   "Decode JSON file with stringified `content` field into EDN."
@@ -66,4 +68,15 @@
                         (if (vector? v) (zip/replace loc [k (set v)]) loc))
                       loc))))))))
 
+(defn differ?
+  "Nil when LHS equals RHS after DISORDERing their vectors into sets.
+  Otherwise return a pair of [only-in-lhs only-in-rhs] as in clojure.data/diff."
+  [lhs rhs]
+  (let [[lonly ronly both] (apply data/diff (map disorder [lhs rhs]))]
+    (when-not (every? nil? [lonly ronly])
+      [lonly ronly])))
+
 (disorder msg)
+(= (disorder was)
+   (disorder now))
+(differ? was now)
