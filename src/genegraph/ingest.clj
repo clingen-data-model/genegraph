@@ -70,11 +70,11 @@
 
 (defn differ?
   "Nil when LHS equals RHS after DISORDERing their vectors into sets.
-  Otherwise return a pair of [only-in-lhs only-in-rhs] as in clojure.data/diff."
+  Otherwise return a pair of [only-lhs only-rhs] as in clojure.data/diff."
   [lhs rhs]
-  (let [[lonly ronly both] (apply data/diff (map disorder [lhs rhs]))]
-    (when-not (every? nil? [lonly ronly])
-      [lonly ronly])))
+  (let [[lonly ronly _both] (apply data/diff (map disorder [lhs rhs]))
+        result [lonly ronly]]
+    (when-not (every? nil? result) result)))
 
 (assert (disorder msg))
 (assert (disorder was))
@@ -82,3 +82,6 @@
 (assert (= (disorder was) (disorder now)))
 (assert (not (differ? was now)))
 (assert (differ? msg now))
+(assert (-> (differ? msg now)
+            (->> (map (fn [m] (dissoc m "content"))))
+            first empty?))
