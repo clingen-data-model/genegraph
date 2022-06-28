@@ -72,19 +72,11 @@
    :DISEASE :mondo/Disease
    :AFFILIATION :cg/Affiliation})
 
-(def query-with-coordinate-range
-  (create-query
-   "select ?x where {
-?x :geno/has-location ?loc .
-?loc :geno/has-reference-sequence ?sequence ;
-:geno/has-interval ?interval .
-?interval :geno/start-position ?start_position ;
-:geno/end-position ?end_position .
-FILTER(?start_position > ?start)
-FILTER(?end_position < ?end)
-}"))
 
-#_(def query-with-coordinate-range
+;; Coordinate range search is a work in progress
+;; included partial progress so that we can transition to
+;; different work for the time being
+(def query-with-coordinate-range
   (create-query
    "select ?x where {
 ?x :geno/has-location ?loc .
@@ -105,7 +97,7 @@ FILTER(?end_position < ?end)
        (map (fn [[k v]] [k (q/resource v)]))
        (into {})))
 
- (defn query [_ args _]
+(defn query [_ args _]
   (let [limit-offset-sort-params (-> args
                                     (select-keys [:limit :offset :sort])
                                     (assoc :distinct true))
