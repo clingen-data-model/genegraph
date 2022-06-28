@@ -17,41 +17,53 @@
    "content"
    {"FunctionalConsequence"
     {"@Value" "functional variant"
-     "XRef" {"@DB" "Sequence Ontology", "@ID" "SO:0001536"}}
+     "XRef" {"@DB" "Sequence Ontology"
+             "@ID" "SO:0001536"}}
     "HGVSlist" {"HGVS"
-                [{"@Type" "coding"
+                [{"@Type"
+                  "coding"
                   "NucleotideExpression"
-                  {"@change" "c.4065_4068del"
+                  {"@change"    "c.4065_4068del"
                    "Expression" {"$" "U14680.1:c.4065_4068del"}}}
-                 {"@Type" "non-coding"
+                 {"@Type"
+                  "non-coding"
                   "NucleotideExpression"
-                  {"@change" "n.4184_4187delTCAA"
+                  {"@change"    "n.4184_4187delTCAA"
                    "Expression" {"$" "U14680.1:n.4184_4187delTCAA"}}}]}
     "Location" {"CytogeneticLocation" {"$" "17q21.31"}
-                "SequenceLocation" [{"@display_stop" "41243483"
-                                     "@display_start" "41243480"}
-                                    {"@display_stop" "43091466"
-                                     "@display_start" "43091463"}]}
-    "OtherNameList" {"Name" [{"$" "3333del4"} {"$" "4184_4187delTCAA"} {"$" "4184del4"}]}
-    "XRefList" {"XRef" [{"@DB" "Breast Cancer Information Core (BIC) (BRCA1)"
-                         "@ID" "4184&base_change=del TCAA"}
-                        {"@DB" "ClinGen", "@ID" "CA026492"}
-                        {"@DB" "OMIM", "@ID" "113705.0015", "@Type" "Allelic variant"}
-                        {"@DB" "dbSNP", "@ID" "80357508", "@Type" "rs"}]}}
+                "SequenceLocation"    [{"@display_stop"  "41243483"
+                                        "@display_start" "41243480"}
+                                       {"@display_stop"  "43091466"
+                                        "@display_start" "43091463"}]}
+    "OtherNameList" {"Name" [{"$" "3333del4"}
+                             {"$" "4184_4187delTCAA"}
+                             {"$" "4184del4"}]}
+    "XRefList" {"XRef" [{"@DB"   "Breast Cancer Information Core (BIC) (BRCA1)"
+                         "@ID"   "4184&base_change=del TCAA"}
+                        {"@DB"   "ClinGen", "@ID" "CA026492"}
+                        {"@DB"   "OMIM"
+                         "@ID"   "113705.0015"
+                         "@Type" "Allelic variant"}
+                        {"@DB"   "dbSNP"
+                         "@ID"   "80357508"
+                         "@Type" "rs"}]}}
    "descendant_ids" []
    "protein_change" ["N1355fs" "N1308fs"]})
 
 (defn disorder
-  "Return EDN with any vectors converted to sets."
+  "Return EDN with any vector fields converted to sets."
   [edn]
-  (letfn [(branch? [node] (or (map? node) (vector? node)))
-          (map-entry? [node] (isa? (type node) clojure.lang.MapEntry))
-          (make [node children]
-            (into (if (map-entry? node) [] (empty node)) children))]
-    (let [zipper (clojure.zip/zipper branch? seq make edn)]
-      (->> zipper
-           (iterate clojure.zip/next)
-           (take-while (complement clojure.zip/end?))
-           (map clojure.zip/node)))))
+  (letfn [(branch? [node] (or   (map? node) (vector? node)))
+          (entry?  [node] (isa? (type node) clojure.lang.MapEntry))
+          (make    [node children]
+            (into (if (entry? node) [] (empty node)) children))]
+    (loop [loc (zip/zipper branch? seq make edn)]
+      (if (zip/end? loc) (zip/root loc)
+          (let [node (zip/node loc)]
+            (recur (zip/next
+                    (if (entry? node)
+                      (let [[k v] node]
+                        (if (vector? v) (zip/replace loc [k (set v)]) loc))
+                      loc))))))))
 
-(disorder {:a [0 1] :b [2 3]})
+(disorder msg)
