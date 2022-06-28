@@ -6,6 +6,7 @@
             [genegraph.transform.gci]
             [genegraph.transform.gene]
             [genegraph.transform.omim]
+            [genegraph.transform.ucsc-cytoband]
             [genegraph.transform.gci-legacy]
             [genegraph.transform.gci-legacy-report-only]
             [genegraph.transform.gci-neo4j-report-only]
