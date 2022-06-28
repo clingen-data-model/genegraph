@@ -76,7 +76,9 @@
     (when-not (every? nil? [lonly ronly])
       [lonly ronly])))
 
-(disorder msg)
-(= (disorder was)
-   (disorder now))
-(differ? was now)
+(assert (disorder msg))
+(assert (disorder was))
+(assert (disorder now))
+(assert (= (disorder was) (disorder now)))
+(assert (not (differ? was now)))
+(assert (differ? msg now))
