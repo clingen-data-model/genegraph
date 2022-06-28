@@ -1,0 +1,59 @@
+* Case Level Variants
+* Case Level Segregation
+* Case Level Family Seg
+* Case Control
+* Experimental Evidence
+query ($iri: String, $experimental_evidence_type: String) {
+  resource(iri: $iri) {
+    ... on Statement {
+      evidence(class: $experimental_evidence_type, transitive: true) {
+        ... on Statement {
+          score
+          calculated_score
+          score_status {
+            curie
+            label
+          }
+          type {
+            curie
+            label
+          }
+          evidence {
+            type {
+              curie
+              label
+            }
+            label
+            source {
+              curie
+              first_author
+              year_published
+              multiple_authors
+            }
+          }
+        }
+      }
+    }
+  }
+}
+* Non-scoreable Evidence
+  # Unscoreable Evidence Table
+query ($iri: String, $unscoreable_evidence_type: String) {
+  resource(iri: $iri) {
+    ... on Statement {
+      evidence(class: $unscoreable_evidence_type, transitive: true) {
+        ... on Statement {
+          description
+          evidence {
+            source {
+              curie
+              first_author
+              multiple_authors
+              year_published
+            }
+          }
+        }
+      }
+    }
+  }
+}
