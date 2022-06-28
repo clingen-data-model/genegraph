@@ -1,18 +1,49 @@
 (ns genegraph.ingest
   "Experiment with ingest ideas."
-  (:require [clojure.data      :as data]
-            [clojure.data.json :as json]
-            [clojure.zip       :as zip]
+  (:require [clojure.data       :as data]
+            [clojure.data.json  :as json]
+            [clojure.java.io    :as io]
+            [clojure.spec.alpha :as s]
+            [clojure.string     :as str]
+            [clojure.zip        :as zip]
             [genegraph.debug]))
 
 (defn decode
-  "Decode JSON file with stringified `content` field into EDN."
-  [file]
-  (-> file slurp json/read-str
+  "Decode JSON string with stringified `content` field into EDN."
+  [json]
+  (-> json json/read-str
       (update "content" json/read-str)))
 
-(def was (decode "./canonicaljson/20191105-variation.json"))
-(def now (decode "./canonicaljson/20191202-variation.json"))
+(defn encode
+  "Encode EDN as a JSON string with stringified `content` field."
+  [edn]
+  (-> edn
+      (update "content" json/write-str)
+      json/write-str))
+
+(def messages
+  "Larry gave me these message files."
+  ["./canonicaljson/20191105-variation.json"
+   "./canonicaljson/20191202-variation.json"])
+
+(defn canonicalize
+  "Read IN-FILE, trim whitespace from each line, then write to OUT-FILE."
+  [in-file out-file]
+  (with-open [in (io/reader in-file)]
+    (-> in line-seq
+        (->> (map str/trim)
+             (apply str)
+             (spit out-file)))))
+
+(def canonicalized
+  (doseq [in messages]
+    (let [path (str/split in #"/")
+          leaf (-> path last (str/split #"-") first)
+          out  (str/join \/ (conj (vec (butlast path)) (str leaf "-canonical.json")))]
+      (canonicalize in out))))
+
+(def was (-> "./canonicaljson/20191105-canonical.json" slurp decode))
+(def now (-> "./canonicaljson/20191202-canonical.json" slurp decode))
 (def msg
   {"child_ids" []
    "name" "NM_007294.3(BRCA1):c.4065_4068del (p.Asn1355fs)"
