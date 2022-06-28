@@ -58,7 +58,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: clojure deps
         run: clojure -P
-      - name: Run tests
-        run: clojure -M:test
+      # - name: Run tests
+      #   run: clojure -M:test
       - name: compile
         run: clojure -T:build uber
