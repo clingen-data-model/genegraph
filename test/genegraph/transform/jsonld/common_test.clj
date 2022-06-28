@@ -48,8 +48,7 @@
                            "@type" "http://example.org/Type1"
                            "field1" true
                            "field2" 25
-                           "field3" -100
-                           "field4" nil})
+                           "field3" -100})
           actual (-> j5
                      (jsonld-map-to-model)
                      (model-to-jsonld)
