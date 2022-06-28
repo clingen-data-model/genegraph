@@ -70,8 +70,7 @@
                                  "http://example.org/field2" "value2"
                                  "http://example.org/field3" {"@id" "http://example.org/j4"}}
                                 {"@id" "http://example.org/j4"
-                                 "http://example.org/field4" "value4"}],
-                      "@id" "BLANK"}]
+                                 "http://example.org/field4" "value4"}]}]
         (is (= expected (json/parse-string (model-to-jsonld model))))))))
 
 (deftest test-model-to-jsonld-framed
