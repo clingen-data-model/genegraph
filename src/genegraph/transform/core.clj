@@ -20,7 +20,7 @@
             [genegraph.transform.gene-validity-refactor]
             [genegraph.transform.actionability]
             ;; need to fix to be compatible with latest jena =tristan
-            ;; [genegraph.transform.clinvar.core] 
+            [genegraph.transform.clinvar.core]
             [genegraph.transform.rxnorm]
             [genegraph.env :as env]
             [io.pedestal.log :as log]))
