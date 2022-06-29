@@ -1,8 +1,10 @@
 # Handles SOP5, SOP6 and SOP7.v1
 prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+prefix sepio: <http://purl.obolibrary.org/obo/SEPIO_>
+
 construct {
-  ?probandScoreEvidenceLine a ?evidenceLineType ;
+  ?probandScoreEvidenceLine a ?lineType ;
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence ?individual ; # evidence about proband
   :sepio/calculatedScore ?calculatedScore ;
@@ -10,8 +12,8 @@ construct {
   :dc/description ?evidenceLineDescription .
 
 # Variant evidence Item
-  ?evidenceItem a ?evidenceItemType ;
-  :sepio/is-about-allele ?variant ; 
+  ?evidenceItem a ?itemType ;
+  :sepio/is-about-allele ?variant ;
   :dc/source ?article ;
   :geno/allele-origin ?alleleOrigin .
 
@@ -40,26 +42,35 @@ construct {
 where {
   # Ensure this pattern does not exist for >= SOPV8 curations
   FILTER NOT EXISTS { ?otherScore a gci:variantScore } .
-  
+
   ?evidenceLine a gci:evidenceScore ;
-  gci:caseInfoType ?gciCaseType ;
   gci:scoreStatus ?scoreStatus ;
-  gci:date_created ?dateCreated ;
-  gci:calculatedScore ?calculatedScore .
+  gci:date_created ?dateCreated .
+
+  # maschinations due to contradicts score_status do not have gci:caseInfoType
+  OPTIONAL {
+    ?evidenceLine gci:caseInfoType ?gciCaseType .
+    ?gciCaseType gcixform:hasEvidenceLineType ?evidenceLineType ;
+    gcixform:hasEvidenceItemType ?evidenceItemType .
+  }
+  # ProbandEvidenceLine
+  BIND(IF(BOUND(?gciCaseType), ?evidenceLineType, sepio:0004097) AS ?lineType) .
+  # ProbandWithVariantEvidenceItem
+  BIND(IF(BOUND(?gciCaseType), ?evidenceItemType, sepio:0004081) AS ?itemType) .
+
+  OPTIONAL {
+    ?evidenceLine gci:calculatedScore ?calculatedScore .
+  }
 
   BIND (IRI(CONCAT(str(?evidenceLine), "_proband_score_evidence_line")) AS ?probandScoreEvidenceLine) 
 
   OPTIONAL {
     ?evidenceLine gci:scoreExplanation ?evidenceLineDescription .
   }
-  
-  ?gciCaseType gcixform:hasEvidenceLineType ?evidenceLineType ;
-  gcixform:hasEvidenceItemType ?evidenceItemType .
 
   OPTIONAL  {
     ?evidenceLine gci:score ?adjustedScore .
   }
-  
   BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
 
   ?individual gci:scores ?evidenceLine ;
@@ -86,7 +97,7 @@ where {
   OPTIONAL {
      ?individual gci:ageType ?ageType .
      ?individual gci:ageValue ?ageValue .
-     ?individual gci:ageUnit ?ageUnit .  
+     ?individual gci:ageUnit ?ageUnit .
   }
 
   OPTIONAL {
@@ -110,7 +121,7 @@ where {
 
   OPTIONAL {
      ?individual gci:hpoIdInDiagnosis ?phenotypeString .
-        BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", SUBSTR(?phenotypeString, STRLEN(?phenotypeString) - 7 , 7))) AS ?phenotypes) .
+     BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", SUBSTR(?phenotypeString, STRLEN(?phenotypeString) - 7 , 7))) AS ?phenotypes) .
   }
 
   ?annotation  gci:individuals|gci:individualIncluded ?individual ;
@@ -123,7 +134,7 @@ where {
   }
 
   BIND(IRI(CONCAT(STR(?evidenceLine), "_variant_evidence_item")) AS ?evidenceItem) .
-  
+
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
 
@@ -136,5 +147,5 @@ where {
   #   ?variant gci:clinvarVariantId ?cvId .
   #   BIND(IRI(CONCAT(?cvbase, ?cvId)) AS ?allele) .
   # }
-  
+
 }
