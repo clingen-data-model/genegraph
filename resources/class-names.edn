@@ -339,6 +339,7 @@
  [:sepio/ProbandWithVariantEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004081"]
  [:sepio/ProbandEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004097"]
+ [:sepio/ProbandScoreCapEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004174"]
  [:sepio/ProteinInteractionGeneticInteractionEvidenceLine
    "http://purl.obolibrary.org/obo/SEPIO_0004182"]
  [:sepio/ProteinInteractionNegativeGeneticInteractionEvidenceLine

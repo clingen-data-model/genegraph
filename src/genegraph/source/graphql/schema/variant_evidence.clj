@@ -16,7 +16,7 @@
                            :description "The variant type of this variant"
                            :path [:rdf/type]}
             :allele_origin {:type 'String
-                     :description "Variant allel origin."
+                     :description "Variant allele origin."
                      :path [:geno/allele-origin]}
             :proband {:type :ProbandEvidence
                       :description "Proband in which this variant is present"

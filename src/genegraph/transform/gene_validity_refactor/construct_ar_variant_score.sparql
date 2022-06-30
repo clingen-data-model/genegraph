@@ -11,7 +11,7 @@
 prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
 construct {
-  ?probandScoreEvidenceLine a :sepio/ProbandEvidenceLine ;
+  ?probandScoreEvidenceLine a :sepio/ProbandScoreCapEvidenceLine ;
   :sepio/has-evidence ?individual , ?variantEvidenceLine .
 } where {
 

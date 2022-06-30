@@ -7,7 +7,7 @@ where
   minus {
     ?s a :sepio/OverallGeneticEvidenceLine .
     [] :sepio/has-evidence ?o ;
-    a :sepio/ProbandEvidenceLine .
+    a :sepio/ProbandScoreCapEvidenceLine .
     { ?o a :sepio/NullVariantEvidenceLine . } union
     { ?o a :sepio/NonNullVariantEvidenceLine . }
   }

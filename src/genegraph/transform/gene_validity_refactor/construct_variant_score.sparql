@@ -1,8 +1,10 @@
 # Handles SOP7.v2 and SOP8
 prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+prefix sepio: <http://purl.obolibrary.org/obo/SEPIO_>
+
 construct {
-  ?evidenceLine a ?evidenceLineType ;
+  ?evidenceLine a ?lineType ;
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence ?evidenceItem , ?functionEvidenceItem ; # evidence about variant
   :sepio/calculated-score ?resultCalculatedScore ;
@@ -11,7 +13,7 @@ construct {
   :dc/description ?evidenceLineDescription .
 
 # Variant evidence item
-  ?evidenceItem a ?evidenceItemType ;
+  ?evidenceItem a ?itemType ;
   :sepio/is-about-allele ?variant ;
   :dc/source ?article ;
   :geno/allele-origin ?alleleOrigin ;
@@ -45,12 +47,25 @@ construct {
 where {
 
   ?evidenceLine a gci:variantScore ;
-  gci:variantType ?variantType ;
   gci:variantScored ?variant ;
   gci:deNovo ?deNovo ;
   gci:scoreStatus ?scoreStatus ;
-  gci:calculatedScore ?calculatedScore ;
   gci:date_created ?date_created .
+
+  # maschinations due to contradicts score_status do not have gci:caseInfoType
+  OPTIONAL {
+    ?evidenceLine gci:variantType ?variantType .
+    ?variantType gcixform:hasEvidenceLineType ?evidenceLineType ;
+    gcixform:hasEvidenceItemType ?evidenceItemType .
+  }
+  # NonNullVariantEvidenceLine
+  BIND(IF(BOUND(?variantType), ?evidenceLineType, sepio:0004121) AS ?lineType) .
+  # VariantEvidenceItem
+  BIND(IF(BOUND(?variantType), ?evidenceItemType, sepio:0004116) AS ?itemType) .
+
+  OPTIONAL {
+    ?evidenceLine gci:calculatedScore ?calculatedScore .
+  }
 
   # This is not actually a proband score, but rather a variant score
   # Should name it as such =tristan
@@ -77,9 +92,6 @@ where {
     ?evidenceLine gci:scoreExplanation ?evidenceLineDescription .
   }
   
-  ?variantType gcixform:hasEvidenceLineType ?evidenceLineType ;
-  gcixform:hasEvidenceItemType ?evidenceItemType .
-
   OPTIONAL  {
     ?evidenceLine gci:score ?adjustedScore .
   }
