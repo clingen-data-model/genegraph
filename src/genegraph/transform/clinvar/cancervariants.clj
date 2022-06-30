@@ -1,8 +1,9 @@
 (ns genegraph.transform.clinvar.cancervariants
-  (:require [genegraph.database.names :as names :refer [prefix-ns-map]]
+  (:require [cheshire.core :as json]
+            [clj-http.client :as http]
+            [genegraph.database.names :as names :refer [prefix-ns-map]]
             [genegraph.util.http-client :as ghttp :refer [http-get-with-cache]]
-            [io.pedestal.log :as log]
-            [cheshire.core :as json])
+            [io.pedestal.log :as log])
   (:import (clojure.lang Keyword)))
 
 (def cancer-variants-normalize-url
@@ -19,6 +20,10 @@
 
 (def canonical_spdi_to_categorical_variation
   "https://normalize.cancervariants.org/variation/canonical_spdi_to_categorical_variation")
+
+(def absolute-copy-number-url
+  "URL for cancervariants.org Absolute Copy Number normalization."
+  "https://normalize.cancervariants.org/variation/parsed_to_abs_cnv")
 
 (def vicc-context
   {"id" {"@id" "@id"},
@@ -79,10 +84,33 @@
         status (:status response)]
     (case status
       200 (let [body (-> response :body json/parse-string)]
-            (log/debug :fn ::vrs-allele-for-variation :body body)
+            (log/debug :fn ::normalize-canonical :body body)
             (-> body (get "canonical_variation") add-vicc-context))
       ;; Error case
       (log/error :fn ::normalize-canonical :msg "Error in VRS normalization request" :status status :response response))))
+
+(defn normalize-absolute-copy-number
+  [input-map]
+  (log/info :fn ::normalize-absolute-copy-number :input-map input-map)
+  (let [response (http/get absolute-copy-number-url
+                           {:query-params
+                            (into {}
+                                  (map #(vector (-> % first name) (-> % second))
+                                       (select-keys input-map [:assembly
+                                                               :chr
+                                                               :start
+                                                               :end
+                                                               :total_copies])))})
+        status (:status response)]
+    (case status
+      200 (let [body (-> response :body json/parse-string)]
+            (log/info :fn ::normalize-absolute-copy-number :body body)
+            (-> body (get "absolute_copy_number") add-vicc-context))
+      ;; Error case
+      (log/error :fn ::normalize-absolute-copy-number
+                 :msg "Error in VRS normalization request"
+                 :status status
+                 :response response))))
 
 (defn vrs-variation-for-expression
   "`variation` should be a string understood by the VICC variant normalization service.

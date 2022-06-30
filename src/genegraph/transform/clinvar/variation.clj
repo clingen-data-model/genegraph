@@ -12,6 +12,7 @@
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.jsonld.common :as jsonld]
             [genegraph.transform.clinvar.cancervariants :as vicc]
+            [genegraph.transform.clinvar.cnv :as xcnv]
             [genegraph.source.graphql.experimental-schema :as experimental-schema]
             [clojure.pprint :refer [pprint]]
             [clojure.datafy :refer [datafy]]
@@ -259,6 +260,10 @@
          (throw e))
        (.remove model stmt-to-remove))
      model)))
+
+(defn get-cnv-representation [])
+
+(defn is-copy-number-variation? [])
 
 (defn add-vrs-model
   "Convert the :rdf/value triple in a Model containing one :vrs/CategoricalVariationDescriptor
