@@ -32,7 +32,7 @@ construct {
   :sepio/has-textual-part ?phenotypeFreeText ;
   :sepio/is-about-condition ?phenotypes ;
   :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed ;
-  :dc/source ?article ;
+  :geno/has-zygosity ?probandZygosity ;
   :sepio/has-variant ?evidenceItem .
 
   ?family a :pco/Family ;
@@ -87,6 +87,10 @@ where {
   BIND(IF(?deNovo = "Yes", :geno/DeNovoAlleleOrigin , IF(?deNovo = "No", :geno/GermlineAlleleOrigin , :geno/AlleleOrigin ) ) AS ?alleleOrigin) .
 
   OPTIONAL {
+     ?individual gci:probandIs ?probandZygosity .
+  }
+
+  OPTIONAL {
       ?individual gci:maternityPaternityConfirmed ?paternityMaternityConfirmed .
   }
 
@@ -116,7 +120,7 @@ where {
   }
 
   OPTIONAL {
-     ?individual gci:specificMutationsGenotypedMethod ?methodsOfDetection .
+     ?method gci:specificMutationsGenotypedMethod ?methodsOfDetection .
   }
 
   OPTIONAL {

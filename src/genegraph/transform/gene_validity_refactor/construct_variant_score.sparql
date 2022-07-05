@@ -34,6 +34,7 @@ construct {
   :sepio/has-textual-part ?phenotypeFreeText ;
   :sepio/is-about-condition ?phenotypes ;
   :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed ;
+  :geno/has-zygosity ?probandZygosity ;
   :sepio/has-variant ?evidenceItem .
 
   ?family a :pco/Family ;
@@ -113,6 +114,10 @@ where {
   OPTIONAL {
     ?individual gci:hpoIdInDiagnosis ?phenotypeString .
     BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", SUBSTR(?phenotypeString, STRLEN(?phenotypeString) - 7 , 7))) AS ?phenotypes) .
+  }
+
+  OPTIONAL {
+     ?individual gci:probandIs ?probandZygosity .
   }
 
   OPTIONAL {
