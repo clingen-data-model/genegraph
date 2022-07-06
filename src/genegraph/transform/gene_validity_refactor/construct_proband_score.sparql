@@ -32,6 +32,7 @@ construct {
   :sepio/has-textual-part ?phenotypeFreeText ;
   :sepio/is-about-condition ?phenotypes ;
   :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed ;
+  :dc/source ?article ;
   :geno/has-zygosity ?probandZygosity ;
   :sepio/has-variant ?evidenceItem .
 
