@@ -7,7 +7,7 @@ construct {
   ?probandScoreEvidenceLine a ?lineType ;
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence ?individual ; # evidence about proband
-  :sepio/calculatedScore ?calculatedScore ;
+  :sepio/calculated-score ?calculatedScore ;
   :sepio/score-status ?scoreStatus ;
   :dc/description ?evidenceLineDescription .
 
