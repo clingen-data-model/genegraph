@@ -107,6 +107,7 @@
             "ageUnit" {"@type" "@vocab"}
             "scoreStatus" {"@type" "@vocab"}
             "interactionType" {"@type" "@vocab"}
+            "probandIs" {"@type" "@vocab"}
             ;; "testingMethods" {"@type" "@vocab"}
 
             ;; ;; Category names
@@ -229,6 +230,11 @@
             "physical association" "gcixform:PhysicalAssociation"
             "positive genetic interaction" "gcixform:PositiveGeneticInteraction"
 
+            ;; probandIs
+            "Biallelic compound heterozygous" "http://purl.obolibrary.org/obo/GENO_0000402"
+            "Biallelic homozygous" "http://purl.obolibrary.org/obo/GENO_0000136"
+            "Monoallelic heterozygous"  "http://purl.obolibrary.org/obo/GENO_0000135"
+            
             }}))))
 
 (defn clear-associated-snapshots [gdm-json]
