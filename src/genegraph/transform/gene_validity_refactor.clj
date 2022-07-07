@@ -284,7 +284,7 @@
         (q/select "select ?x where 
 { ?prop :sepio/has-qualifier :hpo/AutosomalRecessiveInheritance ;
  ^( :sepio/has-subject ) / ( :sepio/has-evidence )+ ?x .
- ?x a :sepio/ProbandEvidenceLine . }" {} model)]
+ ?x a :sepio/ProbandScoreCapEvidenceLine . }" {} model)]
     (q/union
      model
      (l/statements-to-model
