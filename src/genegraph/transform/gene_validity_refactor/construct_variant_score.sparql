@@ -21,6 +21,7 @@ construct {
   
 # Proband with variant evidence item
   ?individual a :sepio/ProbandWithVariantEvidenceItem ;
+  :sepio/is-about-allele ?variant ;
   :sepio/has-sex ?sex ;
   :sepio/age-unit ?ageUnit ;
   :sepio/age-type ?ageType ;
