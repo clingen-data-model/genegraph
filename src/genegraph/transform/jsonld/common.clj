@@ -74,11 +74,29 @@
     (-> framing .get .toString)))
 
 (defn model-to-jsonld [^Model model]
-  (.toString
-   (doto (StringWriter.)
-     (RDFDataMgr/write model RDFFormat/JSONLD_COMPACT_PRETTY))))
+  (let [write-ctx (JsonLDWriteContext.)
+        jsonld-options (JsonLdOptions.)]
+    (.setUseNativeTypes jsonld-options true)
+    (.setOptions write-ctx jsonld-options)
+    (let [rdf-writer (-> (doto (RDFWriter/create)
+                           ;; TODO JSONLD11_FRAME_PRETTY
+                           ;; Using JSONLD10 variant in order to use useNativeTypes
+                           (.format RDFFormat/JSONLD10_PRETTY)
+                           (.source model)
+                           (.context write-ctx))
+                         .build)]
+      (let [sw (StringWriter.)]
+        (.output rdf-writer sw)
+        (.toString sw)))))
 
 (comment
+  ;; RDFDataMgr does not expose JSON-LD processing options, and these options are
+  ;; not yet implemented for the JSON-LD 1.1 writer in Jena
+  (defn model-to-jsonld [^Model model]
+    (.toString
+     (doto (StringWriter.)
+       (RDFDataMgr/write model RDFFormat/JSONLD_PRETTY))))
+
   ;; There is a frame field on the Jena Context object, but it is not used
   ;; in the implementation of JsonLD11Writer, which is the class used by RDFWriter (an RDFDataMgr)
 

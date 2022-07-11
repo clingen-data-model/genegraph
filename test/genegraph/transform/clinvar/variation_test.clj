@@ -1,6 +1,7 @@
 (ns genegraph.transform.clinvar.variation-test
   (:require [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.transform.clinvar.variation :as variation]
+            [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.types :as xform-types]
             [genegraph.transform.jsonld.common :as jsonld]
             [genegraph.database.names :refer [local-property-names
@@ -126,17 +127,18 @@
       (test/is (= {:expr "SPDI1" :type :spdi} (variation/prioritized-variation-expression variant-parsed-content))))))
 
 
-(deftest test-remove-triple
-  (let [input-statements1 (let [r (q/resource "http://example.org/R1")]
-                            [[r :sepio/has-object (q/resource "http://example.org/variant1")]
-                             [r :owl/version-info "2000-01-01"]])]
-    (testing "Trivial case removing empty things from a model"
-      (let [model (l/statements-to-model input-statements1)]
+(comment
+  (deftest test-remove-triple
+    (let [input-statements1 (let [r (q/resource "http://example.org/R1")]
+                              [[r :sepio/has-object (q/resource "http://example.org/variant1")]
+                               [r :owl/version-info "2000-01-01"]])]
+      (testing "Trivial case removing empty things from a model"
+        (let [model (l/statements-to-model input-statements1)]
         ;(test/is (thrown? ()))
-        )))
+          )))
 
-  (comment
-    (testing "Testing that a triple can be removed from a model")))
+    (comment
+      (testing "Testing that a triple can be removed from a model"))))
 
 
 (defn map-group-by
