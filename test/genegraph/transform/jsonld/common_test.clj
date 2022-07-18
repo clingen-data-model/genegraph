@@ -48,8 +48,7 @@
                            "@type" "http://example.org/Type1"
                            "field1" true
                            "field2" 25
-                           "field3" -100
-                           "field4" nil})
+                           "field3" -100})
           actual (-> j5
                      (jsonld-map-to-model)
                      (model-to-jsonld)
@@ -70,8 +69,7 @@
                                  "http://example.org/field2" "value2"
                                  "http://example.org/field3" {"@id" "http://example.org/j4"}}
                                 {"@id" "http://example.org/j4"
-                                 "http://example.org/field4" "value4"}],
-                      "@id" "BLANK"}]
+                                 "http://example.org/field4" "value4"}]}]
         (is (= expected (json/parse-string (model-to-jsonld model))))))))
 
 (deftest test-model-to-jsonld-framed
