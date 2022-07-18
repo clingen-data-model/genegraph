@@ -34,6 +34,7 @@ construct {
   :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed ;
   :dc/source ?article ;
   :geno/has-zygosity ?probandZygosity ;
+  :sepio/is-about-allele ?variant ;
   :sepio/has-variant ?evidenceItem .
 
   ?family a :pco/Family ;
