@@ -38,8 +38,17 @@
                             :path [:sepio/qualified-contribution]}
             :evidence {:type '(list :Resource)
                        :description "Evidence used in in support of the statement"
-                       :args {:class {:type 'String}
-                              :transitive {:type 'Boolean}}
+                       :args {:class
+                              {:type 'String
+                               :description "Filter list for instances of class, expects a curie, will use sub-class relationships."}
+                              :transitive
+                              {:type 'Boolean
+                               :description "Traverse nested evidence relationships to find all evidence from root structure satisfying constrants."}
+                              :hide_nested_variant_evidence
+                              {:type 'Boolean
+                               :description "When a variant evidence line is contained in a proband score cap evidence line, do not return the variant evidence line as a part of this result.
+
+This field is offered to satsify a very specific use case for the ClinGen website. It is recommended to avoid using it otherwise."}}
                        :resolve common/evidence-items}
             :earliest_articles {:type '(list :Resource)
                                 :description "Earlist articles reported for this statement"
