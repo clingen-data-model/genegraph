@@ -61,7 +61,7 @@ where {
     gcixform:hasEvidenceItemType ?evidenceItemType .
   }
   # NonNullVariantEvidenceLine
-  BIND(IF(BOUND(?variantType), ?evidenceLineType, sepio:0004121) AS ?lineType) .
+  BIND(IF(BOUND(?variantType), ?evidenceLineType, sepio:0004097) AS ?lineType) .
   # VariantEvidenceItem
   BIND(IF(BOUND(?variantType), ?evidenceItemType, sepio:0004116) AS ?itemType) .
 
