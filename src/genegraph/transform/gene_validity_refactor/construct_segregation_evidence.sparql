@@ -44,6 +44,8 @@ where {
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
 
+  ?segregation gci:lodPublished true .
+
   optional {
     ?segregation gci:publishedLodScore ?publishedLodScore .
   }
