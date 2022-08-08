@@ -19,8 +19,9 @@
   assembly."
   []
   (let [path (str env/data-vol "/" assembly-file)]
-    (with-open [r (clojure.java.io/reader (io/resource assembly-file))
-                w (clojure.java.io/writer path)]
+    (io/make-parents path)
+    (with-open [r (io/reader (io/resource assembly-file))
+                w (io/writer path)]
       (doseq [line (line-seq r)]
         (.write w (string/replace line #"\$CG_SEARCH_DATA_VOL" env/data-vol))
         (.newLine w)))
