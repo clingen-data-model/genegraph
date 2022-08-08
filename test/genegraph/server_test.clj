@@ -30,7 +30,8 @@
     (with-test-database
       (with-redefs [env/data-vol data-vol]
         (mount.core/start-without #'genegraph.sink.event/stream-processing
-                                  #'genegraph.server/server)
+                                  #'genegraph.server/server
+                                  #'genegraph.server/firebase)
         (f)
         (mount.core/stop)))
     (fs/delete-dir data-vol)))
