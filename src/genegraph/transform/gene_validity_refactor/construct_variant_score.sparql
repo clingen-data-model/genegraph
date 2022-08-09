@@ -113,8 +113,7 @@ where {
   }
 
   OPTIONAL {
-    ?individual gci:hpoIdInDiagnosis ?phenotypeString .
-    BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", SUBSTR(?phenotypeString, STRLEN(?phenotypeString) - 7 , 7))) AS ?phenotypes) .
+    ?individual gci:hpoIdInDiagnosis ?phenotypes .
   }
 
   OPTIONAL {

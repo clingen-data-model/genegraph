@@ -78,12 +78,14 @@
             "SEPIO" "http://purl.obolibrary.org/obo/SEPIO_"
             "GENO" "http://purl.obolibrary.org/obo/GENO_"
             "NCIT" "http://purl.obolibrary.org/obo/NCIT_"
-            
+            "HP" {"@id" "http://purl.obolibrary.org/obo/HP_"
+                  "@prefix" true}
             ;; ;; declare attributes with @id, @vocab types
             "hgncId" {"@type" "@id"}
 
             "autoClassification" {"@type" "@vocab"}
             "alteredClassification" {"@type" "@vocab"}
+            "hpoIdInDiagnosis" {"@type" "@id"}
             "diseaseId" {"@type" "@id"}
             "caseInfoType" {"@type" "@id"}
             "variantType" {"@type" "@id"}
@@ -237,10 +239,47 @@
             
             }}))))
 
-(defn clear-associated-snapshots [gdm-json]
-  (->> (json/parse-string gdm-json)
-       (postwalk #(if (map? %) (dissoc % "associatedClassificationSnapshots") %))
+(defn fix-hpo-ids [m]
+  (if (and (map? m) (get m "hpoIdInDiagnosis"))
+    (update m "hpoIdInDiagnosis" (fn [phenotypes]
+                                   (mapv #(re-find #"HP:\d{7}" %)
+                                         phenotypes)))
+    m))
+
+(comment
+  (fix-hpo-ids {"hpoIdInDiagnosis"
+                ["Infantile muscular hypotonia (HP:0008947)"
+                 "Proximal muscle weakness in upper limbs (HP:0008997)"
+                 "Foot dorsiflexor weakness (HP:0009027)"
+                 "Muscular hypotonia of the trunk (HP:0008936)"
+                 "Delayed gross motor development (HP:0002194)"
+                 "Distal amyotrophy (HP:0003693)"
+                 "Decreased sensory nerve conduction velocity (HP:0003448)"
+                 "Peripheral demyelination (HP:0011096)"
+                 "Onion bulb formation (HP:0003383)"
+                 "Decreased compound muscle action potential amplitude (HP:0033383)"
+                 "Distal muscle weakness (HP:0002460)"
+                 "Abnormal macrophage count (HP:0030326)"]})
+
+  (fix-hpo-ids {"hpoidindiagnosis"
+                ["HP:0001252"
+                 "HP:0002118"
+                 "HP:0004325"
+                 "HP:0009128"
+                 "HP:0002107"]}))
+
+(defn clear-associated-snapshots [m]
+  (if (map? m) (dissoc m "associatedClassificationSnapshots") m))
+
+(defn preprocess-json
+  "Walk GCI JSON prior to parsing as JSON-LD to clean up data."
+  [gci-json]
+  (->> (json/parse-string gci-json)
+       (postwalk #(-> %
+                      clear-associated-snapshots
+                      fix-hpo-ids))
        json/generate-string))
+
 
 (defn fix-gdm-identifiers [gdm-json]
   (-> gdm-json
@@ -259,7 +298,7 @@
 
 (defn parse-gdm [gdm-json]
   (-> gdm-json
-      clear-associated-snapshots
+      preprocess-json
       fix-gdm-identifiers
       append-context
       str->bytestream
