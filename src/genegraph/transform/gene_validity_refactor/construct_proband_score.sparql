@@ -82,6 +82,13 @@ where {
   gci:proband true ;
   gci:sex ?sex .
 
+  # when multiple evidence lines for the same variant and individual
+  # take the one with the latest date_created
+  FILTER NOT EXISTS {
+    ?individual gci:scores/gci:date_created ?dateCreated2
+    filter (?dateCreated < ?dateCreated2)
+  }
+
   OPTIONAL {
       ?individual gci:denovo ?deNovo .
   }
