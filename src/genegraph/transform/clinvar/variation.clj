@@ -5,25 +5,21 @@
                                               local-class-names
                                               property-uri->keyword
                                               prefix-ns-map]]
-            [genegraph.util :refer [str->bytestream]]
-            [genegraph.database.util :refer [tx]]
+            [genegraph.util :refer [str->bytestream
+                                    dissoc-ns]]
             [genegraph.transform.clinvar.common :as common]
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.jsonld.common :as jsonld]
             [genegraph.transform.clinvar.cancervariants :as vicc]
-            [genegraph.transform.clinvar.cnv :as xcnv]
-            [genegraph.source.graphql.experimental-schema :as experimental-schema]
+            [genegraph.annotate.cnv :as cnv]
             [clojure.pprint :refer [pprint]]
             [clojure.datafy :refer [datafy]]
-            [clojure.string :as s]
-            [clojure.java.io :as io]
+            ;; [clojure.string :as s]
             [cheshire.core :as json]
-            [clj-http.client :as http]
             [io.pedestal.log :as log])
   (:import (org.apache.jena.rdf.model Model Statement)
-           (java.io ByteArrayInputStream)
-           (clojure.lang Keyword)))
+           (java.io ByteArrayInputStream)))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
 (def variation-frame
@@ -57,9 +53,10 @@
     (letfn [(get-hgvs [nested-content assembly-name]
               (let [hgvs-list (-> nested-content (get "HGVSlist") (get "HGVS") util/into-sequential-if-not)
                     filtered (filter #(= assembly-name (get-in % ["NucleotideExpression" "@Assembly"])) hgvs-list)]
-                (if (< 1 (count filtered)) (log/warn :fn ::prioritized-variation-expression
-                                                     :msg (str "Multiple expressions for variation for assembly: " assembly-name)
-                                                     :variation variation-msg))
+                (when (< 1 (count filtered))
+                  (log/warn :fn ::prioritized-variation-expression
+                            :msg (str "Multiple expressions for variation for assembly: " assembly-name)
+                            :variation variation-msg))
                 (-> filtered first (get "NucleotideExpression") (get "Expression") (get "$"))))
             (get-spdi [nested-content]
               (-> nested-content (get "CanonicalSPDI") (get "$")))]
@@ -144,11 +141,9 @@
                         (log/trace :fn ::get-all-expressions :hgvs-obj hgvs-obj)
                         (let [outputs (filter not-empty [(nucleotide-hgvs hgvs-obj)
                                                          (protein-hgvs hgvs-obj)])]
-                          (if (empty? outputs)
+                          (when (empty? outputs)
                             (let [e (ex-info "Found no HGVS expressions" {:hgvs-obj hgvs-obj :variation-msg variation-msg})]
-                              (log/error :message (ex-message e) :data (ex-data e))
-                                ;(throw e)
-                              ))
+                              (log/error :message (ex-message e) :data (ex-data e))))
                           outputs)))
                  (apply concat))
             [(let [spdi-expr (-> nested-content (get "CanonicalSPDI") (get "$"))]
@@ -174,11 +169,63 @@
       [expression-iri :rdf/type :vrs/Expression]
       [expression-iri :vrs/syntax syntax]
       [expression-iri :rdf/value expression]]
-     (if (seq syntax-version)
+     (when (seq syntax-version)
        [[expression-iri :vrs/syntax-version syntax-version]]))))
 
-(defn variation-triples
-  "Returns a collection of triples"
+(defn variation-preprocess
+  "Performs some annotations to the variation message in order to enable downstream transformation.
+
+   Parses expressions and determines their types (spdi, hgvs, clinvar copy number).
+   Adds locally namespaced keywords to the message."
+  [msg]
+  (-> msg
+      util/parse-nested-content
+      (#(assoc % ::copy-number? (.startsWith (-> % :content :variation_type)
+                                             "copy number")))
+      (#(if (::copy-number? %) (assoc % ::cnv (cnv/parse (-> % :content :name))) %))
+      (#(assoc % ::prioritized-expression (prioritized-variation-expression %)))
+      (#(assoc % ::other-expressions (get-all-expressions %)))))
+
+(defn make-index-replacer
+  "Returns a function which when called with a value,
+   replaces the INDEX of INPUT-VECTOR with that value."
+  [input-vector index]
+  (fn [value] (assoc input-vector index value)))
+
+(defn get-vrs-model
+  "Takes a map with :expression (String) and :expression-type (Keyword).
+
+   Returns a map containing :model and :iri"
+  [{expression :expression
+    expression-type :expression-type
+    ;copy-number? :copy-number?
+    }]
+  (let [vrs-obj (vicc/vrs-variation-for-expression
+                 (-> expression str)
+                 (-> expression-type keyword))]
+    (if (empty? vrs-obj)
+      (let [e (ex-info "No variation received from VRS normalization" {:fn ::add-vrs-model :expression expression})]
+        (log/error :message (ex-message e) :data (ex-data e))
+        (throw e))
+      (let [vrs-id (get vrs-obj "_id")
+            vrs-model (-> vrs-obj
+                          json/generate-string
+                          str->bytestream
+                          (l/read-rdf {:format :json-ld}))]
+        (log/debug :fn ::add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj)
+        {:iri vrs-id :model vrs-model}))))
+
+(defn model-to-triples [^Model model]
+  (-> model .listStatements iterator-seq
+      (->> (map #(vector (.getSubject %)
+                         (.getPredicate %)
+                         (.getObject %))))))
+
+(defn add-variation-triples
+  "Returns msg with ::triples and ::deferred-triples added.
+   ::deferred-triples is a collection of maps declaring realizers and
+   triple generators. These are triples which need to exist for the model to make
+   sense, but which rely on impure operations like database queries or HTTP calls"
   [msg]
   (let [msg (util/parse-nested-content msg)
         content (:content msg)
@@ -186,52 +233,70 @@
         vrd-unversioned (str (ns-cg "VariationDescriptor_") (:id content))
         vd-iri (str vrd-unversioned "." (:release_date msg))
         clinvar-variation-iri (q/resource (str iri/clinvar-variation (:id content)))
-        canonical-variation-obj (prioritized-variation-expression msg)
-        canonical-variation-expression (q/resource (:expr canonical-variation-obj))
-        canonical-variation-expression-type (q/resource (name (:type canonical-variation-obj)))]
-    (concat
-     [; VRS Variation Descriptor
-      [vd-iri :rdf/type :vrs/CategoricalVariationDescriptor]
-      [vd-iri :rdf/type (q/resource (ns-cg "ClinVarVariation"))]
+
+        ;canonical-variation-obj (prioritized-variation-expression msg)
+        ;canonical-variation-expression (q/resource (:expr canonical-variation-obj))
+        ;canonical-variation-expression-type (q/resource (name (:type canonical-variation-obj)))
+        ]
+    (assoc
+     msg
+     ;; Each ::deferred-triples object has a :generator which when called, performs potentially
+     ;; impure operations to return a collection of triples.
+     ::deferred-triples
+     [{#_#_:triple-generator (make-index-replacer [vd-iri :rdf/value 'canonical-variation-id] 2)
+       :generator
+       (letfn [(vrs-model-getter []
+                 (partial get-vrs-model
+                          {:expression (-> msg ::prioritized-expression :expr)
+                           :expression-type (-> msg ::prioritized-expression :type)}))]
+         (fn []
+           (let [getter-ret ((vrs-model-getter))
+                 _ (log/info :fn :add-variation-triples :getter-ret getter-ret)
+                 {vrs-model :model vrs-id :iri} getter-ret]
+             (let [^Model joined-model
+                   (q/union (l/statements-to-model [[vd-iri :rdf/value (q/resource vrs-id)]])
+                            vrs-model)]
+               (model-to-triples joined-model)))))}]
+
+     ::triples
+     (concat
+      [; VRS Variation Descriptor
+       [vd-iri :rdf/type :vrs/CategoricalVariationDescriptor]
+       [vd-iri :rdf/type (q/resource (ns-cg "ClinVarVariation"))]
        ; For tracking clinvar objects and identifying the named graph in add-iri
-      [vd-iri :rdf/type (q/resource (ns-cg "ClinVarObject"))]
-      [vd-iri :rdfs/label (:name content)]
+       [vd-iri :rdf/type (q/resource (ns-cg "ClinVarObject"))]
+       [vd-iri :rdfs/label (:name content)]
 
        ; Variation Descriptor describes object: variation
-       ; TODO more gracefully handle nil/exception from normalization service
-       ;[vd-iri :sepio/has-object (vicc/vrs-allele-for-variation (prioritized-variation-expression msg))]
-      [vd-iri :rdf/value canonical-variation-expression]
-       ; This identifies the type of expression to downstream processes that need/benefit from that information
-      [canonical-variation-expression :rdf/type canonical-variation-expression-type]
+       #_[vd-iri :rdf/value canonical-variation-expression]
+       #_[canonical-variation-expression :rdf/type canonical-variation-expression-type]
 
-      [vd-iri :dc/is-version-of (q/resource vrd-unversioned)]
-       ; TODO set this to version
+       [vd-iri :dc/is-version-of (q/resource vrd-unversioned)]
        ; Add clinvar's version field to extensions
-      [vd-iri :owl/version-info (:release_date msg)]
-      [vd-iri :cg/release-date (:release_date msg)]
+       [vd-iri :owl/version-info (:release_date msg)]
+       [vd-iri :cg/release-date (:release_date msg)]
 
        ; xrefs
-      [vd-iri :vrs/xrefs (str (get prefix-ns-map "clinvar")
-                              (:id content))]
-      [vd-iri :vrs/xrefs (str clinvar-variation-iri)]]
+       [vd-iri :vrs/xrefs (str (get prefix-ns-map "clinvar") (:id content))]
+       [vd-iri :vrs/xrefs (str clinvar-variation-iri)]]
       ; TODO reverse link to VCV? Or rely on VCV->variation that should be added by VCV
 
       ; include all genomic, protein, spdi expressions as variation members
-     (let [members (let [exprs (get-all-expressions msg)]
-                     (doall
-                      (for [expr exprs]
-                        (do (log/trace :fn ::variation-triples :msg "Making members" :expr expr)
-                            (make-member vd-iri
-                                         (:expression expr)
-                                         (:syntax expr)
-                                         (:syntax-version expr))))))]
-       (apply concat members))
+      (let [other-exprs (::other-expressions msg)]
+        (->> (for [expr other-exprs]
+               (do (log/info :fn ::variation-triples :msg "Making members" :expr expr)
+                   (make-member vd-iri
+                                (:expression expr)
+                                (:syntax expr)
+                                (:syntax-version expr))))
+             (apply concat)
+             (into [])))
 
       ; Extensions
-     (common/fields-to-extensions vd-iri (merge (dissoc content :id :release_date :name)
+      (common/fields-to-extensions vd-iri (merge (dissoc content :id :release_date :name)
                                                  ; Put this back into a string
-                                                {:content (json/generate-string (:content content))}
-                                                {:clinvar_variation clinvar-variation-iri})))))
+                                                 {:content (json/generate-string (:content content))}
+                                                 {:clinvar_variation clinvar-variation-iri}))))))
 
 (defn resource-to-out-triples
   "Uses steppable interface of RDFResource to obtain all the out properties and load
@@ -261,12 +326,9 @@
        (.remove model stmt-to-remove))
      model)))
 
-(defn get-cnv-representation [])
-
-(defn is-copy-number-variation? [])
-
-(defn add-vrs-model
-  "Convert the :rdf/value triple in a Model containing one :vrs/CategoricalVariationDescriptor
+(comment
+  #_(defn add-vrs-model
+      "Convert the :rdf/value triple in a Model containing one :vrs/CategoricalVariationDescriptor
    to a node of the VRS variation representation of the expression.
 
    The :rdf/value triple will contain a iri which itself has an :rdf/type of either :hgvs or :spdi or :text
@@ -274,50 +336,69 @@
    Example:
    [descriptor-iri :rdf/value object]
    [object :rdf/type :hgvs]"
-  [model]
-  (let [expr-kw :rdf/value
-        descriptor-resource (first (q/select "SELECT ?iri WHERE { ?iri a :vrs/CategoricalVariationDescriptor }" {} model))
-        expressions (q/select "SELECT ?object WHERE { ?iri :rdf/value ?object }"
-                              {:iri descriptor-resource}
-                              model)]
-    (when (< 1 (count expressions)) (let [e (ex-info "More than 1 object in model" {:model model
-                                                                                    :object-exprs expressions})]
-                                      (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
-    (let [expression (first expressions)
-          expression-type (q/ld1-> expression [:rdf/type])
-          vrs-obj (vicc/vrs-variation-for-expression expression (keyword (str expression-type)))]
-      (if (empty? vrs-obj)
-        (do (let [e (ex-info "No variation received from VRS normalization" {:fn ::add-vrs-model :expression expression})]
+      [model]
+      (let [expr-kw :rdf/value
+            descriptor-resource (first (q/select "SELECT ?iri WHERE { ?iri a :vrs/CategoricalVariationDescriptor }"
+                                                 {} model))
+            expressions (q/select "SELECT ?object WHERE { ?iri :rdf/value ?object }"
+                                  {:iri descriptor-resource} model)]
+        (when (< 1 (count expressions)) (let [e (ex-info "More than 1 object in model" {:model model
+                                                                                        :object-exprs expressions})]
+                                          (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
+        (let [expression (first expressions)
+              expression-type (q/ld1-> expression [:rdf/type])
+              vrs-obj (vicc/vrs-variation-for-expression expression (keyword (str expression-type)))]
+          (if (empty? vrs-obj)
+            (let [e (ex-info "No variation received from VRS normalization" {:fn ::add-vrs-model :expression expression})]
               (log/error :message (ex-message e) :data (ex-data e))
-              ;; (throw e)
-              ))
-        (let [vrs-id (get vrs-obj "_id")
-              vrs-model (l/read-rdf (str->bytestream (json/generate-string vrs-obj)) {:format :json-ld})]
-          (log/debug :fn ::add-vrs-model
-                     :vrs-id vrs-id
-                     :vrs-obj vrs-obj)
-          (when (empty? vrs-id)
-            (let [e (ex-info "Could not determine variation descriptor iri" {:vrs-obj vrs-obj :model vrs-model})]
-              (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
-          (let [link-triple [descriptor-resource :rdf/value (q/resource vrs-id)]]
+              (throw e))
+            (let [vrs-id (get vrs-obj "_id")
+                  vrs-model (l/read-rdf (str->bytestream (json/generate-string vrs-obj)) {:format :json-ld})]
+              (log/debug :fn ::add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj)
+              (when (empty? vrs-id)
+                (let [e (ex-info "Could not determine variation descriptor iri" {:vrs-obj vrs-obj :model vrs-model})]
+                  (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
+              (let [link-triple [descriptor-resource :rdf/value (q/resource vrs-id)]]
             ; Remove the previous object, which is just the expression and syntax
-            (let [triples-to-remove [[descriptor-resource :rdf/value expression]
-                                     [expression :rdf/type expression-type]]]
-              (log/debug :msg "Deleting previous expression triples" :triples-to-remove triples-to-remove)
-              (doseq [triple triples-to-remove]
-                (remove-triple! model triple)))
+                (let [triples-to-remove [[descriptor-resource :rdf/value expression]
+                                         [expression :rdf/type expression-type]]]
+                  (log/debug :msg "Deleting previous expression triples" :triples-to-remove triples-to-remove)
+                  (doseq [triple triples-to-remove]
+                    (remove-triple! model triple)))
             ; Join the descriptor and the VRS variation
-            (-> (q/union model vrs-model)
-                (add-triple! link-triple))))))))
+                (-> (q/union model vrs-model)
+                    (add-triple! link-triple)))))))))
+
+(defn add-combined-triples
+  "Realizes the ::deferred-triples and combines them with ::triples into ::combined-triples.
+   Expects a message as returned by add-variation-triples"
+  [message]
+  (let [{triples ::triples
+         deferred-triples ::deferred-triples}
+        message]
+    (assoc message
+           ::combined-triples
+           (concat triples
+                   (for [deferred-triple deferred-triples]
+                     (let [{generator :generator} deferred-triple]
+                       (let [realized (generator)]
+                         (log/info :realized realized)
+                         realized)))))))
 
 (defmethod common/clinvar-to-model :variation [event]
   (log/debug :fn ::clinvar-to-model :event event)
   (let [model (-> event
                   :genegraph.transform.clinvar.core/parsed-value
-                  variation-triples
-                  (#(do (log/debug :triples %) %))
+                  variation-preprocess
+                  add-variation-triples
+                  (#(do (log/info :triples (::triples %)) %))
+                  (#(do (pprint (::triples %)) %))
+                  ;;; realize the deferred triples
+                  add-combined-triples
+                  (#(do (pprint (::combined-triples %)) %))
+                  ::combined-triples
                   l/statements-to-model
-                  add-vrs-model
+                  #_add-vrs-model
                   ;(#(do (log/debug :model %) %))
                   (#(common/mark-prior-replaced % (q/resource clinvar-variation-type))))]
     ;(log/debug :fn ::clinvar-to-model :model model)

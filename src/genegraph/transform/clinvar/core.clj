@@ -54,14 +54,19 @@
   ;;(assoc event ::q/model )
   )
 
+(defn add-parsed-value [event]
+  (assoc event
+         ::parsed-value
+         (-> event
+             :genegraph.sink.event/value
+             (json/parse-string true))))
+
 (defmethod add-model :clinvar-raw [event]
   "Construct an Apache Jena Model for the message contained in event under :genegraph.sink.event/value.
   Set it to key :genegraph.database.query/model."
   (try
     (let [event (-> event
-                    (#(assoc % ::parsed-value (-> %
-                                                  :genegraph.sink.event/value
-                                                  (json/parse-string true))))
+                    add-parsed-value
                     ;;((fn [event] (log/info :event event) event))
                     ;;(#(assoc % ::parsed-value (-> % ::parsed-value util/parse-nested-content)))
                     ;;((fn [event] (log/info :msg "parsed content" :parsed-value (::parsed-value event)) event))

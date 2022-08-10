@@ -8,12 +8,12 @@
   (-> "../clinvar-streams/clinvar-raw-testdata_20220523"
       io/reader
       line-seq
-      (->> (map #(json/parse-string % true))
-           (filter #(= "variation" (-> % :content :entity_type))))))
+      (->> (map #(json/parse-string % true)))))
 
 (defn -main [& _]
   (let [variation-messages (load-messages-from-file)]
-    (->> variation-messages
+    (->> (load-messages-from-file)
+         (filter #(= "variation" (-> % :content :entity_type)))
          (filter #(.startsWith (-> % :content :variation_type) "copy number"))
          (map (fn [m] {:message m :cnv (cnv/parse (-> m :content :name))}))
          (map (fn [m] (assoc m :normalized
