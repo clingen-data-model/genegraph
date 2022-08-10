@@ -176,6 +176,16 @@
   ;; :source "http://data.bioontology.org/ontologies/RXNORM/submissions/18/download?apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb"
   ;; :target "RXNORM.ttl"
   ;; :format :rxnorm
-  ;; :reader-opts {:format :turtle}}
+ ;; :reader-opts {:format :turtle}}
+ {:name "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/cytoBand.txt.gz"
+  :source "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/cytoBand.txt.gz"
+  :target "ucsc_cytoband_hg19.txt.gz"
+  :format :ucsc-cytoband
+  :genegraph.transform.ucsc-cytoband/assembly :hg19}
+ {:name "http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz"
+   :source "http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz"
+   :target "ucsc_cytoband_hg38.txt.gz"
+  :format :ucsc-cytoband
+  :genegraph.transform.ucsc-cytoband/assembly :hg38}
  ]
 

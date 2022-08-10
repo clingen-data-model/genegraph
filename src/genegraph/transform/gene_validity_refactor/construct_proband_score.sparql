@@ -82,6 +82,13 @@ where {
   gci:proband true ;
   gci:sex ?sex .
 
+  # when multiple evidence lines for the same variant and individual
+  # take the one with the latest date_created
+  FILTER NOT EXISTS {
+    ?individual gci:scores/gci:date_created ?dateCreated2
+    filter (?dateCreated < ?dateCreated2)
+  }
+
   OPTIONAL {
       ?individual gci:denovo ?deNovo .
   }
@@ -126,8 +133,7 @@ where {
   }
 
   OPTIONAL {
-     ?individual gci:hpoIdInDiagnosis ?phenotypeString .
-     BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", SUBSTR(?phenotypeString, STRLEN(?phenotypeString) - 7 , 7))) AS ?phenotypes) .
+     ?individual gci:hpoIdInDiagnosis ?phenotypes .
   }
 
   ?annotation  gci:individuals|gci:individualIncluded ?individual ;
