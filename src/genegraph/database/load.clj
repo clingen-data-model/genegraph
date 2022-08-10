@@ -47,9 +47,9 @@
                      (string? s) (ResourceFactory/createResource s)
                      (q/resource? s) (q/as-jena-resource s)
                      :else s)
-           predicate (if (keyword? p)
-                       (local-property-names p)
-                       (ResourceFactory/createProperty p))
+           predicate (cond (instance? org.apache.jena.rdf.model.Property p) p
+                           (keyword? p) (local-property-names p)
+                           :else (ResourceFactory/createProperty p))
            object (cond
                     (keyword? o) (local-class-names o)
                     (= :Resource (:object (meta stmt))) (ResourceFactory/createResource o)
