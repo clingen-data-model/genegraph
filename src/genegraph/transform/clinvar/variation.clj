@@ -379,11 +379,15 @@
     (assoc message
            ::combined-triples
            (concat triples
-                   (for [deferred-triple deferred-triples]
-                     (let [{generator :generator} deferred-triple]
-                       (let [realized (generator)]
-                         (log/info :realized realized)
-                         realized)))))))
+                   ;; Each realized set is a collection of triples
+                   ;; Flatten those into one collection
+                   (apply
+                    concat
+                    (for [deferred-triple deferred-triples]
+                      (let [{generator :generator} deferred-triple]
+                        (let [realized (generator)]
+                          (log/info :realized realized)
+                          realized))))))))
 
 (defmethod common/clinvar-to-model :variation [event]
   (log/debug :fn ::clinvar-to-model :event event)
@@ -396,6 +400,14 @@
                   ;;; realize the deferred triples
                   add-combined-triples
                   (#(do (pprint (::combined-triples %)) %))
+                  (#(do (pprint {:has-nils
+                                 ;; (filter #(some some? %) coll)
+                                 (filter (fn [triple] (or (not= 3 (count triple))
+                                                          (nil? (first triple))
+                                                          (nil? (second triple))
+                                                          (nil? (nth triple 2))))
+                                         (::combined-triples %))})
+                        %))
                   ::combined-triples
                   l/statements-to-model
                   #_add-vrs-model
