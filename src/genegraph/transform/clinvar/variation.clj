@@ -379,15 +379,14 @@
     (assoc message
            ::combined-triples
            (concat triples
-                   ;; Each realized set is a collection of triples
-                   ;; Flatten those into one collection
+                   ;; Flatten collections of realized triples into one collection
                    (apply
                     concat
                     (for [deferred-triple deferred-triples]
-                      (let [{generator :generator} deferred-triple]
-                        (let [realized (generator)]
-                          (log/info :realized realized)
-                          realized))))))))
+                      (let [{generator :generator} deferred-triple
+                            realized (generator)]
+                        (log/info :realized realized)
+                        realized)))))))
 
 (defmethod common/clinvar-to-model :variation [event]
   (log/debug :fn ::clinvar-to-model :event event)
@@ -395,25 +394,21 @@
                   :genegraph.transform.clinvar.core/parsed-value
                   variation-preprocess
                   add-variation-triples
-                  (#(do (log/info :triples (::triples %)) %))
-                  (#(do (pprint (::triples %)) %))
+                  (#(do (log/trace :triples (::triples %)) %))
                   ;;; realize the deferred triples
                   add-combined-triples
-                  (#(do (pprint (::combined-triples %)) %))
-                  (#(do (pprint {:has-nils
-                                 ;; (filter #(some some? %) coll)
-                                 (filter (fn [triple] (or (not= 3 (count triple))
-                                                          (nil? (first triple))
-                                                          (nil? (second triple))
-                                                          (nil? (nth triple 2))))
-                                         (::combined-triples %))})
+                  (#(do (log/debug :combined-triples (::combined-triples %)) %))
+                  (#(do (log/error :has-nils {:has-nils
+                                              ;; (filter #(some some? %) coll)
+                                              (filter (fn [triple] (or (not= 3 (count triple))
+                                                                       (nil? (nth triple 0))
+                                                                       (nil? (nth triple 1))
+                                                                       (nil? (nth triple 2))))
+                                                      (::combined-triples %))})
                         %))
                   ::combined-triples
                   l/statements-to-model
-                  #_add-vrs-model
-                  ;(#(do (log/debug :model %) %))
                   (#(common/mark-prior-replaced % (q/resource clinvar-variation-type))))]
-    ;(log/debug :fn ::clinvar-to-model :model model)
     model))
 
 (def variation-context
