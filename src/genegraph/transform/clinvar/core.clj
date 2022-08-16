@@ -1,10 +1,7 @@
 (ns genegraph.transform.clinvar.core
   (:require [genegraph.database.query :as q]
             [genegraph.transform.types :as xform-types :refer [add-model]]
-
-            [genegraph.database.names :refer [prefix-ns-map]]
             [cheshire.core :as json]
-            [clojure.java.io :as io]
             [io.pedestal.log :as log]
             [genegraph.transform.clinvar.common :refer [transform-clinvar
                                                         clinvar-to-model
@@ -50,9 +47,7 @@
 (defmethod clinvar-to-model :default [event]
   (log/debug :fn ::clinvar-to-model :dispatch :default :msg "No multimethod defined for event" :event event)
   ;; Avoids NPE on downstream interceptors expecting a model to exist
-  (l/statements-to-model [])
-  ;;(assoc event ::q/model )
-  )
+  (l/statements-to-model []))
 
 (defn add-parsed-value [event]
   (assoc event
@@ -67,9 +62,6 @@
   (try
     (let [event (-> event
                     add-parsed-value
-                    ;;((fn [event] (log/info :event event) event))
-                    ;;(#(assoc % ::parsed-value (-> % ::parsed-value util/parse-nested-content)))
-                    ;;((fn [event] (log/info :msg "parsed content" :parsed-value (::parsed-value event)) event))
                     (#(assoc % :genegraph.transform.clinvar/format (get-clinvar-format (::parsed-value %))))
                     (#(assoc % ::q/model (clinvar-to-model %))))]
       (log/trace :fn ::add-model :event event)
