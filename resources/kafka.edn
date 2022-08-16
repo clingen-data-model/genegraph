@@ -1,10 +1,10 @@
-{:clusters {:dx-ccloud {:common { "ssl.endpoint.identification.algorithm" "https"
-                                  "sasl.mechanism" "PLAIN"
-                                  "request.timeout.ms" "20000"
-                                  "bootstrap.servers" "pkc-4yyd6.us-east1.gcp.confluent.cloud:9092"
-                                  "retry.backoff.ms" "500"
-                                  "security.protocol" "SASL_SSL"
-                                  "sasl.jaas.config" genegraph.env/dx-jaas-config}
+{:clusters {:dx-ccloud {:common {"ssl.endpoint.identification.algorithm" "https"
+                                 "sasl.mechanism" "PLAIN"
+                                 "request.timeout.ms" "20000"
+                                 "bootstrap.servers" "pkc-4yyd6.us-east1.gcp.confluent.cloud:9092"
+                                 "retry.backoff.ms" "500"
+                                 "security.protocol" "SASL_SSL"
+                                 "sasl.jaas.config" genegraph.env/dx-jaas-config}
                         :consumer {"key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
                                    "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}
                         :producer {"key.serializer" "org.apache.kafka.common.serialization.StringSerializer"
@@ -37,7 +37,7 @@
                                        :cluster :dx-ccloud}
             :gene-tracker-test {:name "gt-precuration-events-test"
                                 :cluster :dx-ccloud}
-            :clinvar-raw {:name "clinvar-raw-testdata_20210412"
+            :clinvar-raw {:name "clinvar-raw-testdata_20220523"
                           :cluster :dx-ccloud
                           :format :clinvar-raw
                           :producer-topic :test-public-v1}
@@ -45,6 +45,4 @@
                                :cluster :dx-ccloud
                                :format :clinvar-combined}
             :test-public-v1 {:name "test-public-v1"
-                              :cluster :dx-ccloud}}}
-
-
+                             :cluster :dx-ccloud}}}

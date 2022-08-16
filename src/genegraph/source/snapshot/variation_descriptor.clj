@@ -143,6 +143,10 @@ fragment alleleFields on Allele {
   [response-objects file-name]
   (with-open [file (io/writer (io/file file-name))]
     (doseq [obj response-objects]
-      (let [output-obj (get-in obj [:data :variation_descriptor_query])]
-        (.write file (json/generate-string output-obj))
-        (.write file "\n")))))
+      (.write file (json/generate-string obj))
+      (.write file "\n"))))
+
+(comment
+  "Generate variation descriptors from current database"
+  (def vds (variation-descriptors-as-of-date {:until "2022-08-15"}))
+  (write-variation-descriptors vds "vds-2022-08-15.txt"))

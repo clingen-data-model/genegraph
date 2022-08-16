@@ -105,6 +105,7 @@
     (case status
       200 (let [body (-> response :body json/parse-string)]
             (log/info :fn ::normalize-absolute-copy-number :body body)
+            (assert not-empty (-> body (get "absolute_copy_number")))
             (-> body (get "absolute_copy_number") add-vicc-context))
       ;; Error case
       (log/error :fn ::normalize-absolute-copy-number
@@ -114,13 +115,14 @@
 
 (defn vrs-variation-for-expression
   "`variation` should be a string understood by the VICC variant normalization service.
-  Example: HGVS or SPDI expressions.
+  Example: HGVS or SPDI expressions. If type is :cnv, the expression should be a map.
   https://normalize.cancervariants.org/variation"
   ([^String variation-expression]
    (vrs-variation-for-expression variation-expression nil))
   ([^String variation-expression ^Keyword expression-type]
    (log/info :fn ::vrs-allele-for-variation :variation-expression variation-expression :expr-type expression-type)
    (case expression-type
+     :cnv (normalize-absolute-copy-number variation-expression)
      :spdi (normalize-canonical variation-expression :spdi)
      :hgvs (normalize-canonical variation-expression :hgvs)
      ;; By default, tell the service to try hgvs. Will return as Text variation if unable to parse

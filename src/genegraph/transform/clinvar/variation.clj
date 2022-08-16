@@ -183,7 +183,9 @@
       (#(assoc % ::copy-number? (.startsWith (-> % :content :variation_type)
                                              "copy number")))
       (#(if (::copy-number? %) (assoc % ::cnv (cnv/parse (-> % :content :name))) %))
-      (#(assoc % ::prioritized-expression (prioritized-variation-expression %)))
+      (#(assoc % ::prioritized-expression (cond (::copy-number?  %) {:type :cnv
+                                                                     :expr (::cnv %)}
+                                                :else (prioritized-variation-expression %))))
       (#(assoc % ::other-expressions (get-all-expressions %)))))
 
 (defn make-index-replacer
@@ -193,7 +195,7 @@
   (fn [value] (assoc input-vector index value)))
 
 (defn get-vrs-model
-  "Takes a map with :expression (String) and :expression-type (Keyword).
+  "Takes a map with :expression (String or Map) and :expression-type (Keyword).
 
    Returns a map containing :model and :iri"
   [{expression :expression
@@ -201,7 +203,7 @@
     ;copy-number? :copy-number?
     }]
   (let [vrs-obj (vicc/vrs-variation-for-expression
-                 (-> expression str)
+                 (-> expression)
                  (-> expression-type keyword))]
     (if (empty? vrs-obj)
       (let [e (ex-info "No variation received from VRS normalization" {:fn ::add-vrs-model :expression expression})]
@@ -385,7 +387,7 @@
                     (for [deferred-triple deferred-triples]
                       (let [{generator :generator} deferred-triple
                             realized (generator)]
-                        (log/info :realized realized)
+                        (log/debug :realized realized)
                         realized)))))))
 
 (defmethod common/clinvar-to-model :variation [event]
@@ -398,13 +400,15 @@
                   ;;; realize the deferred triples
                   add-combined-triples
                   (#(do (log/debug :combined-triples (::combined-triples %)) %))
-                  (#(do (log/error :has-nils {:has-nils
-                                              ;; (filter #(some some? %) coll)
-                                              (filter (fn [triple] (or (not= 3 (count triple))
-                                                                       (nil? (nth triple 0))
-                                                                       (nil? (nth triple 1))
-                                                                       (nil? (nth triple 2))))
-                                                      (::combined-triples %))})
+                  (#(do (let [has-nils (filter
+                                        ;; (filter #(some some? %) coll)
+                                        (fn [triple] (or (not= 3 (count triple))
+                                                         (nil? (nth triple 0))
+                                                         (nil? (nth triple 1))
+                                                         (nil? (nth triple 2))))
+                                        (::combined-triples %))]
+                          (when (not-empty has-nils)
+                            (log/error :has-nils has-nils)))
                         %))
                   ::combined-triples
                   l/statements-to-model
