@@ -81,10 +81,10 @@
     (cond (.startsWith change "g.") "hgvs.g"
           (.startsWith change "c.") "hgvs.c"
           (.startsWith change "p.") "hgvs.p"
-          :default (let [e (ex-info "Unknown hgvs change syntax" {:change change})]
-                     (log/error :message (ex-message e) :data (ex-data e))
-                     (log/error :message "Defaulting to 'hgvs' for change" :change change)
-                     "hgvs"))
+          :else (let [e (ex-info "Unknown hgvs change syntax" {:change change})]
+                  (log/error :message (ex-message e) :data (ex-data e))
+                  (log/error :message "Defaulting to 'hgvs' for change" :change change)
+                  "hgvs"))
     (do (log/warn :message "No change provided, falling back to text syntax")
         "text")))
 
@@ -199,9 +199,7 @@
 
    Returns a map containing :model and :iri"
   [{expression :expression
-    expression-type :expression-type
-    ;copy-number? :copy-number?
-    }]
+    expression-type :expression-type}]
   (let [vrs-obj (vicc/vrs-variation-for-expression
                  (-> expression)
                  (-> expression-type keyword))]
@@ -231,22 +229,15 @@
   [msg]
   (let [msg (util/parse-nested-content msg)
         content (:content msg)
-
         vrd-unversioned (str (ns-cg "VariationDescriptor_") (:id content))
         vd-iri (str vrd-unversioned "." (:release_date msg))
-        clinvar-variation-iri (q/resource (str iri/clinvar-variation (:id content)))
-
-        ;canonical-variation-obj (prioritized-variation-expression msg)
-        ;canonical-variation-expression (q/resource (:expr canonical-variation-obj))
-        ;canonical-variation-expression-type (q/resource (name (:type canonical-variation-obj)))
-        ]
+        clinvar-variation-iri (q/resource (str iri/clinvar-variation (:id content)))]
     (assoc
      msg
      ;; Each ::deferred-triples object has a :generator which when called, performs potentially
      ;; impure operations to return a collection of triples.
      ::deferred-triples
-     [{#_#_:triple-generator (make-index-replacer [vd-iri :rdf/value 'canonical-variation-id] 2)
-       :generator
+     [{:generator
        (letfn [(vrs-model-getter []
                  (partial get-vrs-model
                           {:expression (-> msg ::prioritized-expression :expr)
@@ -327,49 +318,6 @@
          (throw e))
        (.remove model stmt-to-remove))
      model)))
-
-(comment
-  #_(defn add-vrs-model
-      "Convert the :rdf/value triple in a Model containing one :vrs/CategoricalVariationDescriptor
-   to a node of the VRS variation representation of the expression.
-
-   The :rdf/value triple will contain a iri which itself has an :rdf/type of either :hgvs or :spdi or :text
-
-   Example:
-   [descriptor-iri :rdf/value object]
-   [object :rdf/type :hgvs]"
-      [model]
-      (let [expr-kw :rdf/value
-            descriptor-resource (first (q/select "SELECT ?iri WHERE { ?iri a :vrs/CategoricalVariationDescriptor }"
-                                                 {} model))
-            expressions (q/select "SELECT ?object WHERE { ?iri :rdf/value ?object }"
-                                  {:iri descriptor-resource} model)]
-        (when (< 1 (count expressions)) (let [e (ex-info "More than 1 object in model" {:model model
-                                                                                        :object-exprs expressions})]
-                                          (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
-        (let [expression (first expressions)
-              expression-type (q/ld1-> expression [:rdf/type])
-              vrs-obj (vicc/vrs-variation-for-expression expression (keyword (str expression-type)))]
-          (if (empty? vrs-obj)
-            (let [e (ex-info "No variation received from VRS normalization" {:fn ::add-vrs-model :expression expression})]
-              (log/error :message (ex-message e) :data (ex-data e))
-              (throw e))
-            (let [vrs-id (get vrs-obj "_id")
-                  vrs-model (l/read-rdf (str->bytestream (json/generate-string vrs-obj)) {:format :json-ld})]
-              (log/debug :fn ::add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj)
-              (when (empty? vrs-id)
-                (let [e (ex-info "Could not determine variation descriptor iri" {:vrs-obj vrs-obj :model vrs-model})]
-                  (log/error :message (ex-message e) :data (ex-data e)) (throw e)))
-              (let [link-triple [descriptor-resource :rdf/value (q/resource vrs-id)]]
-            ; Remove the previous object, which is just the expression and syntax
-                (let [triples-to-remove [[descriptor-resource :rdf/value expression]
-                                         [expression :rdf/type expression-type]]]
-                  (log/debug :msg "Deleting previous expression triples" :triples-to-remove triples-to-remove)
-                  (doseq [triple triples-to-remove]
-                    (remove-triple! model triple)))
-            ; Join the descriptor and the VRS variation
-                (-> (q/union model vrs-model)
-                    (add-triple! link-triple)))))))))
 
 (defn add-combined-triples
   "Realizes the ::deferred-triples and combines them with ::triples into ::combined-triples.
@@ -485,17 +433,6 @@
            "@prefix" true}
     "cgterms" {"@id" (get prefix-ns-map "cgterms")
                "@prefix" true}}})
-
-
-;(def graphql-schema (genegraph.source.graphql.experimental-schema/schema))
-;(defn graphql-query
-;  "Function not used except for evaluating queries in the REPL
-;  may consider moving into test namespace in future"
-;  ([query-str]
-;   (graphql-query query-str nil))
-;  ([query-str variables]
-;   (tx (lacinia/execute graphql-schema query-str variables nil))))
-
 
 (def variation-descriptor-query
   "
