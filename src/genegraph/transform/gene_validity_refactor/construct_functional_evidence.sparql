@@ -36,9 +36,22 @@ where {
   gci:label ?evidenceLabel ;
   gci:evidenceType ?gciType .
 
-  OPTIONAL {
-    ?evidenceItem gci:biochemicalFunction / gci:evidenceForFunction ?biochemicalFunctionDescription .
+ OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction / gci:geneFunctionConsistentWithPhenotype / gci:explanation ?biochemicalFuncConsistentWithPheno .
   }
+
+  OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction / gci:geneWithSameFunctionSameDisease / gci:evidenceForOtherGenesWithSameFunction ?biochemicalEvidenceForOtherGenes .
+  }
+
+  OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction / gci:explanation ?biochemicalExplanation .
+  }
+
+  OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction / gci:evidenceForFunction ?biochemicalEvidenceForFunction .
+  }
+  BIND(COALESCE(?biochemicalFuncConsistentWithPheno, ?biochemicalEvidenceForOtherGenes, ?biochemicalExplanation, ?biochemicalEvidenceForFunction) AS ?biochemicalFunctionDescription) .
 
   OPTIONAL {
     ?evidenceItem gci:proteinInteractions / gci:relationshipOfOtherGenesToDisese ?proteinInteractionDescription .
