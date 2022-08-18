@@ -12,7 +12,10 @@ construct {
 where {
   ?evidenceLine a gci:annotation ;
   gci:article / gci:pmid ?pmid ;
-  gci:articleNotes / gci:nonscorable /gci:text ?description . 
+  gci:articleNotes / gci:nonscorable ?nonscorable .
+
+  ?nonscorable gci:checked true ;
+  gci:text ?description . 
 
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
   BIND(IRI(CONCAT(STR(?evidenceLine), "_evidence_item")) AS ?evidenceItem) .
