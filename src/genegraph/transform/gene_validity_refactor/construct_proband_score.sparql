@@ -45,9 +45,13 @@ where {
   # Ensure this pattern does not exist for >= SOPV8 curations
   FILTER NOT EXISTS { ?otherScore a gci:variantScore } .
 
+  ?gdm a gci:gdm ;
+  gci:affiliation ?gdmAffiliation .
+  
   ?evidenceLine a gci:evidenceScore ;
   gci:scoreStatus ?scoreStatus ;
-  gci:date_created ?dateCreated .
+  gci:date_created ?dateCreated ;
+  gci:affiliation ?gdmAffiliation .
 
   # maschinations due to contradicts score_status do not have gci:caseInfoType
   OPTIONAL {
@@ -78,16 +82,8 @@ where {
   ?individual gci:scores ?evidenceLine ;
   gci:variants ?variant ;
   gci:label ?individualLabel ;
-
   gci:proband true ;
   gci:sex ?sex .
-
-  # when multiple evidence lines for the same variant and individual
-  # take the one with the latest date_created
-  # FILTER NOT EXISTS {
-  #   ?individual gci:scores/gci:date_created ?dateCreated2
-  #   filter (?dateCreated < ?dateCreated2)
-  # }
 
   OPTIONAL {
       ?individual gci:denovo ?deNovo .
@@ -149,15 +145,5 @@ where {
 
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
-
-  # OPTIONAL {
-  #   ?variant gci:carId ?caId .
-  #   BIND(IRI(CONCAT(?arbase, ?caID)) AS ?allele) .
-  # }
-
-  # OPTIONAL {
-  #   ?variant gci:clinvarVariantId ?cvId .
-  #   BIND(IRI(CONCAT(?cvbase, ?cvId)) AS ?allele) .
-  # }
 
 }
