@@ -48,7 +48,7 @@
   [a b]
   (conditional-join a b "/"))
 
-(defn in? [coll e]
+(defn in? [e coll]
   (some #(= % e) coll))
 
 (defn simplify-dollar-map [m]

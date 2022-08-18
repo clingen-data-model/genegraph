@@ -14,6 +14,7 @@
     [:vrs/Allele :Allele]
     [:vrs/Text :Text]
     [:vrs/CanonicalVariation :CanonicalVariation]
+    [:vrs/AbsoluteCopyNumber :AbsoluteCopyNumber]
     [:vrs/SequenceLocation :SequenceLocation]
     [:vrs/SequenceInterval :SequenceInterval]
     [:vrs/LiteralSequenceExpression :LiteralSequenceExpression]
@@ -27,4 +28,3 @@
     [:sepio/ValueSet :ValueSet]
     [:pco/Family :Family]]
    :default-type-mapping :GenericResource})
-

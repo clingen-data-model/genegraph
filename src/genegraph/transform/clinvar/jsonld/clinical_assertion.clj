@@ -57,8 +57,7 @@ WHERE {
     FILTER(?other_variant_release_date > ?variant_release_date)
   }
 }
-ORDER BY ?s_variant ?gene_id"
-  )
+ORDER BY ?s_variant ?gene_id")
 
 (defn get-genes-for-clinical-assertion
   "Returns the genes associated with this clinical assertion through the variation"
@@ -115,16 +114,14 @@ ORDER BY ?s_variant ?gene_id"
           (do (log/info :msg "Assertion classification context is :PHARMACOGENOMIC")
               :PHARMACOGENOMIC)
 
-          (or (in? ["practice guideline" "reviewed by expert panel"] review-status)
+          (or (in? review-status ["practice guideline" "reviewed by expert panel"])
               (let [{normalized-clinsig :normalized normalized-group :group} (normalize-clinvar-clinsig clinsig)]
                 (log/debug :msg (format "Normalized clinsig %s to %s" clinsig normalized-clinsig))
                 (= "path" normalized-group)))
           (do (log/info :msg "Assertion classification context is :GERMLINE_DISEASE")
               :GERMLINE_DISEASE)
 
-          :default :OTHER
-          ))
-  )
+          :default :OTHER)))
 
 (defn clinical-assertion-to-jsonld [msg]
   (let [id (format (str iri/clinvar-assertion "%s.%s")
@@ -138,75 +135,70 @@ ORDER BY ?s_variant ?gene_id"
                              "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"
                              ;rdf-type          {"@type" "@id"}
                              ;:cg/ClinVarObject {"@type" "@id"}
-                             }
-                 }
-        msg (assoc msg :cg/classification-context (compute-clingen-classification-context msg))
-        ]
+                             }}
+        msg (assoc msg :cg/classification-context (compute-clingen-classification-context msg))]
     (genegraph-kw-to-iri
-      (merge
-        context
+     (merge
+      context
         ; TODO Add @base
-        {"@type" [:cg/ClinVarObject
-                  (str iri/cgterms "EvidenceLine")],
-         "@id" evidence-line-id,
+      {"@type" [:cg/ClinVarObject
+                (str iri/cgterms "EvidenceLine")],
+       "@id" evidence-line-id,
 
-         :sepio/has-evidence-direction "supports"
-         :sepio/evidence-line-strength (scv-review-status-to-evidence-strength-map
-                                         (:review_status msg))
+       :sepio/has-evidence-direction "supports"
+       :sepio/evidence-line-strength (scv-review-status-to-evidence-strength-map
+                                      (:review_status msg))
          ; The SCV itself is an evidence item within an evidence line that pertains to a variant assertion
-         :sepio/has-evidence-item
-         (merge
-           {"@type" [:cg/ClinVarObject
-                     assertion-rdf-type]
-            "@id" id
-            :dc/is-version-of {"@id" (str iri/clinvar-assertion (:id msg))}
-            :dc/has-version (:version msg)
-            :dc/title (:title msg)
+       :sepio/has-evidence-item
+       (merge
+        {"@type" [:cg/ClinVarObject
+                  assertion-rdf-type]
+         "@id" id
+         :dc/is-version-of {"@id" (str iri/clinvar-assertion (:id msg))}
+         :dc/has-version (:version msg)
+         :dc/title (:title msg)
 
-            :sepio/has-subject {"@id" (str iri/clinvar-variation (:variation_id msg))}
-            :sepio/has-predicate (:interpretation_description msg)
-            :sepio/has-object (str iri/trait-set (:trait_set_id msg))
-            :sepio/date-created (:date_created msg)
-            :sepio/date-updated (:date_last_updated msg)
+         :sepio/has-subject {"@id" (str iri/clinvar-variation (:variation_id msg))}
+         :sepio/has-predicate (:interpretation_description msg)
+         :sepio/has-object (str iri/trait-set (:trait_set_id msg))
+         :sepio/date-created (:date_created msg)
+         :sepio/date-updated (:date_last_updated msg)
 
-            :sepio/qualified-contribution {:sepio/activity-date (:interpretation_date_last_evaluated msg)
-                                           :sepio/has-role "SubmitterRole"
-                                           :sepio/has-agent {"@id" (str iri/submitter (:submitter_id msg))}}
+         :sepio/qualified-contribution {:sepio/activity-date (:interpretation_date_last_evaluated msg)
+                                        :sepio/has-role "SubmitterRole"
+                                        :sepio/has-agent {"@id" (str iri/submitter (:submitter_id msg))}}
 
             ; ClinGen/ClinVar additional renamed terms (namespaced to @vocab)
-            "allele_origin" (:allele_origins msg)
-            "collection_method" (:collection_methods msg)
-            "submitted_condition" (str iri/clinical-assertion-trait-set (:clinical_assertion_trait_set_id msg))
+         "allele_origin" (:allele_origins msg)
+         "collection_method" (:collection_methods msg)
+         "submitted_condition" (str iri/clinical-assertion-trait-set (:clinical_assertion_trait_set_id msg))
             ; TODO update field name if change occurs here https://github.com/clingen-data-model/clinvar-streams/issues/3
-            "submitted_variation" (:clinical_assertion_variations msg)
-            }
-           (-> msg (dissoc
-                     :id
-                     :version
-                     :title
-                     :variation_id
-                     :interpretation_description
-                     :trait_set_id
-                     :date_created
-                     :date_last_updated
-                     :interpretation_date_last_evaluated
-                     :submitter_id
-                     :allele_origins
-                     :collection_methods
-                     :clinical_assertion_trait_set_id
-                     :clinical_assertion_variations))),     ; End assertion
+         "submitted_variation" (:clinical_assertion_variations msg)}
+        (-> msg (dissoc
+                 :id
+                 :version
+                 :title
+                 :variation_id
+                 :interpretation_description
+                 :trait_set_id
+                 :date_created
+                 :date_last_updated
+                 :interpretation_date_last_evaluated
+                 :submitter_id
+                 :allele_origins
+                 :collection_methods
+                 :clinical_assertion_trait_set_id
+                 :clinical_assertion_variations))),     ; End assertion
 
          ; Reverse relation from evidence line to parent variation archive
-         "@reverse" {:sepio/has-evidence-line
-                     [{"@id" (let [variation-archive-iri (format (str iri/variation-archive "%s")
-                                                                 (:variation_archive_id msg))]
-                               (if (empty? (:variation_archive_id msg))
-                                 (throw (ex-info "Variation archive id was null" {:cause msg})))
-                               (log/debug :msg (format "Evidence line %s has reverse relation to %s"
-                                                       evidence-line-id variation-archive-iri))
-                               variation-archive-iri)}]}
-         }
-        ))))
+       "@reverse" {:sepio/has-evidence-line
+                   [{"@id" (let [variation-archive-iri (format (str iri/variation-archive "%s")
+                                                               (:variation_archive_id msg))]
+                             (if (empty? (:variation_archive_id msg))
+                               (throw (ex-info "Variation archive id was null" {:cause msg})))
+                             (log/debug :msg (format "Evidence line %s has reverse relation to %s"
+                                                     evidence-line-id variation-archive-iri))
+                             variation-archive-iri)}]}}))))
 
 (defmethod clinvar-model-to-jsonld :clinical_assertion [msg]
   (clinical-assertion-to-jsonld msg))

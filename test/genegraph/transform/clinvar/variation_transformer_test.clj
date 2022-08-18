@@ -1,8 +1,10 @@
 (ns genegraph.transform.clinvar.variation-transformer-test
   (:require [cheshire.core :as json]
+            [clojure.pprint :refer [pprint]]
             [clojure.string :as s]
             [clojure.test :refer [use-fixtures]]
-            [clojure.pprint :refer [pprint]]
+            [genegraph.annotate.serialization :as ser]
+            [genegraph.sink.event :as event]
             [genegraph.transform.clinvar.core]
             [genegraph.transform.clinvar.variation :as variation]
             [genegraph.transform.types :as xform-types]
@@ -30,7 +32,8 @@
   (map xform-types/add-model-jsonld events))
 
 (defn get-variant-messages []
-  (-> "clinvar-raw-testdata_20210412.txt"
+  (-> "clinvar-raw-filtered.txt"
+      #_"clinvar-raw-testdata_20210412.txt"
       slurp
       (clojure.string/split #"\n")
       (->> (map #(json/parse-string % true))
@@ -83,3 +86,19 @@
                                 (log/info :realized realized)
                                 realized))))))))
       (#(do (def with-combined-triples %) %))))
+
+
+(defn test-vrs-normalization-acmg73 []
+  (let [events (->> (get-variant-messages)
+                    #_(filter #(= "12610" (get-in % [:content :id])))
+                    (take 1)
+                    (map eventify)
+                    (map genegraph.transform.clinvar.core/add-parsed-value)
+                    (map #(xform-types/add-model %))
+                    (map #(event/add-to-db! %))
+                    (map #((:enter ser/add-graphql-params-interceptor) %))
+                    (map #((:enter ser/add-graphql-serialization-interceptor) %))
+                    ;; (map #(xform-types/add-event-graphql %))
+                    ;; (map #(ser/add-graphql-serialization-interceptor %))
+                    #_(map #(xform-types/add-model-jsonld %)))]
+    events))

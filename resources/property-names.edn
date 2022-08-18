@@ -245,6 +245,8 @@
  [:vrs/end "https://vrs.ga4gh.org/terms/end"]
  [:vrs/sequence_id "https://vrs.ga4gh.org/terms/end"]
  [:vrs/definition "https://vrs.ga4gh.org/terms/definition"]
+ [:vrs/subject "https://vrs.ga4gh.org/terms/subject"]
+ [:vrs/copies "https://vrs.ga4gh.org/terms/copies"]
  [:cnt/chars "http://www.w3.org/2011/content#chars"]
  [:data/genome-build-identifier "http://edamontology.org/data_2340"]
  [:dc/abstract "http://purl.org/dc/terms/abstract"]
@@ -1267,7 +1269,7 @@
  [:sepio/lower-confidence-limit
   "http://purl.obolibrary.org/obo/SEPIO_0000306"]
  [:sepio/paternity-maternity-confirmed
-  "http://purl.obolibrary.org/obo/SEPIO_0004161"] 
+  "http://purl.obolibrary.org/obo/SEPIO_0004161"]
  [:sepio/measures-parameter
   "http://purl.obolibrary.org/obo/SEPIO_0000114"]
  [:sepio/meets-inclusion-criteria "http://purl.obolibrary.org/obo/SEPIO_0004126"]
@@ -1321,7 +1323,7 @@
  [:sepio/score-status "http://purl.obolibrary.org/obo/SEPIO_0004130"]
  [:sepio/statistical-significance
   "http://purl.obolibrary.org/obo/SEPIO_0004164"]
-  [:sepio/statistical-significance-type
+ [:sepio/statistical-significance-type
   "http://purl.obolibrary.org/obo/SEPIO_0004165"]
  [:sepio/statistical-significance-value-type
   "http://purl.obolibrary.org/obo/SEPIO_0004166"]

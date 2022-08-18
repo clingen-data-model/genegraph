@@ -442,7 +442,7 @@ query($variation_iri:String) {
     type: __typename
     ... on CategoricalVariationDescriptor {
       label
-      object {
+      value {
         id: iri
         type: __typename
         ... on CanonicalVariation {
@@ -493,6 +493,7 @@ fragment alleleFields on Allele {
   }
 }
 ")
+
 
 (defmethod common/clinvar-add-event-graphql :variation [event]
   (let [iri (:genegraph.annotate/iri event)]
