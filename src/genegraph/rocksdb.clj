@@ -50,11 +50,11 @@
   [db k v]
   (.put db k (freeze v)))
 
-(defn rocks-get-raw-key!
+(defn rocks-get-raw-key
   "Retrieve data that has been stored with a byte array defined key. K must be a
   Java byte array."
   [db k]
-  (if-let [result (.get db (key-digest k))]
+  (if-let [result (.get db k)]
     (thaw result)
     ::miss))
 

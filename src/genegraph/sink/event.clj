@@ -98,6 +98,7 @@
 (def stream-producer-interceptor
   "Interceptor for producing message to an output stream"
   {:name ::stream-producer-interceptor
+   :side-effecting true
    :enter stream-producer})
 
 (def transformer-interceptor-chain [event-recorder/record-event-interceptor
@@ -137,10 +138,19 @@
                             cache/expire-resolver-cache-interceptor
                             response-cache/expire-response-cache-interceptor])
 
-(defn interceptor-chain []
-  (if (env/transformer-mode?)
-    transformer-interceptor-chain
-    web-interceptor-chain))
+(def transformer-interceptors
+  (mapv intercept/interceptor transformer-interceptor-chain))
+
+(map :name transformer-interceptors)
+
+;; Just w
+(def hello-world-interceptor
+  {:name ::hello-world
+   :enter #(do (println "hello world!")
+               %)})
+
+(defn interceptor-chain [event]
+  (or (::interceptors event) web-interceptor-chain))
 
 (defn inject-trace-into-interceptor-chain
   "Modifies the interceptor chain so that For every interceptor in the chain,
@@ -169,7 +179,7 @@
   (log/debug :fn :process-event! :event event :msg :event-received)
   (-> event
       (chain/enqueue (map #(intercept/interceptor %)
-                          (inject-trace-into-interceptor-chain (interceptor-chain))))
+                          (inject-trace-into-interceptor-chain (interceptor-chain event))))
       chain/execute))
 
 (defn process-event-seq!

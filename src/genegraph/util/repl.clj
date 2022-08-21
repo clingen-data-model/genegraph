@@ -365,3 +365,54 @@
   (let [assertion (q/resource (str "CGGV:" guid))]
     {:gene (q/ld1-> assertion [:sepio/has-subject :sepio/has-subject :skos/preferred-label])
      :disease (q/ld1-> assertion [:sepio/has-subject :sepio/has-object :rdfs/label])}))
+
+;;types 
+
+  ;; 0. "clinical_assertion_variation"
+  ;; 1. "clinical_assertion_trait"
+  ;; 2. "gene_association"
+  ;; 3. "gene"
+  ;; 4. "clinical_assertion"
+  ;; 5. "trait_mapping"
+  ;; 6. "clinical_assertion_trait_set"
+  ;; 7. "rcv_accession"
+  ;; 8. "clinical_assertion_observation"
+  ;; 9. "submission"
+  ;; 10. "trait"
+  ;; 11. "submitter"
+  ;; 12. "variation"
+  ;; 13. "variation_archive"
+  ;; 14. "release_sentinel"
+  ;; 15. "trait_set"
+
+(defonce clinvar-raw (rocks-sink/open-for-topic! "clinvar-raw"))
+
+#_(pprint (json/parse-string (->> (rocks/entire-db-seq clinvar-raw)
+                               #_(map #(-> %
+                                           ::event/value
+                                           (json/parse-string true)))
+                               (filter #(= "clinical_assertion"
+                                           (get-in (json/parse-string (::event/value %) true) [:content :entity_type])))
+                               first
+                               ::event/value
+
+                               #_(map #(-> % ::event/value (json/parse-string true) (get-in [:content :interpretation_description]) s/lower-case))
+                               #_set)
+
+                          true))
+
+#_(->> (rocks/entire-db-seq clinvar-raw)
+     (filter #(= "clinical_assertion"
+                 (get-in (json/parse-string (::event/value %) true)
+                         [:content :entity_type])))
+     (map #(-> % ::event/value (json/parse-string true) :event_type))
+     set)
+
+(->> (rocks/entire-db-seq clinvar-raw)
+     (map #(assoc % ::data (json/parse-string (::event/value %) true)))
+     (filter #(= "trait"
+                 (get-in (::data %) [:content :entity_type])))
+     (take 3)
+     (map #(assoc % ::event/interceptors [event/hello-world-interceptor]))
+     event/process-event-seq!)
+
