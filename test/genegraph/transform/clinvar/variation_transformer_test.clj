@@ -16,7 +16,7 @@
             [genegraph.sink.event :as event]
             [genegraph.sink.event-recorder :as event-recorder]
             [genegraph.transform.clinvar.core]
-            [genegraph.transform.clinvar.variation :as variation]
+            [genegraph.transform.clinvar.variation-new :as variation]
             [genegraph.transform.types :as xform-types]
             [io.pedestal.log :as log]
             [mount.core]))
@@ -64,8 +64,8 @@
       (read-batch (line-seq reader)))))
 
 (defn get-variant-messages []
-  (-> #_"clinvar-raw-filtered-variation.txt"
-   "clinvar-raw-filtered.txt"
+  (-> "clinvar-raw-filtered-variation.txt"
+      #_"clinvar-raw-filtered.txt"
       #_"clinvar-raw-testdata_20210412.txt"
       io/reader
       line-seq
@@ -91,35 +91,35 @@
                     #_(map #(xform-types/add-model-jsonld %)))]
     events))
 
-(defn test-add-model-stepwise []
-  (mount.core/start #'genegraph.database.instance/db)
-  (def event (->> (get-variant-messages)
-                  (filter #(= "12610" (get-in % [:content :id])))
-                  (take 1)
-                  (map eventify)
-                  (map genegraph.transform.clinvar.core/add-parsed-value)
-                  first))
-  (-> event
-      :genegraph.transform.clinvar.core/parsed-value
-      variation/variation-preprocess
-      (#(do (pprint %) %))
-      variation/add-variation-triples
-      (#(do (log/info :triples (:genegraph.transform.clinvar.variation/triples %)) %))
-      (#(do (pprint (:genegraph.transform.clinvar.variation/triples %)) %))
-      (#(do (def with-triples %) %))
-      ((fn [annotated-message]
-         (let [{triples :genegraph.transform.clinvar.variation/triples
-                deferred-triples :genegraph.transform.clinvar.variation/deferred-triples}
-               annotated-message]
-           (assoc annotated-message
-                  :genegraph.transform.clinvar.variation/combined-triples
-                  (concat triples
-                          (for [deferred-triple deferred-triples]
-                            (let [{generator :generator} deferred-triple]
-                              (let [realized (generator)]
-                                (log/info :realized realized)
-                                realized))))))))
-      (#(do (def with-combined-triples %) %))))
+;; (defn test-add-model-stepwise []
+;;   (mount.core/start #'genegraph.database.instance/db)
+;;   (def event (->> (get-variant-messages)
+;;                   (filter #(= "12610" (get-in % [:content :id])))
+;;                   (take 1)
+;;                   (map eventify)
+;;                   (map genegraph.transform.clinvar.core/add-parsed-value)
+;;                   first))
+;;   (-> event
+;;       :genegraph.transform.clinvar.core/parsed-value
+;;       variation/variation-preprocess
+;;       (#(do (pprint %) %))
+;;       variation/add-variation-triples
+;;       (#(do (log/info :triples (:genegraph.transform.clinvar.variation/triples %)) %))
+;;       (#(do (pprint (:genegraph.transform.clinvar.variation/triples %)) %))
+;;       (#(do (def with-triples %) %))
+;;       ((fn [annotated-message]
+;;          (let [{triples :genegraph.transform.clinvar.variation/triples
+;;                 deferred-triples :genegraph.transform.clinvar.variation/deferred-triples}
+;;                annotated-message]
+;;            (assoc annotated-message
+;;                   :genegraph.transform.clinvar.variation/combined-triples
+;;                   (concat triples
+;;                           (for [deferred-triple deferred-triples]
+;;                             (let [{generator :generator} deferred-triple]
+;;                               (let [realized (generator)]
+;;                                 (log/info :realized realized)
+;;                                 realized))))))))
+;;       (#(do (def with-combined-triples %) %))))
 
 
 (defn test-event-process! [variant-message]
@@ -234,12 +234,18 @@
 (defn -write-jsonlds-no-db []
   (let [file-name "cg-vcep-variations-jsonld.txt"]
     (with-open [writer (io/writer (io/file file-name))]
-      (write-tx (doseq [event (->> (get-variant-messages)
-                                   (take 1)
-                                   (map message-proccess-no-db!))]
-                  (let [j (:genegraph.transform.clinvar.variation-new/contextualized event)]
+      (write-tx (doseq [msg (get-variant-messages)
+                        #_(->>
+                                  ;;  (take 1)
+                           )]
+
+                  (let [event (message-proccess-no-db! msg)
+                        j (:genegraph.transform.clinvar.variation-new/contextualized event)]
+                    (log/info :j j :event event)
                     (when j
-                      (let [js (json/generate-string j)]
+                      (let [js (-> j
+                                   model-json-preprocess-for-output
+                                   (json/generate-string))]
                         (log/info :msg "Writing %d bytes of JSON" :count (count js))
                         (.write writer js)
                         (.write writer "\n")))))))))

@@ -276,7 +276,7 @@
                                (json/generate-string)
                                (json/parse-string true))
             vrs-id (:id vrs-obj-pretty)]
-        (log/info :fn :add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj-pretty)
+        (log/debug :fn :add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj-pretty)
         {:iri vrs-id :variation vrs-obj-pretty}))))
 
 
@@ -439,7 +439,8 @@
       ((fn [e]
          (assoc e ::contextualized (merge (::normalized e)
                                           variation-context))))
-      (#(do (log/info :contextualized (json/generate-string (::contextualized %))) %))
+      (#(do (log/debug :contextualized (json/generate-string (::contextualized %)))
+            %))
 
       ((fn [e]
          (let [m (l/read-rdf (str->bytestream
@@ -447,8 +448,6 @@
                              {:format :json-ld})]
            #_(log/info :m m)
            (assoc e ::q/model m))))
-      #_((fn [event]
-           (assoc)))
                   ;;l/statements-to-model
                   ;;(#(common/mark-prior-replaced % (q/resource clinvar-variation-type)))
       ))

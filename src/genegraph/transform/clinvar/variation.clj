@@ -341,30 +341,30 @@
                         (log/debug :realized realized)
                         realized)))))))
 
-(defmethod common/clinvar-add-model :variation [event]
-  (log/debug :fn :clinvar-add-model :event event)
-  (let [model (-> event
-                  :genegraph.transform.clinvar.core/parsed-value
-                  variation-preprocess
-                  add-variation-triples
-                  (#(do (log/trace :triples (::triples %)) %))
-                  ;;; realize the deferred triples
-                  add-combined-triples
-                  (#(do (log/debug :combined-triples (::combined-triples %)) %))
-                  (#(do (let [has-nils (filter
-                                        ;; (filter #(some some? %) coll)
-                                        (fn [triple] (or (not= 3 (count triple))
-                                                         (nil? (nth triple 0))
-                                                         (nil? (nth triple 1))
-                                                         (nil? (nth triple 2))))
-                                        (::combined-triples %))]
-                          (when (not-empty has-nils)
-                            (log/error :has-nils has-nils)))
-                        %))
-                  ::combined-triples
-                  l/statements-to-model
-                  (#(common/mark-prior-replaced % (q/resource clinvar-variation-type))))]
-    (assoc event ::q/model model)))
+;; (defmethod common/clinvar-add-model :variation [event]
+;;   (log/debug :fn :clinvar-add-model :event event)
+;;   (let [model (-> event
+;;                   :genegraph.transform.clinvar.core/parsed-value
+;;                   variation-preprocess
+;;                   add-variation-triples
+;;                   (#(do (log/trace :triples (::triples %)) %))
+;;                   ;;; realize the deferred triples
+;;                   add-combined-triples
+;;                   (#(do (log/debug :combined-triples (::combined-triples %)) %))
+;;                   (#(do (let [has-nils (filter
+;;                                         ;; (filter #(some some? %) coll)
+;;                                         (fn [triple] (or (not= 3 (count triple))
+;;                                                          (nil? (nth triple 0))
+;;                                                          (nil? (nth triple 1))
+;;                                                          (nil? (nth triple 2))))
+;;                                         (::combined-triples %))]
+;;                           (when (not-empty has-nils)
+;;                             (log/error :has-nils has-nils)))
+;;                         %))
+;;                   ::combined-triples
+;;                   l/statements-to-model
+;;                   (#(common/mark-prior-replaced % (q/resource clinvar-variation-type))))]
+;;     (assoc event ::q/model model)))
 
 (def variation-context
   {"@context"
@@ -498,16 +498,16 @@ fragment alleleFields on Allele {
 ")
 
 
-(defmethod common/clinvar-add-event-graphql :variation [event]
-  (let [iri (:genegraph.annotate/iri event)]
-    (assoc event :graphql-params {:query variation-descriptor-query
-                                  :variables {:variation_iri (str iri)}})))
+;; (defmethod common/clinvar-add-event-graphql :variation [event]
+;;   (let [iri (:genegraph.annotate/iri event)]
+;;     (assoc event :graphql-params {:query variation-descriptor-query
+;;                                   :variables {:variation_iri (str iri)}})))
 
 
-(defmethod common/clinvar-model-to-jsonld :variation [event]
-  (let [model (::q/model event)]
-    (-> model
-        (jsonld/model-to-jsonld)
-        (jsonld/jsonld-to-jsonld-framed (json/generate-string variation-frame))
-        ; TODO may consider adding scoped context to the vrs variation object, with vocab=vrs
-        (jsonld/jsonld-compact (json/generate-string (merge variation-context))))))
+;; (defmethod common/clinvar-model-to-jsonld :variation [event]
+;;   (let [model (::q/model event)]
+;;     (-> model
+;;         (jsonld/model-to-jsonld)
+;;         (jsonld/jsonld-to-jsonld-framed (json/generate-string variation-frame))
+;;         ; TODO may consider adding scoped context to the vrs variation object, with vocab=vrs
+;;         (jsonld/jsonld-compact (json/generate-string (merge variation-context))))))
