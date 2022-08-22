@@ -37,7 +37,8 @@
 
 (defn add-iri [event]
   (log/debug :fn :add-iri :event event :msg :received-event)
-  (if (::graph-name event)
+  (if (and (not (::iri event))
+           (::graph-name event))
     (let [iri (-> (q/select "select ?x where {?x a ?type}"
                             {:type (::graph-name event)}
                             (::q/model event))
@@ -72,12 +73,12 @@
   (if (and env/validate-events
            (not (contains? event ::validation-shape)))
     (assoc event
-      ::validation-shape
-      (some-> event
-              ::root-type
-              shapes
-              :graph-name
-              q/get-named-graph))
+           ::validation-shape
+           (some-> event
+                   ::root-type
+                   shapes
+                   :graph-name
+                   q/get-named-graph))
     event))
 
 (def add-validation-shape-interceptor
@@ -94,8 +95,8 @@
              (not (::validation-context event))
              context-graph-list)
       (assoc event
-        ::validation-context
-        (apply q/union (map q/get-named-graph context-graph-list)))
+             ::validation-context
+             (apply q/union (map q/get-named-graph context-graph-list)))
       event)))
 
 (def add-validation-context-interceptor
