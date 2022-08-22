@@ -62,6 +62,7 @@
       (log/error :fn :normalize-canonical :msg "Error in VRS normalization request" :status status :response response))))
 
 (defn normalize-absolute-copy-number
+  "Normalize the absolute copy number in INPUT-MAP."
   [input-map]
   (log/info :fn :normalize-absolute-copy-number :input-map input-map)
   (let [response (http-get-with-cache vicc-db
