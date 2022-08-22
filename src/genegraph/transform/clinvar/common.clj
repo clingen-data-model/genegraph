@@ -24,22 +24,33 @@
 
 (defmulti transform-clinvar :genegraph.transform.clinvar/format)
 
-(defmulti clinvar-to-model :genegraph.transform.clinvar/format)
+(defmulti clinvar-add-model :genegraph.transform.clinvar/format)
 
 (defmulti clinvar-model-to-jsonld
-          "Multimethod for ClinVar events.
+  "Multimethod for ClinVar events.
           Takes an event, returns it annotated with the JSON-LD representation of the model."
-          :genegraph.transform.clinvar/format)
+  :genegraph.transform.clinvar/format)
+
+(defmethod clinvar-model-to-jsonld :default [event]
+  (log/debug :fn ::clinvar-model-to-jsonld
+             :msg "No multimethod for dispatch"
+             :dispatch (:genegraph.transform.clinvar/format event))
+  event)
 
 (defmulti clinvar-add-event-graphql
-          "Takes an event, returns it annotated with :graphql {:query :variables}"
-          :genegraph.transform.clinvar/format)
+  "Takes an event, returns it annotated with :graphql {:query :variables}"
+  :genegraph.transform.clinvar/format)
+
+(defmethod clinvar-add-event-graphql :default [event]
+  (log/debug :fn ::clinvar-add-event-graphql
+             :msg "No multimethod for dispatch"
+             :dispatch (:genegraph.transform.clinvar/format event))
+  event)
 
 (def clinvar-jsonld-context {"@context" {"@vocab" iri/cgterms
                                          "clingen" iri/cgterms
                                          "sepio" "http://purl.obolibrary.org/obo/SEPIO_"
-                                         "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"
-                                         }})
+                                         "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"}})
 
 (defn ^String json-prettify
   [^String s]
@@ -247,10 +258,24 @@ LIMIT 1")
            (if (sequential? v)
              ; Take the list of lists of triples for each element, flatten one level
              (apply concat
-               (for [v1 v]
-                 (fields-to-extensions node-iri {k v1})))
+                    (for [v1 v]
+                      (fields-to-extensions node-iri {k v1})))
              (let [ext-iri (l/blank-node)]
                [[node-iri :vrs/extensions ext-iri]
                 [ext-iri :rdf/type :vrs/Extension]
                 [ext-iri :vrs/name (name k)]
                 [ext-iri :rdf/value v]])))))
+
+(defn fields-to-extension-maps
+  "Returns a seq of Extension maps for each field in input-map.
+   If a value in input-map is a seq, create an Extension for each element."
+  [input-map]
+  (->> (for [[k v] input-map]
+         (if (sequential? v)
+           (->> (for [vi v]
+                  (fields-to-extension-maps {k vi}))
+                (apply concat))
+           [{:type "Extension"
+             :name (name k)
+             :value v}]))
+       (apply concat)))
