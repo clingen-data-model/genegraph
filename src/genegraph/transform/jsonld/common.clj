@@ -50,7 +50,7 @@
 
 (defn ^String jsonld-compact
   [^String input-str ^String context-str]
-  (log/trace :fn :jsonld-compact :input-str input-str :context-str context-str)
+  (log/debug :fn :jsonld-compact :input-str input-str :context-str context-str)
   (let [titanium-doc (string->JsonDocument input-str)
         titanium-context (string->JsonDocument context-str)
         ; Returns jakarta.json.JsonArray, which has a .getJsonObject(int index) method.
@@ -67,13 +67,17 @@
   "Takes a JSON-LD (1.0 or 1.1) string and a framing string. Returns a JSON-LD 1.1 string of the
   original object, with the frame applied."
   [^String input-str ^String frame-str]
-  (log/trace :fn :to-jsonld-1-1-framed :input-str input-str :frame-str frame-str)
+  (log/debug :fn :to-jsonld-1-1-framed :input-str input-str :frame-str frame-str)
   (let [titanium-doc (string->JsonDocument input-str)
         titanium-frame (string->JsonDocument frame-str)
         framing (JsonLd/frame titanium-doc titanium-frame)]
-    (-> framing .get .toString)))
+    (let [;; This FramingApi/get call is expensive
+          json-object (-> framing .get)
+          out-str (.toString json-object)]
+      out-str)))
 
 (defn model-to-jsonld [^Model model]
+  (log/debug :fn :model-to-jsonld)
   (.toString
    (doto (StringWriter.)
      (RDFDataMgr/write model RDFFormat/JSONLD_COMPACT_PRETTY))))

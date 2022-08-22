@@ -4,12 +4,12 @@
             [cheshire.core :as json]
             [io.pedestal.log :as log]
             [genegraph.transform.clinvar.common :refer [transform-clinvar
-                                                        clinvar-to-model
+                                                        clinvar-add-model
                                                         clinvar-model-to-jsonld
                                                         clinvar-add-event-graphql]]
             [genegraph.transform.clinvar.util :as util]
             ;;[genegraph.transform.clinvar.variation-archive]
-            [genegraph.transform.clinvar.variation]
+            [genegraph.transform.clinvar.variation-new]
             [genegraph.database.load :as l]))
 
 ;;(defmethod clinvar-model-to-jsonld :release_sentinel
@@ -44,10 +44,10 @@
                   (fn [m-key] (nil? (some #(= m-key %) exclude-ks)))
                   (keys m))))
 
-(defmethod clinvar-to-model :default [event]
-  (log/debug :fn ::clinvar-to-model :dispatch :default :msg "No multimethod defined for event" :event event)
+(defmethod clinvar-add-model :default [event]
+  (log/debug :fn :clinvar-add-model :dispatch :default :msg "No multimethod defined for event" :event event)
   ;; Avoids NPE on downstream interceptors expecting a model to exist
-  (l/statements-to-model []))
+  (assoc event ::q/model (l/statements-to-model [])))
 
 (defn add-parsed-value [event]
   (assoc event
@@ -63,11 +63,11 @@
     (let [event (-> event
                     add-parsed-value
                     (#(assoc % :genegraph.transform.clinvar/format (get-clinvar-format (::parsed-value %))))
-                    (#(assoc % ::q/model (clinvar-to-model %))))]
-      (log/trace :fn ::add-model :event event)
+                    (#(clinvar-add-model %)))]
+      (log/trace :fn :add-model :event event)
       event)
     (catch Exception e
-      (log/error :fn ::add-model :msg "Exception in clinvar add-model" :exception e)
+      (log/error :fn :add-model :msg "Exception in clinvar add-model" :exception e)
       (assoc event :exception e))))
 
 (defmethod clinvar-model-to-jsonld :default [event]
@@ -75,10 +75,10 @@
 
 
 (defmethod xform-types/add-event-graphql :clinvar-raw [event]
-  (log/info :fn ::add-event-graphql :event event)
+  (log/info :fn ::add-event-graphql :iri (:genegraph.annotate/iri event))
   (clinvar-add-event-graphql event))
 
 (defmethod xform-types/add-model-jsonld :clinvar-raw [event]
-  (log/debug :fn ::add-model-jsonld :event event)
+  (log/info :fn ::add-model-jsonld :iri (:genegraph.annotate/iri event))
   (let [j (clinvar-model-to-jsonld event)]
     (assoc event :genegraph.annotate/jsonld j)))
