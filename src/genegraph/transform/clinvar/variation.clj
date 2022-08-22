@@ -48,13 +48,13 @@
 
   NOTE: .content.content should be parsed already, but it tries to parse it again if not."
   [variation-msg]
-  (log/trace :fn ::prioritized-variation-expression :variation-msg variation-msg)
+  (log/trace :fn :prioritized-variation-expression :variation-msg variation-msg)
   (let [nested-content (-> variation-msg (util/parse-nested-content) :content :content)]
     (letfn [(get-hgvs [nested-content assembly-name]
               (let [hgvs-list (-> nested-content (get "HGVSlist") (get "HGVS") util/into-sequential-if-not)
                     filtered (filter #(= assembly-name (get-in % ["NucleotideExpression" "@Assembly"])) hgvs-list)]
                 (when (< 1 (count filtered))
-                  (log/warn :fn ::prioritized-variation-expression
+                  (log/warn :fn :prioritized-variation-expression
                             :msg (str "Multiple expressions for variation for assembly: " assembly-name)
                             :variation variation-msg))
                 (-> filtered first (get "NucleotideExpression") (get "Expression") (get "$"))))
@@ -95,7 +95,10 @@
   (when (get hgvs-obj "NucleotideExpression")
     {:expression (-> hgvs-obj (get "NucleotideExpression") (get "Expression") (get "$"))
      :assembly (-> hgvs-obj (get "NucleotideExpression") (get "Assembly"))
-     :syntax (hgvs-syntax-from-change (-> hgvs-obj (get "NucleotideExpression") (get "@change")))}))
+     :syntax (-> (hgvs-syntax-from-change (-> hgvs-obj (get "NucleotideExpression") (get "@change")))
+                 (#(do (when (= "text" %)
+                         (log/warn :msg "HGVS object mapped to text" :hgvs-obj hgvs-obj))
+                       %)))}))
 
 (defn protein-hgvs
   "Takes an object in the form of ClinVar's HGVSlist.
@@ -129,7 +132,7 @@
 
   NOTE: .content.content should be parsed already, but it tries to parse it again if not."
   [variation-msg]
-  (log/debug :fn ::get-all-expressions :variation-msg variation-msg)
+  (log/debug :fn :get-all-expressions :variation-msg variation-msg)
   (let [nested-content (-> variation-msg (util/parse-nested-content) :content :content)
         hgvs-list (-> nested-content (get "HGVSlist") (get "HGVS") util/into-sequential-if-not)]
     (let [expressions
@@ -138,7 +141,7 @@
            (concat
             (->> hgvs-list
                  (map (fn [hgvs-obj]
-                        (log/trace :fn ::get-all-expressions :hgvs-obj hgvs-obj)
+                        (log/trace :fn :get-all-expressions :hgvs-obj hgvs-obj)
                         (let [outputs (filter not-empty [(nucleotide-hgvs hgvs-obj)
                                                          (protein-hgvs hgvs-obj)])]
                           (when (empty? outputs)
@@ -204,7 +207,7 @@
                  (-> expression)
                  (-> expression-type keyword))]
     (if (empty? vrs-obj)
-      (let [e (ex-info "No variation received from VRS normalization" {:fn ::add-vrs-model :expression expression})]
+      (let [e (ex-info "No variation received from VRS normalization" {:fn :add-vrs-model :expression expression})]
         (log/error :message (ex-message e) :data (ex-data e))
         (throw e))
       (let [vrs-id (get vrs-obj "_id")
@@ -212,7 +215,7 @@
                           json/generate-string
                           str->bytestream
                           (l/read-rdf {:format :json-ld}))]
-        (log/debug :fn ::add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj)
+        (log/debug :fn :add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj)
         {:iri vrs-id :model vrs-model}))))
 
 (defn model-to-triples [^Model model]
@@ -244,7 +247,7 @@
                            :expression-type (-> msg ::prioritized-expression :type)}))]
          (fn []
            (let [getter-ret ((vrs-model-getter))
-                 _ (log/info :fn :add-variation-triples :getter-ret getter-ret)
+                 _ (log/debug :fn :add-variation-triples :getter-ret getter-ret)
                  {vrs-model :model vrs-id :iri} getter-ret]
              (let [^Model joined-model
                    (q/union (l/statements-to-model [[vd-iri :rdf/value (q/resource vrs-id)]])
@@ -277,7 +280,7 @@
       ; include all genomic, protein, spdi expressions as variation members
       (let [other-exprs (::other-expressions msg)]
         (->> (for [expr other-exprs]
-               (do (log/info :fn ::variation-triples :msg "Making members" :expr expr)
+               (do (log/debug :fn :variation-triples :msg "Making members" :expr expr)
                    (make-member vd-iri
                                 (:expression expr)
                                 (:syntax expr)
@@ -302,7 +305,7 @@
 (defn add-triple!
   "Adds a triple to a model. Takes a triple ([s p o])."
   ([^Model model triple]
-   (log/debug :fn ::add-triple :triple triple)
+   (log/debug :fn :add-triple :triple triple)
    (let [stmt (l/construct-statement triple)]
      (.add model stmt)
      model)))
@@ -310,10 +313,10 @@
 (defn remove-triple!
   "Deletes a triple from a model. Takes a triple ([s p o])."
   ([^Model model triple]
-   (log/debug :fn ::remove-triple :triple triple)
+   (log/debug :fn :remove-triple :triple triple)
    (let [stmt-to-remove (l/construct-statement triple)]
      (if (not (.contains model stmt-to-remove))
-       (let [e (ex-info "Statement not found in model" {:fn ::remove-triple :model model :stmt-to-remove stmt-to-remove})]
+       (let [e (ex-info "Statement not found in model" {:fn :remove-triple :model model :stmt-to-remove stmt-to-remove})]
          (log/error :message (ex-message e) :data (ex-data e))
          (throw e))
        (.remove model stmt-to-remove))
@@ -338,8 +341,8 @@
                         (log/debug :realized realized)
                         realized)))))))
 
-(defmethod common/clinvar-to-model :variation [event]
-  (log/debug :fn ::clinvar-to-model :event event)
+(defmethod common/clinvar-add-model :variation [event]
+  (log/debug :fn :clinvar-add-model :event event)
   (let [model (-> event
                   :genegraph.transform.clinvar.core/parsed-value
                   variation-preprocess
@@ -361,7 +364,7 @@
                   ::combined-triples
                   l/statements-to-model
                   (#(common/mark-prior-replaced % (q/resource clinvar-variation-type))))]
-    model))
+    (assoc event ::q/model model)))
 
 (def variation-context
   {"@context"
