@@ -14,8 +14,11 @@ where {
   gci:article / gci:pmid ?pmid ;
   gci:articleNotes / gci:nonscorable ?nonscorable .
 
-  ?nonscorable gci:checked true ;
-  gci:text ?description . 
+  ?nonscorable gci:checked true .
+  
+  OPTIONAL {
+      ?nonscorable gci:text ?description . 
+  }
 
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
   BIND(IRI(CONCAT(STR(?evidenceLine), "_evidence_item")) AS ?evidenceItem) .
