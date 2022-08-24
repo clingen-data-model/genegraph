@@ -234,14 +234,9 @@
 (defn -write-jsonlds-no-db []
   (let [file-name "cg-vcep-variations-jsonld.txt"]
     (with-open [writer (io/writer (io/file file-name))]
-      (write-tx (doseq [msg (get-variant-messages)
-                        #_(->>
-                                  ;;  (take 1)
-                           )]
-
+      (write-tx (doseq [msg (get-variant-messages)]
                   (let [event (message-proccess-no-db! msg)
                         j (:genegraph.transform.clinvar.variation-new/contextualized event)]
-                    (log/info :j j :event event)
                     (when j
                       (let [js (-> j
                                    model-json-preprocess-for-output

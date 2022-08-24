@@ -8,24 +8,22 @@
   (:import (clojure.lang Keyword)
            (org.rocksdb RocksDB)))
 
-(def cancer-variants-normalize-url
-  "URL for cancervariants.org VRSATILE normalization.
-  Returns a JSON document containing a variation_descriptor field along with other metadata."
-  ;;"https://normalize.cancervariants.org/variation/normalize"
-  "https://normalize.cancervariants.org/variation/to_vrs")
+(def variation-base-url-prod
+  "https://normalize.cancervariants.org/variation/")
 
-(def cancer-variants-url-to-canonical
+(def variation-base-url-dev
+  "http://variation-normalization-dev.us-east-2.elasticbeanstalk.com/variation/")
+
+(def variation-base-url variation-base-url-dev)
+
+(def url-to-canonical
   "URL for cancervariants.org VRS normalization.
   Returns a JSON document containing a CanonicalVariation under the canonical_variation field, along with other metadata."
-  ;;"https://normalize.cancervariants.org/variation/normalize"
-  "https://normalize.cancervariants.org/variation/to_canonical_variation")
+  (str variation-base-url "/to_canonical_variation"))
 
-(def canonical_spdi_to_categorical_variation
-  "https://normalize.cancervariants.org/variation/canonical_spdi_to_categorical_variation")
-
-(def absolute-copy-number-url
+(def url-absolute-cnv
   "URL for cancervariants.org Absolute Copy Number normalization."
-  "https://normalize.cancervariants.org/variation/parsed_to_abs_cnv")
+  (str variation-base-url "/parsed_to_abs_cnv"))
 
 (def vicc-context
   {"id" {"@id" "@id"},
@@ -47,46 +45,14 @@
   :start (rocksdb/open vicc-db-name)
   :stop (rocksdb/close vicc-db))
 
-(defn normalize-spdi [^String spdi-expression]
-  (log/info :fn :normalize-spdi :variation-expression spdi-expression)
-  (let [response (http-get-with-cache vicc-db
-                                      canonical_spdi_to_categorical_variation
-                                      {:query-params {"q" spdi-expression}})
-        status (:status response)]
-    (case status
-      200 (let [body (-> response :body json/parse-string)]
-            (log/debug :fn :vrs-allele-for-variation :body body)
-            (-> body (get "categorical_variation") add-vicc-context))
-      ;; Error case
-      (log/error :fn :normalize-spdi :msg "Error in VRS normalization request" :status status :response response))))
-
-(defn wrap-with-canonical-variation
-  [variation-object]
-  {"_id" (str (get variation-object "_id") "_canonicalwrap")
-   "@type" "vrs:CanonicalVariation"
-   "variation" variation-object})
-
-(defn normalize-general
-  [^String variation-expression]
-  (log/info :fn :normalize-general :variation-expression variation-expression)
-  (let [response (http-get-with-cache vicc-db
-                                      cancer-variants-normalize-url
-                                      {:query-params {"q" variation-expression}})
-        status (:status response)]
-    (case status
-      200 (let [body (-> response :body json/parse-string)]
-            (log/debug :fn :vrs-allele-for-variation :body body)
-            (-> body (get "variations") first wrap-with-canonical-variation add-vicc-context))
-      ;; Error case
-      (log/error :fn :normalize-general :msg "Error in VRS normalization request" :status status :response response))))
-
 (defn normalize-canonical
   [^String variation-expression ^Keyword expression-type]
   (log/info :fn :normalize-canonical :variation-expression variation-expression)
   (let [response (http-get-with-cache vicc-db
-                                      cancer-variants-url-to-canonical
+                                      url-to-canonical
                                       {:query-params {"q" variation-expression
-                                                      "fmt" (name expression-type)}})
+                                                      "fmt" (name expression-type)
+                                                      "untranslatable_returns_text" true}})
         status (:status response)]
     (case status
       200 (let [body (-> response :body json/parse-string)]
@@ -99,9 +65,9 @@
   [input-map]
   (log/info :fn :normalize-absolute-copy-number :input-map input-map)
   (let [response (http-get-with-cache vicc-db
-                                      absolute-copy-number-url
+                                      url-absolute-cnv
                                       {:query-params
-                                       (into {}
+                                       (into {"untranslatable_returns_text" true}
                                              (map #(vector (-> % first name) (-> % second))
                                                   (select-keys input-map [:assembly
                                                                           :chr
