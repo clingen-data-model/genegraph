@@ -93,7 +93,6 @@
 (def clinvar-variation-root "clinvar-variation:")
 
 (defn get-from-store [db type id]
-  (println "getting from document db " type "_" id)
   (document-store/get-document db (str type "_" id)))
 
 (defn clinsig-term->enum-value [term field]
@@ -120,7 +119,6 @@
 
 (defn add-data-for-trait-set [event]
   (let [trait-set (event-data event)]
-    (clojure.pprint/pprint trait-set)
     (assoc event
            :genegraph.annotate/data
            {:clinvar_type (:entity_type trait-set)
@@ -143,6 +141,17 @@
    :predicate "causes_mendelian_condition"
    :object (proposition-target event)})
 
+(defn description [event]
+  (when-let [interpretation-comments
+             (get-in
+              event
+              [:genegraph.transform.clinvar.core/json-data
+               :content
+               :interpretation_comments])]
+    (-> (first interpretation-comments)
+        (json/parse-string true)
+        :text)))
+
 (defn add-data-for-clinical-assertion [event]
   (let [assertion (get-in event [:genegraph.transform.clinvar.core/json-data :content])]
     (assoc event
@@ -153,7 +162,7 @@
             ;; Loop around on needed data to include in extensions later
             :extensions nil
             ;; Don't think we've settled on description
-            :description nil
+            :description (description event)
             ;; Removing strength per discussion with AW 2022-08-23 =tristan
             #_:strength #_(clinsig-term->enum-value
                            (:interpretation_description assertion)

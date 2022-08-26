@@ -13,19 +13,29 @@
 
 (defonce testdb (atom (rocks/open "document_store_test")))
 
-(->> some-assertions
-     (map #(-> (assoc %
-                      ::document-store/db @testdb
-                      ::event/interceptors
-                      [ann/add-data-interceptor
-                       document-store/store-document-interceptor]
-                      #_[document-store/add-data-interceptor
-                       document-store/add-id-interceptor
-                       document-store/add-is-storeable-interceptor
-                       document-store/store-document-interceptor])
-               event/process-event!
-               ))
-     last)
+(def scvs
+  (->> some-assertions
+              (map #(-> (assoc %
+                               ::document-store/db @testdb
+                               ::event/interceptors
+                               [ann/add-metadata-interceptor
+                                ann/add-data-interceptor
+                                document-store/store-document-interceptor]
+                               #_[document-store/add-data-interceptor
+                                  document-store/add-id-interceptor
+                                  document-store/add-is-storeable-interceptor
+                                  document-store/store-document-interceptor])
+                        event/process-event!))
+              (filter #(= "VariationGermlineConditionStatement" (get-in % [::ann/data :type])))
+              (map #(assoc % ::json (json/generate-string (::ann/data %) {:pretty true})))))
+
+scvs
+
+(doseq [scv scvs]
+  (spit (str "/users/tristan/Desktop/scvs/"
+             (get-in scv [::ann/data :id])
+             ".json")
+        (::json scv)))
 
 (document-store/get-document @testdb "trait_939" )
 
