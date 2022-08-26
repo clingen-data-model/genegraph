@@ -9,7 +9,6 @@
             [genegraph.interceptor :as ggintercept :refer [interceptor-enter-def]]
             [genegraph.annotate :as ann :refer [add-model-interceptor
                                                 add-iri-interceptor
-                                                add-metadata-interceptor
                                                 add-validation-interceptor
                                                 add-subjects-interceptor]]
             [genegraph.annotate.serialization :as ser]
@@ -20,9 +19,21 @@
             [io.pedestal.interceptor.chain :as chain :refer [terminate]]
             [io.pedestal.interceptor.helpers :as helper]
             [io.pedestal.log :as log]
-            [clojure.spec.alpha :as spec]))
+            [clojure.spec.alpha :as spec]
+            [clojure.edn :as edn]
+            [clojure.java.io :as io]))
 
 (def context (atom {}))
+
+(def formats (-> "formats.edn" io/resource slurp edn/read-string))
+
+(defn add-metadata [event]
+  (merge event (get formats (:genegraph.annotate/format event))))
+
+;; should be able to remove this later
+(def add-metadata-interceptor
+  "Interceptor adding metadata annotation to stream events"
+  (interceptor-enter-def ::add-metadata add-metadata))
 
 (defn add-to-db!
   "Adds model data to the db. As validation is configurable, this is done 
@@ -102,7 +113,6 @@
    :enter stream-producer})
 
 (def transformer-interceptor-chain [event-recorder/record-event-interceptor
-                                    ann/add-metadata-interceptor
                                     ann/add-model-interceptor
                                     ann/add-iri-interceptor
                                     ann/add-validation-shape-interceptor
@@ -121,7 +131,6 @@
 
 (def web-interceptor-chain [event-recorder/record-event-interceptor
                             log-result-interceptor
-                            ann/add-metadata-interceptor
                             ann/add-model-interceptor
                             ann/add-iri-interceptor
                             ann/add-validation-shape-interceptor
@@ -178,6 +187,7 @@
 (defn process-event! [event]
   (log/debug :fn :process-event! :event event :msg :event-received)
   (-> event
+      add-metadata
       (chain/enqueue (map #(intercept/interceptor %)
                           (inject-trace-into-interceptor-chain (interceptor-chain event))))
       chain/execute))

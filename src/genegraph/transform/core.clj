@@ -57,4 +57,6 @@
 (defmethod xform-types/add-model :turtle [event] 
   (add-model-with-format event :turtle))
 
+(defmethod xform-types/add-data :default [event]
+  event)
 

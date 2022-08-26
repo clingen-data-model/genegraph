@@ -32,6 +32,10 @@
           (:genegraph.sink.event/value event)
           true)))
 
+(def add-data-interceptor
+  {:name ::add-data
+   :enter add-data})
+
 ;; Thoughts
 ;; 1) this should really be the IRI of the entity; should not depend at all on 
 ;; 2) i'm not entirely sure I want to rely on events being in an ordered sequence
@@ -50,6 +54,10 @@
                   (get-in event [::data :content :id])
                   (get-in event [::data :content :date_last_updated])])))
 
+(def add-id-interceptor
+  {:name ::add-id
+   :enter add-id})
+
 (def storeable-event-types
   #{"update" "create"})
 
@@ -63,20 +71,35 @@
     (assoc event ::storeable? true)
     event))
 
+(def add-is-storeable-interceptor
+  {:name ::add-is-storeable
+   :enter add-is-storeable})
+
 (defn store-document
   "Store the document data associated with this event"
   [event]
-  (when (::storeable? event)
+  (when (and (:genegraph.annotate/data event) (::id event))
     (rocks/rocks-put-raw-key!
      (or (::db event) db)
      (.getBytes (::id event))
-     (::data event)))
+     (:genegraph.annotate/data event)))
   event)
+
+(def store-document-interceptor
+  {:name ::store-document
+   :enter store-document})
 
 (defn get-document
   ([id] (get-document db id))
   ([db id] (rocks/rocks-get-raw-key db (.getBytes id))))
 
-(-> an-event add-data add-id ::id)
-
-(get-document ":clinvar-raw|clinical_assertion|SCV000028756|2019-03-31")
+(defn get-documents-by-prefix [event]
+  (let [db (or (::db event) db)]
+    (assoc event
+           ::documents-by-prefix
+           (reduce (fn [m prefix]
+                     (assoc m prefix (rocks/raw-prefix-seq
+                                      db
+                                      (.getBytes prefix))))
+                   {}
+                   (::get-documents-by-prefix event)))))

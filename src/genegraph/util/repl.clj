@@ -34,7 +34,8 @@
             [genegraph.sink.event-recorder :as event-recorder]
             [genegraph.util.fs :as fs]
             [genegraph.event-analyzer :as event-analyzer]
-            [genegraph.database.property-store :as property-store])
+            [genegraph.database.property-store :as property-store]
+            [genegraph.sink.document-store :as document-store])
   (:import java.time.Instant
            java.time.temporal.ChronoUnit
            [org.apache.jena.rdf.model AnonId Model ModelFactory]
@@ -385,7 +386,7 @@
   ;; 14. "release_sentinel"
   ;; 15. "trait_set"
 
-(defonce clinvar-raw (rocks-sink/open-for-topic! "clinvar-raw"))
+#_(defonce clinvar-raw (rocks-sink/open-for-topic! "clinvar-raw"))
 
 #_(pprint (json/parse-string (->> (rocks/entire-db-seq clinvar-raw)
                                #_(map #(-> %
@@ -408,11 +409,78 @@
      (map #(-> % ::event/value (json/parse-string true) :event_type))
      set)
 
-(->> (rocks/entire-db-seq clinvar-raw)
-     (map #(assoc % ::data (json/parse-string (::event/value %) true)))
-     (filter #(= "trait"
+#_(->> (rocks/entire-db-seq clinvar-raw)
+     #_(map #(assoc % ::data (json/parse-string (::event/value %) true)))
+     #_(filter #(= "trait"
                  (get-in (::data %) [:content :entity_type])))
-     (take 3)
-     (map #(assoc % ::event/interceptors [event/hello-world-interceptor]))
+     (map #(assoc %
+                  ::event/interceptors
+                  [document-store/add-data-interceptor
+                   document-store/add-id-interceptor
+                   document-store/add-is-storeable-interceptor
+                   document-store/store-document-interceptor]))
      event/process-event-seq!)
+
+#_(->> (rocks/entire-db-seq document-store/db) count)
+
+#_(with-open [db (rocks/open "clinvar-raw-complete")]
+  (-> (rocks/entire-db-seq db)
+      count))
+
+#_(with-open [db (rocks/open "clinvar-raw-complete")]
+  (-> (rocks/rocks-get-raw-key db (.getBytes "gene_101927322"))))
+
+
+#_(re-find #"^(.*)_\d{4}-\d{2}-\d{2}$" "gene_101927322_2019-07-01")
+
+#_(stream/topic-data-to-rocksdb
+   :clinvar-raw-complete
+   "clinvar-raw-complete"
+   {:key-fn #(->> %
+                  ::event/key
+                  (re-find #"^(.*)_\d{4}-\d{2}-\d{2}$")
+                  second
+                  .getBytes)})
+
+
+(defonce clinvar-raw-complete (rocks/open "clinvar-raw-complete"))
+
+;; NM_004700.4(KCNQ4):c.853G>A (p.Gly285Ser)
+;; variation 6241
+
+["SCV000840524"
+ "SCV000198442"
+ "SCV000026802"
+ "SCV000041116"]
+
+
+#_(->> ["SCV000840524"
+      "SCV000198442"
+      "SCV000026802"
+      "SCV000041116"]
+     (mapv 
+      #(rocks/rocks-get-raw-key clinvar-raw-complete (.getBytes (str "clinical_assertion_" %))))
+     pprint)
+
+(def some-assertions (-> "test_events/clinvar.edn" io/resource slurp edn/read-string))
+
+
+(->> some-assertions
+     (map #(-> % ::event/value (json/parse-string true) :content))
+     (filter #(= "trait_set" (:entity_type %)))
+     (map :trait_ids)
+     flatten
+     set
+     (mapv #(rocks/rocks-get-raw-key
+             clinvar-raw-complete
+             (.getBytes (str "trait_" %))))
+     pprint
+     )
+
+(->> some-assertions
+     (map #(-> % ::event/value (json/parse-string true) :content))
+     (filter #(= "trait" (:entity_type %)))
+
+     pprint
+)
 
