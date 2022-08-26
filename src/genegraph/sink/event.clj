@@ -147,17 +147,6 @@
                             cache/expire-resolver-cache-interceptor
                             response-cache/expire-response-cache-interceptor])
 
-(def transformer-interceptors
-  (mapv intercept/interceptor transformer-interceptor-chain))
-
-(map :name transformer-interceptors)
-
-;; Just w
-(def hello-world-interceptor
-  {:name ::hello-world
-   :enter #(do (println "hello world!")
-               %)})
-
 (defn interceptor-chain [event]
   (or (::interceptors event) web-interceptor-chain))
 

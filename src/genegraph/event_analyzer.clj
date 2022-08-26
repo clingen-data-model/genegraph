@@ -34,9 +34,9 @@
   [event]
   (let [result (model-diff event)]
     (println "created:")
-    (-> result :created q/to-turtle println)
+    (-> result :created q/pp-model)
     (println "removed:")
-    (-> result :deleted q/to-turtle println)))
+    (-> result :deleted q/pp-model)))
 
 (defn model-changed?
   "true if the model in each event is not identical relative

@@ -7,7 +7,7 @@ construct {
   ?probandScoreEvidenceLine a ?lineType ;
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence ?individual ; # evidence about proband
-  :sepio/calculatedScore ?calculatedScore ;
+  :sepio/calculated-score ?calculatedScore ;
   :sepio/score-status ?scoreStatus ;
   :dc/description ?evidenceLineDescription .
 
@@ -33,6 +33,8 @@ construct {
   :sepio/is-about-condition ?phenotypes ;
   :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed ;
   :dc/source ?article ;
+  :geno/has-zygosity ?probandZygosity ;
+  :sepio/is-about-allele ?variant ;
   :sepio/has-variant ?evidenceItem .
 
   ?family a :pco/Family ;
@@ -43,9 +45,13 @@ where {
   # Ensure this pattern does not exist for >= SOPV8 curations
   FILTER NOT EXISTS { ?otherScore a gci:variantScore } .
 
+  ?gdm a gci:gdm ;
+  gci:affiliation ?gdmAffiliation .
+  
   ?evidenceLine a gci:evidenceScore ;
   gci:scoreStatus ?scoreStatus ;
-  gci:date_created ?dateCreated .
+  gci:date_created ?dateCreated ;
+  gci:affiliation ?gdmAffiliation .
 
   # maschinations due to contradicts score_status do not have gci:caseInfoType
   OPTIONAL {
@@ -76,7 +82,6 @@ where {
   ?individual gci:scores ?evidenceLine ;
   gci:variants ?variant ;
   gci:label ?individualLabel ;
-
   gci:proband true ;
   gci:sex ?sex .
 
@@ -85,6 +90,10 @@ where {
   }
 
   BIND(IF(?deNovo = "Yes", :geno/DeNovoAlleleOrigin , IF(?deNovo = "No", :geno/GermlineAlleleOrigin , :geno/AlleleOrigin ) ) AS ?alleleOrigin) .
+
+  OPTIONAL {
+     ?individual gci:probandIs ?probandZygosity .
+  }
 
   OPTIONAL {
       ?individual gci:maternityPaternityConfirmed ?paternityMaternityConfirmed .
@@ -116,12 +125,11 @@ where {
   }
 
   OPTIONAL {
-     ?individual gci:specificMutationsGenotypedMethod ?methodsOfDetection .
+     ?method gci:specificMutationsGenotypedMethod ?methodsOfDetection .
   }
 
   OPTIONAL {
-     ?individual gci:hpoIdInDiagnosis ?phenotypeString .
-     BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", SUBSTR(?phenotypeString, STRLEN(?phenotypeString) - 7 , 7))) AS ?phenotypes) .
+     ?individual gci:hpoIdInDiagnosis ?phenotypes .
   }
 
   ?annotation  gci:individuals|gci:individualIncluded ?individual ;
@@ -137,15 +145,5 @@ where {
 
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
-
-  # OPTIONAL {
-  #   ?variant gci:carId ?caId .
-  #   BIND(IRI(CONCAT(?arbase, ?caID)) AS ?allele) .
-  # }
-
-  # OPTIONAL {
-  #   ?variant gci:clinvarVariantId ?cvId .
-  #   BIND(IRI(CONCAT(?cvbase, ?cvId)) AS ?allele) .
-  # }
 
 }

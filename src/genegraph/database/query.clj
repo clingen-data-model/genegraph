@@ -188,7 +188,7 @@ use io/slurp"
                (s/replace model-str
                           (str "<" iri ">")
                           (str kw)))
-             (to-turtle model)
+             (to-turtle (.clearNsPrefixMap model))
              (filter second ; remove when no mapping exists
                      (concat predicate-iri-kw object-iri-kw))))))
 

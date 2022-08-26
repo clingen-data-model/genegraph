@@ -21,6 +21,7 @@ construct {
   
 # Proband with variant evidence item
   ?individual a :sepio/ProbandWithVariantEvidenceItem ;
+  :sepio/is-about-allele ?variant ;
   :sepio/has-sex ?sex ;
   :sepio/age-unit ?ageUnit ;
   :sepio/age-type ?ageType ;
@@ -34,6 +35,7 @@ construct {
   :sepio/has-textual-part ?phenotypeFreeText ;
   :sepio/is-about-condition ?phenotypes ;
   :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed ;
+  :geno/has-zygosity ?probandZygosity ;
   :sepio/has-variant ?evidenceItem .
 
   ?family a :pco/Family ;
@@ -59,7 +61,7 @@ where {
     gcixform:hasEvidenceItemType ?evidenceItemType .
   }
   # NonNullVariantEvidenceLine
-  BIND(IF(BOUND(?variantType), ?evidenceLineType, sepio:0004121) AS ?lineType) .
+  BIND(IF(BOUND(?variantType), ?evidenceLineType, sepio:0004097) AS ?lineType) .
   # VariantEvidenceItem
   BIND(IF(BOUND(?variantType), ?evidenceItemType, sepio:0004116) AS ?itemType) .
 
@@ -111,8 +113,11 @@ where {
   }
 
   OPTIONAL {
-    ?individual gci:hpoIdInDiagnosis ?phenotypeString .
-    BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", SUBSTR(?phenotypeString, STRLEN(?phenotypeString) - 7 , 7))) AS ?phenotypes) .
+    ?individual gci:hpoIdInDiagnosis ?phenotypes .
+  }
+
+  OPTIONAL {
+     ?individual gci:probandIs ?probandZygosity .
   }
 
   OPTIONAL {

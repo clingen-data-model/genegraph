@@ -14,9 +14,13 @@ construct {
   :rdfs/label ?evidenceLabel .
 }
 where {
+  ?gdm a gci:gdm ;
+  gci:affiliation ?gdmAffiliation .
+
   ?evidenceLine a gci:evidenceScore ;
   gci:calculatedScore ?calculatedScore ;
-  gci:scoreStatus ?scoreStatus .
+  gci:scoreStatus ?scoreStatus ;
+  gci:affiliation ?gdmAffiliation .
 
   OPTIONAL {
     ?evidenceLine gci:scoreExplanation ?scoreDescription .
@@ -32,9 +36,22 @@ where {
   gci:label ?evidenceLabel ;
   gci:evidenceType ?gciType .
 
-  OPTIONAL {
-    ?evidenceItem gci:biochemicalFunction / gci:evidenceForFunction ?biochemicalFunctionDescription .
+ OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction / gci:geneFunctionConsistentWithPhenotype / gci:explanation ?biochemicalFuncConsistentWithPheno .
   }
+
+  OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction / gci:geneWithSameFunctionSameDisease / gci:evidenceForOtherGenesWithSameFunction ?biochemicalEvidenceForOtherGenes .
+  }
+
+  OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction / gci:explanation ?biochemicalExplanation .
+  }
+
+  OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction / gci:evidenceForFunction ?biochemicalEvidenceForFunction .
+  }
+  BIND(COALESCE(?biochemicalFuncConsistentWithPheno, ?biochemicalEvidenceForOtherGenes, ?biochemicalExplanation, ?biochemicalEvidenceForFunction) AS ?biochemicalFunctionDescription) .
 
   OPTIONAL {
     ?evidenceItem gci:proteinInteractions / gci:relationshipOfOtherGenesToDisese ?proteinInteractionDescription .
