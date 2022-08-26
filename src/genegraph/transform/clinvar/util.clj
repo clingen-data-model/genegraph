@@ -51,9 +51,10 @@
 (defn in? [e coll]
   (some #(= % e) coll))
 
-(defn simplify-dollar-map [m]
+(defn simplify-dollar-map
   "Return (get m :$) if m is a map and :$ is the only key. Otherwise return m.
   Useful for BigQuery JSON serialization where single values may be turned into $ maps"
+  [m]
   (if (and (map? m)
            (= '(:$) (keys m)))
     (:$ m)
@@ -61,7 +62,7 @@
 
 (defn simplify-dollar-map-recur [m]
   (if (map? m)
-    (if (get m :$)
+    (if (= (set (keys m)) #{:$})
       (simplify-dollar-map-recur (simplify-dollar-map m))
       (into {} (for [[k v] m]
                  [k (simplify-dollar-map-recur v)])))
@@ -79,6 +80,14 @@
     (assoc-in val
               [:content :content]
               nested-content)))
+
+(defn unparse-nested-content [val]
+  (let [content (-> val :content :content)]
+    (if (string? content)
+      val
+      (assoc-in val
+                [:content :content]
+                (json/generate-string content)))))
 
 (defn into-sequential-if-not [val]
   (if (not (sequential? val)) [val] val))

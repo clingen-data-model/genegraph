@@ -167,7 +167,12 @@
    Parses expressions and determines their types (spdi, hgvs, clinvar copy number).
    Adds locally namespaced keywords to the message."
   [event]
-  (let [value (util/parse-nested-content
+  (let [;; Unparse the JSON
+        ;;event (assoc event :genegraph.transform.clinvar.core/parsed-value
+        ;;             (util/unparse-nested-content
+        ;;              (:genegraph.transform.clinvar.core/parsed-value event)))
+        ;; Re-parse the JSON
+        value (util/parse-nested-content
                (:genegraph.transform.clinvar.core/parsed-value event))]
     (-> event
         (assoc :genegraph.transform.clinvar.core/parsed-value value)
