@@ -20,61 +20,6 @@
    :genegraph.sink.stream/offset 29751,
    :genegraph.annotate/producer-topic :test-public-v1})
 
-(defn add-data
-  "Associate the deserialized form of the event with the key ::data.
-
-  For now, assumes all event payloads are json encoded strings.
-  Will update when we see a payload of a different kind."
-  [event]
-  (assoc event
-         ::data
-         (json/parse-string
-          (:genegraph.sink.event/value event)
-          true)))
-
-(def add-data-interceptor
-  {:name ::add-data
-   :enter add-data})
-
-;; Thoughts
-;; 1) this should really be the IRI of the entity; should not depend at all on 
-;; 2) i'm not entirely sure I want to rely on events being in an ordered sequence
-;; to find the most recent instance of something prior-to a given date
-;; (but if I don't do it this way, how?)
-
-(defn add-id
-  "For now, assuming just events in clinvar-raw. Will need to adapt
-  for other sorts of events later."
-  [event]
-  (assoc event
-         ::id 
-         (s/join "|"
-                 [(:genegraph.annotate/format event)
-                  (get-in event [::data :content :entity_type])
-                  (get-in event [::data :content :id])
-                  (get-in event [::data :content :date_last_updated])])))
-
-(def add-id-interceptor
-  {:name ::add-id
-   :enter add-id})
-
-(def storeable-event-types
-  #{"update" "create"})
-
-(defn add-is-storeable
-  "Probably only want to store create and update events
-  may want to consider deleting other sorts of events in future.
-
-  Again, just doing clinvar-raw at the moment"
-  [event]
-  (if (storeable-event-types (get-in event [::data :event_type]))
-    (assoc event ::storeable? true)
-    event))
-
-(def add-is-storeable-interceptor
-  {:name ::add-is-storeable
-   :enter add-is-storeable})
-
 (defn store-document
   "Store the document data associated with this event"
   [event]
