@@ -1,5 +1,3 @@
-;; Does not work as advertised in current JENA
-;; Removing from dep tree until resolved =tristan
 (ns genegraph.transform.jsonld.common
   (:require [genegraph.database.names :refer [local-property-names
                                               property-uri->keyword]]
@@ -9,14 +7,7 @@
             [genegraph.database.load :as l])
   (:import (genegraph.database.query.types RDFResource)
            (org.apache.jena.rdf.model Model)
-           (org.apache.jena.riot.writer JsonLD11Writer)
-    ;; (org.apache.jena.riot.writer JsonLDWriter)
-           (org.apache.jena.sparql.util Context)
-           (org.apache.jena.sparql.core.mem DatasetGraphInMemory)
            (org.apache.jena.riot RDFFormat RDFDataMgr Lang JsonLDWriteContext RDFWriter)
-           (org.apache.jena.graph NodeFactory)
-           (org.apache.jena.riot.system PrefixMapStd)
-           (com.github.jsonldjava.core JsonLdOptions)
            (com.apicatalog.jsonld.document JsonDocument)
            (com.apicatalog.jsonld JsonLd)
            (java.io StringWriter)))
@@ -82,7 +73,15 @@
    (doto (StringWriter.)
      (RDFDataMgr/write model RDFFormat/JSONLD_COMPACT_PRETTY))))
 
+
 (comment
+  ;; RDFDataMgr does not expose JSON-LD processing options, and these options are
+  ;; not yet implemented for the JSON-LD 1.1 writer in Jena
+  (defn model-to-jsonld [^Model model]
+    (.toString
+     (doto (StringWriter.)
+       (RDFDataMgr/write model RDFFormat/JSONLD_PRETTY))))
+
   ;; There is a frame field on the Jena Context object, but it is not used
   ;; in the implementation of JsonLD11Writer, which is the class used by RDFWriter (an RDFDataMgr)
 

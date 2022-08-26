@@ -291,6 +291,9 @@
   java.lang.Integer
   (to-rdf-node [x] (ResourceFactory/createTypedLiteral (str x) XSDBaseNumericType/XSDinteger))
 
+  java.lang.Long
+  (to-rdf-node [x] (ResourceFactory/createTypedLiteral (str x) XSDBaseNumericType/XSDlong))
+
   clojure.lang.Keyword
   (to-rdf-node [x] (local-names x))
   
