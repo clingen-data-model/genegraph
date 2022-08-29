@@ -9,7 +9,6 @@
             [genegraph.interceptor :as ggintercept :refer [interceptor-enter-def]]
             [genegraph.annotate :as ann :refer [add-model-interceptor
                                                 add-iri-interceptor
-                                                add-metadata-interceptor
                                                 add-validation-interceptor
                                                 add-subjects-interceptor]]
             [genegraph.annotate.serialization :as ser]
@@ -98,6 +97,7 @@
 (def stream-producer-interceptor
   "Interceptor for producing message to an output stream"
   {:name ::stream-producer-interceptor
+   :side-effecting true
    :enter stream-producer})
 
 (def transformer-interceptor-chain [event-recorder/record-event-interceptor
@@ -137,10 +137,8 @@
                             cache/expire-resolver-cache-interceptor
                             response-cache/expire-response-cache-interceptor])
 
-(defn interceptor-chain []
-  (if (env/transformer-mode?)
-    transformer-interceptor-chain
-    web-interceptor-chain))
+(defn interceptor-chain [event]
+  (or (::interceptors event) web-interceptor-chain))
 
 (defn inject-trace-into-interceptor-chain
   "Modifies the interceptor chain so that For every interceptor in the chain,
@@ -169,7 +167,7 @@
   (log/debug :fn :process-event! :event event :msg :event-received)
   (-> event
       (chain/enqueue (map #(intercept/interceptor %)
-                          (inject-trace-into-interceptor-chain (interceptor-chain))))
+                          (inject-trace-into-interceptor-chain (interceptor-chain event))))
       chain/execute))
 
 (defn process-event-seq!

@@ -29,6 +29,10 @@
 
 (defmulti transform-doc :format)
 
+(defmulti add-data
+  "Add an edn-based representation of the data in the event."
+  :genegraph.transform.core/format)
+
 (defn target-base []
   (str env/data-vol "/base/"))
 

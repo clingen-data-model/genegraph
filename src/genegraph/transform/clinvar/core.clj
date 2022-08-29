@@ -7,10 +7,34 @@
                                                         clinvar-add-model
                                                         clinvar-model-to-jsonld
                                                         clinvar-add-event-graphql]]
+            [genegraph.database.load :as l]
             [genegraph.transform.clinvar.util :as util]
-            ;;[genegraph.transform.clinvar.variation-archive]
             [genegraph.transform.clinvar.variation-new]
-            [genegraph.database.load :as l]))
+            [genegraph.transform.clinvar.clinical-assertion :as clinical-assertion]))
+
+(defn add-document-store-id [event]
+  (let [data (:genegraph.annotate/data event)]
+    (assoc event
+           :genegraph.sink.document-store/id
+           (str (:clinvar_type data) "_" (:clinvar_id data)))))
+
+(defmethod xform-types/add-data :clinvar-raw [event]
+  (let [event-with-json (assoc event
+                               ::json-data
+                               (json/parse-string
+                                (:genegraph.sink.event/value event)
+                                true))
+        event-with-data (case (get-in event-with-json
+                                      [::json-data :content :entity_type])
+                          "trait" (clinical-assertion/add-data-for-raw-trait
+                                   event-with-json)
+                          "trait_set" (clinical-assertion/add-data-for-trait-set
+                                       event-with-json)
+                          "clinical_assertion" (clinical-assertion/add-data-for-clinical-assertion
+                                                event-with-json)
+                          event-with-json)]
+    (add-document-store-id event-with-data)))
+
 
 ;;(defmethod clinvar-model-to-jsonld :release_sentinel
 ;;  [msg]

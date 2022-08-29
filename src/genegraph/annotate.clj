@@ -65,6 +65,10 @@
   "Interceptor adding model annotation to stream events"
   (interceptor-enter-def ::add-model add-model))
 
+(def add-data-interceptor
+  {:name ::add-data
+   :enter #(xform-types/add-data %)})
+
 (defn add-validation-shape
   "Annotate the event with the appropriate shape for validation
   if it exists in the database and if a shape has not already been
