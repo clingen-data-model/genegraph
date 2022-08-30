@@ -12,7 +12,8 @@
   "https://normalize.cancervariants.org/variation/")
 
 (def variation-base-url-dev
-  "http://variation-normalization-dev.us-east-2.elasticbeanstalk.com/variation/")
+  #_"http://variation-normalization-dev.us-east-2.elasticbeanstalk.com/variation/"
+  "http://variation-normalization-dev-eb.us-east-2.elasticbeanstalk.com/variation")
 
 (def variation-base-url variation-base-url-dev)
 
