@@ -1,18 +1,19 @@
 (ns genegraph.rocksdb
   (:require [genegraph.env :as env]
             [taoensso.nippy :as nippy]
+            [clojure.java.io :as io]
             [digest])
-  (:import (org.rocksdb RocksDB Options ReadOptions Slice RocksIterator)
-           java.security.MessageDigest
+  (:import (org.rocksdb Options ReadOptions RocksDB Slice)
            java.util.Arrays))
 
-(defn create-db-path [db-name] 
+(defn create-db-path [db-name]
   (str env/data-vol "/" db-name))
 
 (defn open [db-name]
   (let [full-path (create-db-path db-name)
         opts (-> (Options.)
                  (.setCreateIfMissing true))]
+    (io/make-parents full-path)
     ;; todo add logging...
     (RocksDB/open opts full-path)))
 
@@ -57,8 +58,8 @@
     (nippy/fast-thaw result)
     ::miss))
 
-(defn rocks-put-multipart-key! 
-  "ks is a sequence, will hash each element in ks independently to support 
+(defn rocks-put-multipart-key!
+  "ks is a sequence, will hash each element in ks independently to support
    range scans based on different elements of the key"
   [db ks v]
   (.put db (multipart-key-digest ks) (nippy/fast-freeze v)))
@@ -101,7 +102,7 @@
 
 (defn raw-prefix-iter
   [db prefix]
-  (doto (.newIterator db 
+  (doto (.newIterator db
                       (.setIterateUpperBound (ReadOptions.)
                                              (Slice. (range-upper-bound prefix))))
     (.seek prefix)))
@@ -118,7 +119,7 @@
     (.seekToFirst)))
 
 (defn rocks-iterator-seq [iter]
-  (lazy-seq 
+  (lazy-seq
    (if (.isValid iter)
      (let [v (nippy/fast-thaw (.value iter))]
        (.next iter)
@@ -126,7 +127,7 @@
              (rocks-iterator-seq iter)))
      nil)))
 
-(defn prefix-seq 
+(defn prefix-seq
   "Return a lazy-seq over all records beginning with prefix"
   [db prefix]
   (-> db (prefix-iter prefix) rocks-iterator-seq))
@@ -143,16 +144,16 @@
   [db prefix]
   (-> db (raw-prefix-iter prefix) rocks-iterator-seq))
 
-(defn sample-prefix 
+(defn sample-prefix
   "Take first n records from db given prefix"
   [db prefix n]
   (let [iter (prefix-iter db prefix)]
     (loop [i 0
            ret (transient [])]
       (if (and (< i n) (.isValid iter))
-        (let [new-ret (conj! ret (-> iter .value nippy/fast-thaw))] 
+        (let [new-ret (conj! ret (-> iter .value nippy/fast-thaw))]
           (.next iter)
           (recur (inc i) new-ret))
-        (do 
+        (do
           (.close iter)
           (persistent! ret))))))

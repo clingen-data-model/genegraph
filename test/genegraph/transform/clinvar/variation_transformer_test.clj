@@ -29,11 +29,11 @@
    #'genegraph.transform.clinvar.cancervariants/vicc-db
    #'genegraph.sink.event-recorder/event-database))
 
-(defn fixtures [f]
-  (start-states!)
-  (f))
+;; (defn fixtures [f]
+;;   (start-states!)
+;;   (f))
 
-(use-fixtures :once fixtures)
+;; (use-fixtures :once fixtures)
 
 (defn eventify [input-map]
   ;; Mostly replicating
@@ -67,14 +67,6 @@
       ;; file-lazy-seq
       (->> (map #(json/parse-string % true))
            (filter #(= "variation" (get-in % [:content :entity_type]))))))
-
-(defn test-variation-to-model []
-  (let [variant-messages (->> (get-variant-messages)
-                              (filter #(= "12610" (get-in % [:content :id])))
-                              (take 1)
-                              (map eventify)
-                              (map #(xform-types/add-model %)))]))
-
 
 (defn test-vrs-normalization1 []
   (let [events (->> (get-variant-messages)

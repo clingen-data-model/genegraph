@@ -76,10 +76,12 @@
     val))
 
 (defn parse-nested-content [val]
-  (let [nested-content (-> val :content :content parse-json-if-not-parsed simplify-dollar-map-recur)]
-    (assoc-in val
-              [:content :content]
-              nested-content)))
+  (if (get-in val [:content :content])
+    (let [nested-content (-> val :content :content parse-json-if-not-parsed simplify-dollar-map-recur)]
+      (assoc-in val
+                [:content :content]
+                nested-content))
+    val))
 
 (defn unparse-nested-content [val]
   (let [content (-> val :content :content)]
@@ -102,3 +104,12 @@
 ;  (let [m (into {} (partition-all 2 args))]
 ;    (eval (log/-error args))
 ;    (throw (ex-info (str m) m))))
+
+(defn select-other-keys
+  "Inverse of select-keys in that it selects all the keys other than those specified.
+  exclude-ks should be a seq of value which may be a key in m"
+  [m exclude-ks]
+  (select-keys m (filter
+                  ;; Return true if key from m is not in keys to exclude
+                  (fn [m-key] (nil? (some #(= m-key %) exclude-ks)))
+                  (keys m))))

@@ -26,13 +26,21 @@
 
 (defmulti clinvar-add-model :genegraph.transform.clinvar/format)
 
+(defmulti clinvar-add-data :genegraph.transform.clinvar/format)
+
+(defmethod clinvar-add-data :default [event]
+  (log/debug :fn :clinvar-model-to-jsonld
+             :msg "No multimethod for dispatch"
+             :dispatch (:genegraph.transform.clinvar/format event))
+  event)
+
 (defmulti clinvar-model-to-jsonld
   "Multimethod for ClinVar events.
           Takes an event, returns it annotated with the JSON-LD representation of the model."
   :genegraph.transform.clinvar/format)
 
 (defmethod clinvar-model-to-jsonld :default [event]
-  (log/debug :fn ::clinvar-model-to-jsonld
+  (log/debug :fn :clinvar-model-to-jsonld
              :msg "No multimethod for dispatch"
              :dispatch (:genegraph.transform.clinvar/format event))
   event)
@@ -42,7 +50,7 @@
   :genegraph.transform.clinvar/format)
 
 (defmethod clinvar-add-event-graphql :default [event]
-  (log/debug :fn ::clinvar-add-event-graphql
+  (log/debug :fn :clinvar-add-event-graphql
              :msg "No multimethod for dispatch"
              :dispatch (:genegraph.transform.clinvar/format event))
   event)

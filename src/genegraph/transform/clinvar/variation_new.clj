@@ -162,21 +162,13 @@
        [[expression-iri :vrs/syntax-version syntax-version]]))))
 
 (defn variation-preprocess
-  "Performs some annotations to the variation message in order to enable downstream transformation.
+  "Performs some annotations to the variation event in order to enable downstream transformation.
 
    Parses expressions and determines their types (spdi, hgvs, clinvar copy number).
    Adds locally namespaced keywords to the message."
   [event]
-  (let [;; Unparse the JSON
-        ;;event (assoc event :genegraph.transform.clinvar.core/parsed-value
-        ;;             (util/unparse-nested-content
-        ;;              (:genegraph.transform.clinvar.core/parsed-value event)))
-        ;; Re-parse the JSON
-        value (util/parse-nested-content
-               (:genegraph.transform.clinvar.core/parsed-value event))]
+  (let [value (:genegraph.transform.clinvar.core/parsed-value event)]
     (-> event
-        (assoc :genegraph.transform.clinvar.core/parsed-value value)
-
         (assoc ::copy-number? (.startsWith (-> value
                                                :content
                                                :variation_type)
@@ -247,9 +239,9 @@
              :syntax syntax
              :syntax-version syntax-version)
 
-  (let [;;member-iri (l/blank-node)
+  (let [];;member-iri (l/blank-node)
         ;;expression-iri (l/blank-node)
-        ]
+
     {;;:id member-iri
      :type "VariationMember"
      :expressions [(merge
@@ -285,7 +277,6 @@
         {:iri vrs-id :variation vrs-obj-pretty}))))
 
 
-;; TODO
 (defn add-variation-map
   "Returns msg with ::triples and ::deferred-triples added.
    ::deferred-triples is a collection of maps declaring realizers and
@@ -300,7 +291,7 @@
         vd-iri (str vrd-unversioned "." (:release_date msg))
         clinvar-variation-iri (str iri/clinvar-variation (:id content))]
     (assoc event
-           ::normalized
+           :genegraph.annotate/data
            {:id vd-iri
             :type "CanonicalVariationDescriptor"
             :label (:name content)
@@ -433,30 +424,43 @@
     "cgterms" {"@id" (get prefix-ns-map "cgterms")
                "@prefix" true}}})
 
-(defmethod common/clinvar-add-model :variation [event]
-  (log/debug :fn ::clinvar-add-model :event event)
+(defn add-data-for-variation
+  "Event should have
+   :genegraph.transform.clinvar.core/json-data which is the same as parsed-value"
+  [event]
   (-> event
       variation-preprocess
       add-variation-map
-      #_(#(do (log/info :normalized (::normalized %)) %))
-
-                  ;; Add context
       ((fn [e]
-         (assoc e ::contextualized (merge (::normalized e)
-                                          variation-context))))
-      (#(do (log/debug :contextualized (json/generate-string (::contextualized %)))
-            %))
+         (assoc e
+                :genegraph.transform.clinvar.core/contextualized
+                (merge (::normalized e)
+                       variation-context))))))
 
-      ((fn [e]
-         (let [m (l/read-rdf (str->bytestream
-                              (json/generate-string (::contextualized e)))
-                             {:format :json-ld})]
-           #_(log/info :m m)
-           (assoc e ::q/model m))))
-                  ;;l/statements-to-model
-                  ;;(#(common/mark-prior-replaced % (q/resource clinvar-variation-type)))
-      ))
+#_(defmethod common/clinvar-add-model :variation [event]
+    (log/debug :fn ::clinvar-add-model :event event)
+    (-> event
+        variation-preprocess
+        add-variation-map
 
+      ;; Add context
+        ((fn [e]
+           (assoc e ::contextualized (merge (::normalized e)
+                                            variation-context))))
+        (#(do (log/debug :contextualized (json/generate-string (::contextualized %)))
+              %))
+
+        ((fn [e]
+           (let [m (l/read-rdf (str->bytestream
+                                (json/generate-string (::contextualized e)))
+                               {:format :json-ld})]
+             (assoc e ::q/model m))))))
+
+(defmethod common/clinvar-add-model :variation [event]
+  (assoc event ::q/model (l/read-rdf (str->bytestream
+                                      (json/generate-string
+                                       (:genegraph.transform.clinvar.core/contextualized event)))
+                                     {:format :json-ld})))
 
 
 (def variation-descriptor-query
