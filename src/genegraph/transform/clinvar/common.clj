@@ -96,6 +96,29 @@
                   [gene_id {:gene_symbol gene_symbol :num num}])
                 consensus-cancer-genes-list)))
 
+(defn load-csv-resource [file-name]
+  (-> file-name io/resource io/reader read-csv-with-header doall))
+
+(def clinvar-clinsig-normalized
+  "Seq of maps with keys :scv_term :normalized :label"
+  (load-csv-resource "clinvar_clinsig_normalized.csv"))
+
+(def clinvar-clinsig-classes
+  (load-csv-resource "clinvar_clinsig_classes.csv"))
+
+(def normalize-clinsig-map
+  (into {} (map (fn [{:keys [scv_term normalized label]}]
+                  [scv_term label])
+                clinvar-clinsig-normalized)))
+
+(def clinsig-class-map
+  "Map of normalized clinsig terms to clinsig classes"
+  (into {} (map (fn [{:keys [code label clinvar_prop_type]}]
+                  [label clinvar_prop_type])
+                clinvar-clinsig-classes)))
+
+
+;;;;; BEGIN REMOVE
 (def clinvar-clinsig-map
   (doall (read-csv-with-header (io/reader (io/resource "clinvar_clinsig-map.csv")))))
 
@@ -107,6 +130,7 @@
 (defn normalize-clinvar-clinsig [clinsig]
   (or (get clinvar-clinsig-map-by-clinsig (s/lower-case clinsig))
       "other"))
+;;;;; END REMOVE
 
 (defn variation-vrs-type
   [clinvar-type]

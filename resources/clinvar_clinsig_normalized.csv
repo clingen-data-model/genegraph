@@ -1,0 +1,55 @@
+scv_term,normalized,label
+affects,aff,Affects
+association,assoc,association
+association not found,assocnf,association not found
+benign,b,Benign
+no known pathogenicity,b,Benign
+non-pathogenic,b,Benign
+poly,b,Benign
+benign/likely benign,b/lb,Benign/Likely benign
+conflicting data from submitters,cdfs,conflicting data from submitters
+confers sensitivity,cs,confers sensitivity
+drug response,dr,drug response
+drug-response,dr,drug response
+established risk allele,era,Established risk allele
+likely benign,lb,Likely benign
+probable-non-pathogenic,lb,Likely benign
+probably not pathogenic,lb,Likely benign
+suspected benign,lb,Likely benign
+vlb,lb,Likely benign
+vsb,lb,Likely benign
+likely pathogenic,lp,Likely pathogenic
+likely pathogenic - adrenal bilateral pheochromocy,lp,Likely pathogenic
+likely pathogenic - adrenal pheochromocytoma,lp,Likely pathogenic
+probable-pathogenic,lp,Likely pathogenic
+probably pathogenic,lp,Likely pathogenic
+suspected pathogenic,lp,Likely pathogenic
+vlm,lp,Likely pathogenic
+"likely pathogenic, low penetrance",lp-lp,"Likely pathogenic, low penetrance"
+likely risk allele,lra,Likely risk allele
+associated with leiomyomas,np,not provided
+not provided,np,not provided
+untested,np,not provided
+cancer,oth,other
+other,oth,other
+moderate,p,Pathogenic
+mut,p,Pathogenic
+mutation,p,Pathogenic
+pathogenic,p,Pathogenic
+pathogenic variant for bardet-biedl syndrome,p,Pathogenic
+pathologic,p,Pathogenic
+"pathogenic, low penetrance",p-lp,"Pathogenic, low penetrance"
+pathogenic/likely pathogenic,p/lp,Pathogenic/Likely pathogenic
+protective,protect,protective
+risk factor,rf,risk factor
+uncertain risk allele,ura,Uncertain risk allele
+ncertain significance: likely benign,vus,Uncertain significance
+uncertain,vus,Uncertain significance
+uncertain significance,vus,Uncertain significance
+uncertain significance: likely benign,vus,Uncertain significance
+uncertain significance: likely pathogenic,vus,Uncertain significance
+unknown,vus,Uncertain significance
+unknown significance,vus,Uncertain significance
+variant of unknown significance,vus,Uncertain significance
+vous,vus,Uncertain significance
+vus,vus,Uncertain significance

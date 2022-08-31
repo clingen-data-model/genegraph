@@ -2,11 +2,12 @@
   (:require [cheshire.core :as json]
             [clojure.string :as s]
             [genegraph.database.names :refer [local-class-names
-                                              local-property-names prefix-ns-map]]
+                                              local-property-names
+                                              prefix-ns-map]]
             [genegraph.database.query :as q]
             [genegraph.sink.document-store :as document-store]
-            [genegraph.transform.clinvar.iri :refer [ns-cg]]
-            [genegraph.transform.clinvar.iri :as iri]
+            [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
+            [genegraph.transform.clinvar.common :as common]
             [io.pedestal.log :as log]))
 
 (declare statement-context)
@@ -104,11 +105,26 @@
 (defn clinsig-term->enum-value [term field]
   (get-in clinsig->germline-statement-attribute [field (s/lower-case term)]))
 
+(defn normalize-clinsig-term
+  "Returns the mapped normalized term for the raw input term.
+   If the term is not known, return the mapping for 'other'"
+  [term]
+  (get common/normalize-clinsig-map (s/lower-case term)
+       (get common/normalize-clinsig-map "other")))
+
+(defn get-clinsig-class
+  "Returns the class of a normalized clinsig term
+   e.g. path, oth, rf"
+  [clinsig]
+  (get common/clinsig-class-map clinsig
+       (get common/clinsig-class-map "Other")))
+
 (defn classification [assertion]
-  {:id (clinsig-term->enum-value (:interpretation_description assertion)
-                                 :classification)
-   :type "Coding"
-   :label (:interpretation_description assertion)})
+  (let [clinsig (-> assertion :interpretation_description normalize-clinsig-term)
+        qualified (str (get prefix-ns-map "cgterms") clinsig)]
+    {:id qualified
+     :type "Coding"
+     :label (normalize-clinsig-term (:interpretation_description assertion))}))
 
 (defn event-data [event]
   (get-in event [:genegraph.transform.clinvar.core/parsed-value :content]))
@@ -264,7 +280,10 @@
         subject (q/ld1-> subject-descriptor [:rdf/value])]
     {:subject (str subject)
      :predicate "causes_mendelian_condition"
-     :object (str (proposition-object event))}))
+     :object (let [;; Condition, Disease, Phenotype
+                   proposition-object (proposition-object event)]
+               {:id (str proposition-object)
+                :type (str (q/ld1-> proposition-object [:rdf/type]))})}))
 
 (defn description [event]
   (when-let [interpretation-comments
@@ -277,6 +296,18 @@
         (json/parse-string true)
         :text)))
 
+(defn statement-type [interpretation-description]
+  (let [{clinsig-normalized :normalized
+         normalized-group :group}
+        (-> interpretation-description
+            s/lower-case
+            normalize-clinsig-term)
+        group-map {"path" "VariationGermlinePathogenicityStatement"
+                   "dr" "ClinVarDrugResponseStatement"
+                   "oth" "ClinVarOtherStatement"}]
+    (if (contains? group-map normalized-group)
+      (get group-map normalized-group)
+      (get group-map "oth"))))
 
 (defn add-data-for-clinical-assertion [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
@@ -285,7 +316,7 @@
          event
          :genegraph.annotate/data
          {:id (str domain-root (:id assertion) "." (:release_date message) #_(:date_last_updated assertion))
-          :type "VariationGermlineConditionStatement"
+          :type (statement-type (:interpretation_description assertion))
           :label (:title assertion)
             ;; Loop around on needed data to include in extensions later
           :extensions nil

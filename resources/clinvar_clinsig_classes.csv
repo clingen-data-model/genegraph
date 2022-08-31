@@ -1,0 +1,23 @@
+code,label,significance,clinvar_prop_type,clinvar_code_order,clinvar_desc_order
+aff,Affects,1,aff,100,100
+assoc,association,2,assoc,110,110
+assocnf,association not found,0,assoc,111,111
+b,Benign,0,path,30,10
+b/lb,Benign/Likely benign,0,path,32,12
+cdfs,conflicting data from submitters,-1,path,40,40
+cs,confers sensitivity,1,cs,120,120
+dr,drug response,2,dr,130,130
+era,Established risk allele,2,path,15,26
+lb,Likely benign,0,path,31,11
+lp,Likely pathogenic,2,path,11,20
+lp-lp,"Likely pathogenic, low penetrance",2,path,14,23
+lra,Likely risk allele,2,path,16,25
+np,not provided,1,np,140,140
+oth,other,1,oth,150,150
+p,Pathogenic,2,path,10,21
+p-lp,"Pathogenic, low penetrance",2,path,13,24
+p/lp,Pathogenic/Likely pathogenic,2,path,12,22
+protect,protective,1,protect,160,160
+rf,risk factor,2,rf,170,170
+ura,Uncertain risk allele,1,path,21,31
+vus,Uncertain significance,1,path,20,30
