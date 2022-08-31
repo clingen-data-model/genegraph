@@ -285,18 +285,22 @@
                {:id (str proposition-object)
                 :type (str (q/ld1-> proposition-object [:rdf/type]))})}))
 
-(defn description [event]
+(defn description
+  "Takes :interpretation_comments from the assertion.
+   Adds line breaks between them."
+  [event]
   (when-let [interpretation-comments
-             (get-in
-              event
-              [:genegraph.transform.clinvar.core/parsed-value
-               :content
-               :interpretation_comments])]
-    (-> (first interpretation-comments)
-        (json/parse-string true)
-        :text)))
+             (get-in event
+                     [:genegraph.transform.clinvar.core/parsed-value
+                      :content
+                      :interpretation_comments])]
+    (s/join "\n" (->> interpretation-comments
+                      (map #(json/parse-string % true))
+                      (map :text)))))
 
-(defn statement-type [interpretation-description]
+(defn statement-type
+  "Returns a Statement sub-class type string for a raw interpretation-description."
+  [interpretation-description]
   (let [clinsig (normalize-clinsig-term interpretation-description)
         clinsig-class (get-clinsig-class clinsig)
         group-map {"path" "VariationGermlinePathogenicityStatement"
@@ -306,13 +310,30 @@
       (get group-map clinsig-class)
       (get group-map "oth"))))
 
+(defn contributions [event]
+  (let [message (:genegraph.transform.clinvar.core/parsed-value event)
+        assertion (:content message)
+        qualified-submitter (str iri/submitter (:submitter_id assertion))]
+    [;; Approver (maybe an evaluator role?)
+     {:type "Contribution"
+      :agent qualified-submitter
+      :date (:interpretation_date_last_evaluated assertion)
+      :role "Approver"}
+     ;; Submitter
+     {:type "Contribution"
+      :agent qualified-submitter
+      :date (:date_last_updated assertion)
+      :role "Submitter"}]))
+
 (defn add-data-for-clinical-assertion [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
-        assertion (:content message)]
+        assertion (:content message)
+        vof (str (ns-cg "SCV_Statement_") (:id assertion))
+        id (str vof "." (:release_date message))]
     (-> (assoc
          event
          :genegraph.annotate/data
-         {:id (str domain-root (:id assertion) "." (:release_date message) #_(:date_last_updated assertion))
+         {:id id
           :type (statement-type (:interpretation_description assertion))
           :label (:title assertion)
             ;; Loop around on needed data to include in extensions later
@@ -328,14 +349,13 @@
             ;; Method is per-submitter in ClinVar, not per assertion (I think)
             ;; have we considered how to represent methods? =tristan
           :method nil
-          :contributions nil ; Should be a standard form for contribution here
+          :contributions (contributions event) ; Should be a standard form for contribution here
           :is_reported_in nil ; ClinVar?
-          :record_metadata {:is_version_of ()
+          :record_metadata {:is_version_of vof
                             :version (:release_date message)}
           :direction (clinsig-term->enum-value
                       (:interpretation_description assertion)
                       :direction)
-            ;; TODO substitute later with variation_id + last ISO date
           :subject_descriptor (str (variation-descriptor-by-clinvar-id
                                     (get-in event [:genegraph.transform.clinvar.core/parsed-value
                                                    :content
@@ -394,6 +414,7 @@
     "state" {"@id" (str (get prefix-ns-map "vrs") "state")}
     "sequence_id" {"@id" (str (get prefix-ns-map "vrs") "sequence_id")}
     "sequence" {"@id" (str (get prefix-ns-map "vrs") "sequence")}
+    "role" {"@id" (str (get prefix-ns-map "vrs") "role")}
 
     ; map plurals to known guaranteed array types
     "members" {"@id" (str (get local-property-names :vrs/members))
@@ -424,6 +445,8 @@
                  "@type" "@id"}
     "Condition" {"@id" (str (get prefix-ns-map "vrs") "Condition")
                  "@type" "@id"}
+    "Contribution" {"@id" (str (get prefix-ns-map "vrs") "Contribution")
+                    "@type" "@id"}
     ; Prefixes
     ;"https://vrs.ga4gh.org/terms/"
     "rdf" {"@id" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"

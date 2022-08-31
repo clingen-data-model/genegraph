@@ -250,6 +250,7 @@
  [:vrs/subject "https://vrs.ga4gh.org/terms/subject"]
  [:vrs/copies "https://vrs.ga4gh.org/terms/copies"]
  [:vrs/record-metadata "https://vrs.ga4gh.org/terms/record_metadata"]
+ [:vrs/role "https://vrs.ga4gh.org/terms/role"]
  [:cnt/chars "http://www.w3.org/2011/content#chars"]
  [:data/genome-build-identifier "http://edamontology.org/data_2340"]
  [:dc/abstract "http://purl.org/dc/terms/abstract"]
