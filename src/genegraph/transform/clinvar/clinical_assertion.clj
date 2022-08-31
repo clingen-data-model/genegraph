@@ -297,16 +297,13 @@
         :text)))
 
 (defn statement-type [interpretation-description]
-  (let [{clinsig-normalized :normalized
-         normalized-group :group}
-        (-> interpretation-description
-            s/lower-case
-            normalize-clinsig-term)
+  (let [clinsig (normalize-clinsig-term interpretation-description)
+        clinsig-class (get-clinsig-class clinsig)
         group-map {"path" "VariationGermlinePathogenicityStatement"
                    "dr" "ClinVarDrugResponseStatement"
                    "oth" "ClinVarOtherStatement"}]
-    (if (contains? group-map normalized-group)
-      (get group-map normalized-group)
+    (if (contains? group-map clinsig-class)
+      (get group-map clinsig-class)
       (get group-map "oth"))))
 
 (defn add-data-for-clinical-assertion [event]
