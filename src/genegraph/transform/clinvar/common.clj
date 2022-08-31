@@ -287,3 +287,11 @@ LIMIT 1")
              :name (name k)
              :value v}]))
        (apply concat)))
+
+(defn resource-to-out-triples
+  "Uses steppable interface of RDFResource to obtain all the out properties and load
+  them into a Model. These triples can be used as input to l/statements-to-model.
+  NOTE: that only works when all the properties of the resource are in property-names.edn"
+  [resource]
+  ; [k v] -> [r k v]
+  (map #(cons resource %) (into {} resource)))

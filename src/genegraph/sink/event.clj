@@ -24,8 +24,8 @@
 (def context (atom {}))
 
 (defn add-to-db!
-  "Adds model data to the db. As validation is configurable, this is done 
-   for events that have been successfully validated, as well as those for 
+  "Adds model data to the db. As validation is configurable, this is done
+   for events that have been successfully validated, as well as those for
    which there is no validation configured (see shapes.edn). On successful
    update of the db, annotates the event with :genegraph.sink.event/added-to-db
   true or false"
@@ -68,8 +68,8 @@
 (def log-result-interceptor
   {:name ::log-result
    :leave (fn [e] (log/debug
-                    :fn :log-result-interceptor
-                    :event (select-keys e [::ann/iri ::ann/subjects ::ann/did-validate])) e)})
+                   :fn :log-result-interceptor
+                   :event (select-keys e [::ann/iri ::ann/subjects ::ann/did-validate])) e)})
 
 (def abort-on-dry-run-interceptor
   {:name ::abort-on-dry-run
@@ -149,16 +149,16 @@
             (conj vec
                   (helper/before (fn [e] (let [now-ms (inst-ms (java.util.Date.))]
                                            (assoc e :executed-interceptors
-                                                    (conj (get e :executed-interceptors [])
-                                                          (:name intercept))
-                                                    :interceptor-start-ms now-ms))))
+                                                  (conj (get e :executed-interceptors [])
+                                                        (:name intercept))
+                                                  :interceptor-start-ms now-ms))))
                   intercept
                   (helper/before (fn [e] (let [now-ms (inst-ms (java.util.Date.))
                                                start-ms (:interceptor-start-ms e)]
                                            (if start-ms
                                              (assoc e :executed-interceptors
-                                                      (conj (:executed-interceptors e)
-                                                            (keyword (str (- now-ms start-ms) "ms"))))
+                                                    (conj (:executed-interceptors e)
+                                                          (keyword (str (- now-ms start-ms) "ms"))))
                                              e))))))
           []
           interceptors))
@@ -175,8 +175,8 @@
    (process-event-seq! event-seq {}))
   ([event-seq opts]
    (write-tx
-     (doseq [e event-seq]
-       (process-event! (merge e opts))))))
+    (doseq [e event-seq]
+      (process-event! (merge e opts))))))
 
 (defn event-options []
   {::event-recorder/record-event true})

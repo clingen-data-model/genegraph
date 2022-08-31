@@ -1,17 +1,15 @@
 (ns genegraph.transform.clinvar.core
-  (:require [genegraph.database.query :as q]
-            [genegraph.transform.types :as xform-types :refer [add-model]]
-            [cheshire.core :as json]
-            [io.pedestal.log :as log]
-            [genegraph.transform.clinvar.common :refer [transform-clinvar
-                                                        clinvar-add-model
-                                                        clinvar-add-data
-                                                        clinvar-model-to-jsonld
-                                                        clinvar-add-event-graphql]]
+  (:require [cheshire.core :as json]
             [genegraph.database.load :as l]
+            [genegraph.database.query :as q]
+            [genegraph.transform.clinvar.clinical-assertion :as clinical-assertion]
+            [genegraph.transform.clinvar.common :refer [clinvar-add-event-graphql clinvar-add-model
+                                                        clinvar-model-to-jsonld]]
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.clinvar.variation-new :as variation]
-            [genegraph.transform.clinvar.clinical-assertion :as clinical-assertion]))
+            [genegraph.transform.types :as xform-types :refer [add-model]]
+            [genegraph.util :refer [str->bytestream]]
+            [io.pedestal.log :as log]))
 
 (defn add-document-store-id [event]
   (let [data (:genegraph.annotate/data event)]
@@ -35,7 +33,7 @@
                                          [::parsed-value :content :entity_type]))
         event-with-data (case (get-in event-with-json
                                       [::parsed-value :content :entity_type])
-                          "trait" (clinical-assertion/add-data-for-raw-trait
+                          "trait" (clinical-assertion/add-data-for-trait
                                    event-with-json)
                           "trait_set" (clinical-assertion/add-data-for-trait-set
                                        event-with-json)
@@ -56,6 +54,14 @@
   ;; Avoids NPE on downstream interceptors expecting a model to exist
   (assoc event ::q/model (l/statements-to-model [])))
 
+(defn add-model-from-contextualized-data [event]
+  (if (:genegraph.annotate/data-contextualized event)
+    (assoc event ::q/model (l/read-rdf (str->bytestream
+                                        (json/generate-string
+                                         (:genegraph.annotate/data-contextualized event)))
+                                       {:format :json-ld}))
+    event))
+
 (defmethod add-model :clinvar-raw [event]
   "Construct an Apache Jena Model for the message contained in event under :genegraph.sink.event/value.
   Set it to key :genegraph.database.query/model."
@@ -63,7 +69,7 @@
     (let [event (-> event
                     add-parsed-value
                     (#(assoc % :genegraph.transform.clinvar/format (get-clinvar-format (::parsed-value %))))
-                    (#(clinvar-add-model %)))]
+                    add-model-from-contextualized-data)]
       (log/trace :fn :add-model :event event)
       event)
     (catch Exception e

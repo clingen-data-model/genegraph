@@ -389,6 +389,7 @@
     "state" {"@id" (str (get prefix-ns-map "vrs") "state")}
     "sequence_id" {"@id" (str (get prefix-ns-map "vrs") "sequence_id")}
     "sequence" {"@id" (str (get prefix-ns-map "vrs") "sequence")}
+    "record_metadata" {"@id" (str (get prefix-ns-map "vrs") "record_metadata")}
 
     ; map plurals to known guaranteed array types
     "members" {"@id" (str (get local-property-names :vrs/members))
@@ -433,8 +434,8 @@
       add-variation-map
       ((fn [e]
          (assoc e
-                :genegraph.transform.clinvar.core/contextualized
-                (merge (::normalized e)
+                :genegraph.annotate/data-contextualized
+                (merge (:genegraph.annotate/data e)
                        variation-context))))))
 
 #_(defmethod common/clinvar-add-model :variation [event]
@@ -456,11 +457,11 @@
                                {:format :json-ld})]
              (assoc e ::q/model m))))))
 
-(defmethod common/clinvar-add-model :variation [event]
-  (assoc event ::q/model (l/read-rdf (str->bytestream
-                                      (json/generate-string
-                                       (:genegraph.transform.clinvar.core/contextualized event)))
-                                     {:format :json-ld})))
+#_(defmethod common/clinvar-add-model :variation [event]
+    (assoc event ::q/model (l/read-rdf (str->bytestream
+                                        (json/generate-string
+                                         (:genegraph.annotate/data-contextualized event)))
+                                       {:format :json-ld})))
 
 
 (def variation-descriptor-query
