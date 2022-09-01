@@ -40,11 +40,33 @@
 (defn add-vicc-context [val]
   (assoc val "@context" vicc-context))
 
+;; vicc-db-name is to store the http cache, which caches the full url, params, etc,
+;; and most of the response object.
+;; but really all we need is the expression -> variation object cached.
+;; each normalization function may use a slightly different expr specification, so each
+;; should define their own key fn for how the expr is deterministically serialized.
 (def vicc-db-name "cancervariants-cache.db")
+(def vicc-expr-db-name "cancervariants-expr-cache.db")
 
 (defstate ^RocksDB vicc-db
   :start (rocksdb/open vicc-db-name)
   :stop (rocksdb/close vicc-db))
+
+(defstate ^RocksDB vicc-expr-db
+  :start (rocksdb/open vicc-expr-db-name)
+  :stop (rocksdb/close vicc-expr-db))
+
+(def normalize-canonical-cache
+  "Maps two keys :get and :put to get and put cached values for normalize-canonical function calls"
+  (letfn [(key-fn [^String variation-expression ^Keyword expression-type]
+            (-> {:variation-expression variation-expression :expression-type expression-type}
+                seq (->> (into [])) str))]
+    {:put (fn [^String variation-expression ^Keyword expression-type value]
+            (rocksdb/rocks-put! vicc-expr-db
+                                (key-fn variation-expression expression-type)
+                                value))
+     :get (fn [^String variation-expression ^Keyword expression-type value]
+            (rocksdb/rocks-get vicc-expr-db (key-fn variation-expression expression-type)))}))
 
 (defn normalize-canonical
   [^String variation-expression ^Keyword expression-type]
