@@ -4,10 +4,11 @@
             [clojure.pprint :refer [pprint]]
             [genegraph.annotate :as ann]
             [genegraph.sink.event :refer [add-to-db!]]
-            [genegraph.database.query :as q]
-            [genegraph.transform.types :as xform-types]
+            [genegraph.database.util :refer [write-tx]]
             [genegraph.transform.clinvar.clinical-assertion :as ca]
-            [genegraph.transform.clinvar.common :as common]
+            [genegraph.transform.types :as xform-types]
+            [genegraph.util.fs :refer [gzip-file-reader]]
+            [io.pedestal.log :as log]
             [mount.core :as mount]))
 
 
@@ -44,14 +45,35 @@
       ann/add-metadata
       ; needed for add-to-db! to work
       ann/add-action
-      xform-types/add-data
-      xform-types/add-model
-      add-to-db!
-      #_(#(xform-types/add-model %))))
+      ((fn [e] (try
+                 (xform-types/add-data e)
+                 (catch Exception ex
+                   (log/error :fn :message-process!
+                              :msg "Exception adding data to event"
+                              :event e
+                              :exception ex))
+                 (finally e))))
+      (#(xform-types/add-model %))
+      ((fn [e] (when (:genegraph.database.query/model e) (add-to-db! e)) e))))
 
 (defn process-topic-file [input-filename]
-  (let [messages (map #(json/parse-string % true) (line-seq (io/reader input-filename)))]
-    (map message-proccess! messages)))
+  (let [messages (map #(json/parse-string % true) (line-seq (io/reader input-filename)))
+        ;; map of :genegraph.transform.clinvar/format to the writer
+        writers (atom {})]
+    (with-open [statement-writer (io/writer (str input-filename "-output-statements"))
+                variation-descriptor-writer (io/writer (str input-filename "-output-variation-descriptors"))
+                other-writer (io/writer (str input-filename "-output-other"))]
+      (doseq [event (map message-proccess! messages)]
+        (let [clinvar-type (:genegraph.transform.clinvar/format event)
+              writer (case clinvar-type
+                       :clinical_assertion statement-writer
+                       :variation variation-descriptor-writer
+                       other-writer)]
+          (.write writer (-> event
+                             :genegraph.annotate/data-contextualized
+                             (dissoc "@context")
+                             (json/generate-string)))
+          (.write writer "\n"))))))
 
 
 (comment
@@ -65,3 +87,8 @@
       ca/add-data-for-trait
       (genegraph.transform.clinvar.core/add-model-from-contextualized-data)
       :genegraph.database.query/model))
+
+(defn run-full-topic-file []
+  (let [input-filename "clinvar-raw.gz"
+        messages (map #(json/parse-string % true) (line-seq (gzip-file-reader input-filename)))]
+    (map message-proccess! messages)))

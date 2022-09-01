@@ -1,14 +1,17 @@
 (ns genegraph.transform.clinvar.clinical-assertion
   (:require [cheshire.core :as json]
             [clojure.string :as s]
+            [genegraph.database.load :as l]
             [genegraph.database.names :refer [local-class-names
-                                              local-property-names
-                                              prefix-ns-map]]
+                                              local-property-names prefix-ns-map]]
             [genegraph.database.query :as q]
+            [genegraph.database.query.types :refer [RDFResource]]
             [genegraph.sink.document-store :as document-store]
-            [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.clinvar.common :as common]
-            [io.pedestal.log :as log]))
+            [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
+            [genegraph.transform.clinvar.util :refer [in?]]
+            [io.pedestal.log :as log])
+  (:import (genegraph.database.query.types RDFResource)))
 
 (declare statement-context)
 
@@ -28,6 +31,29 @@
    "not provided"
    "drug response"
    "variant of unknown significance"])
+
+(def all-clinsigs ["Affects"
+                   "association"
+                   "association not found"
+                   "Benign"
+                   "Benign/Likely benign"
+                   "conflicting data from submitters"
+                   "confers sensitivity"
+                   "drug response"
+                   "Established risk allele"
+                   "Likely benign"
+                   "Likely pathogenic"
+                   "Likely pathogenic, low penetrance"
+                   "Likely risk allele"
+                   "not provided"
+                   "other"
+                   "Pathogenic"
+                   "Pathogenic, low penetrance"
+                   "Pathogenic/Likely pathogenic"
+                   "protective"
+                   "risk factor"
+                   "Uncertain risk allele"
+                   "Uncertain significance"])
 
 
 (def clinsig->germline-statement-attribute
@@ -154,15 +180,17 @@
 
 (defn add-data-for-trait [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
-        trait (:content message)]
-    (log/info :event event)
-    (log/info :trait trait)
+        trait (:content message)
+        fallback-id (str (ns-cg "trait") "_" (:id trait) "." (:release_date message))]
     (-> event
         (assoc
          :genegraph.annotate/data
          {:id (cond
                 (:medgen_id trait) (str "medgen:" (:medgen_id trait))
-                :else (:id trait))
+                :else (do (log/warn :fn :add-data-for-trait
+                                    :msg "Trait with no medgen id"
+                                    :message message)
+                          fallback-id))
           :type (case (:type trait)
                   "Disease" "Disease"
                   "Phenotype")
@@ -175,24 +203,27 @@
 
 
 (defn get-trait-by-id [trait-id release-date]
-  (let [rs (q/select "select ?i where {
+  (let [;; Most recent trait with trait-id no later than release-date
+        rs (q/select "select ?i where {
                       { ?i a :vrs/Disease } union { ?i a :vrs/Phenotype }
                       ?i :cg/clinvar-trait-id ?trait_id .
-                      ?i :cg/release-date ?release_date }"
+                      ?i :cg/release-date ?release_date .
+                      FILTER(?release_date <= ?max_release_date) }
+                      order by desc(?release_date)
+                      limit 1"
                      {:trait_id trait-id
-                      :release_date release-date})]
-    (when (and (< 1 (count rs))
-               (< 1 (count (set (map :id rs)))))
-      (log/error :fn :get-trait-byid
-                 :msg "Multiple matching traits with different identifiers"
+                      :max_release_date release-date})]
+    (when (= 0 (count rs))
+      (log/error :fn :get-trait-by-id
+                 :msg "No matching trait found"
                  :trait-id trait-id
-                 :release-date release-date
-                 :rs (map str rs)))
+                 :release-date release-date))
     (first rs)))
 
 (defn trait-resource-for-output [trait]
-  {:id (str trait)
-   :type (str (q/ld1-> trait [:rdf/type]))})
+  (when trait
+    {:id (str trait)
+     :type (str (q/ld1-> trait [:rdf/type]))}))
 
 (defn add-data-for-trait-set [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
@@ -209,6 +240,14 @@
                                :trait-ids trait-ids)
                      (->> trait-ids
                           (map #(get-trait-by-id % (:release_date message)))
+                          ((fn [traits]
+                             (if (some #(= nil %) traits)
+                               (log/error :msg "Got nil traits"
+                                          :trait-set trait-set
+                                          :trait-ids trait-ids
+                                          :traits traits
+                                          :release-date (:release_date message)))
+                             traits))
                           (map #(trait-resource-for-output %))))}
          :genegraph.annotate/iri
          (str (ns-cg "trait_set_") (:id trait-set) "." (:release_date message)))
@@ -230,24 +269,27 @@
   (let [rs (q/select "select ?i where {
                       ?i a :vrs/Condition .
                       ?i :cg/clinvar-trait-set-id ?trait_set_id .
-                      ?i :cg/release-date ?release_date }"
+                      ?i :cg/release-date ?release_date .
+                      FILTER(?release_date <= ?max_release_date) }
+                      order by desc(?release_date)
+                      limit 1"
                      {:trait_set_id trait-set-id
-                      :release_date release-date})]
-    (when (and (< 1 (count rs))
-               (< 1 (count (set (map :id rs)))))
-      (log/error :fn :get-trait-byid
-                 :msg "Multiple matching trait sets with different identifiers"
+                      :max_release_date release-date})]
+    (when (= 0 (count rs))
+      (log/error :fn :get-trait-by-id
+                 :msg "No matching trait set"
                  :trait-set-id trait-set-id
-                 :release-date release-date
-                 :rs (map str rs)))
+                 :release-date release-date))
     (first rs)))
 
-(defn proposition-object [event]
-  (log/info :fn :proposition-object :event event)
+(defn ^RDFResource proposition-object [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
         trait-set-id (:trait_set_id assertion)]
-    (get-trait-set-by-id trait-set-id (:release_date message))))
+    (if (not (nil? trait-set-id))
+      (let [trait-set-resource (get-trait-set-by-id trait-set-id (:release_date message))]
+        trait-set-resource)
+      (log/warn :fn :proposition-object :msg :nil-trait-set-id :message message))))
 
 (defn variation-descriptor-by-clinvar-id [clinvar-id release-date]
   (let [qualified-id (str iri/clinvar-variation clinvar-id)
@@ -270,20 +312,95 @@
                  :rs (map str rs)))
     (first rs)))
 
+(defn ^String statement-type
+  "Returns a Statement sub-class type string for a raw interpretation-description."
+  [interpretation-description]
+  (let [clinsig (normalize-clinsig-term interpretation-description)
+        clinsig-class (get-clinsig-class clinsig)
+        group-map {"path" "VariationGermlinePathogenicityStatement"
+                   "dr" "ClinVarDrugResponseStatement"
+                   "oth" "ClinVarOtherStatement"}]
+    (if (contains? group-map clinsig-class)
+      (get group-map clinsig-class)
+      (get group-map "oth"))))
+
+(def statement-type-to-proposition-type
+  {"VariationGermlinePathogenicityStatement" "VariationGermlinePathogenicityPropostion"
+   "ClinVarDrugResponseStatement" "ClinVarDrugResponseProposition"
+   "ClinVarOtherStatement" "ClinVarOtherProposition"})
+
+(defn clinsig-and-statement-type-to-predicate
+  [clinsig stmt-type]
+  ;; TODO add the predicates to the clinvar_clinsig_normalized.csv
+  (let [path-causal-clinsigs ["Benign"
+                              "Benign/Likely benign"
+                              "Likely benign"
+                              "Likely pathogenic"
+                              "Likely pathogenic, low penetrance"
+                              "Pathogenic"
+                              "Pathogenic, low penetrance"
+                              "Pathogenic/Likely pathogenic"
+                              "Uncertain significance"]
+        path-risk-clinsigs ["Established risk allele"
+                            "Likely risk allele"
+                            "Uncertain risk allele"]]
+    (case stmt-type
+      "VariationGermlinePathogenicityStatement"
+      (cond (in? clinsig path-causal-clinsigs) "causes_mendelian_condition"
+            (in? clinsig path-risk-clinsigs) "increases_risk_for_condition"
+            :else (do (log/error :fn :clinsig-and-statement-type-to-predicate
+                                 :msg "Could not interpret clinsig"
+                                 :clinsig clinsig :stmt-type stmt-type)
+                      nil))
+      "ClinVarDrugResponseStatement" "has_clinvar_drug_response"
+      "ClinVarOtherStatement" "has_clinvar_other"
+      (log/error :fn :clinsig-and-statement-type-to-predicate
+                 :msg "Unknown statement type"
+                 :stmt-type stmt-type
+                 :clinsig clinsig))))
+
 (defn proposition [event]
-  (let [subject-descriptor (variation-descriptor-by-clinvar-id
-                            (get-in event [:genegraph.transform.clinvar.core/parsed-value
-                                           :content
-                                           :variation_id])
-                            (get-in event [:genegraph.transform.clinvar.core/parsed-value
-                                           :release_date]))
-        subject (q/ld1-> subject-descriptor [:rdf/value])]
-    {:subject (str subject)
-     :predicate "causes_mendelian_condition"
+  (let [message (:genegraph.transform.clinvar.core/parsed-value event)
+        assertion (:content message)
+        subject-descriptor (variation-descriptor-by-clinvar-id
+                            (get assertion :variation_id)
+                            (get message :release_date))
+        subject (q/ld1-> subject-descriptor [:rdf/value])
+        stmt-type (statement-type (:interpretation_description assertion))]
+    {:type (get statement-type-to-proposition-type stmt-type)
+     :subject (str subject)
+     :predicate (clinsig-and-statement-type-to-predicate
+                 (normalize-clinsig-term (:interpretation_description assertion))
+                 stmt-type)
      :object (let [;; Condition, Disease, Phenotype
-                   proposition-object (proposition-object event)]
-               {:id (str proposition-object)
-                :type (str (q/ld1-> proposition-object [:rdf/type]))})}))
+                   proposition-object-resource (proposition-object event)]
+               (if proposition-object-resource
+                 (trait-set-resource-for-output proposition-object-resource)
+                 ;; Not Provided (or some error in upstream trait mapping)
+                 {:id (str (ns-cg "not_provided"))
+                  :type "Phenotype"}))}))
+
+(defn method
+  "Returns a Variant Annotation : Method object for a clinical_assertion"
+  [event]
+  (let [message (:genegraph.transform.clinvar.core/parsed-value event)
+        assertion (:content message)
+        has-method? (= "AssertionMethod"
+                       (get-in assertion [:content "AttributeSet" "Attribute" "@Type"]))
+        method-label (get-in assertion [:content "AttributeSet" "Attribute" "$"])
+        method-url (get-in assertion [:content "AttributeSet" "Citation" "URL" "$"])
+        #_(str iri/clinvar-assertion (:id assertion) "." (:release_date message) "_Method")]
+    (when has-method?
+      {:id (str "_:" (l/blank-node))
+       :type "Method"
+       :label method-label
+       :is_reported_in {;; TODO use the method URL as the id if it exists?
+                                ;; Unreliable as not all assertions have one
+                                ;; title
+                                ;; extensions
+                                ;; xrefs
+                        :id (or method-url (str "_:" (l/blank-node)))
+                        :type "Document"}})))
 
 (defn description
   "Takes :interpretation_comments from the assertion.
@@ -297,18 +414,6 @@
     (s/join "\n" (->> interpretation-comments
                       (map #(json/parse-string % true))
                       (map :text)))))
-
-(defn statement-type
-  "Returns a Statement sub-class type string for a raw interpretation-description."
-  [interpretation-description]
-  (let [clinsig (normalize-clinsig-term interpretation-description)
-        clinsig-class (get-clinsig-class clinsig)
-        group-map {"path" "VariationGermlinePathogenicityStatement"
-                   "dr" "ClinVarDrugResponseStatement"
-                   "oth" "ClinVarOtherStatement"}]
-    (if (contains? group-map clinsig-class)
-      (get group-map clinsig-class)
-      (get group-map "oth"))))
 
 (defn contributions [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
@@ -329,27 +434,25 @@
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
         vof (str (ns-cg "SCV_Statement_") (:id assertion))
-        id (str vof "." (:release_date message))]
+        id (str vof "." (:release_date message))
+        stmt-type (statement-type (:interpretation_description assertion))]
     (-> (assoc
          event
          :genegraph.annotate/data
          {:id id
-          :type (statement-type (:interpretation_description assertion))
+          :type stmt-type
           :label (:title assertion)
-            ;; Loop around on needed data to include in extensions later
+          ;; Loop around on needed data to include in extensions later
           :extensions nil
-            ;; Don't think we've settled on description
           :description (description event)
-            ;; Removing strength per discussion with AW 2022-08-23 =tristan
+          ;; Removing strength per discussion with AW 2022-08-23 =tristan
           #_:strength #_(clinsig-term->enum-value
                          (:interpretation_description assertion)
                          :strength)
-            ;; I think not relevant here
-          :confidence_score nil
-            ;; Method is per-submitter in ClinVar, not per assertion (I think)
-            ;; have we considered how to represent methods? =tristan
-          :method nil
-          :contributions (contributions event) ; Should be a standard form for contribution here
+          ;; I think not relevant here
+          ;;:confidence_score nil
+          :method (method event)
+          :contributions (contributions event)
           :is_reported_in nil ; ClinVar?
           :record_metadata {:is_version_of vof
                             :version (:release_date message)}
@@ -357,12 +460,9 @@
                       (:interpretation_description assertion)
                       :direction)
           :subject_descriptor (str (variation-descriptor-by-clinvar-id
-                                    (get-in event [:genegraph.transform.clinvar.core/parsed-value
-                                                   :content
-                                                   :variation_id])
-                                    (get-in event [:genegraph.transform.clinvar.core/parsed-value
-                                                   :release_date])))
-          :variation_origin "germline"
+                                    (get assertion :variation_id)
+                                    (get message :release_date)))
+          ;;:variation_origin "germline"
           :object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
           :classification (classification assertion)
           :target_proposition (proposition event)}
@@ -447,6 +547,8 @@
                  "@type" "@id"}
     "Contribution" {"@id" (str (get prefix-ns-map "vrs") "Contribution")
                     "@type" "@id"}
+    "Document" {"@id" (str (get prefix-ns-map "vrs") "Document")
+                "@type" "@id"}
     ; Prefixes
     ;"https://vrs.ga4gh.org/terms/"
     "rdf" {"@id" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"

@@ -70,10 +70,9 @@
     (cond (.startsWith change "g.") "hgvs.g"
           (.startsWith change "c.") "hgvs.c"
           (.startsWith change "p.") "hgvs.p"
-          :else (let [e (ex-info "Unknown hgvs change syntax" {:change change})]
-                  (log/error :message (ex-message e) :data (ex-data e))
-                  (log/error :message "Defaulting to 'hgvs' for change" :change change)
-                  "hgvs"))
+          :else (do (log/warn :message "Unknown hgvs change syntax. Defaulting to 'hgvs'."
+                              :change change)
+                    "hgvs"))
     (do (log/warn :message "No change provided, falling back to text syntax")
         "text")))
 

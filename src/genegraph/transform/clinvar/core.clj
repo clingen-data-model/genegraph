@@ -18,7 +18,6 @@
            (str (:clinvar_type data) "_" (:clinvar_id data)))))
 
 (defn add-parsed-value [event]
-  (log/info :fn :add-parsed-value :event event)
   (assoc event
          ::parsed-value
          (-> event
@@ -27,22 +26,31 @@
              (util/parse-nested-content))))
 
 (defmethod xform-types/add-data :clinvar-raw [event]
-  (log/info :fn :add-data)
-  (let [event-with-json (add-parsed-value event)
-        _ (log/info :entity_type (get-in event-with-json
-                                         [::parsed-value :content :entity_type]))
-        event-with-data (case (get-in event-with-json
-                                      [::parsed-value :content :entity_type])
-                          "trait" (clinical-assertion/add-data-for-trait
-                                   event-with-json)
-                          "trait_set" (clinical-assertion/add-data-for-trait-set
-                                       event-with-json)
-                          "clinical_assertion" (clinical-assertion/add-data-for-clinical-assertion
-                                                event-with-json)
-                          "variation" (variation/add-data-for-variation
-                                       event-with-json)
-                          event-with-json)]
-    (add-document-store-id event-with-data)))
+  (log/debug :fn :add-data)
+  (try
+    (let [event-with-json (add-parsed-value event)
+          _ (log/info :entity_type (get-in event-with-json
+                                           [::parsed-value :content :entity_type])
+                      :id (get-in event-with-json [::parsed-value :content :id]
+                                  (get-in event-with-json [::parsed-value :content]))
+                      :release_date (get-in event-with-json [::parsed-value :release_date]))
+          event-with-data (case (get-in event-with-json
+                                        [::parsed-value :content :entity_type])
+                            "trait" (clinical-assertion/add-data-for-trait
+                                     event-with-json)
+                            "trait_set" (clinical-assertion/add-data-for-trait-set
+                                         event-with-json)
+                            "clinical_assertion" (clinical-assertion/add-data-for-clinical-assertion
+                                                  event-with-json)
+                            "variation" (variation/add-data-for-variation
+                                         event-with-json)
+                            event-with-json)]
+      (add-document-store-id event-with-data))
+    (catch Exception e
+      (log/error :fn ::add-data :msg "Exception caught in add-data for :clinvar-raw"
+                 :event event
+                 :exception e)
+      (throw e))))
 
 (defn get-clinvar-format [value]
   (let [cv-format (keyword (or (get-in value [:entity_type])

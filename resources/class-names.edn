@@ -425,5 +425,6 @@
  [:vrs/Phenotype "https://vrs.ga4gh.org/terms/Phenotype"]
  [:vrs/Condition "https://vrs.ga4gh.org/terms/Condition"]
  [:vrs/Contribution "https://vrs.ga4gh.org/terms/Contribution"]
+ [:vrs/Document "https://vrs.ga4gh.org/terms/Document"]
  [:chebi/Drug "http://purl.obolibrary.org/obo/CHEBI_23888"]
  [:stato/Cohort "http://purl.obolibrary.org/obo/STATO_0000203"]]
