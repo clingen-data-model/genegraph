@@ -5,7 +5,6 @@
             [genegraph.database.names :refer [local-class-names
                                               local-property-names prefix-ns-map]]
             [genegraph.database.query :as q]
-            [genegraph.database.query.types :refer [RDFResource]]
             [genegraph.sink.document-store :as document-store]
             [genegraph.transform.clinvar.common :as common]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
@@ -150,7 +149,9 @@
         qualified (str (get prefix-ns-map "cgterms") clinsig)]
     {:id qualified
      :type "Coding"
-     :label (normalize-clinsig-term (:interpretation_description assertion))}))
+     :label (-> (normalize-clinsig-term (:interpretation_description assertion))
+                (s/replace " " "_")
+                (s/replace "/" "_"))}))
 
 (defn event-data [event]
   (get-in event [:genegraph.transform.clinvar.core/parsed-value :content]))
@@ -225,49 +226,76 @@
     {:id (str trait)
      :type (str (q/ld1-> trait [:rdf/type]))}))
 
+(defn compact-one-element-condition
+  "If the condition has a members array with only one element, return that element.
+   (copies over :id, :clinvar_trait_set_id, :release_date)"
+  [condition]
+  (if (= 1 (count (:members condition)))
+    (-> condition :members first
+        (merge (select-keys condition [:id
+                                       :clinvar_trait_set_id
+                                       :release_date])))
+    condition))
+
 (defn add-data-for-trait-set [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
-        trait-set (:content message)]
+        trait-set (:content message)
+        data (->
+              {:id (str (ns-cg "trait_set_") (:id trait-set) "." (:release_date message))
+               :type "Condition"
+               :clinvar_trait_set_id (:id trait-set)
+               :release_date (:release_date message)
+               :members (let [trait-ids (:trait_ids trait-set)]
+                          (log/debug :fn :add-data-for-trait-set
+                                     :trait-ids trait-ids)
+                          (->> trait-ids
+                               (map #(get-trait-by-id % (:release_date message)))
+                               ((fn [traits]
+                                  (when (some #(= nil %) traits)
+                                    (log/error :msg "Got nil traits"
+                                               :trait-set trait-set
+                                               :trait-ids trait-ids
+                                               :traits traits
+                                               :release-date (:release_date message)))
+                                  traits))
+                               (map #(trait-resource-for-output %))))}
+              (compact-one-element-condition))]
     (-> (assoc
          event
          :genegraph.annotate/data
-         {:id (str (ns-cg "trait_set_") (:id trait-set) "." (:release_date message))
-          :type "Condition"
-          :clinvar_trait_set_id (:id trait-set)
-          :release_date (:release_date message)
-          :members (let [trait-ids (:trait_ids trait-set)]
-                     (log/info :fn :add-data-for-trait-set
-                               :trait-ids trait-ids)
-                     (->> trait-ids
-                          (map #(get-trait-by-id % (:release_date message)))
-                          ((fn [traits]
-                             (if (some #(= nil %) traits)
-                               (log/error :msg "Got nil traits"
-                                          :trait-set trait-set
-                                          :trait-ids trait-ids
-                                          :traits traits
-                                          :release-date (:release_date message)))
-                             traits))
-                          (map #(trait-resource-for-output %))))}
+         data
          :genegraph.annotate/iri
          (str (ns-cg "trait_set_") (:id trait-set) "." (:release_date message)))
         add-contextualized)))
 
 (defn trait-set-resource-for-output
-  "Takes an RDFResource for a trait-set object (:vrs/Condition)"
+  "Takes an RDFResource for a normalized trait-set object (:vrs/Condition).
+   Uses :vrs/members relationship to get the traits in it."
   [trait-set]
-  {:id (str trait-set)
-   :type "Condition"
-   :members (->> (q/ld-> trait-set [:vrs/members])
-                 (map #(get-trait-by-id % (q/ld1-> trait-set [:cg/release-date])))
-                 (map #(trait-resource-for-output %)))})
+  (let [trait-set-type (q/ld1-> trait-set [:rdf/type])]
+    (case (s/replace (str trait-set-type) (get prefix-ns-map "vrs") "")
+      "Disease" {:id (str trait-set)
+                 :type (str trait-set-type)}
+      "Phenotype" {:id (str trait-set)
+                   :type (str trait-set-type)}
+      "Condition" {:id (str trait-set)
+                   :type "Condition"
+                   :members (->> (q/ld-> trait-set [:vrs/members])
+                                 #_(map #(get-trait-by-id % (q/ld1-> trait-set [:cg/release-date])))
+                                 (map #(trait-resource-for-output %)))}
+      (do (log/error :fn :trait-set-resource-for-output :msg "Unknown type"
+                     :trait-set-type trait-set-type)
+          {:id (str trait-set)
+           :type (str trait-set-type)}))))
 
 (defn get-trait-set-by-id [trait-set-id release-date]
   (log/info :fn :get-trait-set-by-id
             :trait-set-id trait-set-id
             :release-date release-date)
   (let [rs (q/select "select ?i where {
-                      ?i a :vrs/Condition .
+                      { ?i a :vrs/Condition }
+                      union { ?i a :vrs/Disease }
+                      union { ?i a :vrs/Phenotype }
                       ?i :cg/clinvar-trait-set-id ?trait_set_id .
                       ?i :cg/release-date ?release_date .
                       FILTER(?release_date <= ?max_release_date) }
@@ -365,10 +393,17 @@
         subject-descriptor (variation-descriptor-by-clinvar-id
                             (get assertion :variation_id)
                             (get message :release_date))
-        subject (q/ld1-> subject-descriptor [:rdf/value])
         stmt-type (statement-type (:interpretation_description assertion))]
     {:type (get statement-type-to-proposition-type stmt-type)
-     :subject (str subject)
+     :subject (if (not (nil? subject-descriptor))
+                (let [subject (q/ld1-> subject-descriptor [:rdf/value])]
+                  (str subject))
+                (do (log/error :fn :proposition
+                               :msg "No matching subject descriptor found"
+                               :variation-id (get assertion :variation_id)
+                               :release-date (get message :release_date)
+                               :message message)
+                    nil))
      :predicate (clinsig-and-statement-type-to-predicate
                  (normalize-clinsig-term (:interpretation_description assertion))
                  stmt-type)
@@ -379,6 +414,7 @@
                  ;; Not Provided (or some error in upstream trait mapping)
                  {:id (str (ns-cg "not_provided"))
                   :type "Phenotype"}))}))
+
 
 (defn method
   "Returns a Variant Annotation : Method object for a clinical_assertion"
@@ -443,7 +479,8 @@
           :type stmt-type
           :label (:title assertion)
           ;; Loop around on needed data to include in extensions later
-          :extensions nil
+          ;; TODO
+          ;;:extensions nil
           :description (description event)
           ;; Removing strength per discussion with AW 2022-08-23 =tristan
           #_:strength #_(clinsig-term->enum-value
@@ -453,7 +490,7 @@
           ;;:confidence_score nil
           :method (method event)
           :contributions (contributions event)
-          :is_reported_in nil ; ClinVar?
+          ;;:is_reported_in nil ; ClinVar?
           :record_metadata {:is_version_of vof
                             :version (:release_date message)}
           :direction (clinsig-term->enum-value
@@ -470,6 +507,36 @@
          (str (ns-cg "clinical_assertion_") (:id assertion) "." (:release_date message)))
         add-contextualized)))
 
+(comment
+  '(defn clinical-assertion-resource-for-output
+     [assertion]
+     {:id (str assertion)
+      :type (statement-type (q/ld1-> assertion [:cg/interpretation_description]))
+      :label (q/ld1-> assertion [:cg/title])
+          ;; Loop around on needed data to include in extensions later
+      :extensions nil
+      :description (description event)
+          ;; Removing strength per discussion with AW 2022-08-23 =tristan
+      #_:strength #_(clinsig-term->enum-value
+                     (:interpretation_description assertion)
+                     :strength)
+          ;; I think not relevant here
+          ;;:confidence_score nil
+      :method (method event)
+      :contributions (contributions event)
+      :is_reported_in nil ; ClinVar?
+      :record_metadata {:is_version_of vof
+                        :version (:release_date message)}
+      :direction (clinsig-term->enum-value
+                  (:interpretation_description assertion)
+                  :direction)
+      :subject_descriptor (str (variation-descriptor-by-clinvar-id
+                                (get assertion :variation_id)
+                                (get message :release_date)))
+          ;;:variation_origin "germline"
+      :object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
+      :classification (classification assertion)
+      :target_proposition (proposition event)}))
 
 (def statement-context
   {"@context"
