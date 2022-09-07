@@ -241,13 +241,11 @@
 
 (defn compact-one-element-condition
   "If the condition has a members array with only one element, return that element.
-   (copies over :id, :clinvar_trait_set_id, :release_date)"
+   (copies over :clinvar_trait_set_id)"
   [condition]
   (if (= 1 (count (:members condition)))
     (-> condition :members first
-        (merge (select-keys condition [:id
-                                       :clinvar_trait_set_id
-                                       :release_date])))
+        (merge (select-keys condition [:clinvar_trait_set_id])))
     condition))
 
 (defn add-data-for-trait-set [event]
@@ -333,12 +331,13 @@
                    :type (str trait-set-type)}
         "Phenotype" {:id (trait-id-to-medgen-id (str trait-set))
                      :type (str trait-set-type)}
-        "Condition" {:id (str trait-set)
-                     :type "Condition"
-                     :members (->> (q/ld-> trait-set [:vrs/members])
-                                   #_(map #(get-trait-by-id % (q/ld1-> trait-set [:cg/release-date])))
-                                   (map #(get-trait-resource %))
-                                   (map #(trait-resource-for-output %)))}
+        "Condition" (-> {:id (str trait-set)
+                         :type "Condition"
+                         :members (->> (q/ld-> trait-set [:vrs/members])
+                                       #_(map #(get-trait-by-id % (q/ld1-> trait-set [:cg/release-date])))
+                                       (map #(get-trait-resource %))
+                                       (map #(trait-resource-for-output %)))}
+                        compact-one-element-condition)
         (do (log/error :fn :trait-set-resource-for-output :msg "Unknown type"
                        :trait-set-type trait-set-type)
             {:id (str trait-set)
