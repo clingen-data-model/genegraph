@@ -111,6 +111,11 @@
                   [scv_term label])
                 clinvar-clinsig-normalized)))
 
+(def normalize-clinsig-codes-map
+  (into {} (map (fn [{:keys [scv_term normalized label]}]
+                  [scv_term normalized])
+                clinvar-clinsig-normalized)))
+
 (def clinsig-class-map
   "Map of normalized clinsig terms to clinsig classes"
   (into {} (map (fn [{:keys [code label clinvar_prop_type]}]

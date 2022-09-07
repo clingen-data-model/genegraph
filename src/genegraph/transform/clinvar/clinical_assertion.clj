@@ -14,23 +14,6 @@
 
 (declare statement-context)
 
-(def clinsig-values
-  ["likely benign"
-   "association"
-   "benign"
-   "risk factor"
-   "uncertain significance"
-   "likely pathogenic"
-   "pathologic"
-   "pathogenic"
-   "protective"
-   "non-pathogenic"
-   "no known pathogenicity"
-   "other"
-   "not provided"
-   "drug response"
-   "variant of unknown significance"])
-
 (def all-clinsigs ["Affects"
                    "association"
                    "association not found"
@@ -110,25 +93,33 @@
                     "pathogenic" "loinc:LA6668-3"
                     "non-pathogenic" "loinc:LA6675-8"
                     "no known pathogenicity" "loinc:LA6675-8"}})
-                    ;; "risk factor"
-                    ;; "association"
-                    ;; "protective"
-                    ;; "other"
-                    ;; "not provided"
-                    ;; "drug response"
 
 
+#_(def domain-root "clingen:")
+#_(def clinvar-variation-root "clinvar-variation:")
+#_(defn get-from-store [db type id]
+    (document-store/get-document db (str type "_" id)))
+#_(defn clinsig-term->enum-value [term field]
+    (get-in clinsig->germline-statement-attribute [field (s/lower-case term)]))
 
-
-
-(def domain-root "clingen:")
-(def clinvar-variation-root "clinvar-variation:")
-
-(defn get-from-store [db type id]
-  (document-store/get-document db (str type "_" id)))
-
-(defn clinsig-term->enum-value [term field]
-  (get-in clinsig->germline-statement-attribute [field (s/lower-case term)]))
+(defn clinsig->direction
+  "Maps a clinsig (normalized form of interpretation_description) to
+   direction enumerated values supports, opposes, uncertain"
+  [clinsig]
+  (comment "We are fixed on 'direction' and the options for values are
+            'supports', 'opposes', 'uncertain'.  'supports' for P/LP/ERA/LRA,
+            'opposes' for B/LB and 'uncertain' for 'VUS/URA'.
+            Always use 'supports' for the ClinVarXXXStatements.")
+  (let [mappings {"Benign" "opposes"
+                  "Benign/Likely benign" "opposes"
+                  "Likely benign" "opposes"
+                  "Likely pathogenic" "supports"
+                  "Likely pathogenic, low penetrance" "supports"
+                  "Pathogenic" "supports"
+                  "Pathogenic, low penetrance" "supports"
+                  "Pathogenic/Likely pathogenic" "supports"
+                  "Uncertain significance" "uncertain"}]
+    (get mappings clinsig "uncertain")))
 
 (defn normalize-clinsig-term
   "Returns the mapped normalized term for the raw input term.
@@ -136,6 +127,13 @@
   [term]
   (get common/normalize-clinsig-map (s/lower-case term)
        (get common/normalize-clinsig-map "other")))
+
+(defn normalize-clinsig-code
+  "Returns the mapped normalized code for the raw input term.
+   If the term is not known, return the mapping for 'other'"
+  [term]
+  (get common/normalize-clinsig-codes-map (s/lower-case term)
+       (get common/normalize-clinsig-codes-map "other")))
 
 (defn get-clinsig-class
   "Returns the class of a normalized clinsig term
@@ -146,15 +144,15 @@
 
 (defn classification [assertion]
   (let [clinsig (-> assertion :interpretation_description normalize-clinsig-term)
-        qualified (str (get prefix-ns-map "cgterms") clinsig)]
+        qualified (str (get prefix-ns-map "cgterms")
+                       (-> assertion
+                           :interpretation_description
+                           normalize-clinsig-code))]
     {:id qualified
      :type "Coding"
      :label (-> (normalize-clinsig-term (:interpretation_description assertion))
                 (s/replace " " "_")
                 (s/replace "/" "_"))}))
-
-(defn event-data [event]
-  (get-in event [:genegraph.transform.clinvar.core/parsed-value :content]))
 
 #_(defn add-data-for-raw-trait [event]
     (let [trait (event-data event)]
@@ -275,8 +273,7 @@
                                                  :traits traits
                                                  :release-date (:release_date message)))
                                     traits))
-                                 (map #(trait-resource-for-output %))))}
-              #_(compact-one-element-condition))]
+                                 (map #(trait-resource-for-output %))))})]
     (-> (assoc
          event
          :genegraph.annotate/data
@@ -300,48 +297,37 @@
                       order by desc(?release_date)
                       limit 1"
                      {:vof (q/resource trait-vof)
-                      :max_release_date max-release-date})]))
+                      :max_release_date max-release-date})]
+    (if (= 0 (count rs))
+      (log/error :msg "No trait found with version-of"
+                 :is-version-of trait-vof)
+      (first rs))))
 
 (defn trait-set-resource-for-output
   "Takes an RDFResource for a normalized trait-set object (:vrs/Condition).
    Uses :vrs/members relationship to get the traits in it."
   [trait-set]
-  (letfn [(get-trait-resource [trait-vof]
-            (let [rs (q/select "select ?i where {
-                                { ?i a :vrs/Disease }
-                                union { ?i a :vrs/Phenotype }
-                                ?i :vrs/record-metadata ?rmd .
-                                ?rmd :dc/is-version-of ?vof .
-                                ?rmd :owl/version-info ?release_date .
-                                FILTER(?release_date <= ?max_release_date)
-                                }
-                                order by desc(?release_date)
-                                limit 1"
-                               {:vof (q/resource trait-vof)
-                                :max_release_date (q/ld1-> trait-set [:vrs/record-metadata
-                                                                      :owl/version-info])})]
-              (if (= 0 (count rs))
-                (log/error :msg "No trait found with version-of"
-                           :is-version-of trait-vof)
-                (first rs))))]
-    (let [trait-set-type (q/ld1-> trait-set [:rdf/type])]
-      (log/info :trait-set-type trait-set-type)
-      (case (s/replace (str trait-set-type) (get prefix-ns-map "vrs") "")
-        "Disease" {:id (trait-id-to-medgen-id (str trait-set))
+  (let [trait-set-type (q/ld1-> trait-set [:rdf/type])]
+    (log/info :trait-set-type trait-set-type)
+    (case (s/replace (str trait-set-type) (get prefix-ns-map "vrs") "")
+      "Disease" {:id (trait-id-to-medgen-id (str trait-set))
+                 :type (str trait-set-type)}
+      "Phenotype" {:id (trait-id-to-medgen-id (str trait-set))
                    :type (str trait-set-type)}
-        "Phenotype" {:id (trait-id-to-medgen-id (str trait-set))
-                     :type (str trait-set-type)}
-        "Condition" (-> {:id (str trait-set)
-                         :type "Condition"
-                         :members (->> (q/ld-> trait-set [:vrs/members])
-                                       #_(map #(get-trait-by-id % (q/ld1-> trait-set [:cg/release-date])))
-                                       (map #(get-trait-resource %))
-                                       (map #(trait-resource-for-output %)))}
-                        compact-one-element-condition)
-        (do (log/error :fn :trait-set-resource-for-output :msg "Unknown type"
-                       :trait-set-type trait-set-type)
-            {:id (str trait-set)
-             :type (str trait-set-type)})))))
+      "Condition" (-> {:id (str trait-set)
+                       :type "Condition"
+                       :members (->> (q/ld-> trait-set [:vrs/members])
+                                     #_(map #(get-trait-by-id % (q/ld1-> trait-set [:cg/release-date])))
+                                     (map #(get-trait-resource-by-version-of
+                                            %
+                                            (q/ld1-> trait-set [:vrs/record-metadata
+                                                                :owl/version-info])))
+                                     (map #(trait-resource-for-output %)))}
+                      compact-one-element-condition)
+      (do (log/error :fn :trait-set-resource-for-output :msg "Unknown type"
+                     :trait-set-type trait-set-type)
+          {:id (str trait-set)
+           :type (str trait-set-type)}))))
 
 (defn get-trait-set-by-id [trait-set-id release-date]
   (log/info :fn :get-trait-set-by-id
@@ -408,7 +394,7 @@
       (get group-map "oth"))))
 
 (def statement-type-to-proposition-type
-  {"VariationGermlinePathogenicityStatement" "VariationGermlinePathogenicityPropostion"
+  {"VariationGermlinePathogenicityStatement" "VariationGermlinePathogenicityProposition"
    "ClinVarDrugResponseStatement" "ClinVarDrugResponseProposition"
    "ClinVarOtherStatement" "ClinVarOtherProposition"})
 
@@ -513,16 +499,21 @@
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
         qualified-submitter (str iri/submitter (:submitter_id assertion))]
-    [;; Approver (maybe an evaluator role?)
-     {:type "Contribution"
-      :agent qualified-submitter
-      :date (:interpretation_date_last_evaluated assertion)
-      :role "Approver"}
-     ;; Submitter
-     {:type "Contribution"
-      :agent qualified-submitter
-      :date (:date_last_updated assertion)
-      :role "Submitter"}]))
+    (cond-> []
+      (:interpretation_date_last_evaluated assertion)
+      (conj
+       ;; Approver (maybe an evaluator role?)
+       {:type "Contribution"
+        :agent qualified-submitter
+        :date (:interpretation_date_last_evaluated assertion)
+        :role "Approver"})
+      (:date_last_updated assertion)
+      (conj
+       ;; Submitter
+       {:type "Contribution"
+        :agent qualified-submitter
+        :date (:date_last_updated assertion)
+        :role "Submitter"}))))
 
 ;; TODO
 (defn contribution-resource-for-output [contribution-resource]
@@ -535,6 +526,14 @@
   #_(throw (IllegalArgumentException. "proposition-resource-for-output not implemented")))
 
 (defn clinical-assertion-resource-for-output
+  ;; TODO remove keys with nil values
+  ;; TODO verify method is working correctly
+  ;; TODO add type RecordMetadata to record_metadata
+  ;; TODO when interpretation_date_last_evaluated is null, what to do for Approver contribution?
+  ;;      leave it out with just the submitter contribution?
+  ;;      replace it with another contribution activity? This would be inconsistent
+  ;;      unless that activity was also added to all records. Default: 3 contributions
+  ;;      TODO addendum: all drug response stmts from 2019-07-01 do not have interpretation_date_last_evaluated
   "Takes an RDFResource for a clinical assertion Statement and
    puts data it references into a GA4GH Statement structure for output."
   [assertion-resource]
@@ -584,9 +583,9 @@
           ;;:is_reported_in nil ; ClinVar?
           :record_metadata {:is_version_of vof
                             :version (:release_date message)}
-          :direction (clinsig-term->enum-value
-                      (:interpretation_description assertion)
-                      :direction)
+          :direction (-> (:interpretation_description assertion)
+                         normalize-clinsig-term
+                         clinsig->direction)
           :subject_descriptor (get assertion :variation_id)
           #_#_:subject_descriptor (str (variation-descriptor-by-clinvar-id
                                         (get assertion :variation_id)
@@ -598,36 +597,6 @@
          (str (ns-cg "clinical_assertion_") (:id assertion) "." (:release_date message)))
         add-contextualized)))
 
-(comment
-  '(defn clinical-assertion-resource-for-output
-     [assertion]
-     {:id (str assertion)
-      :type (statement-type (q/ld1-> assertion [:cg/interpretation_description]))
-      :label (q/ld1-> assertion [:cg/title])
-          ;; Loop around on needed data to include in extensions later
-      :extensions nil
-      :description (description event)
-          ;; Removing strength per discussion with AW 2022-08-23 =tristan
-      #_:strength #_(clinsig-term->enum-value
-                     (:interpretation_description assertion)
-                     :strength)
-          ;; I think not relevant here
-          ;;:confidence_score nil
-      :method (method event)
-      :contributions (contributions event)
-      :is_reported_in nil ; ClinVar?
-      :record_metadata {:is_version_of vof
-                        :version (:release_date message)}
-      :direction (clinsig-term->enum-value
-                  (:interpretation_description assertion)
-                  :direction)
-      :subject_descriptor (str (variation-descriptor-by-clinvar-id
-                                (get assertion :variation_id)
-                                (get message :release_date)))
-          ;;:variation_origin "germline"
-      :object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
-      :classification (classification assertion)
-      :target_proposition (proposition event)}))
 
 (def statement-context
   {"@context"
