@@ -65,7 +65,7 @@
                "pathogenic" "supports"
                "non-pathogenic" "refutes"
                "no known pathogenicity" "refutes"
-               "variant of unknown significance" "uncertain"
+               "variant of unknown significance" "uncertain"}
 
                ;; Revisit what risk factor means
                ;; "risk factor" "supports"
@@ -77,7 +77,7 @@
                ;; "other" "not provided"
                ;; "protective" "not provided"
                ;; "association" "not provided"
-               }
+
    ;; strength not currently being used, consider removing =tristan
    :strength {"likely benign" "likely"
               "benign" "strong"
@@ -89,7 +89,7 @@
 
               "non-pathogenic" "strong"
               "no known pathogenicity" "strong"
-              "variant of unknown significance" "uncertain"
+              "variant of unknown significance" "uncertain"}
 
               ;; Per above, need to understand what risk factor means
               ;; "risk factor"
@@ -100,7 +100,7 @@
               ;; "other"
               ;; "not provided"
               ;; "drug response"
-              }
+
    :classification {"likely benign" "loinc:LA26334-5"
                     "benign" "loinc:LA6675-8"
                     "uncertain significance" "loinc:LA26333-7"
@@ -109,14 +109,14 @@
                     "pathologic" "loinc:LA6668-3"
                     "pathogenic" "loinc:LA6668-3"
                     "non-pathogenic" "loinc:LA6675-8"
-                    "no known pathogenicity" "loinc:LA6675-8"
+                    "no known pathogenicity" "loinc:LA6675-8"}})
                     ;; "risk factor"
                     ;; "association"
                     ;; "protective"
                     ;; "other"
                     ;; "not provided"
                     ;; "drug response"
-                    }})
+
 
 
 
@@ -445,20 +445,21 @@
 (defn proposition [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
-        subject-descriptor (variation-descriptor-by-clinvar-id
-                            (get assertion :variation_id)
-                            (get message :release_date))
+        #_#_subject-descriptor (variation-descriptor-by-clinvar-id
+                                (get assertion :variation_id)
+                                (get message :release_date))
         stmt-type (statement-type (:interpretation_description assertion))]
     {:type (get statement-type-to-proposition-type stmt-type)
-     :subject (if (not (nil? subject-descriptor))
-                (let [subject (q/ld1-> subject-descriptor [:rdf/value])]
-                  (str subject))
-                (do (log/error :fn :proposition
-                               :msg "No matching subject descriptor found"
-                               :variation-id (get assertion :variation_id)
-                               :release-date (get message :release_date)
-                               :message message)
-                    nil))
+     :subject (get assertion :variation_id)
+     #_(if (not (nil? subject-descriptor))
+         (let [subject (q/ld1-> subject-descriptor [:rdf/value])]
+           (str subject))
+         (do (log/error :fn :proposition
+                        :msg "No matching subject descriptor found"
+                        :variation-id (get assertion :variation_id)
+                        :release-date (get message :release_date)
+                        :message message)
+             nil))
      :predicate (clinsig-and-statement-type-to-predicate
                  (normalize-clinsig-term (:interpretation_description assertion))
                  stmt-type)
@@ -523,28 +524,61 @@
       :date (:date_last_updated assertion)
       :role "Submitter"}]))
 
+;; TODO
+(defn contribution-resource-for-output [contribution-resource]
+  #_(throw (IllegalArgumentException. "contribution-resource-for-output not implemented")))
+
+(defn classification-resource-for-output [classification-resource]
+  #_(throw (IllegalArgumentException. "classification-resource-for-output not implemented")))
+
+(defn proposition-resource-for-output [proposition-resource]
+  #_(throw (IllegalArgumentException. "proposition-resource-for-output not implemented")))
+
+(defn clinical-assertion-resource-for-output
+  "Takes an RDFResource for a clinical assertion Statement and
+   puts data it references into a GA4GH Statement structure for output."
+  [assertion-resource]
+  (let [release-date (q/ld1-> assertion-resource [:vrs/record-metadata
+                                                  :owl/version-info])]
+    {:id (str assertion-resource)
+     :type (q/ld1-> assertion-resource [:rdf/type])
+     :label (q/ld1-> assertion-resource [:rdfs/label])
+     :description (q/ld1-> assertion-resource [:vrs/description])
+     :method (q/ld1-> assertion-resource [:vrs/method])
+     :contributions (->> (q/ld-> assertion-resource [:vrs/contributions])
+                         (map contribution-resource-for-output))
+     :record_metadata {:is_version_of (q/ld1-> assertion-resource [:vrs/record-metadata
+                                                                   :dc/is-version-of])
+                       :version release-date}
+     :direction (q/ld1-> assertion-resource [:vrs/direction])
+     :subject_descriptor (str (variation-descriptor-by-clinvar-id
+                               (q/ld1-> assertion-resource [:cg/variation_id])
+                               release-date))
+          ;;:variation_origin "germline"
+   ;;:object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
+     :classification (-> assertion-resource
+                         (q/ld1-> [:vrs/classification])
+                         classification-resource-for-output)
+     :target_proposition (-> assertion-resource
+                             (q/ld1-> [:vrs/proposition])
+                             proposition-resource-for-output)}))
+
 (defn add-data-for-clinical-assertion [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
         vof (str (ns-cg "SCV_Statement_") (:id assertion))
         id (str vof "." (:release_date message))
-        stmt-type (statement-type (:interpretation_description assertion))]
+        stmt-type (statement-type (:interpretation_description assertion))
+        _ (log/info :stmt-type stmt-type)]
     (-> (assoc
          event
          :genegraph.annotate/data
          {:id id
           :type stmt-type
           :label (:title assertion)
-          ;; Loop around on needed data to include in extensions later
           ;; TODO
           ;;:extensions nil
           :description (description event)
-          ;; Removing strength per discussion with AW 2022-08-23 =tristan
-          #_:strength #_(clinsig-term->enum-value
-                         (:interpretation_description assertion)
-                         :strength)
-          ;; I think not relevant here
-          ;;:confidence_score nil
           :method (method event)
           :contributions (contributions event)
           ;;:is_reported_in nil ; ClinVar?
@@ -553,10 +587,10 @@
           :direction (clinsig-term->enum-value
                       (:interpretation_description assertion)
                       :direction)
-          :subject_descriptor (str (variation-descriptor-by-clinvar-id
-                                    (get assertion :variation_id)
-                                    (get message :release_date)))
-          ;;:variation_origin "germline"
+          :subject_descriptor (get assertion :variation_id)
+          #_#_:subject_descriptor (str (variation-descriptor-by-clinvar-id
+                                        (get assertion :variation_id)
+                                        (get message :release_date)))
           :object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
           :classification (classification assertion)
           :target_proposition (proposition event)}
@@ -610,6 +644,7 @@
 
     ;"value" {"@id" "@value"}
     "value" {"@id" "rdf:value"}
+    "label" {"@id" "rdfs:label"}
 
     "replaces" {"@id" (str (get local-property-names :dc/replaces))
                 "@type" "@id"}
@@ -640,7 +675,10 @@
     "sequence_id" {"@id" (str (get prefix-ns-map "vrs") "sequence_id")}
     "sequence" {"@id" (str (get prefix-ns-map "vrs") "sequence")}
     "role" {"@id" (str (get prefix-ns-map "vrs") "role")}
-
+    "method" {"@id" (str (get prefix-ns-map "vrs") "method")}
+    "contributions" {"@id" (str (get prefix-ns-map "vrs") "contributions")}
+    "direction" {"@id" (str (get prefix-ns-map "vrs") "direction")}
+    "description" {"@id" (str (get prefix-ns-map "vrs") "description")}
 
     ; map plurals to known guaranteed array types
     "members" {"@id" (str (get local-property-names :vrs/members))
@@ -675,6 +713,13 @@
                     "@type" "@id"}
     "Document" {"@id" (str (get prefix-ns-map "vrs") "Document")
                 "@type" "@id"}
+    "VariationGermlinePathogenicityStatement" {"@id" (str (get prefix-ns-map "vrs") "VariationGermlinePathogenicityStatement")
+                                               "@type" "@id"}
+    "ClinVarDrugResponseStatement" {"@id" (str (get prefix-ns-map "vrs") "ClinVarDrugResponseStatement")
+                                    "@type" "@id"}
+    "ClinVarOtherStatement" {"@id" (str (get prefix-ns-map "vrs") "ClinVarOtherStatement")
+                             "@type" "@id"}
+
     ; Prefixes
     ;"https://vrs.ga4gh.org/terms/"
     "rdf" {"@id" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
