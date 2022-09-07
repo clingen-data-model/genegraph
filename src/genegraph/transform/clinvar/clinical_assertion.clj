@@ -5,7 +5,6 @@
             [genegraph.database.names :refer [local-class-names
                                               local-property-names prefix-ns-map]]
             [genegraph.database.query :as q]
-            [genegraph.sink.document-store :as document-store]
             [genegraph.transform.clinvar.common :as common]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :refer [in?]]
@@ -154,23 +153,6 @@
                 (s/replace " " "_")
                 (s/replace "/" "_"))}))
 
-#_(defn add-data-for-raw-trait [event]
-    (let [trait (event-data event)]
-      (assoc event
-             :genegraph.annotate/data
-             {:id (str "medgen:" (:medgen_id trait))
-              :clinvar_id (:id trait)
-              :clinvar_type (:entity_type trait)
-              :label (:name trait)})))
-
-#_(defn add-data-for-trait-set [event]
-    (let [trait-set (event-data event)]
-      (assoc event
-             :genegraph.annotate/data
-             {:clinvar_type (:entity_type trait-set)
-              :clinvar_id (:id trait-set)
-              :trait_ids (:trait_ids trait-set)})))
-
 (defn add-contextualized [event]
   (let [data (:genegraph.annotate/data event)]
     (assoc event
@@ -198,7 +180,8 @@
           :medgen_id (:medgen_id trait)
           :clinvar_trait_id (:id trait)
           :release_date (:release_date message)
-          :record_metadata {:version (:release_date message)
+          :record_metadata {:type "RecordMetadata"
+                            :version (:release_date message)
                             :is_version_of unversioned}})
         (assoc :genegraph.annotate/iri fallback-id)
         add-contextualized)))
@@ -255,7 +238,8 @@
                :type "Condition"
                :clinvar_trait_set_id (:id trait-set)
                :release_date (:release_date message)
-               :record_metadata {:is_version_of (str (ns-cg "trait_set_") (:id trait-set))
+               :record_metadata {:type "RecordMetadata"
+                                 :is_version_of (str (ns-cg "trait_set_") (:id trait-set))
                                  :version (:release_date message)}
                :members (let [trait-ids (:trait_ids trait-set)]
                           (log/debug :fn :add-data-for-trait-set
@@ -317,7 +301,6 @@
       "Condition" (-> {:id (str trait-set)
                        :type "Condition"
                        :members (->> (q/ld-> trait-set [:vrs/members])
-                                     #_(map #(get-trait-by-id % (q/ld1-> trait-set [:cg/release-date])))
                                      (map #(get-trait-resource-by-version-of
                                             %
                                             (q/ld1-> trait-set [:vrs/record-metadata
@@ -337,8 +320,9 @@
                       { ?i a :vrs/Condition }
                       union { ?i a :vrs/Disease }
                       union { ?i a :vrs/Phenotype }
+                      ?i :vrs/record-metadata ?rmd .
+                      ?rmd :owl/version-info ?release_date .
                       ?i :cg/clinvar-trait-set-id ?trait_set_id .
-                      ?i :cg/release-date ?release_date .
                       FILTER(?release_date <= ?max_release_date) }
                       order by desc(?release_date)
                       limit 1"
@@ -348,6 +332,30 @@
       (log/error :fn :get-trait-by-id
                  :msg "No matching trait set"
                  :trait-set-id trait-set-id
+                 :release-date release-date))
+    (first rs)))
+
+(defn get-trait-set-by-version-of
+  [^RDFResource trait-set-vof ^String release-date]
+  (log/info :fn :get-trait-set-by-id
+            :trait-set-vof trait-set-vof
+            :release-date release-date)
+  (let [rs (q/select "select ?i where {
+                      { ?i a :vrs/Condition }
+                      union { ?i a :vrs/Disease }
+                      union { ?i a :vrs/Phenotype }
+                      ?i :vrs/record-metadata ?rmd .
+                      ?rmd :dc/is-version-of ?vof .
+                      ?rmd :owl/version-info ?release_date .
+                      FILTER(?release_date <= ?max_release_date) }
+                      order by desc(?release_date)
+                      limit 1"
+                     {:vof (q/resource trait-set-vof)
+                      :max_release_date release-date})]
+    (when (= 0 (count rs))
+      (log/error :fn :get-trait-set-by-version-of
+                 :msg "No matching trait set"
+                 :trait-set-vof trait-set-vof
                  :release-date release-date))
     (first rs)))
 
@@ -534,23 +542,66 @@
         :date (:date_last_updated assertion)
         :role "Submitter"}))))
 
-;; TODO
-(defn contribution-resource-for-output [contribution-resource]
-  {:type (q/ld1-> contribution-resource [:rdf/type])
-   :agent (q/ld1-> contribution-resource [:vrs/agent])
-   :date (q/ld1-> contribution-resource [:vrs/date])
-   :role (q/ld1-> contribution-resource [:vrs/role])})
 
-;; TODO
-(defn classification-resource-for-output [classification-resource]
-  #_(throw (IllegalArgumentException. "classification-resource-for-output not implemented")))
+(defn contribution-resource-for-output
+  "Takes an RDFResource for a contribution,
+   and returns a map for a GA4GH Contribution"
+  [contribution-resource]
+  (when contribution-resource
+    {:type (q/ld1-> contribution-resource [:rdf/type])
+     :agent (q/ld1-> contribution-resource [:vrs/agent])
+     :date (q/ld1-> contribution-resource [:vrs/date])
+     :role (q/ld1-> contribution-resource [:vrs/role])}))
 
-;; TODO
-(defn proposition-resource-for-output [proposition-resource subject-resource]
-  {:type (q/ld1-> proposition-resource [:rdf/type])
-   :subject (str subject-resource)
-   :predicate (q/ld1-> proposition-resource [:vrs/predicate])
-   :object (q/ld1-> proposition-resource [:vrs/object])})
+(defn classification-resource-for-output
+  "Takes an RDFResource for a classification,
+   and returns a map for a GA4GH Classification"
+  [classification-resource]
+  (when classification-resource
+    {:type (q/ld1-> classification-resource [:rdf/type])
+     :id (str classification-resource)
+     :label (q/ld1-> classification-resource [:rdfs/label])}))
+
+(defn record-metadata-resource-for-output
+  [record-metadata-resource]
+  (when record-metadata-resource
+    {:type (q/ld1-> record-metadata-resource [:rdf/type])
+     :is_version_of (q/ld1-> record-metadata-resource [:dc/is-version-of])
+     :version (q/ld1-> record-metadata-resource [:owl/version-info])}))
+
+#_(defn condition-resource-for-output
+  ;; TODO compact single-member Condition to the member
+    [condition-resource]
+
+    (when condition-resource
+      (let [condition
+            {:id (str condition-resource)
+             :type (q/ld1-> condition-resource [:rdf/type])
+             :record_metadata (record-metadata-resource-for-output
+                               (q/ld1-> condition-resource [:vrs/record-metadata]))
+             :members (map trait-resource-for-output
+                           (q/ld-> condition-resource [:vrs/members]))}]
+        (if (= 1 (count (:members condition)))
+          (-> condition :members first)))))
+
+(defn proposition-resource-for-output
+  "Takes an RDFResource for a proposition and its subject,
+   and returns a map for a GA4GH Proposition"
+  [proposition-resource subject-resource release-date]
+  (log/info :fn :proposition-resource-for-output
+            :proposition-resource proposition-resource
+            :subject-resource subject-resource
+            :release-date release-date)
+  (when proposition-resource
+    {:type (q/ld1-> proposition-resource [:rdf/type])
+     :subject (str subject-resource)
+     :predicate (q/ld1-> proposition-resource [:vrs/predicate])
+     :object (let [object-vof (q/ld1-> proposition-resource [:vrs/object])]
+               (log/info :fn :proposition-resource-for-output
+                         :object-vof object-vof)
+               ;; with the is_version_of of the object (a trait-set), get latest
+               (trait-set-resource-for-output
+                (get-trait-set-by-version-of object-vof release-date)))}))
 
 (defn clinical-assertion-resource-for-output
   ;; TODO remove keys with nil values
@@ -579,15 +630,10 @@
      :method (q/ld1-> assertion-resource [:vrs/method])
      :contributions (->> (q/ld-> assertion-resource [:vrs/contributions])
                          (map contribution-resource-for-output))
-     :record_metadata {:type (q/ld1-> assertion-resource [:vrs/record-metadata
-                                                          :rdf/type])
-                       :is_version_of (q/ld1-> assertion-resource [:vrs/record-metadata
-                                                                   :dc/is-version-of])
-                       :version (q/ld1-> assertion-resource [:vrs/record-metadata
-                                                             :owl/version-info])}
+     :record_metadata (-> (q/ld1-> assertion-resource [:vrs/record-metadata])
+                          record-metadata-resource-for-output)
      :direction (q/ld1-> assertion-resource [:vrs/direction])
      :subject_descriptor (str subject-descriptor)
-          ;;:variation_origin "germline"
    ;;:object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
      :classification (-> assertion-resource
                          (q/ld1-> [:vrs/classification])
@@ -595,7 +641,8 @@
      :target_proposition (-> assertion-resource
                              (q/ld1-> [:vrs/target-proposition])
                              (proposition-resource-for-output
-                              (q/ld1-> subject-descriptor [:rdf/value])))}))
+                              (q/ld1-> subject-descriptor [:rdf/value])
+                              release-date))}))
 
 (defn add-data-for-clinical-assertion [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
@@ -691,6 +738,8 @@
     "predicate" {"@id" (str (get prefix-ns-map "vrs") "predicate")}
     "object" {"@id" (str (get prefix-ns-map "vrs") "object")}
     "subject_descriptor" {"@id" (str (get prefix-ns-map "vrs") "subject_descriptor")}
+    "classification" {"@id" (str (get prefix-ns-map "vrs") "classification")}
+
 
 
     ; map plurals to known guaranteed array types

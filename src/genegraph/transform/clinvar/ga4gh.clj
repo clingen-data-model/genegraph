@@ -16,7 +16,8 @@
             [genegraph.transform.types :as xform-types]
             [genegraph.util.fs :refer [gzip-file-reader]]
             [io.pedestal.log :as log]
-            [mount.core :as mount]))
+            [mount.core :as mount]
+            [genegraph.database.names :as names]))
 
 (def stop-removing-unused [#'write-tx #'tx #'pprint])
 
@@ -178,6 +179,39 @@
               [k v]))]
     (replace-kvs input-map mutator)))
 
+(defn ^String un-namespace-term
+  "Takes a potentially expanded namespaced term, and returns the term without the namespace.
+   e.g. http://example.org/MyTerm -> MyTerm.
+   Uses namespaces from namespaces.edn.
+
+   TODO only some of these are in use in this module. It performs pretty well
+   but if we could check just some namespaces, might be faster."
+  [term]
+  (let [term (str term)
+        namespaces (keys names/ns-prefix-map)]
+    (or (some #(when (.startsWith term %)
+                 (subs term (.length %)))
+              namespaces)
+        term)))
+
+(defn ^String un-prefix-term
+  [term]
+  (let [term (str term)
+        prefixes (map #(str % ":") (keys names/prefix-ns-map))]
+    (or (some #(when (.startsWith term %)
+                 (subs term (.length %)))
+              prefixes)
+        term)))
+
+(defn map-unnamespace-values-clinical-assertion
+  [input-map]
+  (let [fields-to-process (set [:type])]
+    (letfn [(mutator [k v]
+              (if (and (contains? fields-to-process k)
+                       (string? v))
+                [k (un-namespace-term v)]
+                [k v]))]
+      (replace-kvs input-map mutator))))
 
 (defn snapshot-latest-statements []
   (try
@@ -185,38 +219,40 @@
       (with-open [writer (io/writer output-filename)]
       ;; TODO look at group by for this.
       ;; Just want each iri for latest release_date for each is-version-of
-        (let [unversioned-resources
-              (q/select (str "select distinct ?vof where { "
-                             "?i a :vrs/VariationGermlinePathogenicityStatement . "
-                             "?i :vrs/record-metadata ?rmd . "
-                             "?rmd :dc/is-version-of ?vof . } "))
-              latest-versioned-resources
-              (map (fn [vof]
-                     (let [rs (q/select (str "select ?i where { "
-                                             "?i a :vrs/VariationGermlinePathogenicityStatement . "
-                                             "?i :vrs/record-metadata ?rmd . "
-                                             "?rmd :dc/is-version-of ?vof . "
-                                             "?rmd :owl/version-info ?release_date . "
-                                             "} "
-                                             "order by desc(?release_date) "
-                                             "limit 1")
-                                        {:vof vof})]
-                       (if (< 1 (count rs))
-                         (log/error :msg "More than 1 statement returned"
-                                    :vof vof :rs rs)
-                         (first rs))))
-                   (->> unversioned-resources
-                        (take 10)))]
-          (doseq [statement-resource latest-versioned-resources]
-            (let [statement-output (ca/clinical-assertion-resource-for-output statement-resource)
-                  post-processed-output (-> statement-output
-                                            map-rdf-resource-values-to-str
-                                            common/map-remove-nil-values)]
+        (tx
+         (let [unversioned-resources
+               (q/select (str "select distinct ?vof where { "
+                              "?i a :vrs/VariationGermlinePathogenicityStatement . "
+                              "?i :vrs/record-metadata ?rmd . "
+                              "?rmd :dc/is-version-of ?vof . } "))
+               latest-versioned-resources
+               (map (fn [vof]
+                      (let [rs (q/select (str "select ?i where { "
+                                              "?i a :vrs/VariationGermlinePathogenicityStatement . "
+                                              "?i :vrs/record-metadata ?rmd . "
+                                              "?rmd :dc/is-version-of ?vof . "
+                                              "?rmd :owl/version-info ?release_date . "
+                                              "} "
+                                              "order by desc(?release_date) "
+                                              "limit 1")
+                                         {:vof vof})]
+                        (if (< 1 (count rs))
+                          (log/error :msg "More than 1 statement returned"
+                                     :vof vof :rs rs)
+                          (first rs))))
+                    (->> unversioned-resources
+                         (take 10)))]
+           (doseq [statement-resource latest-versioned-resources]
+             (let [statement-output (ca/clinical-assertion-resource-for-output statement-resource)
+                   post-processed-output (-> statement-output
+                                             map-rdf-resource-values-to-str
+                                             common/map-remove-nil-values
+                                             map-unnamespace-values-clinical-assertion)]
 
-              (log/info :post-processed-output post-processed-output)
+               (log/info :post-processed-output post-processed-output)
 
-              (.write writer (json/generate-string post-processed-output))
-              (.write writer "\n"))))))
+               (.write writer (json/generate-string post-processed-output))
+               (.write writer "\n")))))))
     (catch Exception e
       (print-stack-trace e))))
 
