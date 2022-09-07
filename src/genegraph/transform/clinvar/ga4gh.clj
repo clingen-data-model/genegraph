@@ -2,12 +2,14 @@
   (:require [cheshire.core :as json]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
+            [clojure.stacktrace :refer [print-stack-trace]]
             [genegraph.annotate :as ann]
             [genegraph.database.names :refer [prefix-ns-map]]
             [genegraph.database.query :as q]
-            [genegraph.database.util :refer [write-tx tx]]
+            [genegraph.database.util :refer [tx write-tx]]
             [genegraph.sink.event :as event]
             [genegraph.transform.clinvar.clinical-assertion :as ca]
+            [genegraph.transform.clinvar.common :as common :refer [replace-kvs]]
             [genegraph.transform.clinvar.core :refer [add-parsed-value]]
             [genegraph.transform.clinvar.iri :refer [ns-cg]]
             [genegraph.transform.jsonld.common :as jsonld]
@@ -154,7 +156,8 @@
                 variation-descriptor-writer (io/writer (str input-filename "-output-variation-descriptors"))
                 other-writer (io/writer (str input-filename "-output-other"))]
       (write-tx
-       (doseq [event (map message-proccess! messages)]
+       (doseq [event (->> (map message-proccess! messages)
+                          #_(take 10))]
          (let [clinvar-type (:genegraph.transform.clinvar/format event)
                writer (case clinvar-type
                         :clinical_assertion statement-writer
@@ -163,8 +166,59 @@
            (.write writer (-> event
                               :genegraph.annotate/data-contextualized
                               (dissoc "@context")
+                              common/map-remove-nil-values
                               (json/generate-string)))
            (.write writer "\n")))))))
+
+(defn map-rdf-resource-values-to-str
+  [input-map]
+  (letfn [(mutator [k v]
+            (if (= genegraph.database.query.types.RDFResource (class v))
+              [k (str v)]
+              [k v]))]
+    (replace-kvs input-map mutator)))
+
+
+(defn snapshot-latest-statements []
+  (try
+    (let [output-filename "statements.txt"]
+      (with-open [writer (io/writer output-filename)]
+      ;; TODO look at group by for this.
+      ;; Just want each iri for latest release_date for each is-version-of
+        (let [unversioned-resources
+              (q/select (str "select distinct ?vof where { "
+                             "?i a :vrs/VariationGermlinePathogenicityStatement . "
+                             "?i :vrs/record-metadata ?rmd . "
+                             "?rmd :dc/is-version-of ?vof . } "))
+              latest-versioned-resources
+              (map (fn [vof]
+                     (let [rs (q/select (str "select ?i where { "
+                                             "?i a :vrs/VariationGermlinePathogenicityStatement . "
+                                             "?i :vrs/record-metadata ?rmd . "
+                                             "?rmd :dc/is-version-of ?vof . "
+                                             "?rmd :owl/version-info ?release_date . "
+                                             "} "
+                                             "order by desc(?release_date) "
+                                             "limit 1")
+                                        {:vof vof})]
+                       (if (< 1 (count rs))
+                         (log/error :msg "More than 1 statement returned"
+                                    :vof vof :rs rs)
+                         (first rs))))
+                   (->> unversioned-resources
+                        (take 10)))]
+          (doseq [statement-resource latest-versioned-resources]
+            (let [statement-output (ca/clinical-assertion-resource-for-output statement-resource)
+                  post-processed-output (-> statement-output
+                                            map-rdf-resource-values-to-str
+                                            common/map-remove-nil-values)]
+
+              (log/info :post-processed-output post-processed-output)
+
+              (.write writer (json/generate-string post-processed-output))
+              (.write writer "\n"))))))
+    (catch Exception e
+      (print-stack-trace e))))
 
 
 

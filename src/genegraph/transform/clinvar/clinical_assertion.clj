@@ -361,6 +361,9 @@
       (log/warn :fn :proposition-object :msg :nil-trait-set-id :message message))))
 
 (defn variation-descriptor-by-clinvar-id [clinvar-id release-date]
+  (log/info :fn :variation-descriptor-by-clinvar-id
+            :clinvar-id clinvar-id
+            :release-date release-date)
   (let [qualified-id (str iri/clinvar-variation clinvar-id)
         rs (q/select "select ?i where {
                       ?i a :vrs/CanonicalVariationDescriptor .
@@ -461,6 +464,19 @@
 
 
 (defn method
+  ;; TODO handle pubmed method citations
+  ;; "AttributeSet": {
+  ;;       "Attribute": {
+  ;;           "$": "Pharmacogenomics knowledge for personalized medicine",
+  ;;           "@Type": "AssertionMethod"
+  ;;       },
+  ;;       "Citation": {
+  ;;           "ID": {
+  ;;               "$": "22992668",
+  ;;               "@Source": "PubMed"
+  ;;           }
+  ;;       }
+  ;;   }
   "Returns a Variant Annotation : Method object for a clinical_assertion"
   [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
@@ -469,6 +485,9 @@
                        (get-in assertion [:content "AttributeSet" "Attribute" "@Type"]))
         method-label (get-in assertion [:content "AttributeSet" "Attribute" "$"])
         method-url (get-in assertion [:content "AttributeSet" "Citation" "URL" "$"])
+        method-pubmed (let [citation (get-in assertion [:content "AttributeSet" "Citation"])]
+                        (when (= "PubMed" (get-in citation ["ID" "@Source"]))
+                          (str "PMID:" (get-in citation ["ID" "$"]))))
         #_(str iri/clinvar-assertion (:id assertion) "." (:release_date message) "_Method")]
     (when has-method?
       {:id (str "_:" (l/blank-node))
@@ -479,7 +498,7 @@
                                 ;; title
                                 ;; extensions
                                 ;; xrefs
-                        :id (or method-url (str "_:" (l/blank-node)))
+                        :id (or method-url method-pubmed (str "_:" (l/blank-node)))
                         :type "Document"}})))
 
 (defn description
@@ -517,28 +536,42 @@
 
 ;; TODO
 (defn contribution-resource-for-output [contribution-resource]
-  #_(throw (IllegalArgumentException. "contribution-resource-for-output not implemented")))
+  {:type (q/ld1-> contribution-resource [:rdf/type])
+   :agent (q/ld1-> contribution-resource [:vrs/agent])
+   :date (q/ld1-> contribution-resource [:vrs/date])
+   :role (q/ld1-> contribution-resource [:vrs/role])})
 
+;; TODO
 (defn classification-resource-for-output [classification-resource]
   #_(throw (IllegalArgumentException. "classification-resource-for-output not implemented")))
 
-(defn proposition-resource-for-output [proposition-resource]
-  #_(throw (IllegalArgumentException. "proposition-resource-for-output not implemented")))
+;; TODO
+(defn proposition-resource-for-output [proposition-resource subject-resource]
+  {:type (q/ld1-> proposition-resource [:rdf/type])
+   :subject (str subject-resource)
+   :predicate (q/ld1-> proposition-resource [:vrs/predicate])
+   :object (q/ld1-> proposition-resource [:vrs/object])})
 
 (defn clinical-assertion-resource-for-output
   ;; TODO remove keys with nil values
-  ;; TODO verify method is working correctly
+  ;; TODO verify method is working correctly (seems to be, some are just not provided)
   ;; TODO add type RecordMetadata to record_metadata
   ;; TODO when interpretation_date_last_evaluated is null, what to do for Approver contribution?
   ;;      leave it out with just the submitter contribution?
   ;;      replace it with another contribution activity? This would be inconsistent
   ;;      unless that activity was also added to all records. Default: 3 contributions
   ;;      TODO addendum: all drug response stmts from 2019-07-01 do not have interpretation_date_last_evaluated
+  ;; TODO handle :event_type delete for all these records.
   "Takes an RDFResource for a clinical assertion Statement and
    puts data it references into a GA4GH Statement structure for output."
   [assertion-resource]
+  (log/info :fn :clinical-assertion-resource-for-output :assertion-resource assertion-resource)
   (let [release-date (q/ld1-> assertion-resource [:vrs/record-metadata
-                                                  :owl/version-info])]
+                                                  :owl/version-info])
+        ;; Assertion is stored with the subject-descriptor just being the variation id
+        subject-descriptor (variation-descriptor-by-clinvar-id
+                            (q/ld1-> assertion-resource [:vrs/subject-descriptor])
+                            release-date)]
     {:id (str assertion-resource)
      :type (q/ld1-> assertion-resource [:rdf/type])
      :label (q/ld1-> assertion-resource [:rdfs/label])
@@ -546,21 +579,23 @@
      :method (q/ld1-> assertion-resource [:vrs/method])
      :contributions (->> (q/ld-> assertion-resource [:vrs/contributions])
                          (map contribution-resource-for-output))
-     :record_metadata {:is_version_of (q/ld1-> assertion-resource [:vrs/record-metadata
+     :record_metadata {:type (q/ld1-> assertion-resource [:vrs/record-metadata
+                                                          :rdf/type])
+                       :is_version_of (q/ld1-> assertion-resource [:vrs/record-metadata
                                                                    :dc/is-version-of])
-                       :version release-date}
+                       :version (q/ld1-> assertion-resource [:vrs/record-metadata
+                                                             :owl/version-info])}
      :direction (q/ld1-> assertion-resource [:vrs/direction])
-     :subject_descriptor (str (variation-descriptor-by-clinvar-id
-                               (q/ld1-> assertion-resource [:cg/variation_id])
-                               release-date))
+     :subject_descriptor (str subject-descriptor)
           ;;:variation_origin "germline"
    ;;:object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
      :classification (-> assertion-resource
                          (q/ld1-> [:vrs/classification])
                          classification-resource-for-output)
      :target_proposition (-> assertion-resource
-                             (q/ld1-> [:vrs/proposition])
-                             proposition-resource-for-output)}))
+                             (q/ld1-> [:vrs/target-proposition])
+                             (proposition-resource-for-output
+                              (q/ld1-> subject-descriptor [:rdf/value])))}))
 
 (defn add-data-for-clinical-assertion [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
@@ -581,7 +616,8 @@
           :method (method event)
           :contributions (contributions event)
           ;;:is_reported_in nil ; ClinVar?
-          :record_metadata {:is_version_of vof
+          :record_metadata {:type "RecordMetadata"
+                            :is_version_of vof
                             :version (:release_date message)}
           :direction (-> (:interpretation_description assertion)
                          normalize-clinsig-term
@@ -590,7 +626,7 @@
           #_#_:subject_descriptor (str (variation-descriptor-by-clinvar-id
                                         (get assertion :variation_id)
                                         (get message :release_date)))
-          :object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
+          ;;:object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
           :classification (classification assertion)
           :target_proposition (proposition event)}
          :genegraph.annotate/iri
@@ -643,11 +679,19 @@
     "state" {"@id" (str (get prefix-ns-map "vrs") "state")}
     "sequence_id" {"@id" (str (get prefix-ns-map "vrs") "sequence_id")}
     "sequence" {"@id" (str (get prefix-ns-map "vrs") "sequence")}
+    "agent" {"@id" (str (get prefix-ns-map "vrs") "agent")}
+    "date" {"@id" (str (get prefix-ns-map "vrs") "date")}
     "role" {"@id" (str (get prefix-ns-map "vrs") "role")}
     "method" {"@id" (str (get prefix-ns-map "vrs") "method")}
     "contributions" {"@id" (str (get prefix-ns-map "vrs") "contributions")}
     "direction" {"@id" (str (get prefix-ns-map "vrs") "direction")}
     "description" {"@id" (str (get prefix-ns-map "vrs") "description")}
+    "target_proposition" {"@id" (str (get prefix-ns-map "vrs") "target_proposition")}
+    "subject" {"@id" (str (get prefix-ns-map "vrs") "subject")}
+    "predicate" {"@id" (str (get prefix-ns-map "vrs") "predicate")}
+    "object" {"@id" (str (get prefix-ns-map "vrs") "object")}
+    "subject_descriptor" {"@id" (str (get prefix-ns-map "vrs") "subject_descriptor")}
+
 
     ; map plurals to known guaranteed array types
     "members" {"@id" (str (get local-property-names :vrs/members))
@@ -682,6 +726,8 @@
                     "@type" "@id"}
     "Document" {"@id" (str (get prefix-ns-map "vrs") "Document")
                 "@type" "@id"}
+    "RecordMetadata" {"@id" (str (get prefix-ns-map "vrs") "RecordMetadata")
+                      "@type" "@id"}
     "VariationGermlinePathogenicityStatement" {"@id" (str (get prefix-ns-map "vrs") "VariationGermlinePathogenicityStatement")
                                                "@type" "@id"}
     "ClinVarDrugResponseStatement" {"@id" (str (get prefix-ns-map "vrs") "ClinVarDrugResponseStatement")

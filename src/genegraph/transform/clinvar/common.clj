@@ -324,3 +324,38 @@ LIMIT 1")
   [resource]
   ; [k v] -> [r k v]
   (map #(cons resource %) (into {} resource)))
+
+(defn replace-kvs
+  "Recursively replace keys in input-map and its values by applying kv-mutate-fn.
+   If kv-mutate-fn returns nil, the kv pair is removed.
+   Recurses through all maps either in values or in vector/lists in values."
+  [input-map kv-mutate-fn]
+  (if (map? input-map)
+    (into {} (map (fn [[k v]]
+                    (when-let [[k1 v1] (kv-mutate-fn k v)]
+                      (cond
+                        (map? v1) [k1 (replace-kvs v1 kv-mutate-fn)]
+                        (sequential? v1) [k1 (map #(replace-kvs % kv-mutate-fn) v1)]
+                        :else [k1 v1])))
+                  input-map))
+    input-map))
+
+(defn map-remove-nil-values
+  "Remove fields in map whose value is nil. Recursively with replace-kvs."
+  [input-map]
+  (letfn [(mutator [k v]
+            (when (not (nil? v))
+              (vector k v)))]
+    (replace-kvs input-map mutator)))
+
+(comment
+  (let [m {:a 1
+           :b {:c 3}
+           "_id" 4}]
+    (letfn [(mutator [k v]
+              (vector (if (= "_id" k) "id" k)
+                      (cond (map? v) (replace-kvs v mutator)
+                            (sequential? v) (map #(replace-kvs % mutator) v)
+                            :else v)))]
+      (let [m2 (replace-kvs m mutator)]
+        (pprint m2)))))

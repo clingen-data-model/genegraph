@@ -426,6 +426,7 @@
  [:vrs/Condition "https://vrs.ga4gh.org/terms/Condition"]
  [:vrs/Contribution "https://vrs.ga4gh.org/terms/Contribution"]
  [:vrs/Document "https://vrs.ga4gh.org/terms/Document"]
+ [:vrs/RecordMetadata "https://vrs.ga4gh.org/terms/RecordMetadata"]
  [:vrs/VariationGermlinePathogenicityStatement "https://vrs.ga4gh.org/terms/VariationGermlinePathogenicityStatement"]
  [:vrs/ClinVarDrugResponseStatement "https://vrs.ga4gh.org/terms/ClinVarDrugResponseStatement"]
  [:vrs/ClinVarOtherStatement "https://vrs.ga4gh.org/terms/ClinVarOtherStatement"]
