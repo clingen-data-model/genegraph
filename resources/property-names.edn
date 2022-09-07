@@ -227,6 +227,7 @@
  [:cg/negated "http://dataexchange.clinicalgenome.org/terms/negated"]
  [:cg/clinvar-trait-id "http://dataexchange.clinicalgenome.org/terms/clinvar_trait_id"]
  [:cg/clinvar-trait-set-id "http://dataexchange.clinicalgenome.org/terms/clinvar_trait_set_id"]
+ [:cg/medgen-id "http://dataexchange.clinicalgenome.org/terms/medgen_id"]
  [:vrs/xrefs "https://vrs.ga4gh.org/terms/xrefs"]
  [:vrs/extensions "https://vrs.ga4gh.org/terms/extensions"]
  [:vrs/type "https://vrs.ga4gh.org/terms/type"]

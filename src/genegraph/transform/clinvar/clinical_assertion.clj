@@ -182,24 +182,27 @@
 (defn add-data-for-trait [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         trait (:content message)
+        unversioned (str (ns-cg "trait") "_" (:id trait))
         fallback-id (str (ns-cg "trait") "_" (:id trait) "." (:release_date message))]
     (-> event
         (assoc
          :genegraph.annotate/data
-         {:id (cond
-                (:medgen_id trait) (str "medgen:" (:medgen_id trait))
-                :else (do (log/warn :fn :add-data-for-trait
-                                    :msg "Trait with no medgen id"
-                                    :message message)
-                          fallback-id))
+         {:id fallback-id
+          #_(cond
+              (:medgen_id trait) (str "medgen:" (:medgen_id trait))
+              :else (do (log/warn :fn :add-data-for-trait
+                                  :msg "Trait with no medgen id"
+                                  :message message)
+                        fallback-id))
           :type (case (:type trait)
                   "Disease" "Disease"
                   "Phenotype")
+          :medgen_id (:medgen_id trait)
           :clinvar_trait_id (:id trait)
-          :release_date (:release_date message)})
-        (assoc
-         :genegraph.annotate/iri
-         (str (ns-cg "trait_") (:id trait) "." (:release_date message)))
+          :release_date (:release_date message)
+          :record_metadata {:version (:release_date message)
+                            :is_version_of unversioned}})
+        (assoc :genegraph.annotate/iri fallback-id)
         add-contextualized)))
 
 
@@ -209,7 +212,8 @@
                       { ?i a :vrs/Disease } union { ?i a :vrs/Phenotype }
                       ?i :cg/clinvar-trait-id ?trait_id .
                       ?i :cg/release-date ?release_date .
-                      FILTER(?release_date <= ?max_release_date) }
+                      FILTER(?release_date <= ?max_release_date)
+                      }
                       order by desc(?release_date)
                       limit 1"
                      {:trait_id trait-id
@@ -221,10 +225,19 @@
                  :release-date release-date))
     (first rs)))
 
-(defn trait-resource-for-output [trait]
-  (when trait
-    {:id (str trait)
-     :type (str (q/ld1-> trait [:rdf/type]))}))
+(defn trait-id-to-medgen-id [trait-iri]
+  (log/info :fn :trait-id-to-medgen-id :trait-iri trait-iri)
+  (or (str "medgen:" (q/ld1-> (q/resource trait-iri) [:cg/medgen-id]))
+      trait-iri))
+
+(defn trait-resource-for-output
+  "Takes a trait RDFResource and returns it in a GA4GH standard map
+   used for outputting to external systems."
+  [trait-resource]
+  (log/info :fn :trait-resource-for-output :trait trait-resource)
+  (when trait-resource
+    {:id (trait-id-to-medgen-id (str trait-resource))
+     :type (str (q/ld1-> trait-resource [:rdf/type]))}))
 
 (defn compact-one-element-condition
   "If the condition has a members array with only one element, return that element.
@@ -241,25 +254,31 @@
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         trait-set (:content message)
         data (->
-              {:id (str (ns-cg "trait_set_") (:id trait-set) "." (:release_date message))
+              {:id (str (ns-cg "trait_set_") (:id trait-set)
+                        "." (:release_date message))
                :type "Condition"
                :clinvar_trait_set_id (:id trait-set)
                :release_date (:release_date message)
+               :record_metadata {:is_version_of (str (ns-cg "trait_set_") (:id trait-set))
+                                 :version (:release_date message)}
                :members (let [trait-ids (:trait_ids trait-set)]
                           (log/debug :fn :add-data-for-trait-set
                                      :trait-ids trait-ids)
-                          (->> trait-ids
-                               (map #(get-trait-by-id % (:release_date message)))
-                               ((fn [traits]
-                                  (when (some #(= nil %) traits)
-                                    (log/error :msg "Got nil traits"
-                                               :trait-set trait-set
-                                               :trait-ids trait-ids
-                                               :traits traits
-                                               :release-date (:release_date message)))
-                                  traits))
-                               (map #(trait-resource-for-output %))))}
-              (compact-one-element-condition))]
+                          ;; Unversioned identifiers for the traits
+                          (map #(str (ns-cg "trait") "_" %)
+                               trait-ids)
+                          #_(->> trait-ids
+                                 (map #(get-trait-by-id % (:release_date message)))
+                                 ((fn [traits]
+                                    (when (some #(= nil %) traits)
+                                      (log/error :msg "Got nil traits"
+                                                 :trait-set trait-set
+                                                 :trait-ids trait-ids
+                                                 :traits traits
+                                                 :release-date (:release_date message)))
+                                    traits))
+                                 (map #(trait-resource-for-output %))))}
+              #_(compact-one-element-condition))]
     (-> (assoc
          event
          :genegraph.annotate/data
@@ -268,25 +287,62 @@
          (str (ns-cg "trait_set_") (:id trait-set) "." (:release_date message)))
         add-contextualized)))
 
+(defn get-trait-resource-by-version-of
+  [trait-vof max-release-date]
+  (log/info :fn :get-trait-resource-by-version-of
+            :trait-vof trait-vof :max-release-date max-release-date)
+  (let [rs (q/select "select ?i where {
+                      { ?i a :vrs/Disease }
+                      union { ?i a :vrs/Phenotype }
+                      ?i :vrs/record-metadata ?rmd .
+                      ?rmd :dc/is-version-of ?vof .
+                      ?rmd :owl/version-info ?release_date .
+                      FILTER(?release_date <= ?max_release_date)
+                      }
+                      order by desc(?release_date)
+                      limit 1"
+                     {:vof (q/resource trait-vof)
+                      :max_release_date max-release-date})]))
+
 (defn trait-set-resource-for-output
   "Takes an RDFResource for a normalized trait-set object (:vrs/Condition).
    Uses :vrs/members relationship to get the traits in it."
   [trait-set]
-  (let [trait-set-type (q/ld1-> trait-set [:rdf/type])]
-    (case (s/replace (str trait-set-type) (get prefix-ns-map "vrs") "")
-      "Disease" {:id (str trait-set)
-                 :type (str trait-set-type)}
-      "Phenotype" {:id (str trait-set)
+  (letfn [(get-trait-resource [trait-vof]
+            (let [rs (q/select "select ?i where {
+                                { ?i a :vrs/Disease }
+                                union { ?i a :vrs/Phenotype }
+                                ?i :vrs/record-metadata ?rmd .
+                                ?rmd :dc/is-version-of ?vof .
+                                ?rmd :owl/version-info ?release_date .
+                                FILTER(?release_date <= ?max_release_date)
+                                }
+                                order by desc(?release_date)
+                                limit 1"
+                               {:vof (q/resource trait-vof)
+                                :max_release_date (q/ld1-> trait-set [:vrs/record-metadata
+                                                                      :owl/version-info])})]
+              (if (= 0 (count rs))
+                (log/error :msg "No trait found with version-of"
+                           :is-version-of trait-vof)
+                (first rs))))]
+    (let [trait-set-type (q/ld1-> trait-set [:rdf/type])]
+      (log/info :trait-set-type trait-set-type)
+      (case (s/replace (str trait-set-type) (get prefix-ns-map "vrs") "")
+        "Disease" {:id (trait-id-to-medgen-id (str trait-set))
                    :type (str trait-set-type)}
-      "Condition" {:id (str trait-set)
-                   :type "Condition"
-                   :members (->> (q/ld-> trait-set [:vrs/members])
-                                 #_(map #(get-trait-by-id % (q/ld1-> trait-set [:cg/release-date])))
-                                 (map #(trait-resource-for-output %)))}
-      (do (log/error :fn :trait-set-resource-for-output :msg "Unknown type"
-                     :trait-set-type trait-set-type)
-          {:id (str trait-set)
-           :type (str trait-set-type)}))))
+        "Phenotype" {:id (trait-id-to-medgen-id (str trait-set))
+                     :type (str trait-set-type)}
+        "Condition" {:id (str trait-set)
+                     :type "Condition"
+                     :members (->> (q/ld-> trait-set [:vrs/members])
+                                   #_(map #(get-trait-by-id % (q/ld1-> trait-set [:cg/release-date])))
+                                   (map #(get-trait-resource %))
+                                   (map #(trait-resource-for-output %)))}
+        (do (log/error :fn :trait-set-resource-for-output :msg "Unknown type"
+                       :trait-set-type trait-set-type)
+            {:id (str trait-set)
+             :type (str trait-set-type)})))))
 
 (defn get-trait-set-by-id [trait-set-id release-date]
   (log/info :fn :get-trait-set-by-id
@@ -407,13 +463,15 @@
      :predicate (clinsig-and-statement-type-to-predicate
                  (normalize-clinsig-term (:interpretation_description assertion))
                  stmt-type)
-     :object (let [;; Condition, Disease, Phenotype
-                   proposition-object-resource (proposition-object event)]
-               (if proposition-object-resource
-                 (trait-set-resource-for-output proposition-object-resource)
+     :object (str (ns-cg "trait_set_") (:trait_set_id assertion))
+     #_(str (:trait_set_id assertion))
+     #_(let [;; Condition, Disease, Phenotype
+             proposition-object-resource (proposition-object event)]
+         (if proposition-object-resource
+           (trait-set-resource-for-output proposition-object-resource)
                  ;; Not Provided (or some error in upstream trait mapping)
-                 {:id (str (ns-cg "not_provided"))
-                  :type "Phenotype"}))}))
+           {:id (str (ns-cg "not_provided"))
+            :type "Phenotype"}))}))
 
 
 (defn method
@@ -549,6 +607,7 @@
             "@type" "@id"}
     ;"release_date" {"@id" (str (get local-property-names :cg/release-date))}
     "name" {"@id" (str (get local-property-names :vrs/name))}
+    "record_metadata" {"@id" (str (get local-property-names :vrs/record-metadata))}
 
     ;"value" {"@id" "@value"}
     "value" {"@id" "rdf:value"}
@@ -582,6 +641,7 @@
     "sequence_id" {"@id" (str (get prefix-ns-map "vrs") "sequence_id")}
     "sequence" {"@id" (str (get prefix-ns-map "vrs") "sequence")}
     "role" {"@id" (str (get prefix-ns-map "vrs") "role")}
+
 
     ; map plurals to known guaranteed array types
     "members" {"@id" (str (get local-property-names :vrs/members))
