@@ -77,7 +77,7 @@ where {
     }
     BIND(IF(BOUND(?normalExpression), gcixform:A, gcixform:B) AS ?gciSubType) .
   }
-  
+
   OPTIONAL {
     FILTER( ?gciType = gcixform:BiochemicalFunction )
     ?evidenceItem gci:biochemicalFunction ?bioChemFunction .
