@@ -263,6 +263,7 @@
  [:vrs/proposition "https://vrs.ga4gh.org/terms/proposition"]
  [:vrs/target-proposition "https://vrs.ga4gh.org/terms/target_proposition"]
  [:vrs/subject-descriptor "https://vrs.ga4gh.org/terms/subject_descriptor"]
+ [:vrs/is_reported_in "https://vrs.ga4gh.org/terms/is_reported_in"]
  [:cnt/chars "http://www.w3.org/2011/content#chars"]
  [:data/genome-build-identifier "http://edamontology.org/data_2340"]
  [:dc/abstract "http://purl.org/dc/terms/abstract"]
