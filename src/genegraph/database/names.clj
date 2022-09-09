@@ -26,10 +26,10 @@
   (let [m (.getUnionModel db)
         statements (iterator-seq
                     (.listStatements
-                     m nil 
+                     m nil
                      (property "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
                      (.createResource m t)))]
-           (map #(.getSubject %) statements)))
+    (map #(.getSubject %) statements)))
 
 (defn curie [iri]
   (if-let [[prefix curie-result] (some #(when (s/starts-with? iri (first %)) %) ns-prefix-map)]
@@ -49,7 +49,7 @@
       nil)))
 
 (defn object-properties []
-  (tx 
+  (tx
    (->> (resources-with-type "http://www.w3.org/2002/07/owl#ObjectProperty")
         (concat (resources-with-type "http://www.w3.org/2002/07/owl#DatatypeProperty"))
         (concat (resources-with-type "http://www.w3.org/2002/07/owl#AnnotationProperty"))
@@ -63,8 +63,7 @@
   (let [kw-to-iri  (-> "property-names.edn" io/resource slurp edn/read-string)]
     (into {} (map (fn [[k v]]  [k (ResourceFactory/createProperty v)]) kw-to-iri))))
 
-(def local-property-names
-  (read-local-property-names))
+
 
 (defn- local-name-uri-class [resource]
   (let [label (some-> resource get-label csk/->PascalCase)
@@ -85,6 +84,9 @@
   (let [kw-to-iri  (-> "class-names.edn" io/resource slurp edn/read-string)]
     (into {} (map (fn [[k v]]  [k (ResourceFactory/createResource v)]) kw-to-iri))))
 
+(def local-property-names
+  (read-local-property-names))
+
 (def local-class-names
   (read-local-class-names))
 
@@ -96,4 +98,3 @@
 
 (def local-names
   (merge local-class-names local-property-names))
-

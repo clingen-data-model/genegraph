@@ -48,12 +48,13 @@
   [a b]
   (conditional-join a b "/"))
 
-(defn in? [coll e]
+(defn in? [e coll]
   (some #(= % e) coll))
 
-(defn simplify-dollar-map [m]
+(defn simplify-dollar-map
   "Return (get m :$) if m is a map and :$ is the only key. Otherwise return m.
   Useful for BigQuery JSON serialization where single values may be turned into $ maps"
+  [m]
   (if (and (map? m)
            (= '(:$) (keys m)))
     (:$ m)
@@ -61,7 +62,7 @@
 
 (defn simplify-dollar-map-recur [m]
   (if (map? m)
-    (if (get m :$)
+    (if (= (set (keys m)) #{:$})
       (simplify-dollar-map-recur (simplify-dollar-map m))
       (into {} (for [[k v] m]
                  [k (simplify-dollar-map-recur v)])))
@@ -75,10 +76,20 @@
     val))
 
 (defn parse-nested-content [val]
-  (let [nested-content (-> val :content :content parse-json-if-not-parsed simplify-dollar-map-recur)]
-    (assoc-in val
-              [:content :content]
-              nested-content)))
+  (if (get-in val [:content :content])
+    (let [nested-content (-> val :content :content parse-json-if-not-parsed simplify-dollar-map-recur)]
+      (assoc-in val
+                [:content :content]
+                nested-content))
+    val))
+
+(defn unparse-nested-content [val]
+  (let [content (-> val :content :content)]
+    (if (string? content)
+      val
+      (assoc-in val
+                [:content :content]
+                (json/generate-string content)))))
 
 (defn into-sequential-if-not [val]
   (if (not (sequential? val)) [val] val))
@@ -93,3 +104,12 @@
 ;  (let [m (into {} (partition-all 2 args))]
 ;    (eval (log/-error args))
 ;    (throw (ex-info (str m) m))))
+
+(defn select-other-keys
+  "Inverse of select-keys in that it selects all the keys other than those specified.
+  exclude-ks should be a seq of value which may be a key in m"
+  [m exclude-ks]
+  (select-keys m (filter
+                  ;; Return true if key from m is not in keys to exclude
+                  (fn [m-key] (nil? (some #(= m-key %) exclude-ks)))
+                  (keys m))))

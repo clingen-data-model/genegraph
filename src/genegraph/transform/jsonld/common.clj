@@ -1,5 +1,3 @@
-;; Does not work as advertised in current JENA
-;; Removing from dep tree until resolved =tristan
 (ns genegraph.transform.jsonld.common
   (:require [genegraph.database.names :refer [local-property-names
                                               property-uri->keyword]]
@@ -9,14 +7,7 @@
             [genegraph.database.load :as l])
   (:import (genegraph.database.query.types RDFResource)
            (org.apache.jena.rdf.model Model)
-           (org.apache.jena.riot.writer JsonLD11Writer)
-    ;; (org.apache.jena.riot.writer JsonLDWriter)
-           (org.apache.jena.sparql.util Context)
-           (org.apache.jena.sparql.core.mem DatasetGraphInMemory)
            (org.apache.jena.riot RDFFormat RDFDataMgr Lang JsonLDWriteContext RDFWriter)
-           (org.apache.jena.graph NodeFactory)
-           (org.apache.jena.riot.system PrefixMapStd)
-           (com.github.jsonldjava.core JsonLdOptions)
            (com.apicatalog.jsonld.document JsonDocument)
            (com.apicatalog.jsonld JsonLd)
            (java.io StringWriter)))
@@ -50,7 +41,7 @@
 
 (defn ^String jsonld-compact
   [^String input-str ^String context-str]
-  (log/trace :fn :jsonld-compact :input-str input-str :context-str context-str)
+  (log/debug :fn :jsonld-compact :input-str input-str :context-str context-str)
   (let [titanium-doc (string->JsonDocument input-str)
         titanium-context (string->JsonDocument context-str)
         ; Returns jakarta.json.JsonArray, which has a .getJsonObject(int index) method.
@@ -67,27 +58,21 @@
   "Takes a JSON-LD (1.0 or 1.1) string and a framing string. Returns a JSON-LD 1.1 string of the
   original object, with the frame applied."
   [^String input-str ^String frame-str]
-  (log/trace :fn :to-jsonld-1-1-framed :input-str input-str :frame-str frame-str)
+  (log/debug :fn :to-jsonld-1-1-framed :input-str input-str :frame-str frame-str)
   (let [titanium-doc (string->JsonDocument input-str)
         titanium-frame (string->JsonDocument frame-str)
         framing (JsonLd/frame titanium-doc titanium-frame)]
-    (-> framing .get .toString)))
+    (let [;; This FramingApi/get call is expensive
+          json-object (-> framing .get)
+          out-str (.toString json-object)]
+      out-str)))
 
 (defn model-to-jsonld [^Model model]
-  (let [write-ctx (JsonLDWriteContext.)
-        jsonld-options (JsonLdOptions.)]
-    (.setUseNativeTypes jsonld-options true)
-    (.setOptions write-ctx jsonld-options)
-    (let [rdf-writer (-> (doto (RDFWriter/create)
-                           ;; TODO JSONLD11_FRAME_PRETTY
-                           ;; Using JSONLD10 variant in order to use useNativeTypes
-                           (.format RDFFormat/JSONLD10_PRETTY)
-                           (.source model)
-                           (.context write-ctx))
-                         .build)]
-      (let [sw (StringWriter.)]
-        (.output rdf-writer sw)
-        (.toString sw)))))
+  (log/debug :fn :model-to-jsonld)
+  (.toString
+   (doto (StringWriter.)
+     (RDFDataMgr/write model RDFFormat/JSONLD_COMPACT_PRETTY))))
+
 
 (comment
   ;; RDFDataMgr does not expose JSON-LD processing options, and these options are

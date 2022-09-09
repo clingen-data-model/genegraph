@@ -24,22 +24,41 @@
 
 (defmulti transform-clinvar :genegraph.transform.clinvar/format)
 
-(defmulti clinvar-to-model :genegraph.transform.clinvar/format)
+(defmulti clinvar-add-model :genegraph.transform.clinvar/format)
+
+(defmulti clinvar-add-data :genegraph.transform.clinvar/format)
+
+(defmethod clinvar-add-data :default [event]
+  (log/debug :fn :clinvar-model-to-jsonld
+             :msg "No multimethod for dispatch"
+             :dispatch (:genegraph.transform.clinvar/format event))
+  event)
 
 (defmulti clinvar-model-to-jsonld
-          "Multimethod for ClinVar events.
+  "Multimethod for ClinVar events.
           Takes an event, returns it annotated with the JSON-LD representation of the model."
-          :genegraph.transform.clinvar/format)
+  :genegraph.transform.clinvar/format)
+
+(defmethod clinvar-model-to-jsonld :default [event]
+  (log/debug :fn :clinvar-model-to-jsonld
+             :msg "No multimethod for dispatch"
+             :dispatch (:genegraph.transform.clinvar/format event))
+  event)
 
 (defmulti clinvar-add-event-graphql
-          "Takes an event, returns it annotated with :graphql {:query :variables}"
-          :genegraph.transform.clinvar/format)
+  "Takes an event, returns it annotated with :graphql {:query :variables}"
+  :genegraph.transform.clinvar/format)
+
+(defmethod clinvar-add-event-graphql :default [event]
+  (log/debug :fn :clinvar-add-event-graphql
+             :msg "No multimethod for dispatch"
+             :dispatch (:genegraph.transform.clinvar/format event))
+  event)
 
 (def clinvar-jsonld-context {"@context" {"@vocab" iri/cgterms
                                          "clingen" iri/cgterms
                                          "sepio" "http://purl.obolibrary.org/obo/SEPIO_"
-                                         "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"
-                                         }})
+                                         "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"}})
 
 (defn ^String json-prettify
   [^String s]
@@ -77,6 +96,34 @@
                   [gene_id {:gene_symbol gene_symbol :num num}])
                 consensus-cancer-genes-list)))
 
+(defn load-csv-resource [file-name]
+  (-> file-name io/resource io/reader read-csv-with-header doall))
+
+(def clinvar-clinsig-normalized
+  "Seq of maps with keys :scv_term :normalized :label"
+  (load-csv-resource "clinvar_clinsig_normalized.csv"))
+
+(def clinvar-clinsig-classes
+  (load-csv-resource "clinvar_clinsig_classes.csv"))
+
+(def normalize-clinsig-map
+  (into {} (map (fn [{:keys [scv_term normalized label]}]
+                  [scv_term label])
+                clinvar-clinsig-normalized)))
+
+(def normalize-clinsig-codes-map
+  (into {} (map (fn [{:keys [scv_term normalized label]}]
+                  [scv_term normalized])
+                clinvar-clinsig-normalized)))
+
+(def clinsig-class-map
+  "Map of normalized clinsig terms to clinsig classes"
+  (into {} (map (fn [{:keys [code label clinvar_prop_type]}]
+                  [label clinvar_prop_type])
+                clinvar-clinsig-classes)))
+
+
+;;;;; BEGIN REMOVE
 (def clinvar-clinsig-map
   (doall (read-csv-with-header (io/reader (io/resource "clinvar_clinsig-map.csv")))))
 
@@ -88,6 +135,7 @@
 (defn normalize-clinvar-clinsig [clinsig]
   (or (get clinvar-clinsig-map-by-clinsig (s/lower-case clinsig))
       "other"))
+;;;;; END REMOVE
 
 (defn variation-vrs-type
   [clinvar-type]
@@ -247,10 +295,67 @@ LIMIT 1")
            (if (sequential? v)
              ; Take the list of lists of triples for each element, flatten one level
              (apply concat
-               (for [v1 v]
-                 (fields-to-extensions node-iri {k v1})))
+                    (for [v1 v]
+                      (fields-to-extensions node-iri {k v1})))
              (let [ext-iri (l/blank-node)]
                [[node-iri :vrs/extensions ext-iri]
                 [ext-iri :rdf/type :vrs/Extension]
                 [ext-iri :vrs/name (name k)]
                 [ext-iri :rdf/value v]])))))
+
+(defn fields-to-extension-maps
+  "Returns a seq of Extension maps for each field in input-map.
+   If a value in input-map is a seq, create an Extension for each element."
+  [input-map]
+  (->> (for [[k v] input-map]
+         (if (sequential? v)
+           (->> (for [vi v]
+                  (fields-to-extension-maps {k vi}))
+                (apply concat))
+           [{:type "Extension"
+             :name (name k)
+             :value v}]))
+       (apply concat)))
+
+(defn resource-to-out-triples
+  "Uses steppable interface of RDFResource to obtain all the out properties and load
+  them into a Model. These triples can be used as input to l/statements-to-model.
+  NOTE: that only works when all the properties of the resource are in property-names.edn"
+  [resource]
+  ; [k v] -> [r k v]
+  (map #(cons resource %) (into {} resource)))
+
+(defn replace-kvs
+  "Recursively replace keys in input-map and its values by applying kv-mutate-fn.
+   If kv-mutate-fn returns nil, the kv pair is removed.
+   Recurses through all maps either in values or in vector/lists in values."
+  [input-map kv-mutate-fn]
+  (if (map? input-map)
+    (into {} (map (fn [[k v]]
+                    (when-let [[k1 v1] (kv-mutate-fn k v)]
+                      (cond
+                        (map? v1) [k1 (replace-kvs v1 kv-mutate-fn)]
+                        (sequential? v1) [k1 (map #(replace-kvs % kv-mutate-fn) v1)]
+                        :else [k1 v1])))
+                  input-map))
+    input-map))
+
+(defn map-remove-nil-values
+  "Remove fields in map whose value is nil. Recursively with replace-kvs."
+  [input-map]
+  (letfn [(mutator [k v]
+            (when (not (nil? v))
+              (vector k v)))]
+    (replace-kvs input-map mutator)))
+
+(comment
+  (let [m {:a 1
+           :b {:c 3}
+           "_id" 4}]
+    (letfn [(mutator [k v]
+              (vector (if (= "_id" k) "id" k)
+                      (cond (map? v) (replace-kvs v mutator)
+                            (sequential? v) (map #(replace-kvs % mutator) v)
+                            :else v)))]
+      (let [m2 (replace-kvs m mutator)]
+        (pprint m2)))))

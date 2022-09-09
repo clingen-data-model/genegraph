@@ -22,13 +22,14 @@
             [genegraph.transform.clinvar.core]
             [genegraph.transform.rxnorm]
             [genegraph.env :as env]
-            [io.pedestal.log :as log]))
+            [io.pedestal.log :as log]
+            [io.pedestal.interceptor.chain :as ic]))
 
 (defn add-model [event]
   (try
     (xform-types/add-model event)
-    (catch Exception e
-      (assoc event :exception (str e)))))
+    (catch Exception e 
+      (ic/terminate (assoc event :exception (str e))))))
 
 (defn transform-doc [doc]
   (xform-types/transform-doc doc))
@@ -55,3 +56,7 @@
 
 (defmethod xform-types/add-model :turtle [event]
   (add-model-with-format event :turtle))
+
+(defmethod xform-types/add-data :default [event]
+  event)
+

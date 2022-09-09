@@ -9,6 +9,7 @@
             [taoensso.nippy :as nippy]
             [genegraph.rocksdb :as rocksdb])
   (:import java.util.Properties
+           java.nio.ByteBuffer
            [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord ConsumerRecords]
            [org.apache.kafka.clients.producer KafkaProducer Producer ProducerRecord]
            [org.apache.kafka.common PartitionInfo TopicPartition]
@@ -272,9 +273,12 @@
       (.start thread)
       (swap! consumer-topic-state assoc topic :running))))
 
-(defn run-consumers! [event-processing-fn]
-  (subscribe-consumers! event-processing-fn (consumer-topics)))
-  
+(defn run-consumers!
+  ([event-processing-fn]
+   (subscribe-consumers! event-processing-fn (consumer-topics)))
+  ([event-processing-fn consumer-topics]
+   (subscribe-consumers! event-processing-fn consumer-topics)))
+
 (defn start-consumers! []
   (reset! run-consumer true))
 
@@ -324,12 +328,14 @@
   value off the topic and returns a sequence to use as key. In the event that key-fn returns nil or is not supplied, 
   will use offset as key."
   ([topic db-name]
-   (topic-data-to-rocksdb topic db-name (constantly nil)))
-  ([topic db-name key-fn]
+   (topic-data-to-rocksdb topic db-name {:key-fn (constantly nil)}))
+  ([topic db-name options]
    (with-open [c (consumer-for-topic topic)
                db (rocksdb/open db-name)]
      (let [tps (topic-partitions c topic)
-           end (-> (.endOffsets c tps) first val)]
+           end (or (:end options)
+                   (-> (.endOffsets c tps) first val))
+           key-fn (:key-fn options)]
        (.assign c tps)
        (.seekToBeginning c tps)
        (loop [records (poll-once c)]
@@ -337,7 +343,29 @@
          (doseq [record records]
            (let [annotated-record (consumer-record-to-clj record topic)
                  k (or (key-fn annotated-record) (::offset annotated-record))]
-             (rocksdb/rocks-put-multipart-key! db k annotated-record)))
+             (rocksdb/rocks-put-raw-key! db k annotated-record)))
          (when (< (.position c (first tps)) end)
            (recur (poll-once c))))))))
 
+(defn store-stream
+  ([topic db-name]
+   (store-stream topic db-name {}))
+  ([topic db-name options]
+   (with-open [c (consumer-for-topic topic)
+               db (rocksdb/open db-name)]
+     (let [tps (topic-partitions c topic)
+           end (or (:end options)
+                   (-> (.endOffsets c tps) first val))]
+       (.assign c tps)
+       (.seekToBeginning c tps)
+       (println "max offset " (-> (.endOffsets c tps) first val))
+       (loop [records (poll-once c)]
+         (println (.position c (first tps)) "/" end)
+         (doseq [record records]
+           (let [annotated-record (consumer-record-to-clj record topic)
+                 k (.array
+                    (doto (ByteBuffer/allocate Long/BYTES)
+                      (.putLong (::offset annotated-record))))] 
+             (rocksdb/rocks-put-raw-key! db k annotated-record)))
+         (when (< (.position c (first tps)) end)
+           (recur (poll-once c))))))))

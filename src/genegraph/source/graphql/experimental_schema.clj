@@ -42,6 +42,7 @@
    model-variation/vrs-allele
    model-variation/vrs-text
    model-variation/vrs-canonical-variation
+   model-variation/vrs-absolute-copy-number
    model-variation/vrs-literal-sequence-expression
    model-variation/vrs-sequence-location
    model-variation/vrs-sequence-interval

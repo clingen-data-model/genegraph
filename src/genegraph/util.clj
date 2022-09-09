@@ -7,3 +7,10 @@
   (if (string? s)
     (-> s .getBytes ByteArrayInputStream.)
     s))
+
+(defn dissoc-ns
+  "Dissocs keys from M which have the namespace qualifier NAMESPACE-KW"
+  [m namespace-kw]
+  (-> (keys m)
+      (->> (remove #(= namespace-kw (-> % namespace keyword)))
+           (select-keys m))))

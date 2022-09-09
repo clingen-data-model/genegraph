@@ -1,24 +1,30 @@
 (ns genegraph.transform.clinvar.cancervariants
-  (:require [genegraph.database.names :as names :refer [prefix-ns-map]]
+  (:require [cheshire.core :as json]
+            [genegraph.database.names :as names :refer [prefix-ns-map]]
+            [genegraph.rocksdb :as rocksdb]
             [genegraph.util.http-client :as ghttp :refer [http-get-with-cache]]
             [io.pedestal.log :as log]
-            [cheshire.core :as json])
-  (:import (clojure.lang Keyword)))
+            [mount.core :refer [defstate]])
+  (:import (clojure.lang Keyword)
+           (org.rocksdb RocksDB)))
 
-(def cancer-variants-normalize-url
-  "URL for cancervariants.org VRSATILE normalization.
-  Returns a JSON document containing a variation_descriptor field along with other metadata."
-  ;;"https://normalize.cancervariants.org/variation/normalize"
-  "https://normalize.cancervariants.org/variation/to_vrs")
+(def variation-base-url-prod
+  "https://normalize.cancervariants.org/variation/")
 
-(def cancer-variants-url-to-canonical
+(def variation-base-url-dev
+  #_"http://variation-normalization-dev.us-east-2.elasticbeanstalk.com/variation/"
+  "http://variation-normalization-dev-eb.us-east-2.elasticbeanstalk.com/variation")
+
+(def variation-base-url variation-base-url-dev)
+
+(def url-to-canonical
   "URL for cancervariants.org VRS normalization.
   Returns a JSON document containing a CanonicalVariation under the canonical_variation field, along with other metadata."
-  ;;"https://normalize.cancervariants.org/variation/normalize"
-  "https://normalize.cancervariants.org/variation/to_canonical_variation")
+  (str variation-base-url "/to_canonical_variation"))
 
-(def canonical_spdi_to_categorical_variation
-  "https://normalize.cancervariants.org/variation/canonical_spdi_to_categorical_variation")
+(def url-absolute-cnv
+  "URL for cancervariants.org Absolute Copy Number normalization."
+  (str variation-base-url "/parsed_to_abs_cnv"))
 
 (def vicc-context
   {"id" {"@id" "@id"},
@@ -34,65 +40,85 @@
 (defn add-vicc-context [val]
   (assoc val "@context" vicc-context))
 
+;; vicc-db-name is to store the http cache, which caches the full url, params, etc,
+;; and most of the response object.
+;; but really all we need is the expression -> variation object cached.
+;; each normalization function may use a slightly different expr specification, so each
+;; should define their own key fn for how the expr is deterministically serialized.
 (def vicc-db-name "cancervariants-cache.db")
+(def vicc-expr-db-name "cancervariants-expr-cache.db")
 
-(defn normalize-spdi [^String spdi-expression]
-  (log/info :fn ::normalize-spdi :variation-expression spdi-expression)
-  (let [response (http-get-with-cache vicc-db-name
-                                      canonical_spdi_to_categorical_variation
-                                      {:query-params {"q" spdi-expression}})
-        status (:status response)]
-    (case status
-      200 (let [body (-> response :body json/parse-string)]
-            (log/debug :fn ::vrs-allele-for-variation :body body)
-            (-> body (get "categorical_variation") add-vicc-context))
-      ;; Error case
-      (log/error :fn ::normalize-spdi :msg "Error in VRS normalization request" :status status :response response))))
+(defstate ^RocksDB vicc-db
+  :start (rocksdb/open vicc-db-name)
+  :stop (rocksdb/close vicc-db))
 
-(defn wrap-with-canonical-variation
-  [variation-object]
-  {"_id" (str (get variation-object "_id") "_canonicalwrap")
-   "@type" "vrs:CanonicalVariation"
-   "variation" variation-object})
+(defstate ^RocksDB vicc-expr-db
+  :start (rocksdb/open vicc-expr-db-name)
+  :stop (rocksdb/close vicc-expr-db))
 
-(defn normalize-general
-  [^String variation-expression]
-  (log/info :fn ::normalize-general :variation-expression variation-expression)
-  (let [response (http-get-with-cache vicc-db-name
-                                      cancer-variants-normalize-url
-                                      {:query-params {"q" variation-expression}})
-        status (:status response)]
-    (case status
-      200 (let [body (-> response :body json/parse-string)]
-            (log/debug :fn ::vrs-allele-for-variation :body body)
-            (-> body (get "variations") first wrap-with-canonical-variation add-vicc-context))
-      ;; Error case
-      (log/error :fn ::normalize-general :msg "Error in VRS normalization request" :status status :response response))))
+(def normalize-canonical-cache
+  "Maps two keys :get and :put to get and put cached values for normalize-canonical function calls"
+  (letfn [(key-fn [^String variation-expression ^Keyword expression-type]
+            (-> {:variation-expression variation-expression :expression-type expression-type}
+                seq (->> (into [])) str))]
+    {:put (fn [^String variation-expression ^Keyword expression-type value]
+            (rocksdb/rocks-put! vicc-expr-db
+                                (key-fn variation-expression expression-type)
+                                value))
+     :get (fn [^String variation-expression ^Keyword expression-type value]
+            (rocksdb/rocks-get vicc-expr-db (key-fn variation-expression expression-type)))}))
 
 (defn normalize-canonical
   [^String variation-expression ^Keyword expression-type]
-  (log/info :fn ::normalize-canonical :variation-expression variation-expression)
-  (let [response (http-get-with-cache vicc-db-name
-                                      cancer-variants-url-to-canonical
+  (log/info :fn :normalize-canonical :variation-expression variation-expression)
+  (let [response (http-get-with-cache vicc-db
+                                      url-to-canonical
                                       {:query-params {"q" variation-expression
-                                                      "fmt" (name expression-type)}})
+                                                      "fmt" (name expression-type)
+                                                      "untranslatable_returns_text" true}})
         status (:status response)]
     (case status
       200 (let [body (-> response :body json/parse-string)]
-            (log/debug :fn ::vrs-allele-for-variation :body body)
+            (log/debug :fn :normalize-canonical :body body)
             (-> body (get "canonical_variation") add-vicc-context))
       ;; Error case
-      (log/error :fn ::normalize-canonical :msg "Error in VRS normalization request" :status status :response response))))
+      (log/error :fn :normalize-canonical :msg "Error in VRS normalization request" :status status :response response))))
+
+(defn normalize-absolute-copy-number
+  [input-map]
+  (log/info :fn :normalize-absolute-copy-number :input-map input-map)
+  (let [response (http-get-with-cache vicc-db
+                                      url-absolute-cnv
+                                      {:query-params
+                                       (into {"untranslatable_returns_text" true}
+                                             (map #(vector (-> % first name) (-> % second))
+                                                  (select-keys input-map [:assembly
+                                                                          :chr
+                                                                          :start
+                                                                          :end
+                                                                          :total_copies])))})
+        status (:status response)]
+    (case status
+      200 (let [body (-> response :body json/parse-string)]
+            (log/info :fn :normalize-absolute-copy-number :body body)
+            (assert not-empty (-> body (get "absolute_copy_number")))
+            (-> body (get "absolute_copy_number") add-vicc-context))
+      ;; Error case
+      (log/error :fn :normalize-absolute-copy-number
+                 :msg "Error in VRS normalization request"
+                 :status status
+                 :response response))))
 
 (defn vrs-variation-for-expression
   "`variation` should be a string understood by the VICC variant normalization service.
-  Example: HGVS or SPDI expressions.
+  Example: HGVS or SPDI expressions. If type is :cnv, the expression should be a map.
   https://normalize.cancervariants.org/variation"
   ([^String variation-expression]
    (vrs-variation-for-expression variation-expression nil))
   ([^String variation-expression ^Keyword expression-type]
-   (log/info :fn ::vrs-allele-for-variation :variation-expression variation-expression :expr-type expression-type)
+   (log/debug :fn :vrs-allele-for-variation :variation-expression variation-expression :expr-type expression-type)
    (case expression-type
+     :cnv (normalize-absolute-copy-number variation-expression)
      :spdi (normalize-canonical variation-expression :spdi)
      :hgvs (normalize-canonical variation-expression :hgvs)
      ;; By default, tell the service to try hgvs. Will return as Text variation if unable to parse
