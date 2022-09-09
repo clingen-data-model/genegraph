@@ -37,54 +37,8 @@
                    "Uncertain risk allele"
                    "Uncertain significance"])
 
-
 (def clinsig->germline-statement-attribute
-  {:direction {"likely benign" "refutes"
-               "benign" "refutes"
-
-               "uncertain significance" "uncertain"
-               "likely pathogenic" "supports"
-               "pathologic" "supports"
-               "pathogenic" "supports"
-               "non-pathogenic" "refutes"
-               "no known pathogenicity" "refutes"
-               "variant of unknown significance" "uncertain"}
-
-               ;; Revisit what risk factor means
-               ;; "risk factor" "supports"
-
-               ;; not provided likely = nil, but keeping these
-               ;; around until that can be ascertained.
-               ;; "not provided" "not provided"
-               ;; "drug response" "not provided"
-               ;; "other" "not provided"
-               ;; "protective" "not provided"
-               ;; "association" "not provided"
-
-   ;; strength not currently being used, consider removing =tristan
-   :strength {"likely benign" "likely"
-              "benign" "strong"
-
-              "uncertain significance" "uncertain"
-              "likely pathogenic" "likely"
-              "pathologic" "strong"
-              "pathogenic" "strong"
-
-              "non-pathogenic" "strong"
-              "no known pathogenicity" "strong"
-              "variant of unknown significance" "uncertain"}
-
-              ;; Per above, need to understand what risk factor means
-              ;; "risk factor"
-
-              ;; not providing values for non-germline assertions
-              ;; "association"
-              ;; "protective"
-              ;; "other"
-              ;; "not provided"
-              ;; "drug response"
-
-   :classification {"likely benign" "loinc:LA26334-5"
+  {:classification {"likely benign" "loinc:LA26334-5"
                     "benign" "loinc:LA6675-8"
                     "uncertain significance" "loinc:LA26333-7"
                     "variant of unknown significance" "loinc:LA26333-7"
@@ -93,14 +47,6 @@
                     "pathogenic" "loinc:LA6668-3"
                     "non-pathogenic" "loinc:LA6675-8"
                     "no known pathogenicity" "loinc:LA6675-8"}})
-
-
-#_(def domain-root "clingen:")
-#_(def clinvar-variation-root "clinvar-variation:")
-#_(defn get-from-store [db type id]
-    (document-store/get-document db (str type "_" id)))
-#_(defn clinsig-term->enum-value [term field]
-    (get-in clinsig->germline-statement-attribute [field (s/lower-case term)]))
 
 (defn clinsig->direction
   "Maps a clinsig (normalized form of interpretation_description) to
@@ -164,17 +110,11 @@
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         trait (:content message)
         unversioned (str (ns-cg "trait") "_" (:id trait))
-        fallback-id (str (ns-cg "trait") "_" (:id trait) "." (:release_date message))]
+        tid (str (ns-cg "trait") "_" (:id trait) "." (:release_date message))]
     (-> event
         (assoc
          :genegraph.annotate/data
-         {:id fallback-id
-          #_(cond
-              (:medgen_id trait) (str "medgen:" (:medgen_id trait))
-              :else (do (log/warn :fn :add-data-for-trait
-                                  :msg "Trait with no medgen id"
-                                  :message message)
-                        fallback-id))
+         {:id tid
           :type (case (:type trait)
                   "Disease" "Disease"
                   "Phenotype")
@@ -184,7 +124,7 @@
           :record_metadata {:type "RecordMetadata"
                             :version (:release_date message)
                             :is_version_of unversioned}})
-        (assoc :genegraph.annotate/iri fallback-id)
+        (assoc :genegraph.annotate/iri tid)
         add-contextualized)))
 
 
@@ -207,10 +147,16 @@
                  :release-date release-date))
     (first rs)))
 
-(defn trait-id-to-medgen-id [trait-iri]
+(defn trait-id-to-medgen-id
+  "The reason we can keep the fully qualified trait-iri URI as the id and still
+   validate against the schema requiring a CURIE is that 'http:' is a valid prefix."
+  ;; TODO address this CURIE issue, either by compacting the namespace of the IRI, or
+  ;; changing the schema to accept URI types.
+  [trait-iri]
   (log/info :fn :trait-id-to-medgen-id :trait-iri trait-iri)
-  (or (str "medgen:" (q/ld1-> (q/resource trait-iri) [:cg/medgen-id]))
-      trait-iri))
+  (if-let [medgen-id (q/ld1-> (q/resource trait-iri) [:cg/medgen-id])]
+    (str "medgen:" medgen-id)
+    trait-iri))
 
 (defn trait-resource-for-output
   "Takes a trait RDFResource and returns it in a GA4GH standard map
@@ -248,6 +194,8 @@
                           ;; Unversioned identifiers for the traits
                           (map #(str (ns-cg "trait") "_" %)
                                trait-ids)
+                          ;; This code looks up the members. Commented out
+                          ;; because we are deferring this operation.
                           #_(->> trait-ids
                                  (map #(get-trait-by-id % (:release_date message)))
                                  ((fn [traits]
@@ -465,7 +413,6 @@
             :predicate (clinsig-and-statement-type-to-predicate
                         (normalize-clinsig-term (:interpretation_description assertion))
                         stmt-type)
-            #_(str (:trait_set_id assertion))
             #_(let [;; Condition, Disease, Phenotype
                     proposition-object-resource (proposition-object event)]
                 (if proposition-object-resource
@@ -478,7 +425,7 @@
 
 
 (defn method
-  ;; TODO handle pubmed method citations
+  ;; pubmed method citation format:
   ;; "AttributeSet": {
   ;;       "Attribute": {
   ;;           "$": "Pharmacogenomics knowledge for personalized medicine",
@@ -501,17 +448,18 @@
         method-url (get-in assertion [:content "AttributeSet" "Citation" "URL" "$"])
         method-pubmed (let [citation (get-in assertion [:content "AttributeSet" "Citation"])]
                         (when (= "PubMed" (get-in citation ["ID" "@Source"]))
-                          (str "PMID:" (get-in citation ["ID" "$"]))))
-        #_(str iri/clinvar-assertion (:id assertion) "." (:release_date message) "_Method")]
+                          (str "PMID:" (get-in citation ["ID" "$"]))))]
     (when has-method?
-      {:id (str "_:" (l/blank-node))
+      {;; If a deterministic id is needed:
+       ;; (str iri/clinvar-assertion (:id assertion) "." (:release_date message) "_Method")
+       :id (str "_:" (l/blank-node))
        :type "Method"
        :label method-label
        :is_reported_in {;; TODO use the method URL as the id if it exists?
-                                ;; Unreliable as not all assertions have one
-                                ;; title
-                                ;; extensions
-                                ;; xrefs
+                        ;; Unreliable as not all assertions have one
+                        ;; title
+                        ;; extensions
+                        ;; xrefs
                         :id (or method-url method-pubmed (str "_:" (l/blank-node)))
                         :type "Document"}})))
 
@@ -586,21 +534,6 @@
      :is_version_of (q/ld1-> record-metadata-resource [:dc/is-version-of])
      :version (q/ld1-> record-metadata-resource [:owl/version-info])}))
 
-#_(defn condition-resource-for-output
-  ;; TODO compact single-member Condition to the member
-    [condition-resource]
-
-    (when condition-resource
-      (let [condition
-            {:id (str condition-resource)
-             :type (q/ld1-> condition-resource [:rdf/type])
-             :record_metadata (record-metadata-resource-for-output
-                               (q/ld1-> condition-resource [:vrs/record-metadata]))
-             :members (map trait-resource-for-output
-                           (q/ld-> condition-resource [:vrs/members]))}]
-        (if (= 1 (count (:members condition)))
-          (-> condition :members first)))))
-
 (defn proposition-resource-for-output
   "Takes an RDFResource for a proposition and its subject,
    and returns a map for a GA4GH Proposition"
@@ -662,7 +595,8 @@
                           record-metadata-resource-for-output)
      :direction (q/ld1-> assertion-resource [:vrs/direction])
      :subject_descriptor (str subject-descriptor)
-   ;;:object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
+     ;; TODO This object_descriptor would be nice to have
+     ;;:object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
      :classification (-> assertion-resource
                          (q/ld1-> [:vrs/classification])
                          classification-resource-for-output)
@@ -690,7 +624,6 @@
           :description (description event)
           :method (method event)
           :contributions (contributions event)
-          ;;:is_reported_in nil ; ClinVar?
           :record_metadata {:type "RecordMetadata"
                             :is_version_of vof
                             :version (:release_date message)}
@@ -813,7 +746,6 @@
                              "@type" "@id"}
 
     ; Prefixes
-    ;"https://vrs.ga4gh.org/terms/"
     "rdf" {"@id" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
            "@prefix" true}
     "rdfs" {"@id" "http://www.w3.org/2000/01/rdf-schema#"
