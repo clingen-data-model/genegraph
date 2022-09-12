@@ -16,7 +16,7 @@
             [genegraph.sink.event :as event]
             [genegraph.sink.event-recorder :as event-recorder]
             [genegraph.transform.clinvar.core]
-            [genegraph.transform.clinvar.variation-new :as variation]
+            [genegraph.transform.clinvar.variation :as variation]
             [genegraph.transform.types :as xform-types]
             [io.pedestal.log :as log]
             [mount.core]))
@@ -179,7 +179,7 @@
     (with-open [writer (io/writer (io/file file-name))]
       (write-tx (doseq [msg (get-variant-messages)]
                   (let [event (message-proccess-no-db! msg)
-                        j (:genegraph.transform.clinvar.variation-new/contextualized event)]
+                        j (:genegraph.transform.clinvar.variation/contextualized event)]
                     (when j
                       (let [js (-> j
                                    model-json-preprocess-for-output
