@@ -200,35 +200,6 @@
                             (apply-to-value v)))
                   input-map))))
 
-(defn replace-kvs
-  "Recursively replace keys in input-map and its values, for keys matching
-   key-match-fn, by applying key-mutate-fn"
-  [input-map kv-mutate-fn]
-  (letfn [(apply-to-kv [k v]
-            (kv-mutate-fn k v))]
-    (into {} (map (fn [[k v]]
-                    apply-to-kv)
-                  input-map))))
-
-(comment
-  (let [m {:a 1
-           :b {:c 3}
-           "_id" 4}]
-    (letfn [(mutator [k v]
-              (vector (if (= "_id" k) "id" k)
-                      (cond (map? v) (replace-kvs v mutator)
-                            (sequential? v) (map #(replace-kvs % mutator) v)
-                            :else v)))]
-      (let [m2 (replace-kvs m mutator)]
-        (pprint m2)))))
-
-
-(defn model-to-triples [^Model model]
-  (-> model .listStatements iterator-seq
-      (->> (map #(vector (.getSubject %)
-                         (.getPredicate %)
-                         (.getObject %))))))
-
 (defn make-member-map
   "Creates a set of VariationMember triples based on an expression and syntax.
   Returns a seq of seqs"
@@ -237,10 +208,9 @@
              :expression expression
              :syntax syntax
              :syntax-version syntax-version)
-
-  (let [];;member-iri (l/blank-node)
-        ;;expression-iri (l/blank-node)
-
+  (let []
+    ;;member-iri (l/blank-node)
+    ;;expression-iri (l/blank-node)
     {;;:id member-iri
      :type "VariationMember"
      :expressions [(merge
@@ -316,34 +286,9 @@
                               :version (:release_date msg)}}
            :genegraph.annotate/iri vd-iri)))
 
-(defn resource-to-out-triples
-  "Uses steppable interface of RDFResource to obtain all the out properties and load
-  them into a Model. These triples can be used as input to l/statements-to-model.
-  NOTE: that only works when all the properties of the resource are in property-names.edn"
-  [resource]
-  ; [k v] -> [r k v]
-  (map #(cons resource %) (into {} resource)))
-
-(defn add-triple!
-  "Adds a triple to a model. Takes a triple ([s p o])."
-  ([^Model model triple]
-   (log/debug :fn ::add-triple :triple triple)
-   (let [stmt (l/construct-statement triple)]
-     (.add model stmt)
-     model)))
-
-(defn remove-triple!
-  "Deletes a triple from a model. Takes a triple ([s p o])."
-  ([^Model model triple]
-   (log/debug :fn ::remove-triple :triple triple)
-   (let [stmt-to-remove (l/construct-statement triple)]
-     (if (not (.contains model stmt-to-remove))
-       (let [e (ex-info "Statement not found in model" {:fn ::remove-triple :model model :stmt-to-remove stmt-to-remove})]
-         (log/error :message (ex-message e) :data (ex-data e))
-         (throw e))
-       (.remove model stmt-to-remove))
-     model)))
-
+(defn variation-descriptor-resource-for-output
+  "Takes a VariationDescriptor resource and returns a GA4GH edn structure"
+  [descriptor-resource])
 
 (def variation-context
   {"@context"
