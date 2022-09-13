@@ -277,11 +277,12 @@
 
 (defn add-data-for-variation
   "Returns msg with :genegraph.annotate/data and :genegraph.annotate/data-contextualized added.
-   ::deferred-triples is a collection of maps declaring realizers and
-   triple generators. These are triples which need to exist for the model to make
-   sense, but which rely on impure operations like database queries or HTTP calls"
+
+   Note this function may execute HTTP calls if the normalized version of canonical
+   variation expressions are not already cached locally."
   [event]
-  (let [message (-> event
+  (let [event (variation-preprocess event)
+        message (-> event
                     :genegraph.transform.clinvar.core/parsed-value)
         variation (:content message)
         vrd-unversioned (str (ns-cg "VariationDescriptor_") (:id variation))
@@ -312,29 +313,48 @@
                                 {:expression (-> event ::prioritized-expression :expr)
                                  :expression-type (-> event ::prioritized-expression :type)})]
                    (:variation vrs-ret))
-          :record_metadata {:is_version_of vrd-unversioned
+          :record_metadata {:type "RecordMetadata"
+                            :is_version_of vrd-unversioned
                             :version (:release_date message)}})
         (assoc :genegraph.annotate/iri vd-iri)
         add-contextualized)))
 
+(defn record-metadata-resource-for-output
+  [record-metadata-resource]
+  (when record-metadata-resource
+    {:type (q/ld1-> record-metadata-resource [:rdf/type])
+     :is_version_of (q/ld1-> record-metadata-resource [:dc/is-version-of])
+     :version (q/ld1-> record-metadata-resource [:owl/version-info])}))
+
 (defn variation-descriptor-resource-for-output
   "Takes a VariationDescriptor resource and returns a GA4GH edn structure"
-  [descriptor-resource])
+  [descriptor-resource]
+  {:id (str descriptor-resource)
+   :type (q/ld1-> descriptor-resource [:rdf/type])
+   :label (q/ld1-> descriptor-resource [:rdfs/label])
+   :extensions ()
+   :description ()
+   :xrefs ()
+   :alternate_labels ()
+   :members ()
+   :subject_variation_descriptor ()
+   :value ()
+   :record_metadata ()})
+
+(def myval "hello")
 
 (def variation-context
   {"@context"
    {; Properties
-    ;"object" {"@id" (str (get local-property-names :sepio/has-object))
-    ;          "@type" "@id"}
     "is_version_of" {"@id" (str (get local-property-names :dc/is-version-of))
                      "@type" "@id"}
     "type" {"@id" "@type"
             "@type" "@id"}
-    ;"release_date" {"@id" (str (get local-property-names :cg/release-date))}
     "name" {"@id" (str (get local-property-names :vrs/name))}
 
     ;"value" {"@id" "@value"}
     "value" {"@id" "rdf:value"}
+    "label" {"@id" "rdfs:label"}
 
     "replaces" {"@id" (str (get local-property-names :dc/replaces))
                 "@type" "@id"}
@@ -389,6 +409,9 @@
                                  "@type" "@id"}
     "VariationMember" {"@id" (str (get prefix-ns-map "vrs") "VariationMember")
                        "@type" "@id"}
+    "RecordMetadata" {"@id" (str (get prefix-ns-map "vrs") "RecordMetadata")
+                      "@type" "@id"}
+
     ; Prefixes
     ;"https://vrs.ga4gh.org/terms/"
     "rdf" {"@id" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -399,32 +422,6 @@
            "@prefix" true}
     "cgterms" {"@id" (get prefix-ns-map "cgterms")
                "@prefix" true}}})
-
-#_(defmethod common/clinvar-add-model :variation [event]
-    (log/debug :fn ::clinvar-add-model :event event)
-    (-> event
-        variation-preprocess
-        add-variation-map
-
-      ;; Add context
-        ((fn [e]
-           (assoc e ::contextualized (merge (::normalized e)
-                                            variation-context))))
-        (#(do (log/debug :contextualized (json/generate-string (::contextualized %)))
-              %))
-
-        ((fn [e]
-           (let [m (l/read-rdf (str->bytestream
-                                (json/generate-string (::contextualized e)))
-                               {:format :json-ld})]
-             (assoc e ::q/model m))))))
-
-#_(defmethod common/clinvar-add-model :variation [event]
-    (assoc event ::q/model (l/read-rdf (str->bytestream
-                                        (json/generate-string
-                                         (:genegraph.annotate/data-contextualized event)))
-                                       {:format :json-ld})))
-
 
 (def variation-descriptor-query
   "

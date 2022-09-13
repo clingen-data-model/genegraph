@@ -39,7 +39,8 @@
                                                   event-with-json)
                             "variation" (variation/add-data-for-variation
                                          event-with-json)
-                            event-with-json)])
+                            event-with-json)]
+      event-with-data)
     (catch Exception e
       (log/error :fn ::add-data :msg "Exception caught in add-data for :clinvar-raw"
                  :event event
