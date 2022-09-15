@@ -3,9 +3,9 @@
             [clojure.string :as s]
             [genegraph.database.load :as l]
             [genegraph.database.names :refer [local-class-names
-                                              local-property-names prefix-ns-map]]
+                                              local-property-names
+                                              prefix-ns-map]]
             [genegraph.database.query :as q]
-            [genegraph.sink.document-store :as document-store]
             [genegraph.transform.clinvar.common :as common]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :refer [in?]]
@@ -37,54 +37,8 @@
                    "Uncertain risk allele"
                    "Uncertain significance"])
 
-
 (def clinsig->germline-statement-attribute
-  {:direction {"likely benign" "refutes"
-               "benign" "refutes"
-
-               "uncertain significance" "uncertain"
-               "likely pathogenic" "supports"
-               "pathologic" "supports"
-               "pathogenic" "supports"
-               "non-pathogenic" "refutes"
-               "no known pathogenicity" "refutes"
-               "variant of unknown significance" "uncertain"}
-
-               ;; Revisit what risk factor means
-               ;; "risk factor" "supports"
-
-               ;; not provided likely = nil, but keeping these
-               ;; around until that can be ascertained.
-               ;; "not provided" "not provided"
-               ;; "drug response" "not provided"
-               ;; "other" "not provided"
-               ;; "protective" "not provided"
-               ;; "association" "not provided"
-
-   ;; strength not currently being used, consider removing =tristan
-   :strength {"likely benign" "likely"
-              "benign" "strong"
-
-              "uncertain significance" "uncertain"
-              "likely pathogenic" "likely"
-              "pathologic" "strong"
-              "pathogenic" "strong"
-
-              "non-pathogenic" "strong"
-              "no known pathogenicity" "strong"
-              "variant of unknown significance" "uncertain"}
-
-              ;; Per above, need to understand what risk factor means
-              ;; "risk factor"
-
-              ;; not providing values for non-germline assertions
-              ;; "association"
-              ;; "protective"
-              ;; "other"
-              ;; "not provided"
-              ;; "drug response"
-
-   :classification {"likely benign" "loinc:LA26334-5"
+  {:classification {"likely benign" "loinc:LA26334-5"
                     "benign" "loinc:LA6675-8"
                     "uncertain significance" "loinc:LA26333-7"
                     "variant of unknown significance" "loinc:LA26333-7"
@@ -93,14 +47,6 @@
                     "pathogenic" "loinc:LA6668-3"
                     "non-pathogenic" "loinc:LA6675-8"
                     "no known pathogenicity" "loinc:LA6675-8"}})
-
-
-#_(def domain-root "clingen:")
-#_(def clinvar-variation-root "clinvar-variation:")
-#_(defn get-from-store [db type id]
-    (document-store/get-document db (str type "_" id)))
-#_(defn clinsig-term->enum-value [term field]
-    (get-in clinsig->germline-statement-attribute [field (s/lower-case term)]))
 
 (defn clinsig->direction
   "Maps a clinsig (normalized form of interpretation_description) to
@@ -154,23 +100,6 @@
                 (s/replace " " "_")
                 (s/replace "/" "_"))}))
 
-#_(defn add-data-for-raw-trait [event]
-    (let [trait (event-data event)]
-      (assoc event
-             :genegraph.annotate/data
-             {:id (str "medgen:" (:medgen_id trait))
-              :clinvar_id (:id trait)
-              :clinvar_type (:entity_type trait)
-              :label (:name trait)})))
-
-#_(defn add-data-for-trait-set [event]
-    (let [trait-set (event-data event)]
-      (assoc event
-             :genegraph.annotate/data
-             {:clinvar_type (:entity_type trait-set)
-              :clinvar_id (:id trait-set)
-              :trait_ids (:trait_ids trait-set)})))
-
 (defn add-contextualized [event]
   (let [data (:genegraph.annotate/data event)]
     (assoc event
@@ -181,26 +110,21 @@
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         trait (:content message)
         unversioned (str (ns-cg "trait") "_" (:id trait))
-        fallback-id (str (ns-cg "trait") "_" (:id trait) "." (:release_date message))]
+        tid (str (ns-cg "trait") "_" (:id trait) "." (:release_date message))]
     (-> event
         (assoc
          :genegraph.annotate/data
-         {:id fallback-id
-          #_(cond
-              (:medgen_id trait) (str "medgen:" (:medgen_id trait))
-              :else (do (log/warn :fn :add-data-for-trait
-                                  :msg "Trait with no medgen id"
-                                  :message message)
-                        fallback-id))
+         {:id tid
           :type (case (:type trait)
                   "Disease" "Disease"
                   "Phenotype")
           :medgen_id (:medgen_id trait)
           :clinvar_trait_id (:id trait)
           :release_date (:release_date message)
-          :record_metadata {:version (:release_date message)
+          :record_metadata {:type "RecordMetadata"
+                            :version (:release_date message)
                             :is_version_of unversioned}})
-        (assoc :genegraph.annotate/iri fallback-id)
+        (assoc :genegraph.annotate/iri tid)
         add-contextualized)))
 
 
@@ -223,10 +147,16 @@
                  :release-date release-date))
     (first rs)))
 
-(defn trait-id-to-medgen-id [trait-iri]
+(defn trait-id-to-medgen-id
+  "The reason we can keep the fully qualified trait-iri URI as the id and still
+   validate against the schema requiring a CURIE is that 'http:' is a valid prefix."
+  ;; TODO address this CURIE issue, either by compacting the namespace of the IRI, or
+  ;; changing the schema to accept URI types.
+  [trait-iri]
   (log/info :fn :trait-id-to-medgen-id :trait-iri trait-iri)
-  (or (str "medgen:" (q/ld1-> (q/resource trait-iri) [:cg/medgen-id]))
-      trait-iri))
+  (if-let [medgen-id (q/ld1-> (q/resource trait-iri) [:cg/medgen-id])]
+    (str "medgen:" medgen-id)
+    trait-iri))
 
 (defn trait-resource-for-output
   "Takes a trait RDFResource and returns it in a GA4GH standard map
@@ -255,7 +185,8 @@
                :type "Condition"
                :clinvar_trait_set_id (:id trait-set)
                :release_date (:release_date message)
-               :record_metadata {:is_version_of (str (ns-cg "trait_set_") (:id trait-set))
+               :record_metadata {:type "RecordMetadata"
+                                 :is_version_of (str (ns-cg "trait_set_") (:id trait-set))
                                  :version (:release_date message)}
                :members (let [trait-ids (:trait_ids trait-set)]
                           (log/debug :fn :add-data-for-trait-set
@@ -263,6 +194,8 @@
                           ;; Unversioned identifiers for the traits
                           (map #(str (ns-cg "trait") "_" %)
                                trait-ids)
+                          ;; This code looks up the members. Commented out
+                          ;; because we are deferring this operation.
                           #_(->> trait-ids
                                  (map #(get-trait-by-id % (:release_date message)))
                                  ((fn [traits]
@@ -317,7 +250,6 @@
       "Condition" (-> {:id (str trait-set)
                        :type "Condition"
                        :members (->> (q/ld-> trait-set [:vrs/members])
-                                     #_(map #(get-trait-by-id % (q/ld1-> trait-set [:cg/release-date])))
                                      (map #(get-trait-resource-by-version-of
                                             %
                                             (q/ld1-> trait-set [:vrs/record-metadata
@@ -337,8 +269,9 @@
                       { ?i a :vrs/Condition }
                       union { ?i a :vrs/Disease }
                       union { ?i a :vrs/Phenotype }
+                      ?i :vrs/record-metadata ?rmd .
+                      ?rmd :owl/version-info ?release_date .
                       ?i :cg/clinvar-trait-set-id ?trait_set_id .
-                      ?i :cg/release-date ?release_date .
                       FILTER(?release_date <= ?max_release_date) }
                       order by desc(?release_date)
                       limit 1"
@@ -348,6 +281,30 @@
       (log/error :fn :get-trait-by-id
                  :msg "No matching trait set"
                  :trait-set-id trait-set-id
+                 :release-date release-date))
+    (first rs)))
+
+(defn get-trait-set-by-version-of
+  [^RDFResource trait-set-vof ^String release-date]
+  (log/info :fn :get-trait-set-by-id
+            :trait-set-vof trait-set-vof
+            :release-date release-date)
+  (let [rs (q/select "select ?i where {
+                      { ?i a :vrs/Condition }
+                      union { ?i a :vrs/Disease }
+                      union { ?i a :vrs/Phenotype }
+                      ?i :vrs/record-metadata ?rmd .
+                      ?rmd :dc/is-version-of ?vof .
+                      ?rmd :owl/version-info ?release_date .
+                      FILTER(?release_date <= ?max_release_date) }
+                      order by desc(?release_date)
+                      limit 1"
+                     {:vof (q/resource trait-set-vof)
+                      :max_release_date release-date})]
+    (when (= 0 (count rs))
+      (log/error :fn :get-trait-set-by-version-of
+                 :msg "No matching trait set"
+                 :trait-set-vof trait-set-vof
                  :release-date release-date))
     (first rs)))
 
@@ -431,40 +388,44 @@
                  :stmt-type stmt-type
                  :clinsig clinsig))))
 
-(defn proposition [event]
+(defn proposition
+  "Returns a Proposition object for a clinical_assertion record.
+   Some clinical_assertions do not have trait_set_id values, and in those,
+   the :object of the proposition will be omitted."
+  [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
         #_#_subject-descriptor (variation-descriptor-by-clinvar-id
                                 (get assertion :variation_id)
                                 (get message :release_date))
         stmt-type (statement-type (:interpretation_description assertion))]
-    {:type (get statement-type-to-proposition-type stmt-type)
-     :subject (get assertion :variation_id)
-     #_(if (not (nil? subject-descriptor))
-         (let [subject (q/ld1-> subject-descriptor [:rdf/value])]
-           (str subject))
-         (do (log/error :fn :proposition
-                        :msg "No matching subject descriptor found"
-                        :variation-id (get assertion :variation_id)
-                        :release-date (get message :release_date)
-                        :message message)
-             nil))
-     :predicate (clinsig-and-statement-type-to-predicate
-                 (normalize-clinsig-term (:interpretation_description assertion))
-                 stmt-type)
-     :object (str (ns-cg "trait_set_") (:trait_set_id assertion))
-     #_(str (:trait_set_id assertion))
-     #_(let [;; Condition, Disease, Phenotype
-             proposition-object-resource (proposition-object event)]
-         (if proposition-object-resource
-           (trait-set-resource-for-output proposition-object-resource)
+    (merge {:type (get statement-type-to-proposition-type stmt-type)
+            :subject (get assertion :variation_id)
+            #_(if (not (nil? subject-descriptor))
+                (let [subject (q/ld1-> subject-descriptor [:rdf/value])]
+                  (str subject))
+                (do (log/error :fn :proposition
+                               :msg "No matching subject descriptor found"
+                               :variation-id (get assertion :variation_id)
+                               :release-date (get message :release_date)
+                               :message message)
+                    nil))
+            :predicate (clinsig-and-statement-type-to-predicate
+                        (normalize-clinsig-term (:interpretation_description assertion))
+                        stmt-type)
+            #_(let [;; Condition, Disease, Phenotype
+                    proposition-object-resource (proposition-object event)]
+                (if proposition-object-resource
+                  (trait-set-resource-for-output proposition-object-resource)
                  ;; Not Provided (or some error in upstream trait mapping)
-           {:id (str (ns-cg "not_provided"))
-            :type "Phenotype"}))}))
+                  {:id (str (ns-cg "not_provided"))
+                   :type "Phenotype"}))}
+           (when (:trait_set_id assertion)
+             {:object (str (ns-cg "trait_set_") (:trait_set_id assertion))}))))
 
 
 (defn method
-  ;; TODO handle pubmed method citations
+  ;; pubmed method citation format:
   ;; "AttributeSet": {
   ;;       "Attribute": {
   ;;           "$": "Pharmacogenomics knowledge for personalized medicine",
@@ -487,17 +448,18 @@
         method-url (get-in assertion [:content "AttributeSet" "Citation" "URL" "$"])
         method-pubmed (let [citation (get-in assertion [:content "AttributeSet" "Citation"])]
                         (when (= "PubMed" (get-in citation ["ID" "@Source"]))
-                          (str "PMID:" (get-in citation ["ID" "$"]))))
-        #_(str iri/clinvar-assertion (:id assertion) "." (:release_date message) "_Method")]
+                          (str "PMID:" (get-in citation ["ID" "$"]))))]
     (when has-method?
-      {:id (str "_:" (l/blank-node))
+      {;; If a deterministic id is needed:
+       ;; (str iri/clinvar-assertion (:id assertion) "." (:release_date message) "_Method")
+       :id (str "_:" (l/blank-node))
        :type "Method"
        :label method-label
        :is_reported_in {;; TODO use the method URL as the id if it exists?
-                                ;; Unreliable as not all assertions have one
-                                ;; title
-                                ;; extensions
-                                ;; xrefs
+                        ;; Unreliable as not all assertions have one
+                        ;; title
+                        ;; extensions
+                        ;; xrefs
                         :id (or method-url method-pubmed (str "_:" (l/blank-node)))
                         :type "Document"}})))
 
@@ -515,52 +477,101 @@
                       (map :text)))))
 
 (defn contributions [event]
+  ;; TODO add Agent type to property-names and context
+  ;; TODO add resolution of agent name/label against ClinVar :submitter records
+  ;; TODO not sure how the Agents will be stored in Jena, probably will end up with
+  ;; a lot of duplicate Agent nodes, in different clinicalassertion named graphs,
+  ;; and not be able to distinguish them since they're identical other than the graph name.
+  ;; This should be okay since they really are identical for now (just id and type).
+  ;; But after we include the submitter name, they may not be, since submitter names can change.
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
-        qualified-submitter (str iri/submitter (:submitter_id assertion))]
+        qualified-submitter (str iri/submitter (:submitter_id assertion))
+        agent {:id qualified-submitter
+               :type "Agent"}]
     (cond-> []
       (:interpretation_date_last_evaluated assertion)
       (conj
        ;; Approver (maybe an evaluator role?)
        {:type "Contribution"
-        :agent qualified-submitter
+        :agent agent
         :date (:interpretation_date_last_evaluated assertion)
         :role "Approver"})
       (:date_last_updated assertion)
       (conj
        ;; Submitter
        {:type "Contribution"
-        :agent qualified-submitter
+        :agent agent
         :date (:date_last_updated assertion)
         :role "Submitter"}))))
 
-;; TODO
-(defn contribution-resource-for-output [contribution-resource]
-  {:type (q/ld1-> contribution-resource [:rdf/type])
-   :agent (q/ld1-> contribution-resource [:vrs/agent])
-   :date (q/ld1-> contribution-resource [:vrs/date])
-   :role (q/ld1-> contribution-resource [:vrs/role])})
 
-;; TODO
-(defn classification-resource-for-output [classification-resource]
-  #_(throw (IllegalArgumentException. "classification-resource-for-output not implemented")))
+(defn contribution-resource-for-output
+  "Takes an RDFResource for a contribution,
+   and returns a map for a GA4GH Contribution"
+  [contribution-resource]
+  (when contribution-resource
+    {:type (q/ld1-> contribution-resource [:rdf/type])
+     :agent (let [agent-resource (q/ld1-> contribution-resource [:vrs/agent])]
+              {:id (str agent-resource)
+               :type (q/ld1-> agent-resource [:rdf/type])})
+     :date (q/ld1-> contribution-resource [:vrs/date])
+     :role (q/ld1-> contribution-resource [:vrs/role])}))
 
-;; TODO
-(defn proposition-resource-for-output [proposition-resource subject-resource]
-  {:type (q/ld1-> proposition-resource [:rdf/type])
-   :subject (str subject-resource)
-   :predicate (q/ld1-> proposition-resource [:vrs/predicate])
-   :object (q/ld1-> proposition-resource [:vrs/object])})
+(defn classification-resource-for-output
+  "Takes an RDFResource for a classification,
+   and returns a map for a GA4GH Classification"
+  [classification-resource]
+  (when classification-resource
+    {:type (q/ld1-> classification-resource [:rdf/type])
+     :id (str classification-resource)
+     :label (q/ld1-> classification-resource [:rdfs/label])}))
+
+(defn record-metadata-resource-for-output
+  [record-metadata-resource]
+  (when record-metadata-resource
+    {:type (q/ld1-> record-metadata-resource [:rdf/type])
+     :is_version_of (q/ld1-> record-metadata-resource [:dc/is-version-of])
+     :version (q/ld1-> record-metadata-resource [:owl/version-info])}))
+
+(defn proposition-resource-for-output
+  "Takes an RDFResource for a proposition and its subject,
+   and returns a map for a GA4GH Proposition"
+  [proposition-resource subject-resource release-date]
+  (log/info :fn :proposition-resource-for-output
+            :proposition-resource proposition-resource
+            :subject-resource subject-resource
+            :release-date release-date)
+  (when proposition-resource
+    {:type (q/ld1-> proposition-resource [:rdf/type])
+     :subject (str subject-resource)
+     :predicate (q/ld1-> proposition-resource [:vrs/predicate])
+     :object (let [object-vof (q/ld1-> proposition-resource [:vrs/object])]
+               (log/info :fn :proposition-resource-for-output
+                         :object-vof object-vof)
+               ;; with the is_version_of of the object (a trait-set), get latest
+               ;; Some clinical assertions don't have any conditions
+               (when object-vof
+                 (trait-set-resource-for-output
+                  (get-trait-set-by-version-of object-vof release-date))))}))
+
+(defn document-resource-for-output
+  [document-resource]
+  (when document-resource
+    {:id (str document-resource)
+     :type (q/ld1-> document-resource [:rdf/type])}))
+
+(defn method-resource-for-output
+  [method-resource]
+  (when method-resource
+    {:id (str method-resource)
+     :type (q/ld1-> method-resource [:rdf/type])
+     :label (q/ld1-> method-resource [:rdfs/label])
+     :is_reported_in (let [doc-resource (q/ld1-> method-resource [:vrs/is_reported_in])]
+                       (document-resource-for-output doc-resource))}))
 
 (defn clinical-assertion-resource-for-output
   ;; TODO remove keys with nil values
-  ;; TODO verify method is working correctly (seems to be, some are just not provided)
-  ;; TODO add type RecordMetadata to record_metadata
-  ;; TODO when interpretation_date_last_evaluated is null, what to do for Approver contribution?
-  ;;      leave it out with just the submitter contribution?
-  ;;      replace it with another contribution activity? This would be inconsistent
-  ;;      unless that activity was also added to all records. Default: 3 contributions
-  ;;      TODO addendum: all drug response stmts from 2019-07-01 do not have interpretation_date_last_evaluated
   ;; TODO handle :event_type delete for all these records.
   "Takes an RDFResource for a clinical assertion Statement and
    puts data it references into a GA4GH Statement structure for output."
@@ -576,26 +587,24 @@
      :type (q/ld1-> assertion-resource [:rdf/type])
      :label (q/ld1-> assertion-resource [:rdfs/label])
      :description (q/ld1-> assertion-resource [:vrs/description])
-     :method (q/ld1-> assertion-resource [:vrs/method])
+     :method (-> (q/ld1-> assertion-resource [:vrs/method])
+                 method-resource-for-output)
      :contributions (->> (q/ld-> assertion-resource [:vrs/contributions])
                          (map contribution-resource-for-output))
-     :record_metadata {:type (q/ld1-> assertion-resource [:vrs/record-metadata
-                                                          :rdf/type])
-                       :is_version_of (q/ld1-> assertion-resource [:vrs/record-metadata
-                                                                   :dc/is-version-of])
-                       :version (q/ld1-> assertion-resource [:vrs/record-metadata
-                                                             :owl/version-info])}
+     :record_metadata (-> (q/ld1-> assertion-resource [:vrs/record-metadata])
+                          record-metadata-resource-for-output)
      :direction (q/ld1-> assertion-resource [:vrs/direction])
      :subject_descriptor (str subject-descriptor)
-          ;;:variation_origin "germline"
-   ;;:object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
+     ;; TODO This object_descriptor would be nice to have
+     ;;:object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
      :classification (-> assertion-resource
                          (q/ld1-> [:vrs/classification])
                          classification-resource-for-output)
      :target_proposition (-> assertion-resource
                              (q/ld1-> [:vrs/target-proposition])
                              (proposition-resource-for-output
-                              (q/ld1-> subject-descriptor [:rdf/value])))}))
+                              (q/ld1-> subject-descriptor [:rdf/value])
+                              release-date))}))
 
 (defn add-data-for-clinical-assertion [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
@@ -615,7 +624,6 @@
           :description (description event)
           :method (method event)
           :contributions (contributions event)
-          ;;:is_reported_in nil ; ClinVar?
           :record_metadata {:type "RecordMetadata"
                             :is_version_of vof
                             :version (:release_date message)}
@@ -691,6 +699,8 @@
     "predicate" {"@id" (str (get prefix-ns-map "vrs") "predicate")}
     "object" {"@id" (str (get prefix-ns-map "vrs") "object")}
     "subject_descriptor" {"@id" (str (get prefix-ns-map "vrs") "subject_descriptor")}
+    "classification" {"@id" (str (get prefix-ns-map "vrs") "classification")}
+    "is_reported_in" {"@id" (str (get prefix-ns-map "vrs") "is_reported_in")}
 
 
     ; map plurals to known guaranteed array types
@@ -736,7 +746,6 @@
                              "@type" "@id"}
 
     ; Prefixes
-    ;"https://vrs.ga4gh.org/terms/"
     "rdf" {"@id" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
            "@prefix" true}
     "rdfs" {"@id" "http://www.w3.org/2000/01/rdf-schema#"

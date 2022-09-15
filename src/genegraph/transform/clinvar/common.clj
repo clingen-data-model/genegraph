@@ -325,6 +325,34 @@ LIMIT 1")
   ; [k v] -> [r k v]
   (map #(cons resource %) (into {} resource)))
 
+(defn model-to-triples
+  "Returns a seq of all [s p o] triples in the model. Unordered."
+  [^Model model]
+  (-> model .listStatements iterator-seq
+      (->> (map #(vector (.getSubject %)
+                         (.getPredicate %)
+                         (.getObject %))))))
+
+(defn add-triple!
+  "Adds a triple to a model. Takes a triple ([s p o])."
+  ([^Model model triple]
+   (log/debug :fn ::add-triple :triple triple)
+   (let [stmt (l/construct-statement triple)]
+     (.add model stmt)
+     model)))
+
+(defn remove-triple!
+  "Deletes a triple from a model. Takes a triple ([s p o])."
+  ([^Model model triple]
+   (log/debug :fn ::remove-triple :triple triple)
+   (let [stmt-to-remove (l/construct-statement triple)]
+     (if (not (.contains model stmt-to-remove))
+       (let [e (ex-info "Statement not found in model" {:fn ::remove-triple :model model :stmt-to-remove stmt-to-remove})]
+         (log/error :message (ex-message e) :data (ex-data e))
+         (throw e))
+       (.remove model stmt-to-remove))
+     model)))
+
 (defn replace-kvs
   "Recursively replace keys in input-map and its values by applying kv-mutate-fn.
    If kv-mutate-fn returns nil, the kv pair is removed.
@@ -349,13 +377,13 @@ LIMIT 1")
     (replace-kvs input-map mutator)))
 
 (comment
-  (let [m {:a 1
-           :b {:c 3}
-           "_id" 4}]
-    (letfn [(mutator [k v]
-              (vector (if (= "_id" k) "id" k)
-                      (cond (map? v) (replace-kvs v mutator)
-                            (sequential? v) (map #(replace-kvs % mutator) v)
-                            :else v)))]
-      (let [m2 (replace-kvs m mutator)]
-        (pprint m2)))))
+  '(let [m {:a 1
+            :b {:c 3}
+            "_id" 4}]
+     (letfn [(mutator [k v]
+               (vector (if (= "_id" k) "id" k)
+                       (cond (map? v) (replace-kvs v mutator)
+                             (sequential? v) (map #(replace-kvs % mutator) v)
+                             :else v)))]
+       (let [m2 (replace-kvs m mutator)]
+         (pprint m2)))))

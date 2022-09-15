@@ -3,19 +3,14 @@
             [genegraph.database.load :as l]
             [genegraph.database.query :as q]
             [genegraph.transform.clinvar.clinical-assertion :as clinical-assertion]
-            [genegraph.transform.clinvar.common :refer [clinvar-add-event-graphql clinvar-add-model
+            [genegraph.transform.clinvar.common :refer [clinvar-add-event-graphql
+                                                        clinvar-add-model
                                                         clinvar-model-to-jsonld]]
             [genegraph.transform.clinvar.util :as util]
-            [genegraph.transform.clinvar.variation-new :as variation]
+            [genegraph.transform.clinvar.variation :as variation]
             [genegraph.transform.types :as xform-types :refer [add-model]]
             [genegraph.util :refer [str->bytestream]]
             [io.pedestal.log :as log]))
-
-(defn add-document-store-id [event]
-  (let [data (:genegraph.annotate/data event)]
-    (assoc event
-           :genegraph.sink.document-store/id
-           (str (:clinvar_type data) "_" (:clinvar_id data)))))
 
 (defn add-parsed-value [event]
   (assoc event
@@ -45,7 +40,7 @@
                             "variation" (variation/add-data-for-variation
                                          event-with-json)
                             event-with-json)]
-      (add-document-store-id event-with-data))
+      event-with-data)
     (catch Exception e
       (log/error :fn ::add-data :msg "Exception caught in add-data for :clinvar-raw"
                  :event event
@@ -85,7 +80,11 @@
       (assoc event :exception e))))
 
 (defmethod clinvar-model-to-jsonld :default [event]
-  (log/debug :fn ::clinvar-model-to-jsonld :dispatch :default :msg "No multimethod defined for event" :event event))
+  (log/warn :fn ::clinvar-model-to-jsonld
+            :dispatch :default
+            :msg "No multimethod defined for event"
+            :event event)
+  event)
 
 
 (defmethod xform-types/add-event-graphql :clinvar-raw [event]
