@@ -80,7 +80,7 @@
    :fields {:interval {:type :SequenceInterval
                        :path [:vrs/interval]}
             :sequence_id {:type 'String
-                          :path [:vrs/sequence_id]}}})
+                          :path [:vrs/sequence-id]}}})
 
 (def vrs-number
   {:name :Number

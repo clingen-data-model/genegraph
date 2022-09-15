@@ -17,7 +17,8 @@
             [clojure.datafy :refer [datafy]]
             ;; [clojure.string :as s]
             [cheshire.core :as json]
-            [io.pedestal.log :as log])
+            [io.pedestal.log :as log]
+            [genegraph.database.names :as names])
   (:import (org.apache.jena.rdf.model Model Statement)
            (java.io ByteArrayInputStream)))
 
@@ -75,9 +76,12 @@
   "Takes a change string like g.119705C>T and returns a VRS syntax string like \"hgvs.g\""
   [^String change]
   (if change
-    (cond (.startsWith change "g.") "hgvs.g"
-          (.startsWith change "c.") "hgvs.c"
+    (cond (.startsWith change "c.") "hgvs.c"
           (.startsWith change "p.") "hgvs.p"
+          (.startsWith change "g.") "hgvs.g"
+          (.startsWith change "m.") "hgvs.m"
+          (.startsWith change "n.") "hgvs.n"
+          (.startsWith change "r.") "hgvs.r"
           :else (do (log/warn :message "Unknown hgvs change syntax. Defaulting to 'hgvs'."
                               :change change)
                     "hgvs"))
@@ -148,47 +152,25 @@
                   :syntax "spdi"}))]))]
       expressions)))
 
-(defn make-member
-  "Creates a set of VariationMember triples based on an expression and syntax.
+#_(defn make-member
+    "Creates a set of VariationMember triples based on an expression and syntax.
   Returns a seq of seqs"
-  [node-iri expression syntax syntax-version]
-  (log/trace :fn :make-member :node-iri node-iri
-             :expression expression
-             :syntax syntax
-             :syntax-version syntax-version)
-  (let [member-iri (l/blank-node)
-        expression-iri (l/blank-node)]
-    (concat
-     [[node-iri :vrs/members member-iri]
-      [member-iri :rdf/type :vrs/VariationMember]
-      [member-iri :vrs/expressions expression-iri]
-      [expression-iri :rdf/type :vrs/Expression]
-      [expression-iri :vrs/syntax syntax]
-      [expression-iri :rdf/value expression]]
-     (when (seq syntax-version)
-       [[expression-iri :vrs/syntax-version syntax-version]]))))
-
-#_(defn preprocess-copy-number
-    [event]
-    (let [message (:genegraph.transform.clinvar.core/parsed-value event)
-          variation (:content message)
-          copy-number? (.startsWith (:variation_type variation)
-                                    "copy number")]
-      (-> event
-          (assoc ::copy-number? copy-number?)
-          (#(if copy-number?
-              (assoc % ::cnv (cnv/parse (-> variation :name)))
-              %)))))
-
-#_(defn preprocess-expressions
-    [event]
-    (let [message (:genegraph.transform.clinvar.core/parsed-value event)
-          variation (:content message)]
-      (-> event
-          (#(assoc % ::prioritized-expression (cond (::copy-number? %) {:type :cnv
-                                                                        :expr (::cnv %)}
-                                                    :else (prioritized-variation-expression message))))
-          (assoc ::other-expressions (get-all-expressions message)))))
+    [node-iri expression syntax syntax-version]
+    (log/trace :fn :make-member :node-iri node-iri
+               :expression expression
+               :syntax syntax
+               :syntax-version syntax-version)
+    (let [member-iri (l/blank-node)
+          expression-iri (l/blank-node)]
+      (concat
+       [[node-iri :vrs/members member-iri]
+        [member-iri :rdf/type :vrs/VariationMember]
+        [member-iri :vrs/expressions expression-iri]
+        [expression-iri :rdf/type :vrs/Expression]
+        [expression-iri :vrs/syntax syntax]
+        [expression-iri :rdf/value expression]]
+       (when (seq syntax-version)
+         [[expression-iri :vrs/syntax-version syntax-version]]))))
 
 (defn variation-preprocess
   "Performs some annotations to the variation event in order to enable downstream transformation.
@@ -271,7 +253,7 @@
                                (json/generate-string)
                                (json/parse-string true))
             vrs-id (:id vrs-obj-pretty)]
-        (log/debug :fn :add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj-pretty)
+        (log/info :fn :add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj-pretty)
         {:iri vrs-id :variation vrs-obj-pretty}))))
 
 
@@ -309,10 +291,10 @@
                         (into []))
           :subject_variation_descriptor ()
             ;;  :value_id ()
-          :value (let [vrs-ret (get-vrs-variation-map
-                                {:expression (-> event ::prioritized-expression :expr)
-                                 :expression-type (-> event ::prioritized-expression :type)})]
-                   (:variation vrs-ret))
+          :canonical_variation (let [vrs-ret (get-vrs-variation-map
+                                              {:expression (-> event ::prioritized-expression :expr)
+                                               :expression-type (-> event ::prioritized-expression :type)})]
+                                 (:variation vrs-ret))
           :record_metadata {:type "RecordMetadata"
                             :is_version_of vrd-unversioned
                             :version (:release_date message)}})
@@ -326,22 +308,175 @@
      :is_version_of (q/ld1-> record-metadata-resource [:dc/is-version-of])
      :version (q/ld1-> record-metadata-resource [:owl/version-info])}))
 
+(defn extension-resource-for-output
+  [extension-resource]
+  (when extension-resource
+    {:type (q/ld1-> extension-resource [:rdf/type])
+     :name (q/ld1-> extension-resource [:vrs/name])
+     :value (q/ld1-> extension-resource [:rdf/value])}))
+
+(defn variation-member-resource-for-output
+  [member-resource]
+  (when member-resource
+    #_(log/info :fn :variation-member-resource-for-output :member-resource member-resource)
+    {:type (q/ld1-> member-resource [:rdf/type])
+     :expressions (letfn [(expression-resource-for-output
+                            [expression-resource]
+                            (when expression-resource
+                              {:type (q/ld1-> expression-resource [:rdf/type])
+                               :syntax (q/ld1-> expression-resource [:vrs/syntax])
+                               :value (q/ld1-> expression-resource [:rdf/value])
+                               :syntax_version (q/ld1-> expression-resource [:vrs/syntax-version])}))]
+                    (map expression-resource-for-output
+                         (q/ld-> member-resource [:vrs/expressions])))}))
+(def class-uri->keyword
+  (into {} (map (fn [[k v]] [(str k) v])
+                names/class-uri->keyword)))
+
+(defn class-kw
+  [qualified-class-name]
+  (let [kw (get class-uri->keyword (str qualified-class-name))]
+    (when (nil? kw) (throw (ex-info "Class name not found" {:class-name qualified-class-name})))
+    kw))
+
+(defn number-resource-for-output
+  [number-resource]
+  (when number-resource
+    {:type (q/ld1-> number-resource [:rdf/type])
+     :value (q/ld1-> number-resource [:rdf/value])}))
+
+(defn sequence-location-resource-for-output
+  [sequence-location-resource]
+  (when sequence-location-resource
+    {:id (str sequence-location-resource)
+     :type (q/ld1-> sequence-location-resource [:rdf/type])
+     :sequence_id (q/ld1-> sequence-location-resource [:vrs/sequence-id])
+     :start (number-resource-for-output
+             (q/ld1-> sequence-location-resource [:vrs/start]))
+     :end (number-resource-for-output
+           (q/ld1-> sequence-location-resource [:vrs/end]))}))
+
+(defn literal-sequence-expression-for-output
+  [lse-resource]
+  (when lse-resource
+    {:type (q/ld1-> lse-resource [:rdf/type])
+     :sequence (q/ld1-> lse-resource [:vrs/sequence])}))
+
+(defn repeated-sequence-expression-for-output
+  [rse-resource]
+  (when rse-resource
+    {:type (q/ld1-> rse-resource [:rdf/type])
+     :seq_expr (let [seq-expr-r (q/ld1-> rse-resource [:vrs/seq-expr])
+                     seq-expr-type (q/ld1-> seq-expr-r [:rdf/type])]
+                 (case seq-expr-type
+                   :vrs/LiteralSequenceExpression ()
+                   :vrs/DerivedSequenceExpression ()
+                   (let [ex (ex-info "Unrecognized sequence expression type"
+                                     {:fn :repeated-sequence-expression-for-output
+                                      :seq-expr-type seq-expr-type})]
+                     (log/error :message (ex-message ex) :data (ex-data ex))
+                     (throw ex))))
+     :count (let [count-r (q/ld1-> rse-resource [:vrs/count])
+                  count-type (class-kw (q/ld1-> count-r [:rdf/type]))]
+              (case count-type
+                :vrs/DefiniteRange {:type (q/ld1-> count-r [:rdf/type])
+                                    :min (q/ld1-> count-r [:vrs/min])
+                                    :max (q/ld1-> count-r [:vrs/max])}
+                :vrs/IndefiniteRange {:type (q/ld1-> count-r [:rdf/type])
+                                      :value (q/ld1-> count-r [:rdf/value])
+                                      :comparator (q/ld1-> count-r [:vrs/comparator])}
+                :vrs/Number (number-resource-for-output count-r)
+                (let [ex (ex-info "Unrecognized count type"
+                                  {:fn :repeated-sequence-expression-for-output
+                                   :count-type count-type})]
+                  (log/error :message (ex-message ex) :data (ex-data ex))
+                  (throw ex))))}))
+
+(defn allele-resource-for-output
+  [allele-resource]
+  (log/info :fn :allele-resource-for-output :allele-resource allele-resource)
+  (when allele-resource
+    {:id (str allele-resource)
+     :type (q/ld1-> allele-resource [:rdf/type])
+     :location (sequence-location-resource-for-output
+                (q/ld1-> allele-resource [:vrs/location]))
+     :state (let [state-resource (q/ld1-> allele-resource [:vrs/state])
+                  state-type (class-kw (q/ld1-> state-resource [:rdf/type]))]
+              (case state-type
+                :vrs/LiteralSequenceExpression (literal-sequence-expression-for-output
+                                                state-resource)
+                :vrs/RepeatedSequenceExpression (repeated-sequence-expression-for-output
+                                                 state-resource)
+                (do (log/error :fn :allele-resource-for-output
+                               :msg "Unrecognized state type"
+                               :state-type state-type)
+                    (throw (RuntimeException.)))))}))
+
+(defn text-variation-resource-for-output
+  [text-variation-resource]
+  (when text-variation-resource
+    {:id (str text-variation-resource)
+     :type (q/ld1-> text-variation-resource [:rdf/type])
+     :definition (q/ld1-> text-variation-resource [:vrs/definition])}))
+
+(defn canonical-context-resource-for-output
+  [context-resource]
+  (log/info :fn :canonical-context-resource-for-output
+            :context-resource context-resource)
+  (let [t (class-kw (q/ld1-> context-resource [:rdf/type]))]
+    (case t
+      :vrs/Allele (allele-resource-for-output context-resource)
+      :vrs/Text (text-variation-resource-for-output context-resource)
+      (do (log/error :msg "Unrecognized canonical context type"
+                     :fn :canonical-context-resource-for-output
+                     :canonical-context-type t)
+          (throw (RuntimeException.))))))
+
+(defn canonical-variation-resource-for-output
+  [variation-resource]
+  (log/info :fn :canonical-variation-resource-for-output
+            :variation-resource variation-resource)
+  (when variation-resource
+    {:id (str variation-resource)
+     :type (q/ld1-> variation-resource [:rdf/type])
+     :canonical_context (-> (q/ld1-> variation-resource [:vrs/canonical-context])
+                            canonical-context-resource-for-output)}))
+
+(defn variation-resource-for-output
+  [variation-resource]
+  (let [variation-type (class-kw (q/ld1-> variation-resource [:rdf/type]))]
+    (log/info :fn :variation-resource-for-output
+              :variation-type variation-type)
+    (case variation-type
+      :vrs/CanonicalVariation (canonical-variation-resource-for-output variation-resource)
+      (do (log/error :msg "Unrecognized variation type"
+                     :fn :variation-resource-for-output
+                     :variation-type variation-type)
+          (throw (RuntimeException.))))))
+
 (defn variation-descriptor-resource-for-output
   "Takes a VariationDescriptor resource and returns a GA4GH edn structure"
   [descriptor-resource]
+  #_(log/info :fn :variation-descriptor-resource-for-output
+              :descriptor-resource descriptor-resource)
   {:id (str descriptor-resource)
    :type (q/ld1-> descriptor-resource [:rdf/type])
    :label (q/ld1-> descriptor-resource [:rdfs/label])
-   :extensions ()
-   :description ()
-   :xrefs ()
-   :alternate_labels ()
-   :members ()
-   :subject_variation_descriptor ()
-   :value ()
-   :record_metadata ()})
+   :extensions (->> (q/ld-> descriptor-resource [:vrs/extensions])
+                    (map extension-resource-for-output))
+   :description (q/ld1-> descriptor-resource [:vrs/description])
+   :xrefs (q/ld-> descriptor-resource [:vrs/xrefs])
+   :alternate_labels nil
+   :members (->> (q/ld-> descriptor-resource [:vrs/members])
+                 (map variation-member-resource-for-output))
+   :subject_variation_descriptor nil
+   :canonical_variation (-> (q/ld1-> descriptor-resource [:vrs/canonical-variation])
+                            variation-resource-for-output)
+   ;; TODO there is no record_metadata field on CanonicalVariationDescriptor or its super classes
+   ;; https://github.com/ga4gh/vrs/blob/metaschema-update/schema/core.json
+   #_#_:record_metadata (-> (q/ld1-> descriptor-resource [:vrs/record-metadata])
+                            record-metadata-resource-for-output)})
 
-(def myval "hello")
 
 (def variation-context
   {"@context"
@@ -385,6 +520,19 @@
     "sequence_id" {"@id" (str (get prefix-ns-map "vrs") "sequence_id")}
     "sequence" {"@id" (str (get prefix-ns-map "vrs") "sequence")}
     "record_metadata" {"@id" (str (get prefix-ns-map "vrs") "record_metadata")}
+    "xrefs" {"@id" (str (get prefix-ns-map "vrs") "xrefs")}
+    "description" {"@id" (str (get prefix-ns-map "vrs") "description")}
+    "syntax" {"@id" (str (get prefix-ns-map "vrs") "syntax")}
+    "syntax_version" {"@id" (str (get prefix-ns-map "vrs") "syntax_version")}
+    "expression" {"@id" (str (get prefix-ns-map "vrs") "expression")}
+    "canonical_context" {"@id" (str (get prefix-ns-map "vrs") "canonical_context")}
+    "canonical_variation" {"@id" (str (get prefix-ns-map "vrs") "canonical_variation")}
+    "definition" {"@id" (str (get prefix-ns-map "vrs") "definition")}
+    "seq_expr" {"@id" (str (get prefix-ns-map "vrs") "seq_expr")}
+    "count" {"@id" (str (get prefix-ns-map "vrs") "count")}
+    "min" {"@id" (str (get prefix-ns-map "vrs") "min")}
+    "max" {"@id" (str (get prefix-ns-map "vrs") "max")}
+    "comparator" {"@id" (str (get prefix-ns-map "vrs") "comparator")}
 
     ; map plurals to known guaranteed array types
     "members" {"@id" (str (get local-property-names :vrs/members))
@@ -399,6 +547,10 @@
                           "@type" "@id"}
     "Allele" {"@id" (str (get prefix-ns-map "vrs") "Allele")
               "@type" "@id"}
+    "Text" {"@id" (str (get prefix-ns-map "vrs") "Text")
+            "@type" "@id"}
+    "RelativeCopyNumber" {"@id" (str (get prefix-ns-map "vrs") "RelativeCopyNumber")
+                          "@type" "@id"}
     "SequenceLocation" {"@id" (str (get prefix-ns-map "vrs") "SequenceLocation")
                         "@type" "@id"}
     "SequenceInterval" {"@id" (str (get prefix-ns-map "vrs") "SequenceInterval")
@@ -407,10 +559,14 @@
               "@type" "@id"}
     "LiteralSequenceExpression" {"@id" (str (get prefix-ns-map "vrs") "LiteralSequenceExpression")
                                  "@type" "@id"}
+    "RepeatedSequenceExpression" {"@id" (str (get prefix-ns-map "vrs") "RepeatedSequenceExpression")
+                                  "@type" "@id"}
     "VariationMember" {"@id" (str (get prefix-ns-map "vrs") "VariationMember")
                        "@type" "@id"}
     "RecordMetadata" {"@id" (str (get prefix-ns-map "vrs") "RecordMetadata")
                       "@type" "@id"}
+    "Expression" {"@id" (str (get prefix-ns-map "vrs") "Expression")
+                  "@type" "@id"}
 
     ; Prefixes
     ;"https://vrs.ga4gh.org/terms/"

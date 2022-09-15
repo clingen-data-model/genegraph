@@ -161,7 +161,7 @@
                 other-writer (io/writer (str input-filename "-output-other"))]
       (write-tx
        (doseq [event (->> (map message-proccess! messages)
-                          (take 10))]
+                          #_(take 10))]
          (let [clinvar-type (:genegraph.transform.clinvar/format event)
                ;;_ (log/info :clinvar-type clinvar-type)
                ;;_ (log/info :event event)
@@ -426,16 +426,17 @@
                                      :vof vof :rs rs)
                           (first rs))))
                     (->> unversioned-resources
-                         (take 10)))]
+                         #_(take 1)))]
            (doseq [descriptor-resource (->> latest-versioned-resources)]
              (try
                (let [descriptor-output (variation/variation-descriptor-resource-for-output descriptor-resource)
+                     #_#__ (log/info :descriptor-output descriptor-output)
                      post-processed-output (-> descriptor-output
                                                map-rdf-resource-values-to-str
                                                common/map-remove-nil-values
                                                map-unnamespace-values)]
 
-                 (log/info :post-processed-output post-processed-output)
+                 #_(log/info :post-processed-output post-processed-output)
                  (.write writer (json/generate-string post-processed-output))
                  (.write writer "\n"))
                (catch Exception e
@@ -492,8 +493,3 @@
   (let [input-filename "clinvar-raw.gz"
         messages (map #(json/parse-string % true) (line-seq (gzip-file-reader input-filename)))]
     (map message-proccess! messages)))
-
-(defn dump-after-loading []
-  (let [scv-rs (q/select "select distinct ?vof where {
-                          ?i a :vrs/VariationGermlinePathogenicityStatement .
-                          ?i :dc/is-version-of ?vof . }")]))
