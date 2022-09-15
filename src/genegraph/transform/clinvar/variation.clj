@@ -356,21 +356,46 @@
      :end (number-resource-for-output
            (q/ld1-> sequence-location-resource [:vrs/end]))}))
 
+(defn chromosome-location-resource-for-output
+  [chromosome-location-resource]
+  (when chromosome-location-resource
+    {:id (str chromosome-location-resource)
+     :type (q/ld1-> chromosome-location-resource [:rdf/type])
+     :species_id (q/ld1-> chromosome-location-resource [:vrs/species-id])
+     :chr (q/ld1-> chromosome-location-resource [:vrs/chr])
+     ;; start and end here are HumanCytoband, which is just a regex-constrained string
+     :start (q/ld1-> chromosome-location-resource [:vrs/start])
+     :end (q/ld1-> chromosome-location-resource [:vrs/end])}))
+
+(defn derived-sequence-expression-for-output
+  [dse-resource]
+  (when dse-resource
+    {:type (q/ld1-> dse-resource [:rdf/type])
+     :location (sequence-location-resource-for-output
+                (q/ld1-> dse-resource [:vrs/location]))
+     :reverse_complement (Boolean/valueOf (q/ld1-> dse-resource [:vrs/reverse_complement]))}))
+
 (defn literal-sequence-expression-for-output
   [lse-resource]
   (when lse-resource
     {:type (q/ld1-> lse-resource [:rdf/type])
      :sequence (q/ld1-> lse-resource [:vrs/sequence])}))
 
+(defn composed-sequence-expression-for-output
+  [cse-resource]
+  ())
+
 (defn repeated-sequence-expression-for-output
   [rse-resource]
   (when rse-resource
     {:type (q/ld1-> rse-resource [:rdf/type])
      :seq_expr (let [seq-expr-r (q/ld1-> rse-resource [:vrs/seq-expr])
-                     seq-expr-type (q/ld1-> seq-expr-r [:rdf/type])]
+                     seq-expr-type (class-kw (q/ld1-> seq-expr-r [:rdf/type]))]
                  (case seq-expr-type
-                   :vrs/LiteralSequenceExpression ()
-                   :vrs/DerivedSequenceExpression ()
+                   :vrs/LiteralSequenceExpression (literal-sequence-expression-for-output
+                                                   seq-expr-r) ;; TODO
+                   :vrs/DerivedSequenceExpression (derived-sequence-expression-for-output
+                                                   seq-expr-r) ;; TODO
                    (let [ex (ex-info "Unrecognized sequence expression type"
                                      {:fn :repeated-sequence-expression-for-output
                                       :seq-expr-type seq-expr-type})]
@@ -407,10 +432,11 @@
                                                 state-resource)
                 :vrs/RepeatedSequenceExpression (repeated-sequence-expression-for-output
                                                  state-resource)
-                (do (log/error :fn :allele-resource-for-output
-                               :msg "Unrecognized state type"
-                               :state-type state-type)
-                    (throw (RuntimeException.)))))}))
+                (let [ex (ex-info "Unrecognized state type"
+                                  {:fn :allele-resource-for-output
+                                   :state-type state-type})]
+                  (log/error :message (ex-message ex) :data (ex-data ex))
+                  (throw ex))))}))
 
 (defn text-variation-resource-for-output
   [text-variation-resource]
@@ -418,6 +444,24 @@
     {:id (str text-variation-resource)
      :type (q/ld1-> text-variation-resource [:rdf/type])
      :definition (q/ld1-> text-variation-resource [:vrs/definition])}))
+
+(defn relative-cnv-resource-for-output
+  [cnv-resource]
+  (when cnv-resource
+    {:id (str cnv-resource)
+     :type (q/ld1-> cnv-resource [:rdf/type])
+     :location (let [location-r (q/ld1-> cnv-resource [:vrs/location])
+                     location-type (class-kw (q/ld1-> location-r [:rdf/type]))]
+                 (case location-type
+                   :vrs/SequenceLocation (sequence-location-resource-for-output location-r)
+                   :vrs/ChromosomeLocation (chromosome-location-resource-for-output location-r)
+                   (do (log/warn :fn :relative-cnv-resource-for-output
+                                 :msg "RelativeCopyNumber.location not a ChromosomeLocation or SequenceLocation"
+                                 :cnv-resource cnv-resource
+                                 :location-r location-r
+                                 :location-type location-type)
+                       (str location-r))))
+     :relative_copy_class (q/ld1-> cnv-resource [:vrs/relative-copy-class])}))
 
 (defn canonical-context-resource-for-output
   [context-resource]
@@ -427,10 +471,12 @@
     (case t
       :vrs/Allele (allele-resource-for-output context-resource)
       :vrs/Text (text-variation-resource-for-output context-resource)
-      (do (log/error :msg "Unrecognized canonical context type"
-                     :fn :canonical-context-resource-for-output
-                     :canonical-context-type t)
-          (throw (RuntimeException.))))))
+      :vrs/RelativeCopyNumber (relative-cnv-resource-for-output context-resource)
+      (let [ex (ex-info "Unrecognized canonical context type"
+                        {:fn :canonical-context-resource-for-output
+                         :canonical-context-type t})]
+        (log/error :message (ex-message ex) :data (ex-data ex))
+        (throw ex)))))
 
 (defn canonical-variation-resource-for-output
   [variation-resource]
@@ -449,10 +495,11 @@
               :variation-type variation-type)
     (case variation-type
       :vrs/CanonicalVariation (canonical-variation-resource-for-output variation-resource)
-      (do (log/error :msg "Unrecognized variation type"
-                     :fn :variation-resource-for-output
-                     :variation-type variation-type)
-          (throw (RuntimeException.))))))
+      (let [ex (ex-info "Unrecognized variation type"
+                        {:fn :variation-resource-for-output
+                         :variation-type variation-type})]
+        (log/error :message (ex-message ex) :data (ex-data ex))
+        (throw ex)))))
 
 (defn variation-descriptor-resource-for-output
   "Takes a VariationDescriptor resource and returns a GA4GH edn structure"
@@ -500,13 +547,6 @@
           "@type" "@id"}
     ;; "_id" {"@id" "@id"
     ;;        "@type" "@id"}
-    "Extension" {"@id" (str (get local-class-names :vrs/Extension))}
-    "CategoricalVariationDescriptor"
-    {"@id" (str (get local-class-names :vrs/CategoricalVariationDescriptor))
-     "@type" "@id"}
-    "CanonicalVariationDescriptor"
-    {"@id" (str (get local-class-names :vrs/CanonicalVariationDescriptor))
-     "@type" "@id"}
 
     ; eliminate vrs prefixes on vrs variation terms
     ; VRS properties
@@ -533,6 +573,10 @@
     "min" {"@id" (str (get prefix-ns-map "vrs") "min")}
     "max" {"@id" (str (get prefix-ns-map "vrs") "max")}
     "comparator" {"@id" (str (get prefix-ns-map "vrs") "comparator")}
+    "species_id" {"@id" (str (get prefix-ns-map "vrs") "species_id")}
+    "chr" {"@id" (str (get prefix-ns-map "vrs") "chr")}
+    "relative_copy_class" {"@id" (str (get prefix-ns-map "vrs") "relative_copy_class")}
+
 
     ; map plurals to known guaranteed array types
     "members" {"@id" (str (get local-property-names :vrs/members))
@@ -543,29 +587,38 @@
                    "@container" "@set"}
 
     ; VRS entities
-    "CanonicalVariation" {"@id" (str (get prefix-ns-map "vrs") "CanonicalVariation")
+    "Extension" {"@id" (str (get local-class-names :vrs/Extension))}
+    "CanonicalVariationDescriptor" {"@id" (str (get local-class-names :vrs/CanonicalVariationDescriptor))
+                                    "@type" "@id"}
+    "CanonicalVariation" {"@id" (str (get local-class-names :vrs/CanonicalVariation))
                           "@type" "@id"}
-    "Allele" {"@id" (str (get prefix-ns-map "vrs") "Allele")
+    "Allele" {"@id" (str (get local-class-names :vrs/Allele))
               "@type" "@id"}
-    "Text" {"@id" (str (get prefix-ns-map "vrs") "Text")
+    "Text" {"@id" (str (get local-class-names :vrs/Text))
             "@type" "@id"}
-    "RelativeCopyNumber" {"@id" (str (get prefix-ns-map "vrs") "RelativeCopyNumber")
+    "RelativeCopyNumber" {"@id" (str (get local-class-names :vrs/RelativeCopyNumber))
                           "@type" "@id"}
-    "SequenceLocation" {"@id" (str (get prefix-ns-map "vrs") "SequenceLocation")
+    "SequenceLocation" {"@id" (str (get local-class-names :vrs/SequenceLocation))
                         "@type" "@id"}
-    "SequenceInterval" {"@id" (str (get prefix-ns-map "vrs") "SequenceInterval")
+    "SequenceInterval" {"@id" (str (get local-class-names :vrs/SequenceInterval))
                         "@type" "@id"}
-    "Number" {"@id" (str (get prefix-ns-map "vrs") "Number")
+    "ChromosomeLocation" {"@id" (str (get local-class-names :vrs/ChromosomeLocation))
+                          "@type" "@id"}
+    "HumanCytoband" {"@id" (str (get local-class-names :vrs/HumanCytoband))
+                     "@type" "@id"}
+    "Number" {"@id" (str (get local-class-names :vrs/Number))
               "@type" "@id"}
-    "LiteralSequenceExpression" {"@id" (str (get prefix-ns-map "vrs") "LiteralSequenceExpression")
+    "LiteralSequenceExpression" {"@id" (str (get local-class-names :vrs/LiteralSequenceExpression))
                                  "@type" "@id"}
-    "RepeatedSequenceExpression" {"@id" (str (get prefix-ns-map "vrs") "RepeatedSequenceExpression")
+    "RepeatedSequenceExpression" {"@id" (str (get local-class-names :vrs/RepeatedSequenceExpression))
                                   "@type" "@id"}
-    "VariationMember" {"@id" (str (get prefix-ns-map "vrs") "VariationMember")
+    "DerivedSequenceExpression" {"@id" (str (get local-class-names :vrs/DerivedSequenceExpression))
+                                 "@type" "@id"}
+    "VariationMember" {"@id" (str (get local-class-names :vrs/VariationMember))
                        "@type" "@id"}
-    "RecordMetadata" {"@id" (str (get prefix-ns-map "vrs") "RecordMetadata")
+    "RecordMetadata" {"@id" (str (get local-class-names :vrs/RecordMetadata))
                       "@type" "@id"}
-    "Expression" {"@id" (str (get prefix-ns-map "vrs") "Expression")
+    "Expression" {"@id" (str (get local-class-names :vrs/Expression))
                   "@type" "@id"}
 
     ; Prefixes
