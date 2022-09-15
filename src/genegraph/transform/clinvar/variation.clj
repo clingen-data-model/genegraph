@@ -345,15 +345,32 @@
     {:type (q/ld1-> number-resource [:rdf/type])
      :value (q/ld1-> number-resource [:rdf/value])}))
 
+(defn number-or-range-resource-for-output
+  [quantity-resource]
+  (let [quantity-type (class-kw (q/ld1-> quantity-resource [:rdf/type]))]
+    (case quantity-type
+      :vrs/DefiniteRange {:type (q/ld1-> quantity-resource [:rdf/type])
+                          :min (q/ld1-> quantity-resource [:vrs/min])
+                          :max (q/ld1-> quantity-resource [:vrs/max])}
+      :vrs/IndefiniteRange {:type (q/ld1-> quantity-resource [:rdf/type])
+                            :value (q/ld1-> quantity-resource [:rdf/value])
+                            :comparator (q/ld1-> quantity-resource [:vrs/comparator])}
+      :vrs/Number (number-resource-for-output quantity-resource)
+      (let [ex (ex-info "Unrecognized quantity type"
+                        {:fn :number-or-range-resource-for-output
+                         :quantity-type quantity-type})]
+        (log/error :message (ex-message ex) :data (ex-data ex))
+        (throw ex)))))
+
 (defn sequence-location-resource-for-output
   [sequence-location-resource]
   (when sequence-location-resource
     {:id (str sequence-location-resource)
      :type (q/ld1-> sequence-location-resource [:rdf/type])
      :sequence_id (q/ld1-> sequence-location-resource [:vrs/sequence-id])
-     :start (number-resource-for-output
+     :start (number-or-range-resource-for-output
              (q/ld1-> sequence-location-resource [:vrs/start]))
-     :end (number-resource-for-output
+     :end (number-or-range-resource-for-output
            (q/ld1-> sequence-location-resource [:vrs/end]))}))
 
 (defn chromosome-location-resource-for-output
@@ -383,6 +400,7 @@
 
 (defn composed-sequence-expression-for-output
   [cse-resource]
+  ;; TODO
   ())
 
 (defn repeated-sequence-expression-for-output
