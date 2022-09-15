@@ -179,7 +179,9 @@
 (defn map-rdf-resource-values-to-str
   [input-map]
   (letfn [(mutator [k v]
-            (if (= genegraph.database.query.types.RDFResource (class v))
+            (if (= (.getCanonicalName genegraph.database.query.types.RDFResource)
+                   (-> v class (#(when % (.getCanonicalName %))))
+                   #_(.getCanonicalName (class v)))
               [k (str v)]
               [k v]))]
     (replace-kvs input-map mutator)))
