@@ -375,15 +375,3 @@ LIMIT 1")
             (when (not (nil? v))
               (vector k v)))]
     (replace-kvs input-map mutator)))
-
-(comment
-  '(let [m {:a 1
-            :b {:c 3}
-            "_id" 4}]
-     (letfn [(mutator [k v]
-               (vector (if (= "_id" k) "id" k)
-                       (cond (map? v) (replace-kvs v mutator)
-                             (sequential? v) (map #(replace-kvs % mutator) v)
-                             :else v)))]
-       (let [m2 (replace-kvs m mutator)]
-         (pprint m2)))))

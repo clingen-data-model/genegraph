@@ -75,6 +75,14 @@
 (defn hgvs-syntax-from-change
   "Takes a change string like g.119705C>T and returns a VRS syntax string like \"hgvs.g\""
   [^String change]
+  #_(let [change-prefix-map {"c." "hgvs.c", "p." "hgvs.p", "g." "hgvs.g",
+                             "m." "hgvs.m", "n." "hgvs.n", "r." "hgvs.r"}]
+      (if change
+        (or (some #(when (.startsWith change (key %)) (val %)) change-prefix-map)
+            (do (log/warn :message "Unknown hgvs change syntax. Defaulting to 'hgvs'."
+                          :change change)
+                "text"))
+        "text"))
   (if change
     (cond (.startsWith change "c.") "hgvs.c"
           (.startsWith change "p.") "hgvs.p"
