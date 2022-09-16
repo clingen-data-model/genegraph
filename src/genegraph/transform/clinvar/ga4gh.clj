@@ -1,28 +1,29 @@
 (ns genegraph.transform.clinvar.ga4gh
   (:require [cheshire.core :as json]
+            [clojure.core.reducers :as r]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
             [clojure.stacktrace :refer [print-stack-trace]]
-            [clojure.core.reducers :as r]
             [genegraph.annotate :as ann]
             [genegraph.database.names :refer [prefix-ns-map]]
+            [genegraph.database.names :as names]
             [genegraph.database.query :as q]
             [genegraph.database.util :refer [tx write-tx]]
+            [genegraph.server]
             [genegraph.sink.event :as event]
             [genegraph.transform.clinvar.clinical-assertion :as ca]
-            [genegraph.transform.clinvar.variation :as variation]
             [genegraph.transform.clinvar.common :as common :refer [replace-kvs]]
             [genegraph.transform.clinvar.core :refer [add-parsed-value]]
             [genegraph.transform.clinvar.iri :refer [ns-cg]]
+            [genegraph.transform.clinvar.util :as util]
+            [genegraph.transform.clinvar.variation :as variation]
             [genegraph.transform.jsonld.common :as jsonld]
             [genegraph.transform.types :as xform-types]
             [genegraph.util.fs :refer [gzip-file-reader]]
             [io.pedestal.log :as log]
-            [mount.core :as mount]
-            [genegraph.database.names :as names]
-            [genegraph.server]))
+            [mount.core :as mount]))
 
-(def stop-removing-unused [#'write-tx #'tx #'pprint])
+(def stop-removing-unused [#'write-tx #'tx #'pprint #'util/parse-nested-content])
 
 (defn start-states! []
   (mount/start
@@ -118,6 +119,29 @@
       ((fn [e] (if (:genegraph.annotate/data e) (xform-types/add-model e) e)))
       ((fn [e] (if (:genegraph.database.query/model e) (event/add-to-db! e) e)))))
 
+(defn message-proccess-no-db!
+  "Takes a message value map. The :value of a KafkaRecord, parsed as json"
+  [message]
+  (-> message
+      eventify
+      ann/add-metadata
+      ; needed for add-to-db! to work
+      ann/add-action
+      ((fn [e] (try
+                 (xform-types/add-data e)
+                 (catch Exception ex
+                   (log/error :fn :message-process!
+                              :msg "Exception adding data to event"
+                              :event e
+                              :exception ex)
+                   e))))
+      ((fn [e] (if (:genegraph.annotate/data e) (xform-types/add-model e) e)))))
+
+(defn message-process-add-to-db!
+  [event]
+  (-> event
+      ((fn [e] (if (:genegraph.database.query/model e) (event/add-to-db! e) e)))))
+
 (defn clinvar-add-iri [event]
   ;; TODO doesn't work for types without ids
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
@@ -153,6 +177,30 @@
   (assoc event
          :genegraph.annotate/jsonld
          (jsonld/model-to-jsonld (:genegraph.database.query/model event))))
+
+(defn process-topic-file-parallel [input-filename]
+  (let [messages (map #(json/parse-string % true) (line-seq (io/reader input-filename)))]
+    (with-open [statement-writer (io/writer (str input-filename "-output-statements"))
+                variation-descriptor-writer (io/writer (str input-filename "-output-variation-descriptors"))
+                other-writer (io/writer (str input-filename "-output-other"))]
+      (write-tx
+       (doseq [event (->> messages
+                          (pmap message-proccess-no-db!)
+                          (map message-process-add-to-db!)
+                          #_(take 10))]
+         (let [clinvar-type (:genegraph.transform.clinvar/format event)
+               ;;_ (log/info :clinvar-type clinvar-type)
+               ;;_ (log/info :event event)
+               writer (case clinvar-type
+                        :clinical_assertion statement-writer
+                        :variation variation-descriptor-writer
+                        other-writer)]
+           (.write writer (-> event
+                              :genegraph.annotate/data-contextualized
+                              (dissoc "@context")
+                              common/map-remove-nil-values
+                              (json/generate-string)))
+           (.write writer "\n")))))))
 
 (defn process-topic-file [input-filename]
   (let [messages (map #(json/parse-string % true) (line-seq (io/reader input-filename)))]
@@ -438,7 +486,8 @@
                                                common/map-remove-nil-values
                                                map-unnamespace-values)]
 
-                 #_(log/info :post-processed-output post-processed-output)
+                 (log/info :msg "Writing descriptor"
+                           :id (:id post-processed-output))
                  (.write writer (json/generate-string post-processed-output))
                  (.write writer "\n"))
                (catch Exception e
@@ -452,31 +501,8 @@
 (comment
   (start-states!)
   (process-topic-file "cg-vcep-2019-07-01/variation.txt")
+  (process-topic-file "cg-vcep-inputs/variation.txt")
   (snapshot-latest-variations))
-
-
-(defn message-process-no-transform!
-  [message]
-  (-> message
-      eventify
-      ann/add-metadata
-      ann/add-action
-      add-data-no-transform
-      add-model
-      #_add-jsonld
-      add-to-db!))
-
-(defn ingest-file-no-transform [input-filename]
-  (let [messages (-> input-filename
-                     io/reader
-                     line-seq
-                     (->> #_(take 10)
-                      (map #(json/parse-string % true))))]
-    (doseq [event (map message-process-no-transform! messages)]
-      (log/info :fn :ingest-file-no-transform
-                ;;:event event
-                :iri (:genegraph.annotate/iri event)
-                #_#_:model (:genegraph.database.query/model event)))))
 
 
 (comment
