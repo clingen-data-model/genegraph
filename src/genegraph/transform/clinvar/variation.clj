@@ -14,13 +14,9 @@
             [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.annotate.cnv :as cnv]
             [clojure.pprint :refer [pprint]]
-            [clojure.datafy :refer [datafy]]
-            ;; [clojure.string :as s]
             [cheshire.core :as json]
             [io.pedestal.log :as log]
-            [genegraph.database.names :as names])
-  (:import (org.apache.jena.rdf.model Model Statement)
-           (java.io ByteArrayInputStream)))
+            [genegraph.database.names :as names]))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
 (def variation-frame
@@ -75,26 +71,26 @@
 (defn hgvs-syntax-from-change
   "Takes a change string like g.119705C>T and returns a VRS syntax string like \"hgvs.g\""
   [^String change]
-  #_(let [change-prefix-map {"c." "hgvs.c", "p." "hgvs.p", "g." "hgvs.g",
-                             "m." "hgvs.m", "n." "hgvs.n", "r." "hgvs.r"}]
-      (if change
-        (or (some #(when (.startsWith change (key %)) (val %)) change-prefix-map)
-            (do (log/warn :message "Unknown hgvs change syntax. Defaulting to 'hgvs'."
-                          :change change)
-                "text"))
-        "text"))
-  (if change
-    (cond (.startsWith change "c.") "hgvs.c"
-          (.startsWith change "p.") "hgvs.p"
-          (.startsWith change "g.") "hgvs.g"
-          (.startsWith change "m.") "hgvs.m"
-          (.startsWith change "n.") "hgvs.n"
-          (.startsWith change "r.") "hgvs.r"
-          :else (do (log/warn :message "Unknown hgvs change syntax. Defaulting to 'hgvs'."
-                              :change change)
-                    "hgvs"))
-    (do (log/warn :message "No change provided, falling back to text syntax")
-        "text")))
+  (let [change-prefix-map {"c." "hgvs.c", "p." "hgvs.p", "g." "hgvs.g",
+                           "m." "hgvs.m", "n." "hgvs.n", "r." "hgvs.r"}]
+    (if change
+      (or (some #(when (.startsWith change (key %)) (val %)) change-prefix-map)
+          (log/warn :message "Unknown hgvs change syntax. Defaulting to 'hgvs'."
+                    :change change))
+      (log/warn :message "No change provided"))))
+
+(defn hgvs-syntax-from-expression
+  "This function attempts to determine the hgvs syntax from the expression.
+   It uses regex and may be less reliable than using hgvs-syntax-from-change,
+   which looks at the '[a-z]\\.' prefix on an HGVS change term if provided."
+  [^String expression]
+  (let [found (re-find #"[\w_]+:([cpgmnr])\..+" expression)]
+    (if (empty? found)
+      (log/warn :message "Could not determine hgvs syntax from expression"
+                :expression expression)
+      ;; re-find returns the first matched sequence followed by groups. We want first group.
+      (when (and (< 1 (count found)) (nth found 1))
+        (str "hgvs." (nth found 1))))))
 
 (defn nucleotide-hgvs
   "Takes an object in the form of ClinVar's HGVSlist.
@@ -103,15 +99,17 @@
   (when (get hgvs-obj "NucleotideExpression")
     {:expression (-> hgvs-obj (get "NucleotideExpression") (get "Expression") (get "$"))
      :assembly (-> hgvs-obj (get "NucleotideExpression") (get "Assembly"))
-     :syntax (hgvs-syntax-from-change (-> hgvs-obj (get "NucleotideExpression") (get "@change")))}))
+     :syntax (or (hgvs-syntax-from-change (get-in hgvs-obj ["NucleotideExpression" "@change"]))
+                 (hgvs-syntax-from-expression (get-in hgvs-obj ["NucleotideExpression" "Expression" "$"])))}))
 
 (defn protein-hgvs
   "Takes an object in the form of ClinVar's HGVSlist.
   Returns an {:expression :assembly :syntax} map if a protein HGVS expression is present."
   [hgvs-obj]
   (when (get hgvs-obj "ProteinExpression")
-    {:expression (-> hgvs-obj (get "ProteinExpression") (get "Expression") (get "$"))
-     :syntax (hgvs-syntax-from-change (-> hgvs-obj (get "ProteinExpression") (get "@change")))}))
+    {:expression (get-in hgvs-obj ["ProteinExpression" "Expression" "$"])
+     :syntax (or (hgvs-syntax-from-change (get-in hgvs-obj ["ProteinExpression" "@change"]))
+                 (hgvs-syntax-from-expression (get-in hgvs-obj ["ProteinExpression" "Expression" "$"])))}))
 
 (defn get-all-expressions
   "Attempts to return a 'canonical' expression of the variation in ClinVar.
@@ -160,26 +158,6 @@
                   :syntax "spdi"}))]))]
       expressions)))
 
-#_(defn make-member
-    "Creates a set of VariationMember triples based on an expression and syntax.
-  Returns a seq of seqs"
-    [node-iri expression syntax syntax-version]
-    (log/trace :fn :make-member :node-iri node-iri
-               :expression expression
-               :syntax syntax
-               :syntax-version syntax-version)
-    (let [member-iri (l/blank-node)
-          expression-iri (l/blank-node)]
-      (concat
-       [[node-iri :vrs/members member-iri]
-        [member-iri :rdf/type :vrs/VariationMember]
-        [member-iri :vrs/expressions expression-iri]
-        [expression-iri :rdf/type :vrs/Expression]
-        [expression-iri :vrs/syntax syntax]
-        [expression-iri :rdf/value expression]]
-       (when (seq syntax-version)
-         [[expression-iri :vrs/syntax-version syntax-version]]))))
-
 (defn variation-preprocess
   "Performs some annotations to the variation event in order to enable downstream transformation.
 
@@ -227,18 +205,17 @@
              :expression expression
              :syntax syntax
              :syntax-version syntax-version)
-  (let []
-    ;;member-iri (l/blank-node)
-    ;;expression-iri (l/blank-node)
-    {;;:id member-iri
-     :type "VariationMember"
-     :expressions [(merge
-                    {;;expression-iri
-                     :type "Expression"
-                     :syntax syntax
-                     :value expression}
-                    (when syntax-version
-                      {:syntax_version syntax-version}))]}))
+  ;;member-iri (l/blank-node)
+  ;;expression-iri (l/blank-node)
+  {;;:id member-iri
+   :type "VariationMember"
+   :expressions [(merge
+                  {;;expression-iri
+                   :type "Expression"
+                   :syntax syntax
+                   :value expression}
+                  (when syntax-version
+                    {:syntax_version syntax-version}))]})
 
 (defn get-vrs-variation-map
   "Takes a map with :expression (String or Map) and :expression-type (Keyword).
@@ -261,7 +238,7 @@
                                (json/generate-string)
                                (json/parse-string true))
             vrs-id (:id vrs-obj-pretty)]
-        (log/info :fn :add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj-pretty)
+        (log/debug :fn :add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj-pretty)
         {:iri vrs-id :variation vrs-obj-pretty}))))
 
 
@@ -326,7 +303,6 @@
 (defn variation-member-resource-for-output
   [member-resource]
   (when member-resource
-    #_(log/info :fn :variation-member-resource-for-output :member-resource member-resource)
     {:type (q/ld1-> member-resource [:rdf/type])
      :expressions (letfn [(expression-resource-for-output
                             [expression-resource]
@@ -445,7 +421,7 @@
 
 (defn allele-resource-for-output
   [allele-resource]
-  (log/info :fn :allele-resource-for-output :allele-resource allele-resource)
+  (log/debug :fn :allele-resource-for-output :allele-resource allele-resource)
   (when allele-resource
     {:id (str allele-resource)
      :type (q/ld1-> allele-resource [:rdf/type])
@@ -491,8 +467,8 @@
 
 (defn canonical-context-resource-for-output
   [context-resource]
-  (log/info :fn :canonical-context-resource-for-output
-            :context-resource context-resource)
+  (log/debug :fn :canonical-context-resource-for-output
+             :context-resource context-resource)
   (let [t (class-kw (q/ld1-> context-resource [:rdf/type]))]
     (case t
       :vrs/Allele (allele-resource-for-output context-resource)
@@ -506,8 +482,8 @@
 
 (defn canonical-variation-resource-for-output
   [variation-resource]
-  (log/info :fn :canonical-variation-resource-for-output
-            :variation-resource variation-resource)
+  (log/debug :fn :canonical-variation-resource-for-output
+             :variation-resource variation-resource)
   (when variation-resource
     {:id (str variation-resource)
      :type (q/ld1-> variation-resource [:rdf/type])
@@ -517,8 +493,6 @@
 (defn variation-resource-for-output
   [variation-resource]
   (let [variation-type (class-kw (q/ld1-> variation-resource [:rdf/type]))]
-    (log/info :fn :variation-resource-for-output
-              :variation-type variation-type)
     (case variation-type
       :vrs/CanonicalVariation (canonical-variation-resource-for-output variation-resource)
       (let [ex (ex-info "Unrecognized variation type"
@@ -530,8 +504,8 @@
 (defn variation-descriptor-resource-for-output
   "Takes a VariationDescriptor resource and returns a GA4GH edn structure"
   [descriptor-resource]
-  #_(log/info :fn :variation-descriptor-resource-for-output
-              :descriptor-resource descriptor-resource)
+  (log/debug :fn :variation-descriptor-resource-for-output
+             :descriptor-resource descriptor-resource)
   {:id (str descriptor-resource)
    :type (q/ld1-> descriptor-resource [:rdf/type])
    :label (q/ld1-> descriptor-resource [:rdfs/label])
