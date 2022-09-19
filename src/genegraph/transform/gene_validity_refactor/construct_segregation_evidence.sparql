@@ -83,7 +83,8 @@ where {
 
   OPTIONAL {
     ?family gci:individualIncluded ?proband .
-    ?proband gci:proband true .
+    ?proband gci:proband true ;
+    gci:affiliation ?gdmAffiliation .
   }
   
 }
