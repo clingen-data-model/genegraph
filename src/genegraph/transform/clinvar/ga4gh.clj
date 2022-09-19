@@ -280,16 +280,20 @@
                                      :vof vof :rs rs)
                           (first rs))))
                     (->> unversioned-resources
-                         (take 10)))]
-           (doseq [statement-resource (->> latest-versioned-resources)]
+                         #_(take 5)))]
+           (doseq [[i statement-resource] (->> latest-versioned-resources
+                                               (map-indexed vector))]
+             (log/info :latest-statement-resource statement-resource)
              (try
                (let [statement-output (ca/clinical-assertion-resource-for-output statement-resource)
+                     _ (log/info :msg "Post processing output...")
                      post-processed-output (-> statement-output
                                                map-rdf-resource-values-to-str
                                                common/map-remove-nil-values
                                                (map-unnamespace-values (set [:type]))
                                                (map-compact-namespaced-values))]
-                 (log/info :post-processed-output post-processed-output)
+                 (log/info :progress (format "%d/%d" i (count latest-versioned-resources))
+                           :post-processed-output post-processed-output)
                  (.write writer (json/generate-string post-processed-output))
                  (.write writer "\n"))
                (catch Exception e
@@ -300,165 +304,11 @@
       (print-stack-trace e))))
 
 (defn snapshot-latest-statements []
-  (try
-    (let [output-filename "statements.txt"]
-      (with-open [writer (io/writer output-filename)]
-      ;; TODO look at group by for this.
-      ;; Just want each iri for latest release_date for each is-version-of
-        (tx
-         (let [unversioned-resources
-               (q/select (str "select distinct ?vof where { "
-                              "?i a :vrs/VariationGermlinePathogenicityStatement . "
-                              "?i :vrs/record-metadata ?rmd . "
-                              "?rmd :dc/is-version-of ?vof . "
-                              "} "))
-               _ (log/info :fn :snapshot-latest-statements
-                           :msg (str "unversioned-resources count: "
-                                     (count unversioned-resources)))
-               latest-versioned-resources
-               (map (fn [vof]
-                      (let [rs (q/select (str "select ?i where { "
-                                              "?i a :vrs/VariationGermlinePathogenicityStatement . "
-                                              "?i :vrs/record-metadata ?rmd . "
-                                              "?rmd :dc/is-version-of ?vof . "
-                                              "?rmd :owl/version-info ?release_date . "
-                                              "} "
-                                              "order by desc(?release_date) "
-                                              "limit 1")
-                                         {:vof vof})]
-                        (if (< 1 (count rs))
-                          (log/error :msg "More than 1 statement returned"
-                                     :vof vof :rs rs)
-                          (first rs))))
-                    (->> unversioned-resources
-                         #_(take 10)))]
-           (doseq [statement-resource (->> latest-versioned-resources)]
-             (try
-               (let [statement-output (ca/clinical-assertion-resource-for-output statement-resource)
-                     post-processed-output (-> statement-output
-                                               map-rdf-resource-values-to-str
-                                               common/map-remove-nil-values
-                                               (map-unnamespace-values #{:type})
-                                               (map-compact-namespaced-values))]
-
-                 (log/info :post-processed-output post-processed-output)
-
-                 (.write writer (json/generate-string post-processed-output))
-                 (.write writer "\n"))
-               (catch Exception e
-                 (print-stack-trace e)
-                 (log/error :msg "Failed to output statement"
-                            :statement-resource statement-resource))))))))
-    (catch Exception e
-      (print-stack-trace e))))
-
-(defn snapshot-latest-statements-drugresponse []
-  (try
-    (let [output-filename "statements-drugresponse.txt"]
-      (with-open [writer (io/writer output-filename)]
-      ;; TODO look at group by for this.
-      ;; Just want each iri for latest release_date for each is-version-of
-        (tx
-         (let [unversioned-resources
-               (q/select (str "select distinct ?vof where { "
-                              "?i a :vrs/ClinVarDrugResponseStatement . "
-                              "?i :vrs/record-metadata ?rmd . "
-                              "?rmd :dc/is-version-of ?vof . "
-                              "} "))
-               _ (log/info :fn :snapshot-latest-statements
-                           :msg (str "unversioned-resources count: "
-                                     (count unversioned-resources)))
-               latest-versioned-resources
-               (map (fn [vof]
-                      (let [rs (q/select (str "select ?i where { "
-                                              "?i a :vrs/ClinVarDrugResponseStatement . "
-                                              "?i :vrs/record-metadata ?rmd . "
-                                              "?rmd :dc/is-version-of ?vof . "
-                                              "?rmd :owl/version-info ?release_date . "
-                                              "} "
-                                              "order by desc(?release_date) "
-                                              "limit 1")
-                                         {:vof vof})]
-                        (if (< 1 (count rs))
-                          (log/error :msg "More than 1 statement returned"
-                                     :vof vof :rs rs)
-                          (first rs))))
-                    (->> unversioned-resources
-                         (take 10)))]
-           (doseq [statement-resource (->> latest-versioned-resources)]
-             (try
-               (let [statement-output (ca/clinical-assertion-resource-for-output statement-resource)
-                     post-processed-output (-> statement-output
-                                               map-rdf-resource-values-to-str
-                                               common/map-remove-nil-values
-                                               (map-unnamespace-values (set [:type]))
-                                               (map-compact-namespaced-values))]
-
-                 (log/info :post-processed-output post-processed-output)
-
-                 (.write writer (json/generate-string post-processed-output))
-                 (.write writer "\n"))
-               (catch Exception e
-                 (print-stack-trace e)
-                 (log/error :msg "Failed to output statement"
-                            :statement-resource statement-resource))))))))
-    (catch Exception e
-      (print-stack-trace e))))
-
-(defn snapshot-latest-statements-other []
-  (try
-    (let [output-filename "statements-other.txt"]
-      (with-open [writer (io/writer output-filename)]
-      ;; TODO look at group by for this.
-      ;; Just want each iri for latest release_date for each is-version-of
-        (tx
-         (let [unversioned-resources
-               (q/select (str "select distinct ?vof where { "
-                              "?i a :vrs/ClinVarOtherStatement . "
-                              "?i :vrs/record-metadata ?rmd . "
-                              "?rmd :dc/is-version-of ?vof . "
-                              "} "))
-               _ (log/info :fn :snapshot-latest-statements
-                           :msg (str "unversioned-resources count: "
-                                     (count unversioned-resources)))
-               latest-versioned-resources
-               (map (fn [vof]
-                      (let [rs (q/select (str "select ?i where { "
-                                              "?i a ?type . "
-                                              "?i :vrs/record-metadata ?rmd . "
-                                              "?rmd :dc/is-version-of ?vof . "
-                                              "?rmd :owl/version-info ?release_date . "
-                                              "} "
-                                              "order by desc(?release_date) "
-                                              "limit 1")
-                                         {:vof vof
-                                          :type :vrs/ClinVarOtherStatement})]
-                        (if (< 1 (count rs))
-                          (log/error :msg "More than 1 statement returned"
-                                     :vof vof :rs rs)
-                          (first rs))))
-                    (->> unversioned-resources
-                         (take 10)))]
-           (doseq [statement-resource (->> latest-versioned-resources)]
-             (try
-               (let [statement-output (ca/clinical-assertion-resource-for-output statement-resource)
-                     post-processed-output (-> statement-output
-                                               map-rdf-resource-values-to-str
-                                               common/map-remove-nil-values
-                                               (map-unnamespace-values (set [:type]))
-                                               (map-compact-namespaced-values))]
-
-                 (log/info :post-processed-output post-processed-output)
-
-                 (.write writer (json/generate-string post-processed-output))
-                 (.write writer "\n"))
-               (catch Exception e
-                 (print-stack-trace e)
-                 (log/error :msg "Failed to output statement"
-                            :statement-resource statement-resource))))))))
-    (catch Exception e
-      (print-stack-trace e))))
-
+  (let [stmt-types [:vrs/VariationGermlinePathogenicityStatement
+                    #_:vrs/ClinVarDrugResponseStatement
+                    #_:vrs/ClinVarOtherStatement]]
+    (doseq [t stmt-types]
+      (snapshot-latest-statements-of-type t))))
 
 (defn snapshot-latest-variations []
   (try
