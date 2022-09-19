@@ -1,10 +1,9 @@
 (ns genegraph.transform.clinvar.variation
-  (:require [genegraph.database.load :as l]
-            [genegraph.database.query :as q]
-            [genegraph.database.names :refer [local-property-names
-                                              local-class-names
-                                              property-uri->keyword
-                                              prefix-ns-map]]
+  (:require [genegraph.database.query :as q]
+            [genegraph.database.names :as names :refer [local-property-names
+                                                        local-class-names
+                                                        property-uri->keyword
+                                                        prefix-ns-map]]
             [genegraph.util :refer [str->bytestream
                                     dissoc-ns]]
             [genegraph.transform.clinvar.common :as common]
@@ -15,8 +14,7 @@
             [genegraph.annotate.cnv :as cnv]
             [clojure.pprint :refer [pprint]]
             [cheshire.core :as json]
-            [io.pedestal.log :as log]
-            [genegraph.database.names :as names]))
+            [io.pedestal.log :as log]))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
 (def variation-frame
@@ -33,47 +31,6 @@
            :genegraph.annotate/data-contextualized
            (merge data variation-context))))
 
-
-(defn prioritized-variation-expression
-  "Attempts to return a 'canonical' expression of the variation in ClinVar.
-  Takes a clinvar-raw variation message. Returns one string expression.
-  Tries GRCh38, GRCh37, may add additional options in the future.
-  When no 'canonical' expressions found, falls back to Text VRS using variation.id.
-
-  NOTE: .content.content must be parsed already."
-  [variation-msg]
-  (log/trace :fn :prioritized-variation-expression :variation-msg variation-msg)
-  (let [nested-content (-> variation-msg :content :content)]
-    (letfn [(get-hgvs [nested-content assembly-name]
-              (let [hgvs-list (-> nested-content (get "HGVSlist") (get "HGVS") util/into-sequential-if-not)
-                    filtered (filter #(= assembly-name (get-in % ["NucleotideExpression" "@Assembly"])) hgvs-list)]
-                (when (< 1 (count filtered))
-                  (log/warn :fn :prioritized-variation-expression
-                            :msg (str "Multiple expressions for variation for assembly: " assembly-name)
-                            :variation-id (-> variation-msg :content :id)
-                            :hgvs-list hgvs-list))
-                (-> filtered first (get "NucleotideExpression") (get "Expression") (get "$"))))
-            (get-spdi [nested-content]
-              (-> nested-content (get "CanonicalSPDI") (get "$")))]
-      (let [exprs (for [val-opt [{:fn #(get-spdi nested-content)
-                                  :type :spdi
-                                  :label "SPDI"}
-                                 {:fn #(get-hgvs nested-content "GRCh38")
-                                  :type :hgvs
-                                  :label "GRCh38"}
-                                 {:fn #(get-hgvs nested-content "GRCh37")
-                                  :type :hgvs
-                                  :label "GRCh37"}
-                                 ;; Fallback to using the variation id
-                                 {:fn #(-> variation-msg :content :id)
-                                  :type :text
-                                  :label "ClinVar Variation ID"}]]
-                    (let [expr ((get val-opt :fn))]
-                      (when expr {:expr expr
-                                  :type (:type val-opt)
-                                  :label (:label val-opt)})))]
-        ;; Return first non-nil
-        (some identity exprs)))))
 
 (defn prioritized-variation-expressions-all
   "Attempts to return a 'canonical' expression of the variation in ClinVar.
@@ -108,7 +65,7 @@
                                   :type :hgvs
                                   :label "GRCh37"}
                                  ;; Fallback to using the variation id
-                                 {:fn #(-> variation-msg :content :id)
+                                 {:fn #(str "clinvar:" (-> variation-msg :content :id))
                                   :type :text
                                   :label "Text"}]]
                     (let [expr ((get val-opt :fn))]
@@ -116,8 +73,7 @@
                                   :type (:type val-opt)
                                   :label (:label val-opt)})))]
         ;; Evaluate all and return non-nil
-        (into [] (filter #(not (nil? %)) exprs))
-        #_(some identity exprs)))))
+        (into [] (filter #(not (nil? %)) exprs))))))
 
 
 (defn hgvs-syntax-from-change
@@ -343,8 +299,7 @@
                                            :expression-type (-> ce :type)})
                                          :variation)
                         :expression ce
-                        :label (-> ce :label)}))
-          #_#__ (log/info :vrs-rets vrs-rets)]
+                        :label (-> ce :label)}))]
       (let [selected (or (some #(when (not= "Text" (get-in (%) [:normalized :canonical_context :type]))
                                   (%))
                                vrs-rets)
@@ -389,10 +344,6 @@
           :subject_variation_descriptor ()
             ;;  :value_id ()
           :canonical_variation (:normalized nce)
-          #_(let [vrs-ret (get-vrs-variation-map
-                           {:expression (-> event ::prioritized-expression :expr)
-                            :expression-type (-> event ::prioritized-expression :type)})]
-              (:variation vrs-ret))
           :record_metadata {:type "RecordMetadata"
                             :is_version_of vrd-unversioned
                             :version (:release_date message)}})
