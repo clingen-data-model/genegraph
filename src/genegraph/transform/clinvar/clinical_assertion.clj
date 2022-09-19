@@ -153,7 +153,7 @@
   ;; TODO address this CURIE issue, either by compacting the namespace of the IRI, or
   ;; changing the schema to accept URI types.
   [trait-iri]
-  (log/info :fn :trait-id-to-medgen-id :trait-iri trait-iri)
+  (log/debug :fn :trait-id-to-medgen-id :trait-iri trait-iri)
   (if-let [medgen-id (q/ld1-> (q/resource trait-iri) [:cg/medgen-id])]
     (str "medgen:" medgen-id)
     trait-iri))
@@ -162,7 +162,7 @@
   "Takes a trait RDFResource and returns it in a GA4GH standard map
    used for outputting to external systems."
   [trait-resource]
-  (log/info :fn :trait-resource-for-output :trait trait-resource)
+  (log/debug :fn :trait-resource-for-output :trait trait-resource)
   (when trait-resource
     {:id (trait-id-to-medgen-id (str trait-resource))
      :type (str (q/ld1-> trait-resource [:rdf/type]))}))
@@ -217,8 +217,8 @@
 
 (defn get-trait-resource-by-version-of
   [trait-vof max-release-date]
-  (log/info :fn :get-trait-resource-by-version-of
-            :trait-vof trait-vof :max-release-date max-release-date)
+  (log/debug :fn :get-trait-resource-by-version-of
+             :trait-vof trait-vof :max-release-date max-release-date)
   (comment
     "See comment in get-trait-set-resource-by-version-of"
     "{ ?i a :vrs/Disease } union { ?i a :vrs/Phenotype }")
@@ -241,7 +241,7 @@
    Uses :vrs/members relationship to get the traits in it."
   [trait-set]
   (let [trait-set-type (q/ld1-> trait-set [:rdf/type])]
-    (log/info :trait-set-type trait-set-type)
+    (log/debug :trait-set-type trait-set-type)
     (case (s/replace (str trait-set-type) (get prefix-ns-map "vrs") "")
       "Disease" {:id (trait-id-to-medgen-id (str trait-set))
                  :type (str trait-set-type)}
@@ -262,9 +262,9 @@
            :type (str trait-set-type)}))))
 
 #_(defn get-trait-set-by-id [trait-set-id release-date]
-    (log/info :fn :get-trait-set-by-id
-              :trait-set-id trait-set-id
-              :release-date release-date)
+    (log/debug :fn :get-trait-set-by-id
+               :trait-set-id trait-set-id
+               :release-date release-date)
     (let [rs (q/select "select ?i where {
                       { ?i a :vrs/Condition }
                       union { ?i a :vrs/Disease }
@@ -286,9 +286,9 @@
 
 (defn get-trait-set-by-version-of
   [^RDFResource trait-set-vof ^String release-date]
-  (log/info :fn :get-trait-set-by-version-of
-            :trait-set-vof trait-set-vof
-            :release-date release-date)
+  (log/debug :fn :get-trait-set-by-version-of
+             :trait-set-vof trait-set-vof
+             :release-date release-date)
   (comment
     "This resource type pattern was originally included in the following select."
     "It was found to cost hundreds of milliseconds and was taken out. Assuming
@@ -323,9 +323,9 @@
 
 ;; TODO This function is slower than it should be. Look into this.
 (defn variation-descriptor-by-clinvar-id [clinvar-id release-date]
-  (log/info :fn :variation-descriptor-by-clinvar-id
-            :clinvar-id clinvar-id
-            :release-date release-date)
+  (log/debug :fn :variation-descriptor-by-clinvar-id
+             :clinvar-id clinvar-id
+             :release-date release-date)
   (let [qualified-id (str iri/clinvar-variation clinvar-id)
 
         _  (comment (q/select (str
@@ -571,10 +571,10 @@
   "Takes an RDFResource for a proposition and its subject,
    and returns a map for a GA4GH Proposition"
   [proposition-resource subject-resource release-date]
-  (log/info :fn :proposition-resource-for-output
-            :proposition-resource proposition-resource
-            :subject-resource subject-resource
-            :release-date release-date)
+  (log/debug :fn :proposition-resource-for-output
+             :proposition-resource proposition-resource
+             :subject-resource subject-resource
+             :release-date release-date)
   (let [not-found-condition {:id (ns-cg "ConditionNotFound")
                              :type "Phenotype"}]
     (when proposition-resource
@@ -582,8 +582,8 @@
        :subject (str subject-resource)
        :predicate (q/ld1-> proposition-resource [:vrs/predicate])
        :object (let [object-vof (q/ld1-> proposition-resource [:vrs/object])]
-                 (log/info :fn :proposition-resource-for-output
-                           :object-vof object-vof)
+                 (log/debug :fn :proposition-resource-for-output
+                            :object-vof object-vof)
                ;; with the is_version_of of the object (a trait-set), get latest
                ;; Some clinical assertions don't have any conditions
                  (if object-vof
@@ -632,7 +632,7 @@
         subject-descriptor (variation-descriptor-by-clinvar-id
                             (q/ld1-> assertion-resource [:vrs/subject-descriptor])
                             release-date)
-        _ (log/info :finished :variation-descriptor-by-clinvar-id)]
+        _ (log/debug :finished :variation-descriptor-by-clinvar-id)]
     {:id (str assertion-resource)
      :type (q/ld1-> assertion-resource [:rdf/type])
      :label (q/ld1-> assertion-resource [:rdfs/label])
@@ -661,8 +661,7 @@
         assertion (:content message)
         vof (str (ns-cg "SCV_Statement_") (:id assertion))
         id (str vof "." (:release_date message))
-        stmt-type (statement-type (:interpretation_description assertion))
-        _ (log/info :stmt-type stmt-type)]
+        stmt-type (statement-type (:interpretation_description assertion))]
     (-> (assoc
          event
          :genegraph.annotate/data
