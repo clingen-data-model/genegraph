@@ -1,0 +1,14 @@
+construct {
+  ?s ?p ?o .
+}
+where
+{
+   ?s ?p ?o .
+   minus {
+     ?s a :sepio/FamilyCosegregation .
+     FILTER NOT EXISTS { ?s :sepio/is-about-proband ?proband }
+     FILTER NOT EXISTS { ?s :sepio/estimated-lod-score ?elod }
+     FILTER NOT EXISTS { ?s :sepio/published-lod-score ?plod }
+   }
+}
+
