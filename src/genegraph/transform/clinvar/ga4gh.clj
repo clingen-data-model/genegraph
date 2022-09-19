@@ -280,7 +280,7 @@
                                      :vof vof :rs rs)
                           (first rs))))
                     (->> unversioned-resources
-                         #_(take 5)))]
+                         #_(take 100)))]
            (doseq [[i statement-resource] (->> latest-versioned-resources
                                                (map-indexed vector))]
              (log/info :latest-statement-resource statement-resource)
@@ -292,7 +292,7 @@
                                                common/map-remove-nil-values
                                                (map-unnamespace-values (set [:type]))
                                                (map-compact-namespaced-values))]
-                 (log/info :progress (format "%d/%d" i (count latest-versioned-resources))
+                 (log/info :progress (format "%d/%d" (inc i) (count latest-versioned-resources))
                            :post-processed-output post-processed-output)
                  (.write writer (json/generate-string post-processed-output))
                  (.write writer "\n"))
@@ -300,6 +300,64 @@
                  (print-stack-trace e)
                  (log/error :msg "Failed to output statement"
                             :statement-resource statement-resource))))))))
+    (catch Exception e
+      (print-stack-trace e))))
+
+(defn snapshot-latest-statements-of-type-parallel
+  [type-kw]
+  (try
+    (let [type-name (name type-kw)
+          output-filename (format "statements-%s.txt" type-name)]
+      (with-open [writer (io/writer output-filename)]
+      ;; TODO look at group by for this.
+      ;; Just want each iri for latest release_date for each is-version-of
+        (tx
+         (let [unversioned-resources
+               (q/select (str "select distinct ?vof where { "
+                              "?i a ?type . "
+                              "?i :vrs/record-metadata ?rmd . "
+                              "?rmd :dc/is-version-of ?vof . } ")
+                         {:type type-kw})
+               _ (log/info :fn :snapshot-latest-statements
+                           :msg (str "unversioned-resources count: "
+                                     (count unversioned-resources)))
+               latest-versioned-resources
+               (map (fn [vof]
+                      (let [rs (q/select (str "select ?i where { "
+                                              "?i a ?type . "
+                                              "?i :vrs/record-metadata ?rmd . "
+                                              "?rmd :dc/is-version-of ?vof . "
+                                              "?rmd :owl/version-info ?release_date . } "
+                                              "order by desc(?release_date) "
+                                              "limit 1")
+                                         {:type type-kw
+                                          :vof vof})]
+                        (if (< 1 (count rs))
+                          (log/error :msg "More than 1 statement returned"
+                                     :vof vof :rs rs)
+                          (first rs))))
+                    (->> unversioned-resources
+                         #_(take 100)))]
+
+
+
+           (doseq [[i post-processed-output] (->> latest-versioned-resources
+                                                  (pmap #(-> (ca/clinical-assertion-resource-for-output %)
+                                                             map-rdf-resource-values-to-str
+                                                             common/map-remove-nil-values
+                                                             (map-unnamespace-values (set [:type]))
+                                                             (map-compact-namespaced-values)))
+                                                  (map-indexed vector))]
+             (try
+               (let [_ (log/info :msg "Post processing output...")]
+                 (log/info :progress (format "%d/%d" (inc i) (count latest-versioned-resources))
+                           :post-processed-output post-processed-output)
+                 (.write writer (json/generate-string post-processed-output))
+                 (.write writer "\n"))
+               (catch Exception e
+                 (print-stack-trace e)
+                 (log/error :msg "Failed to output statement"
+                            :statement-resource post-processed-output))))))))
     (catch Exception e
       (print-stack-trace e))))
 
