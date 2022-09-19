@@ -93,6 +93,8 @@
   "http://dataexchange.clinicalgenome.org/terms/VariantClinicalSignificanceAssertion"]
  [:cg/AggregateVariantClinicalSignificanceAssertion
   "http://dataexchange.clinicalgenome.org/terms/AggregateVariantClinicalSignificanceAssertion"]
+ [:cg/Approver "http://dataexchange.clinicalgenome.org/terms/Approver"]
+ [:cg/Submitter "http://dataexchange.clinicalgenome.org/terms/Submitter"]
  [:cgagent/genegraph-admin "http://dataexchange.clinicalgenome.org/agent/genegraph-admin"]
  [:cgagent/crc-curator "http://dataexchange.clinicalgenome.org/agent/crc-curator"]
  [:so/ProteinCodingGene "http://purl.obolibrary.org/obo/SO_0001217"]
@@ -405,6 +407,7 @@
  [:mondo/Disease "http://purl.obolibrary.org/obo/MONDO_0000001"]
  [:sepio/Assertion "http://purl.obolibrary.org/obo/SEPIO_0000001"]
  [:vrs/Extension "https://vrs.ga4gh.org/terms/Extension"]
+ [:vrs/Coding "https://vrs.ga4gh.org/terms/Coding"]
  [:vrs/Allele "https://vrs.ga4gh.org/terms/Allele"]
  [:vrs/Text "https://vrs.ga4gh.org/terms/Text"]
  [:vrs/RelativeCopyNumber "https://vrs.ga4gh.org/terms/RelativeCopyNumber"]

@@ -261,6 +261,8 @@
  [:vrs/copies "https://vrs.ga4gh.org/terms/copies"]
  [:vrs/record-metadata "https://vrs.ga4gh.org/terms/record_metadata"]
  [:vrs/role "https://vrs.ga4gh.org/terms/role"]
+ [:vrs/contributor "https://vrs.ga4gh.org/terms/contributor"]
+ [:vrs/activity "https://vrs.ga4gh.org/terms/activity"]
  [:vrs/method "https://vrs.ga4gh.org/terms/method"]
  [:vrs/contributions "https://vrs.ga4gh.org/terms/contributions"]
  [:vrs/direction "https://vrs.ga4gh.org/terms/direction"]

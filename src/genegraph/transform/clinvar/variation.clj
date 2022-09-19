@@ -349,7 +349,7 @@
                                   (%))
                                vrs-rets)
                          ((first vrs-rets)))]
-        (log/info :selected selected)
+        (log/debug :selected selected)
         selected))))
 
 (defn add-data-for-variation
