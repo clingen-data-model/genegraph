@@ -278,7 +278,7 @@
                      {:trait_set_id trait-set-id
                       :max_release_date release-date})]
     (when (= 0 (count rs))
-      (log/error :fn :get-trait-by-id
+      (log/error :fn :get-trait-set-by-id
                  :msg "No matching trait set"
                  :trait-set-id trait-set-id
                  :release-date release-date))
@@ -286,7 +286,7 @@
 
 (defn get-trait-set-by-version-of
   [^RDFResource trait-set-vof ^String release-date]
-  (log/info :fn :get-trait-set-by-id
+  (log/info :fn :get-trait-set-by-version-of
             :trait-set-vof trait-set-vof
             :release-date release-date)
   (let [rs (q/select "select ?i where {
@@ -329,12 +329,14 @@
                       ?ext :rdf/value ?variation_id .
                       ?i :vrs/record-metadata ?rmd .
                       ?rmd :owl/version-info ?version .
-                      FILTER(?version <= ?max_release_date) }"
+                      FILTER(?version <= ?max_release_date) }
+                      order by desc(?version)
+                      limit 1"
                      {:variation_id qualified-id
                       :max_release_date release-date})]
     (when (and (< 1 (count rs))
                (< 1 (count (set (map :id rs)))))
-      (log/error :fn :get-trait-byid
+      (log/error :fn :variation-descriptor-by-clinvar-id
                  :msg "Multiple matching trait sets with different identifiers"
                  :clinvar-id clinvar-id
                  :release-date release-date

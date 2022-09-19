@@ -1,26 +1,18 @@
 (ns genegraph.transform.clinvar.common
-  (:require [genegraph.database.names :refer [local-property-names local-class-names prefix-ns-map]]
-            [genegraph.transform.clinvar.iri :as iri]
-            [genegraph.database.load :as l]
-            [genegraph.database.query :as q]
-            [io.pedestal.log :as log]
-            [cheshire.core :as json]
+  (:require [cheshire.core :as json]
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
-            [clojure.string :as s])
-  (:import (genegraph.database.query.types RDFResource)
-           (java.io StringWriter ByteArrayInputStream)
-           (java.nio.charset Charset)
-           (org.apache.jena.rdf.model Model)
-           ;; (org.apache.jena.riot.writer JsonLDWriter) ; can remove? =tristan
-           (org.apache.jena.sparql.util Context)
-           (org.apache.jena.sparql.core.mem DatasetGraphInMemory)
-           (org.apache.jena.riot RDFFormat)
-           (org.apache.jena.graph NodeFactory)
-           (org.apache.jena.riot.system PrefixMapStd)
-           (com.github.jsonldjava.core JsonLdOptions)
-           (com.apicatalog.jsonld.document JsonDocument)
-           (com.apicatalog.jsonld JsonLd)))
+            [clojure.string :as s]
+            [genegraph.database.load :as l]
+            [genegraph.database.names :refer [local-class-names
+                                              local-property-names]]
+            [genegraph.database.names :as names]
+            [genegraph.database.query :as q]
+            [genegraph.database.query.types :as types]
+            [genegraph.transform.clinvar.iri :as iri]
+            [io.pedestal.log :as log])
+  (:import (org.apache.jena.rdf.model Model) ;; (org.apache.jena.riot.writer JsonLDWriter) ; can remove? =tristan
+           (genegraph.database.query.types RDFResource)))
 
 (defmulti transform-clinvar :genegraph.transform.clinvar/format)
 
@@ -306,16 +298,123 @@ LIMIT 1")
 (defn fields-to-extension-maps
   "Returns a seq of Extension maps for each field in input-map.
    If a value in input-map is a seq, create an Extension for each element."
+  ([input-map] (fields-to-extension-maps input-map {}))
+  ([input-map {:keys [expand-seqs?]}]
+   (->> (for [[k v] input-map]
+          (if (and expand-seqs? (sequential? v))
+            (->> (for [vi v]
+                   (fields-to-extension-maps {k vi}))
+                 (apply concat))
+            [{:type "Extension"
+              :name (name k)
+              :value v}]))
+        (apply concat))))
+
+(defn replace-kvs
+  "Recursively replace keys in input-map and its values by applying kv-mutate-fn.
+   If kv-mutate-fn returns nil, the kv pair is removed.
+   Recurses through all maps either in values or in vector/lists in values."
+  [input-map kv-mutate-fn]
+  (if (map? input-map)
+    (into {} (map (fn [[k v]]
+                    (when-let [[k1 v1] (kv-mutate-fn k v)]
+                      (cond
+                        (map? v1) [k1 (replace-kvs v1 kv-mutate-fn)]
+                        (sequential? v1) [k1 (map #(replace-kvs % kv-mutate-fn) v1)]
+                        :else [k1 v1])))
+                  input-map))
+    input-map))
+
+(defn map-rdf-resource-values-to-str
   [input-map]
-  (->> (for [[k v] input-map]
-         (if (sequential? v)
-           (->> (for [vi v]
-                  (fields-to-extension-maps {k vi}))
-                (apply concat))
-           [{:type "Extension"
-             :name (name k)
-             :value v}]))
-       (apply concat)))
+  (letfn [(mutator [k v]
+            (if (= (.getCanonicalName genegraph.database.query.types.RDFResource)
+                   (-> v class (#(when % (.getCanonicalName %))))
+                   #_(.getCanonicalName (class v)))
+              [k (str v)]
+              [k v]))]
+    (replace-kvs input-map mutator)))
+
+(defn ^String un-namespace-term
+  "Takes a potentially expanded namespaced term, and returns the term without the namespace.
+   e.g. http://example.org/MyTerm -> MyTerm.
+   Uses namespaces from namespaces.edn.
+
+   TODO only some of these are in use in this module. It performs pretty well
+   but if we could check just some namespaces, might be faster."
+  [term]
+  (let [term (str term)
+        namespaces (keys names/ns-prefix-map)]
+    (or (some #(when (.startsWith term %)
+                 (subs term (.length %)))
+              namespaces)
+        term)))
+
+(defn ^String un-prefix-term
+  "Takes a term and if prefixed with a known prefix (in namespaces.edn), removes it"
+  [term]
+  (let [term (str term)
+        prefixes (map #(str % ":") (keys names/prefix-ns-map))]
+    (or (some #(when (.startsWith term %)
+                 (subs term (.length %)))
+              prefixes)
+        term)))
+
+(defn map-unnamespace-keys
+  "Recursively apply un-namespace-term to a map"
+  [input-map]
+  (letfn [(mutator [k v]
+            (un-namespace-term (str k)))]
+    (replace-kvs input-map mutator)))
+
+(defn map-unnamespace-property-kw-keys
+  "Recursively look up keys in property-names, if there, apply un-namespace-term to its value"
+  [input-map]
+  (letfn [(mutator [k v]
+            (let [property (get local-property-names k)]
+              (if property
+                (let [unnamespaced (un-namespace-term (str (get local-property-names k)))]
+                  (log/info :property property
+                            :unnamespaced unnamespaced)
+                  [unnamespaced v])
+                [k v])))]
+    (replace-kvs input-map mutator)))
+
+(defn map-unnamespace-values
+  "Recursively apply un-namespace-term to a map"
+  ([input-map]
+   (map-unnamespace-values input-map nil))
+  ([input-map fields-to-process]
+   (letfn [(mutator [k v]
+             (if (and (or (nil? fields-to-process)
+                          (contains? fields-to-process k))
+                      (string? v))
+               [k (un-namespace-term v)]
+               [k v]))]
+     (replace-kvs input-map mutator))))
+
+(defn ^String compact-namespaced-term
+  "Performs same logic as un-namespace-term, but replaces the namespace with
+  the defined prefix instead of removing it."
+  [^String term]
+  (let [term (str term)
+        namespaces (keys names/ns-prefix-map)]
+    (or (some #(when (.startsWith term %)
+                 (str (get names/ns-prefix-map %)
+                      ":"
+                      (subs term (.length %))))
+              namespaces)
+        term)))
+
+(defn map-compact-namespaced-values
+  [input-map]
+  (let [fields-to-process #{:id :subject_descriptor :is_version_of}]
+    (letfn [(mutator [k v]
+              (if (and (contains? fields-to-process k)
+                       (string? v))
+                [k (compact-namespaced-term v)]
+                [k v]))]
+      (replace-kvs input-map mutator))))
 
 (defn resource-to-out-triples
   "Uses steppable interface of RDFResource to obtain all the out properties and load
@@ -324,6 +423,64 @@ LIMIT 1")
   [resource]
   ; [k v] -> [r k v]
   (map #(cons resource %) (into {} resource)))
+
+(defn is-RDFResource? [thing]
+  (= (.getCanonicalName genegraph.database.query.types.RDFResource)
+     (some-> thing class .getCanonicalName)))
+
+(defn is-blank-node? [^RDFResource resource]
+  (nil? (-> resource types/as-jena-resource .getURI)))
+
+(defn map-pop-out-lone-seq-values
+  [input-map]
+  (into {} (map (fn [[k v]]
+                  (if (and (sequential? v) (= 1 (count v)))
+                    [k (first v)]
+                    [k v]))
+                input-map)))
+
+(defn resource-out-map
+  "Returns a map of all outgoing [pred obj] triples from RESOURCE.
+   If multiple out triples have same pred, puts the objs in a vector."
+  [resource]
+  ;; Uses Datafiable interface of RDFResource
+  (let [tuples2 (into [] resource)
+        result (->> tuples2
+                    (sort-by first)
+                    (partition-by first)
+                    (map (fn [group] [;; Property kw for the group
+                                      (-> group first first)
+                                      ;; Elements in the group
+                                      (mapv second group)]))
+                    (into {})
+                    map-pop-out-lone-seq-values)]
+    result))
+
+(defn rdf-select-tree
+  "Recursively selects outgoing triples from RDFResources in objects of triples, starting from a root RDFResource.
+   If root-resource is not an RDFResource, returns it.
+   NOTE: do not use this on a resource which may have an edge cycle. Does not have cycle detection right now."
+  [root-resource]
+  (if (is-RDFResource? root-resource)
+    (let [outgoing (resource-out-map root-resource)]
+      (log/info :fn :rdf-select-tree
+                :root-resource root-resource
+                :resource-class (class root-resource)
+                :jena-resource (types/as-jena-resource root-resource)
+                :uri (.getURI (types/as-jena-resource root-resource)))
+      (if (not-empty outgoing)
+        (merge {}
+               (when (not (is-blank-node? root-resource))
+                 {:id (str root-resource)})
+               (into {} (map (fn [[k v]]
+                               (cond
+                                 (sequential? v) [k (map rdf-select-tree v)]
+                                 :else [k (rdf-select-tree v)]))
+                             outgoing)))
+        ;; was a resource, but no triples
+        root-resource))
+    ;; not a resource
+    root-resource))
 
 (defn model-to-triples
   "Returns a seq of all [s p o] triples in the model. Unordered."
@@ -352,21 +509,6 @@ LIMIT 1")
          (throw e))
        (.remove model stmt-to-remove))
      model)))
-
-(defn replace-kvs
-  "Recursively replace keys in input-map and its values by applying kv-mutate-fn.
-   If kv-mutate-fn returns nil, the kv pair is removed.
-   Recurses through all maps either in values or in vector/lists in values."
-  [input-map kv-mutate-fn]
-  (if (map? input-map)
-    (into {} (map (fn [[k v]]
-                    (when-let [[k1 v1] (kv-mutate-fn k v)]
-                      (cond
-                        (map? v1) [k1 (replace-kvs v1 kv-mutate-fn)]
-                        (sequential? v1) [k1 (map #(replace-kvs % kv-mutate-fn) v1)]
-                        :else [k1 v1])))
-                  input-map))
-    input-map))
 
 (defn map-remove-nil-values
   "Remove fields in map whose value is nil. Recursively with replace-kvs."
