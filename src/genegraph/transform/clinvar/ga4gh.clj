@@ -12,7 +12,10 @@
             [genegraph.server]
             [genegraph.sink.event :as event]
             [genegraph.transform.clinvar.clinical-assertion :as ca]
-            [genegraph.transform.clinvar.common :as common :refer [replace-kvs]]
+            [genegraph.transform.clinvar.common :as common :refer [replace-kvs
+                                                                   map-rdf-resource-values-to-str
+                                                                   map-unnamespace-values
+                                                                   map-compact-namespaced-values]]
             [genegraph.transform.clinvar.core :refer [add-parsed-value]]
             [genegraph.transform.clinvar.iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :as util]
@@ -224,49 +227,6 @@
                               (json/generate-string)))
            (.write writer "\n")))))))
 
-(defn map-rdf-resource-values-to-str
-  [input-map]
-  (letfn [(mutator [k v]
-            (if (= (.getCanonicalName genegraph.database.query.types.RDFResource)
-                   (-> v class (#(when % (.getCanonicalName %))))
-                   #_(.getCanonicalName (class v)))
-              [k (str v)]
-              [k v]))]
-    (replace-kvs input-map mutator)))
-
-(defn ^String un-namespace-term
-  "Takes a potentially expanded namespaced term, and returns the term without the namespace.
-   e.g. http://example.org/MyTerm -> MyTerm.
-   Uses namespaces from namespaces.edn.
-
-   TODO only some of these are in use in this module. It performs pretty well
-   but if we could check just some namespaces, might be faster."
-  [term]
-  (let [term (str term)
-        namespaces (keys names/ns-prefix-map)]
-    (or (some #(when (.startsWith term %)
-                 (subs term (.length %)))
-              namespaces)
-        term)))
-
-(defn ^String un-prefix-term
-  [term]
-  (let [term (str term)
-        prefixes (map #(str % ":") (keys names/prefix-ns-map))]
-    (or (some #(when (.startsWith term %)
-                 (subs term (.length %)))
-              prefixes)
-        term)))
-
-(defn map-unnamespace-values
-  [input-map]
-  (let [fields-to-process (set [:type])]
-    (letfn [(mutator [k v]
-              (if (and (contains? fields-to-process k)
-                       (string? v))
-                [k (un-namespace-term v)]
-                [k v]))]
-      (replace-kvs input-map mutator))))
 
 (defn bmap [f coll]
   (let [batches (partition-all 10 coll)]
@@ -285,6 +245,59 @@
    (def b (reduce conj []
                   (map (fn [i] (doseq [n (range (int 1e5))] (inc n)) i)
                        (range 10000))))))
+
+(defn snapshot-latest-statements-of-type
+  [type-kw]
+  (try
+    (let [type-name (name type-kw)
+          output-filename (format "statements-%s.txt" type-name)]
+      (with-open [writer (io/writer output-filename)]
+      ;; TODO look at group by for this.
+      ;; Just want each iri for latest release_date for each is-version-of
+        (tx
+         (let [unversioned-resources
+               (q/select (str "select distinct ?vof where { "
+                              "?i a ?type . "
+                              "?i :vrs/record-metadata ?rmd . "
+                              "?rmd :dc/is-version-of ?vof . } ")
+                         {:type type-kw})
+               _ (log/info :fn :snapshot-latest-statements
+                           :msg (str "unversioned-resources count: "
+                                     (count unversioned-resources)))
+               latest-versioned-resources
+               (map (fn [vof]
+                      (let [rs (q/select (str "select ?i where { "
+                                              "?i a ?type . "
+                                              "?i :vrs/record-metadata ?rmd . "
+                                              "?rmd :dc/is-version-of ?vof . "
+                                              "?rmd :owl/version-info ?release_date . } "
+                                              "order by desc(?release_date) "
+                                              "limit 1")
+                                         {:type type-kw
+                                          :vof vof})]
+                        (if (< 1 (count rs))
+                          (log/error :msg "More than 1 statement returned"
+                                     :vof vof :rs rs)
+                          (first rs))))
+                    (->> unversioned-resources
+                         (take 10)))]
+           (doseq [statement-resource (->> latest-versioned-resources)]
+             (try
+               (let [statement-output (ca/clinical-assertion-resource-for-output statement-resource)
+                     post-processed-output (-> statement-output
+                                               map-rdf-resource-values-to-str
+                                               common/map-remove-nil-values
+                                               (map-unnamespace-values (set [:type]))
+                                               (map-compact-namespaced-values))]
+                 (log/info :post-processed-output post-processed-output)
+                 (.write writer (json/generate-string post-processed-output))
+                 (.write writer "\n"))
+               (catch Exception e
+                 (print-stack-trace e)
+                 (log/error :msg "Failed to output statement"
+                            :statement-resource statement-resource))))))))
+    (catch Exception e
+      (print-stack-trace e))))
 
 (defn snapshot-latest-statements []
   (try
@@ -325,7 +338,8 @@
                      post-processed-output (-> statement-output
                                                map-rdf-resource-values-to-str
                                                common/map-remove-nil-values
-                                               map-unnamespace-values)]
+                                               (map-unnamespace-values #{:type})
+                                               (map-compact-namespaced-values))]
 
                  (log/info :post-processed-output post-processed-output)
 
@@ -377,7 +391,8 @@
                      post-processed-output (-> statement-output
                                                map-rdf-resource-values-to-str
                                                common/map-remove-nil-values
-                                               map-unnamespace-values)]
+                                               (map-unnamespace-values (set [:type]))
+                                               (map-compact-namespaced-values))]
 
                  (log/info :post-processed-output post-processed-output)
 
@@ -430,7 +445,8 @@
                      post-processed-output (-> statement-output
                                                map-rdf-resource-values-to-str
                                                common/map-remove-nil-values
-                                               map-unnamespace-values)]
+                                               (map-unnamespace-values (set [:type]))
+                                               (map-compact-namespaced-values))]
 
                  (log/info :post-processed-output post-processed-output)
 
@@ -484,7 +500,8 @@
                      post-processed-output (-> descriptor-output
                                                map-rdf-resource-values-to-str
                                                common/map-remove-nil-values
-                                               map-unnamespace-values)]
+                                               (map-unnamespace-values #{:type})
+                                               (map-compact-namespaced-values))]
 
                  (log/info :msg "Writing descriptor"
                            :id (:id post-processed-output))
@@ -502,7 +519,21 @@
   (start-states!)
   (process-topic-file "cg-vcep-2019-07-01/variation.txt")
   (process-topic-file "cg-vcep-inputs/variation.txt")
+  (process-topic-file "variation-inputs-556853.txt")
   (snapshot-latest-variations))
+
+
+(comment
+  (-> "statements.txt"
+      io/reader
+      line-seq
+      (->> (map #(json/parse-string % true))
+           (map map-compact-namespaced-values)
+           ((fn [records]
+              (with-open [writer (io/writer "statements-compacted.txt")]
+                (doseq [rec records]
+                  (.write writer (json/generate-string rec))
+                  (.write writer "\n"))))))))
 
 
 (comment

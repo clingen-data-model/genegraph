@@ -42,31 +42,83 @@
 
   NOTE: .content.content must be parsed already."
   [variation-msg]
-  (log/trace :fn ::prioritized-variation-expression :variation-msg variation-msg)
+  (log/trace :fn :prioritized-variation-expression :variation-msg variation-msg)
   (let [nested-content (-> variation-msg :content :content)]
     (letfn [(get-hgvs [nested-content assembly-name]
               (let [hgvs-list (-> nested-content (get "HGVSlist") (get "HGVS") util/into-sequential-if-not)
                     filtered (filter #(= assembly-name (get-in % ["NucleotideExpression" "@Assembly"])) hgvs-list)]
                 (when (< 1 (count filtered))
-                  (log/warn :fn ::prioritized-variation-expression
+                  (log/warn :fn :prioritized-variation-expression
                             :msg (str "Multiple expressions for variation for assembly: " assembly-name)
-                            :variation variation-msg))
+                            :variation-id (-> variation-msg :content :id)
+                            :hgvs-list hgvs-list))
                 (-> filtered first (get "NucleotideExpression") (get "Expression") (get "$"))))
             (get-spdi [nested-content]
               (-> nested-content (get "CanonicalSPDI") (get "$")))]
       (let [exprs (for [val-opt [{:fn #(get-spdi nested-content)
-                                  :type :spdi}
+                                  :type :spdi
+                                  :label "SPDI"}
                                  {:fn #(get-hgvs nested-content "GRCh38")
-                                  :type :hgvs}
+                                  :type :hgvs
+                                  :label "GRCh38"}
                                  {:fn #(get-hgvs nested-content "GRCh37")
-                                  :type :hgvs}
+                                  :type :hgvs
+                                  :label "GRCh37"}
                                  ;; Fallback to using the variation id
                                  {:fn #(-> variation-msg :content :id)
-                                  :type :text}]]
+                                  :type :text
+                                  :label "ClinVar Variation ID"}]]
                     (let [expr ((get val-opt :fn))]
-                      (when expr {:expr expr :type (:type val-opt)})))]
+                      (when expr {:expr expr
+                                  :type (:type val-opt)
+                                  :label (:label val-opt)})))]
         ;; Return first non-nil
         (some identity exprs)))))
+
+(defn prioritized-variation-expressions-all
+  "Attempts to return a 'canonical' expression of the variation in ClinVar.
+  Takes a clinvar-raw variation message. Returns one string expression.
+  Tries GRCh38, GRCh37, may add additional options in the future.
+  When no 'canonical' expressions found, falls back to Text VRS using variation.id.
+
+  NOTE: .content.content must be parsed already."
+  [variation-msg]
+  (log/trace :fn :prioritized-variation-expression-all :variation-msg variation-msg)
+  (let [nested-content (-> variation-msg :content :content)]
+    (letfn [(get-hgvs [nested-content assembly-name]
+              (let [hgvs-list (-> nested-content (get "HGVSlist") (get "HGVS") util/into-sequential-if-not)
+                    filtered (filterv #(= assembly-name (get-in % ["NucleotideExpression" "@Assembly"])) hgvs-list)]
+                ;; TODO add a check here to ensure this is just a duplicate expression
+                ;; If the expressions are different, will need a deterministic way to select one.
+                (when (< 1 (count filtered))
+                  (log/warn :fn :prioritized-variation-expression
+                            :msg (str "Multiple expressions for variation for assembly: " assembly-name)
+                            :variation-id (-> variation-msg :content :id)
+                            :filtered-list filtered))
+                (-> filtered first (get "NucleotideExpression") (get "Expression") (get "$"))))
+            (get-spdi [nested-content]
+              (-> nested-content (get "CanonicalSPDI") (get "$")))]
+      (let [exprs (for [val-opt [{:fn #(get-spdi nested-content)
+                                  :type :spdi
+                                  :label "SPDI"}
+                                 {:fn #(get-hgvs nested-content "GRCh38")
+                                  :type :hgvs
+                                  :label "GRCh38"}
+                                 {:fn #(get-hgvs nested-content "GRCh37")
+                                  :type :hgvs
+                                  :label "GRCh37"}
+                                 ;; Fallback to using the variation id
+                                 {:fn #(-> variation-msg :content :id)
+                                  :type :text
+                                  :label "Text"}]]
+                    (let [expr ((get val-opt :fn))]
+                      (when expr {:expr expr
+                                  :type (:type val-opt)
+                                  :label (:label val-opt)})))]
+        ;; Evaluate all and return non-nil
+        (into [] (filter #(not (nil? %)) exprs))
+        #_(some identity exprs)))))
+
 
 (defn hgvs-syntax-from-change
   "Takes a change string like g.119705C>T and returns a VRS syntax string like \"hgvs.g\""
@@ -75,9 +127,9 @@
                            "m." "hgvs.m", "n." "hgvs.n", "r." "hgvs.r"}]
     (if change
       (or (some #(when (.startsWith change (key %)) (val %)) change-prefix-map)
-          (log/warn :message "Unknown hgvs change syntax. Defaulting to 'hgvs'."
-                    :change change))
-      (log/warn :message "No change provided"))))
+          (log/debug :message "Unknown hgvs change syntax."
+                     :change change))
+      (log/debug :message "No change provided"))))
 
 (defn hgvs-syntax-from-expression
   "This function attempts to determine the hgvs syntax from the expression.
@@ -99,8 +151,14 @@
   (when (get hgvs-obj "NucleotideExpression")
     {:expression (-> hgvs-obj (get "NucleotideExpression") (get "Expression") (get "$"))
      :assembly (-> hgvs-obj (get "NucleotideExpression") (get "Assembly"))
-     :syntax (or (hgvs-syntax-from-change (get-in hgvs-obj ["NucleotideExpression" "@change"]))
-                 (hgvs-syntax-from-expression (get-in hgvs-obj ["NucleotideExpression" "Expression" "$"])))}))
+     :syntax (let [syntax (or (hgvs-syntax-from-change
+                               (get-in hgvs-obj ["NucleotideExpression" "@change"]))
+                              (hgvs-syntax-from-expression
+                               (get-in hgvs-obj ["NucleotideExpression" "Expression" "$"])))]
+               (when (nil? syntax) (log/error :fn :nucleotide-hgvs
+                                              :msg "Could not determine hgvs syntax"
+                                              :hgvs-obj hgvs-obj))
+               syntax)}))
 
 (defn protein-hgvs
   "Takes an object in the form of ClinVar's HGVSlist.
@@ -108,8 +166,14 @@
   [hgvs-obj]
   (when (get hgvs-obj "ProteinExpression")
     {:expression (get-in hgvs-obj ["ProteinExpression" "Expression" "$"])
-     :syntax (or (hgvs-syntax-from-change (get-in hgvs-obj ["ProteinExpression" "@change"]))
-                 (hgvs-syntax-from-expression (get-in hgvs-obj ["ProteinExpression" "Expression" "$"])))}))
+     :syntax (let [syntax (or (hgvs-syntax-from-change
+                               (get-in hgvs-obj ["ProteinExpression" "@change"]))
+                              (hgvs-syntax-from-expression
+                               (get-in hgvs-obj ["ProteinExpression" "Expression" "$"])))]
+               (when (nil? syntax) (log/error :fn :protein-hgvs
+                                              :msg "Could not determine hgvs syntax"
+                                              :hgvs-obj hgvs-obj))
+               syntax)}))
 
 (defn get-all-expressions
   "Attempts to return a 'canonical' expression of the variation in ClinVar.
@@ -171,9 +235,20 @@
                                                :variation_type)
                                            "copy number"))
         (#(if (::copy-number? %) (assoc % ::cnv (cnv/parse (-> value :content :name))) %))
-        (#(assoc % ::prioritized-expression (cond (::copy-number? %) {:type :cnv
-                                                                      :expr (::cnv %)}
-                                                  :else (prioritized-variation-expression value))))
+
+        ;; Add the list of canonical-candidate expressions for non-cnv
+        (#(if (not (::copy-number? %))
+            (assoc % ::canonical-candidate-expressions
+                   (prioritized-variation-expressions-all value))
+            %))
+        (#(assoc % ::prioritized-expression
+                 ;; TODO prioritized-expression is only used for copy-number now
+                 ;; for non-copy-number, it checks canonical-candidate-expressions
+                 (cond (::copy-number? %) {:type :cnv
+                                           :expr (::cnv %)
+                                           :label "CNV"}
+
+                       :else (first (::canonical-candidate-expressions value)))))
         (assoc ::other-expressions (get-all-expressions value)))))
 
 (defn make-index-replacer
@@ -241,6 +316,41 @@
         (log/debug :fn :add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj-pretty)
         {:iri vrs-id :variation vrs-obj-pretty}))))
 
+(defn normalize-canonical-expression
+  "Selects the canonical expression and returns it and the normalized form
+   {:expression ... :normalized ...}"
+  [event]
+  (comment
+    "Candidate expressions are sorted in preferred order and are all non-cnv maps like:"
+    {:expr "...." :type :hgvs}
+    {:expr "...." :type :spdi}
+    {:expr {"..." "..."} :type :cnv})
+  (if (::copy-number? event)
+    {:expression (-> event ::prioritized-expression)
+     :normalized (get (get-vrs-variation-map
+                       {:expression (-> event ::prioritized-expression :expr)
+                        :expression-type (-> event ::prioritized-expression :type)})
+                      :variation)
+     :label (-> event ::prioritized-expression :expr)}
+    (let [candidate-expressions (::canonical-candidate-expressions event)
+          _ (log/info :candidate-expressions candidate-expressions)
+          ;; each vrs-ret[:variation] is the structure in the 'variation', 'canonical_variaton' (or equivalent)
+          ;; field in the normalization service response body
+          vrs-rets (for [ce candidate-expressions]
+                     (fn []
+                       {:normalized (get (get-vrs-variation-map
+                                          {:expression (-> ce :expr)
+                                           :expression-type (-> ce :type)})
+                                         :variation)
+                        :expression ce
+                        :label (-> ce :label)}))
+          #_#__ (log/info :vrs-rets vrs-rets)]
+      (let [selected (or (some #(when (not= "Text" (get-in (%) [:normalized :canonical_context :type]))
+                                  (%))
+                               vrs-rets)
+                         ((first vrs-rets)))]
+        (log/info :selected selected)
+        selected))))
 
 (defn add-data-for-variation
   "Returns msg with :genegraph.annotate/data and :genegraph.annotate/data-contextualized added.
@@ -254,7 +364,9 @@
         variation (:content message)
         vrd-unversioned (str (ns-cg "VariationDescriptor_") (:id variation))
         vd-iri (str vrd-unversioned "." (:release_date message))
-        clinvar-variation-iri (str iri/clinvar-variation (:id variation))]
+        clinvar-variation-iri (str iri/clinvar-variation (:id variation))
+        ;; normalize-canonical-expression must be called after variation-preprocess
+        nce (normalize-canonical-expression event)]
     (-> event
         (assoc
          :genegraph.annotate/data
@@ -276,13 +388,27 @@
                         (into []))
           :subject_variation_descriptor ()
             ;;  :value_id ()
-          :canonical_variation (let [vrs-ret (get-vrs-variation-map
-                                              {:expression (-> event ::prioritized-expression :expr)
-                                               :expression-type (-> event ::prioritized-expression :type)})]
-                                 (:variation vrs-ret))
+          :canonical_variation (:normalized nce)
+          #_(let [vrs-ret (get-vrs-variation-map
+                           {:expression (-> event ::prioritized-expression :expr)
+                            :expression-type (-> event ::prioritized-expression :type)})]
+              (:variation vrs-ret))
           :record_metadata {:type "RecordMetadata"
                             :is_version_of vrd-unversioned
                             :version (:release_date message)}})
+        ;; Add some info about how the canonical variation expression was selected
+        (update-in [:genegraph.annotate/data :extensions]
+                   (fn [extensions] (concat extensions
+                                            (common/fields-to-extension-maps
+                                             {:canonical_expression
+                                              (:expr (:expression nce))
+                                              :candidate_expressions
+                                              (map #_#(:expr %)
+                                               #(identity {;;:type (:type %)
+                                                           :expression (:expr %)
+                                                           :label (:label %)})
+                                                   (::canonical-candidate-expressions event))}
+                                             {:expand-seqs? false}))))
         (assoc :genegraph.annotate/iri vd-iri)
         add-contextualized)))
 
@@ -296,9 +422,11 @@
 (defn extension-resource-for-output
   [extension-resource]
   (when extension-resource
-    {:type (q/ld1-> extension-resource [:rdf/type])
-     :name (q/ld1-> extension-resource [:vrs/name])
-     :value (q/ld1-> extension-resource [:rdf/value])}))
+    (common/map-pop-out-lone-seq-values
+     {:type (q/ld1-> extension-resource [:rdf/type])
+      :name (q/ld1-> extension-resource [:vrs/name])
+      :value (map #(-> % common/rdf-select-tree common/map-unnamespace-property-kw-keys)
+                  (q/ld-> extension-resource [:rdf/value]))})))
 
 (defn variation-member-resource-for-output
   [member-resource]
