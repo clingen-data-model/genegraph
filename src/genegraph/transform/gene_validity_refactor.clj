@@ -50,8 +50,8 @@
                construct-variant-score
                construct-ar-variant-score
                construct-unscoreable-evidence
-               unlink-variant-scores-when-proband-scores-exist)
-
+               unlink-variant-scores-when-proband-scores-exist
+               unlink-segregations-when-no-proband-and-lod-scores)
 
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -246,6 +246,20 @@
                                          phenotypes)))
     m))
 
+(defn sopDataModelVersion
+    [event]
+  (let [json (-> event :genegraph.sink.event/value json/parse-string)
+        classificationPoints (get-in json ["resource" "classificationPoints"])
+        autosomalRecissiveDisorder (get classificationPoints "autosomalRecessiveDisorder")
+        probandWithOtherVariantType (contains? classificationPoints "probandWithOtherVariantType")
+        segregation (get classificationPoints "segregation")
+        evidenceCountExome (contains? segregation "evidenceCountExome")]
+    (if probandWithOtherVariantType
+      8
+      (if evidenceCountExome
+        7
+        5))))
+
 (comment
   (fix-hpo-ids {"hpoIdInDiagnosis"
                 ["Infantile muscular hypotonia (HP:0008947)"
@@ -378,8 +392,10 @@
                                {::q/model
                                 (q/union unlinked-model
                                          gdm-sepio-relationships)}))]
-    (unlink-variant-scores-when-proband-scores-exist
-     {::q/model (add-proband-scores linked-model)})))
+    (unlink-segregations-when-no-proband-and-lod-scores
+     {::q/model
+      (unlink-variant-scores-when-proband-scores-exist
+       {::q/model (add-proband-scores linked-model)})})))
 
 (defmethod add-model :gci-refactor
   [event]
