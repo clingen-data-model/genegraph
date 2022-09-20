@@ -56,7 +56,15 @@ where {
     ?classification gci:sopVersion ?declaredSopVersion .
   }
 
-  BIND(COALESCE(?declaredSopVersion, <http://purl.obolibrary.org/obo/SEPIO_0004093>) AS ?sopVersion) .
+  # Per discussion with Gloria, logic to differentiate SOP v 6 and 5
+  
+  OPTIONAL {
+    ?pointsTree gci:segregation / gci:evidenceCountExome ?evidenceCountExome .
+  }
+
+  BIND(IF(bound(?evidenceCountExome), <http://purl.obolibrary.org/obo/SEPIO_0004094>, <http://purl.obolibrary.org/obo/SEPIO_0004093>) AS ?sopVerionFromStructure) .
+
+  BIND(COALESCE(?declaredSopVersion, ?sopVerionFromStructure) AS ?sopVersion) .
 
   OPTIONAL {
     ?classification gci:reasons ?reasonForChangedScore .
