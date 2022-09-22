@@ -81,10 +81,20 @@ where {
     ?segregation gci:moiDisplayedForFamily ?familyMoi .
   }
 
+  #{ ?proband gci:variantScores [] }
+  #UNION
+  #{ FILTER NOT EXISTS { [] gci:variantScores [] }
+  #  ?proband gci:scores [] }
+
+  # I know this is ugly, just need to see in UI
   OPTIONAL {
     ?family gci:individualIncluded ?proband .
-    ?proband gci:proband true ;
-    gci:affiliation ?gdmAffiliation .
+    ?proband gci:affiliation ?gdmAffiliation .
+    # ?proband gci:proband true .
+    { ?proband gci:variantScores ?scores }
+    UNION
+    { FILTER NOT EXISTS { [] gci:variantScores [] }
+      ?proband gci:scores ?scores }    
+    ?scores gci:scoreStatus ?scoreStatus .
   }
-  
 }
