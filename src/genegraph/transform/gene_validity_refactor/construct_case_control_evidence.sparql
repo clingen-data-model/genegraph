@@ -26,6 +26,7 @@ construct {
     :sepio/num-with-variant ?caseNumWithVariant ;
     :sepio/detection-method ?caseDetectionMethod ;
     :sepio/allele-frequency ?caseAlleleFrequency ;
+    :geno/related-condition ?commonDiagnosis ;
     :sepio/has-evidence-item ?evidenceItem .
 
 # Control cohort study
@@ -70,6 +71,11 @@ where {
 
     OPTIONAL {
         ?caseCohort gci:alleleFrequency ?caseAlleleFrequency ;
+    }
+
+    OPTIONAL {
+        ?caseCohort gci:commonDiagnosis ?commonDiagnosis .
+        ?commonDiagnosis a gci:disease .
     }
 
     OPTIONAL {
