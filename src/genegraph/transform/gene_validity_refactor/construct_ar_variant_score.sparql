@@ -20,10 +20,18 @@ construct {
   # Need to construct evidence line for individual
   BIND(IRI(CONCAT(STR(?individual), "_proband_score_evidence_line")) AS ?probandScoreEvidenceLine ) .
 
+  {
   # Limit results to autosomal recessive MOI
   ?gdm a gci:gdm ;
   gci:modeInheritance ?moistr .
 
-  FILTER regex(?moistr, "0000007") .
+    FILTER regex(?moistr, "0000007") .
+  } UNION {
+    ?gdm a gci:gdm ;
+    gci:modeInheritance ?moistr .
+
+    FILTER regex(?moistr, "0032113") .    
+  }
+  
 }
 
