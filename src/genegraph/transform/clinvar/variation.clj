@@ -1,27 +1,19 @@
 (ns genegraph.transform.clinvar.variation
-  (:require [genegraph.database.query :as q]
-            [genegraph.database.names :as names :refer [local-property-names
-                                                        local-class-names
-                                                        property-uri->keyword
-                                                        prefix-ns-map]]
-            [genegraph.util :refer [str->bytestream
-                                    dissoc-ns]]
-            [genegraph.transform.clinvar.common :as common]
-            [genegraph.transform.clinvar.util :as util]
-            [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
-            [genegraph.transform.jsonld.common :as jsonld]
-            [genegraph.transform.clinvar.cancervariants :as vicc]
+  (:require [cheshire.core :as json]
             [genegraph.annotate.cnv :as cnv]
-            [clojure.pprint :refer [pprint]]
-            [cheshire.core :as json]
+            [genegraph.database.names :as names]
+            [genegraph.database.query :as q]
+            [genegraph.transform.clinvar.cancervariants :as vicc]
+            [genegraph.transform.clinvar.common :as common]
+            [genegraph.transform.clinvar.iri :as iri]
+            [genegraph.transform.clinvar.util :as util]
+            [genegraph.transform.jsonld.common :as jsonld]
             [io.pedestal.log :as log]))
 
-(def clinvar-variation-type (ns-cg "ClinVarVariation"))
+(def clinvar-variation-type (iri/ns-cg "ClinVarVariation"))
 (def variation-frame
   "Frame map for variation"
-  {#_#_"@type" clinvar-variation-type
-   #_#_"@type" "https://vrs.ga4gh.org/terms/CategoricalVariationDescriptor"
-   "@type" "https://vrs.ga4gh.org/terms/CanonicalVariationDescriptor"})
+  {"@type" "https://vrs.ga4gh.org/terms/CanonicalVariationDescriptor"})
 
 (declare variation-context)
 
@@ -238,7 +230,7 @@
              :syntax-version syntax-version)
   ;;member-iri (l/blank-node)
   ;;expression-iri (l/blank-node)
-  {;;:id member-iri
+  {#_#_:id member-iri
    :type "VariationMember"
    :expressions [(merge
                   {;;expression-iri
@@ -317,7 +309,7 @@
         message (-> event
                     :genegraph.transform.clinvar.core/parsed-value)
         variation (:content message)
-        vrd-unversioned (str (ns-cg "VariationDescriptor_") (:id variation))
+        vrd-unversioned (str (iri/ns-cg "VariationDescriptor_") (:id variation))
         vd-iri (str vrd-unversioned "." (:release_date message))
         clinvar-variation-iri (str iri/clinvar-variation (:id variation))
         ;; normalize-canonical-expression must be called after variation-preprocess
@@ -332,7 +324,7 @@
                        (merge (dissoc variation :id :release_date :name :content)
                               {:clinvar_variation clinvar-variation-iri}))
           :description (:name variation)
-          :xrefs [(str (get prefix-ns-map "clinvar") (:id variation))
+          :xrefs [(str (get names/prefix-ns-map "clinvar") (:id variation))
                   (str clinvar-variation-iri)]
           :alternate_labels []
           :members (->> (for [expr (::other-expressions event)]
@@ -342,7 +334,7 @@
                                            (:syntax-version expr)))
                         (into []))
           :subject_variation_descriptor ()
-            ;;  :value_id ()
+          ;;  :value_id ()
           :canonical_variation (:normalized nce)
           :record_metadata {:type "RecordMetadata"
                             :is_version_of vrd-unversioned
@@ -355,9 +347,9 @@
                                               (:expr (:expression nce))
                                               :candidate_expressions
                                               (map #_#(:expr %)
-                                               #(identity {;;:type (:type %)
-                                                           :expression (:expr %)
-                                                           :label (:label %)})
+                                                   #(identity {#_#_:type (:type %)
+                                                               :expression (:expr %)
+                                                               :label (:label %)})
                                                    (::canonical-candidate-expressions event))}
                                              {:expand-seqs? false}))))
         (assoc :genegraph.annotate/iri vd-iri)
@@ -606,109 +598,107 @@
 
 (def variation-context
   {"@context"
-   {; Properties
-    "is_version_of" {"@id" (str (get local-property-names :dc/is-version-of))
+   {;; Properties
+    "is_version_of" {"@id" (str (get names/local-property-names :dc/is-version-of))
                      "@type" "@id"}
     "type" {"@id" "@type"
             "@type" "@id"}
-    "name" {"@id" (str (get local-property-names :vrs/name))}
+    "name" {"@id" (str (get names/local-property-names :vrs/name))}
 
-    ;"value" {"@id" "@value"}
+    ;;"value" {"@id" "@value"}
     "value" {"@id" "rdf:value"}
     "label" {"@id" "rdfs:label"}
 
-    "replaces" {"@id" (str (get local-property-names :dc/replaces))
+    "replaces" {"@id" (str (get names/local-property-names :dc/replaces))
                 "@type" "@id"}
-    "is_replaced_by" {"@id" (str (get local-property-names :dc/is-replaced-by))
+    "is_replaced_by" {"@id" (str (get names/local-property-names :dc/is-replaced-by))
                       "@type" "@id"}
-    "version" {"@id" (str (get local-property-names :owl/version-info))}
+    "version" {"@id" (str (get names/local-property-names :owl/version-info))}
     "id" {"@id" "@id"
           "@type" "@id"}
-    ;; "_id" {"@id" "@id"
-    ;;        "@type" "@id"}
 
-    ; eliminate vrs prefixes on vrs variation terms
-    ; VRS properties
-    "variation" {"@id" (str (get prefix-ns-map "vrs") "variation")}
-    "complement" {"@id" (str (get prefix-ns-map "vrs") "complement")}
-    "interval" {"@id" (str (get prefix-ns-map "vrs") "interval")}
-    "start" {"@id" (str (get prefix-ns-map "vrs") "start")}
-    "end" {"@id" (str (get prefix-ns-map "vrs") "end")}
-    "location" {"@id" (str (get prefix-ns-map "vrs") "location")}
-    "state" {"@id" (str (get prefix-ns-map "vrs") "state")}
-    "sequence_id" {"@id" (str (get prefix-ns-map "vrs") "sequence_id")}
-    "sequence" {"@id" (str (get prefix-ns-map "vrs") "sequence")}
-    "record_metadata" {"@id" (str (get prefix-ns-map "vrs") "record_metadata")}
-    "xrefs" {"@id" (str (get prefix-ns-map "vrs") "xrefs")}
-    "description" {"@id" (str (get prefix-ns-map "vrs") "description")}
-    "syntax" {"@id" (str (get prefix-ns-map "vrs") "syntax")}
-    "syntax_version" {"@id" (str (get prefix-ns-map "vrs") "syntax_version")}
-    "expression" {"@id" (str (get prefix-ns-map "vrs") "expression")}
-    "canonical_context" {"@id" (str (get prefix-ns-map "vrs") "canonical_context")}
-    "canonical_variation" {"@id" (str (get prefix-ns-map "vrs") "canonical_variation")}
-    "definition" {"@id" (str (get prefix-ns-map "vrs") "definition")}
-    "seq_expr" {"@id" (str (get prefix-ns-map "vrs") "seq_expr")}
-    "count" {"@id" (str (get prefix-ns-map "vrs") "count")}
-    "min" {"@id" (str (get prefix-ns-map "vrs") "min")}
-    "max" {"@id" (str (get prefix-ns-map "vrs") "max")}
-    "comparator" {"@id" (str (get prefix-ns-map "vrs") "comparator")}
-    "species_id" {"@id" (str (get prefix-ns-map "vrs") "species_id")}
-    "chr" {"@id" (str (get prefix-ns-map "vrs") "chr")}
-    "relative_copy_class" {"@id" (str (get prefix-ns-map "vrs") "relative_copy_class")}
+    ;; eliminate vrs prefixes on vrs variation terms
+    ;; VRS properties
+    "variation" {"@id" (str (get names/prefix-ns-map "vrs") "variation")}
+    "complement" {"@id" (str (get names/prefix-ns-map "vrs") "complement")}
+    "interval" {"@id" (str (get names/prefix-ns-map "vrs") "interval")}
+    "start" {"@id" (str (get names/prefix-ns-map "vrs") "start")}
+    "end" {"@id" (str (get names/prefix-ns-map "vrs") "end")}
+    "location" {"@id" (str (get names/prefix-ns-map "vrs") "location")}
+    "state" {"@id" (str (get names/prefix-ns-map "vrs") "state")}
+    "sequence_id" {"@id" (str (get names/prefix-ns-map "vrs") "sequence_id")}
+    "sequence" {"@id" (str (get names/prefix-ns-map "vrs") "sequence")}
+    "record_metadata" {"@id" (str (get names/prefix-ns-map "vrs") "record_metadata")}
+    "xrefs" {"@id" (str (get names/prefix-ns-map "vrs") "xrefs")}
+    "description" {"@id" (str (get names/prefix-ns-map "vrs") "description")}
+    "syntax" {"@id" (str (get names/prefix-ns-map "vrs") "syntax")}
+    "syntax_version" {"@id" (str (get names/prefix-ns-map "vrs") "syntax_version")}
+    "expression" {"@id" (str (get names/prefix-ns-map "vrs") "expression")}
+    "canonical_context" {"@id" (str (get names/prefix-ns-map "vrs") "canonical_context")}
+    "canonical_variation" {"@id" (str (get names/prefix-ns-map "vrs") "canonical_variation")}
+    "definition" {"@id" (str (get names/prefix-ns-map "vrs") "definition")}
+    "seq_expr" {"@id" (str (get names/prefix-ns-map "vrs") "seq_expr")}
+    "count" {"@id" (str (get names/prefix-ns-map "vrs") "count")}
+    "min" {"@id" (str (get names/prefix-ns-map "vrs") "min")}
+    "max" {"@id" (str (get names/prefix-ns-map "vrs") "max")}
+    "comparator" {"@id" (str (get names/prefix-ns-map "vrs") "comparator")}
+    "species_id" {"@id" (str (get names/prefix-ns-map "vrs") "species_id")}
+    "chr" {"@id" (str (get names/prefix-ns-map "vrs") "chr")}
+    "relative_copy_class" {"@id" (str (get names/prefix-ns-map "vrs") "relative_copy_class")}
 
 
-    ; map plurals to known guaranteed array types
-    "members" {"@id" (str (get local-property-names :vrs/members))
+    ;; map plurals to known guaranteed array types
+    "members" {"@id" (str (get names/local-property-names :vrs/members))
                "@container" "@set"}
-    "extensions" {"@id" (str (get local-property-names :vrs/extensions))
+    "extensions" {"@id" (str (get names/local-property-names :vrs/extensions))
                   "@container" "@set"}
-    "expressions" {"@id" (str (get local-property-names :vrs/expressions))
+    "expressions" {"@id" (str (get names/local-property-names :vrs/expressions))
                    "@container" "@set"}
 
-    ; VRS entities
-    "Extension" {"@id" (str (get local-class-names :vrs/Extension))}
-    "CanonicalVariationDescriptor" {"@id" (str (get local-class-names :vrs/CanonicalVariationDescriptor))
+    ;; VRS entities
+    "Extension" {"@id" (str (get names/local-class-names :vrs/Extension))}
+    "CanonicalVariationDescriptor" {"@id" (str (get names/local-class-names :vrs/CanonicalVariationDescriptor))
                                     "@type" "@id"}
-    "CanonicalVariation" {"@id" (str (get local-class-names :vrs/CanonicalVariation))
+    "CanonicalVariation" {"@id" (str (get names/local-class-names :vrs/CanonicalVariation))
                           "@type" "@id"}
-    "Allele" {"@id" (str (get local-class-names :vrs/Allele))
+    "Allele" {"@id" (str (get names/local-class-names :vrs/Allele))
               "@type" "@id"}
-    "Text" {"@id" (str (get local-class-names :vrs/Text))
+    "Text" {"@id" (str (get names/local-class-names :vrs/Text))
             "@type" "@id"}
-    "RelativeCopyNumber" {"@id" (str (get local-class-names :vrs/RelativeCopyNumber))
+    "RelativeCopyNumber" {"@id" (str (get names/local-class-names :vrs/RelativeCopyNumber))
                           "@type" "@id"}
-    "SequenceLocation" {"@id" (str (get local-class-names :vrs/SequenceLocation))
+    "SequenceLocation" {"@id" (str (get names/local-class-names :vrs/SequenceLocation))
                         "@type" "@id"}
-    "SequenceInterval" {"@id" (str (get local-class-names :vrs/SequenceInterval))
+    "SequenceInterval" {"@id" (str (get names/local-class-names :vrs/SequenceInterval))
                         "@type" "@id"}
-    "ChromosomeLocation" {"@id" (str (get local-class-names :vrs/ChromosomeLocation))
+    "ChromosomeLocation" {"@id" (str (get names/local-class-names :vrs/ChromosomeLocation))
                           "@type" "@id"}
-    "HumanCytoband" {"@id" (str (get local-class-names :vrs/HumanCytoband))
+    "HumanCytoband" {"@id" (str (get names/local-class-names :vrs/HumanCytoband))
                      "@type" "@id"}
-    "Number" {"@id" (str (get local-class-names :vrs/Number))
+    "Number" {"@id" (str (get names/local-class-names :vrs/Number))
               "@type" "@id"}
-    "LiteralSequenceExpression" {"@id" (str (get local-class-names :vrs/LiteralSequenceExpression))
+    "LiteralSequenceExpression" {"@id" (str (get names/local-class-names :vrs/LiteralSequenceExpression))
                                  "@type" "@id"}
-    "RepeatedSequenceExpression" {"@id" (str (get local-class-names :vrs/RepeatedSequenceExpression))
+    "RepeatedSequenceExpression" {"@id" (str (get names/local-class-names :vrs/RepeatedSequenceExpression))
                                   "@type" "@id"}
-    "DerivedSequenceExpression" {"@id" (str (get local-class-names :vrs/DerivedSequenceExpression))
+    "DerivedSequenceExpression" {"@id" (str (get names/local-class-names :vrs/DerivedSequenceExpression))
                                  "@type" "@id"}
-    "VariationMember" {"@id" (str (get local-class-names :vrs/VariationMember))
+    "VariationMember" {"@id" (str (get names/local-class-names :vrs/VariationMember))
                        "@type" "@id"}
-    "RecordMetadata" {"@id" (str (get local-class-names :vrs/RecordMetadata))
+    "RecordMetadata" {"@id" (str (get names/local-class-names :vrs/RecordMetadata))
                       "@type" "@id"}
-    "Expression" {"@id" (str (get local-class-names :vrs/Expression))
+    "Expression" {"@id" (str (get names/local-class-names :vrs/Expression))
                   "@type" "@id"}
 
-    ; Prefixes
-    ;"https://vrs.ga4gh.org/terms/"
+    ;; Prefixes
+    ;; "https://vrs.ga4gh.org/terms/"
     "rdf" {"@id" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
            "@prefix" true}
     "rdfs" {"@id" "http://www.w3.org/2000/01/rdf-schema#"
             "@prefix" true}
-    "vrs" {"@id" (get prefix-ns-map "vrs")
+    "vrs" {"@id" (get names/prefix-ns-map "vrs")
            "@prefix" true}
-    "cgterms" {"@id" (get prefix-ns-map "cgterms")
+    "cgterms" {"@id" (get names/prefix-ns-map "cgterms")
                "@prefix" true}}})
 
 (def variation-descriptor-query
@@ -784,5 +774,5 @@ fragment alleleFields on Allele {
     (-> model
         (jsonld/model-to-jsonld)
         (jsonld/jsonld-to-jsonld-framed (json/generate-string variation-frame))
-        ; TODO may consider adding scoped context to the vrs variation object, with vocab=vrs
+        ;; TODO may consider adding scoped context to the vrs variation object, with vocab=vrs
         (jsonld/jsonld-compact (json/generate-string (merge variation-context))))))

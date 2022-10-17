@@ -1,23 +1,29 @@
 (ns genegraph.transform.clinvar.common
-  (:require [cheshire.core :as json]
-            [clojure.data.csv :as csv]
+  (:require [clojure.data.csv :as csv]
             [clojure.java.io :as io]
-            [clojure.string :as s]
+            [clojure.string :as str]
             [genegraph.database.load :as l]
-            [genegraph.database.names :as names :refer [local-class-names
-                                                        local-property-names]]
+            [genegraph.database.names :as names]
             [genegraph.database.query :as q]
             [genegraph.database.query.types :as types]
             [genegraph.transform.clinvar.iri :as iri]
             [io.pedestal.log :as log])
-  (:import (org.apache.jena.rdf.model Model)
-           (genegraph.database.query.types RDFResource)))
+  (:import [genegraph.database.query.types RDFResource]
+           [org.apache.jena.rdf.model Model]))
 
-(defmulti transform-clinvar :genegraph.transform.clinvar/format)
+(defmacro trace
+  "Print a map of EXPRESSION and its value with location metadata."
+  [expression]
+  (let [{:keys [line column]} (meta &form)]
+    `(let [x# ~expression]
+       (do
+         (clojure.pprint/pprint
+          {:column ~column :file ~*file* :line ~line '~expression x#})
+         x#))))
 
+(defmulti clinvar-add-data  :genegraph.transform.clinvar/format)
 (defmulti clinvar-add-model :genegraph.transform.clinvar/format)
-
-(defmulti clinvar-add-data :genegraph.transform.clinvar/format)
+(defmulti transform-clinvar :genegraph.transform.clinvar/format)
 
 (defmethod clinvar-add-data :default [event]
   (log/debug :fn :clinvar-model-to-jsonld
@@ -26,8 +32,8 @@
   event)
 
 (defmulti clinvar-model-to-jsonld
-  "Multimethod for ClinVar events.
-          Takes an event, returns it annotated with the JSON-LD representation of the model."
+  "Multimethod for ClinVar events. Takes an event, returns it annotated
+  with the JSON-LD representation of the model."
   :genegraph.transform.clinvar/format)
 
 (defmethod clinvar-model-to-jsonld :default [event]
@@ -46,18 +52,11 @@
              :dispatch (:genegraph.transform.clinvar/format event))
   event)
 
-(def clinvar-jsonld-context {"@context" {"@vocab" iri/cgterms
-                                         "clingen" iri/cgterms
-                                         "sepio" "http://purl.obolibrary.org/obo/SEPIO_"
-                                         "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"}})
-
-(defn ^String json-prettify
-  [^String s]
-  (json/generate-string (json/parse-string s) {:pretty true}))
-
-(defn ^String json-unprettify
-  [^String s]
-  (json/generate-string (json/parse-string s)))
+(def clinvar-jsonld-context
+  {"@context" {"@vocab" iri/cgterms
+               "clingen" iri/cgterms
+               "sepio" "http://purl.obolibrary.org/obo/SEPIO_"
+               "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"}})
 
 (defn read-csv-with-header
   "Reads a CSV file, using the first line as headers, converting each remaining
@@ -127,7 +126,7 @@
                 clinvar-clinsig-map)))
 
 (defn normalize-clinvar-clinsig [clinsig]
-  (or (get clinvar-clinsig-map-by-clinsig (s/lower-case clinsig))
+  (or (get clinvar-clinsig-map-by-clinsig (str/lower-case clinsig))
       "other"))
 ;;;;; END REMOVE
 
@@ -191,8 +190,8 @@
   [m]
   (letfn [(resolve-key [k]
             (if (keyword? k)
-              (if (some #(= k %) (keys local-property-names))
-                (let [mapped-k (local-property-names k)]
+              (if (some #(= k %) (keys names/local-property-names))
+                (let [mapped-k (names/local-property-names k)]
                   (assert (not (nil? mapped-k)) (format "%s mapped from %s was nil" k mapped-k))
                   (str mapped-k))
                 (name k))
@@ -200,15 +199,15 @@
           (resolve-value [v]
             (cond (map? v) (genegraph-kw-to-iri v)
                   (vector? v) (map #(resolve-value %) v)
-                  (keyword? v) (if (some #(= v %) (keys local-class-names))
-                                 (let [mapped-v (local-class-names v)]
+                  (keyword? v) (if (some #(= v %) (keys names/local-class-names))
+                                 (let [mapped-v (names/local-class-names v)]
                                    (assert (not (nil? mapped-v))) (format "%s mapped from %s was nil" v mapped-v)
                                    (str mapped-v))
                                  (name v))
                   :default v))]
     (into {} (map (fn [[k v]]
-                    ; Take each k and v that are keywords and try to resolve k against local-property-names, and
-                    ; v against local-class-names. If keyword not in those maps, convert keyword to string (name)
+                                        ; Take each k and v that are keywords and try to resolve k against local-property-names, and
+                                        ; v against local-class-names. If keyword not in those maps, convert keyword to string (name)
                     (let [k2 (resolve-key k)
                           v2 (resolve-value v)]
                       (log/trace :mapped-values (format "%s -> %s, %s -> %s" k k2 v v2))
@@ -287,7 +286,7 @@ LIMIT 1")
   (apply concat
          (for [[k v] m]
            (if (sequential? v)
-             ; Take the list of lists of triples for each element, flatten one level
+             ;; Take the list of lists of triples for each element, flatten one level
              (apply concat
                     (for [v1 v]
                       (fields-to-extensions node-iri {k v1})))
@@ -312,6 +311,14 @@ LIMIT 1")
               :name (name k)
               :value v}]))
         (apply concat))))
+
+(comment
+  (def variation {:id 23 :release_date "yesterday" :name "fnord" :content "content" :a 0})
+  (def clinvar-variation-iri "clinvar-variation-iri")
+  (fields-to-extension-maps
+   (merge (dissoc variation :id :release_date :name :content)
+          {:clinvar_variation clinvar-variation-iri}))
+  )
 
 (defn replace-kvs
   "Recursively replace keys in input-map and its values by applying kv-mutate-fn.
@@ -374,9 +381,9 @@ LIMIT 1")
   "Recursively look up keys in property-names, if there, apply un-namespace-term to its value"
   [input-map]
   (letfn [(mutator [k v]
-            (let [property (get local-property-names k)]
+            (let [property (get names/local-property-names k)]
               (if property
-                (let [unnamespaced (un-namespace-term (str (get local-property-names k)))]
+                (let [unnamespaced (un-namespace-term (str (get names/local-property-names k)))]
                   (log/info :property property
                             :unnamespaced unnamespaced)
                   [unnamespaced v])
