@@ -297,7 +297,8 @@ LIMIT 1")
 
 (defn fields-to-extension-maps
   "Returns a seq of Extension maps for each field in input-map.
-   If a value in input-map is a seq, create an Extension for each element."
+   If a value in input-map is a seq, and expand-seqs? is true,
+   create an Extension for each element."
   ([input-map] (fields-to-extension-maps input-map {}))
   ([input-map {:keys [expand-seqs?]}]
    (->> (for [[k v] input-map]
@@ -432,6 +433,8 @@ LIMIT 1")
   (nil? (-> resource types/as-jena-resource .getURI)))
 
 (defn map-pop-out-lone-seq-values
+  "Returns INPUT-MAP with any values that are seqs of 1 element
+   replaced with that 1 element. Not recursive."
   [input-map]
   (into {} (map (fn [[k v]]
                   (if (and (sequential? v) (= 1 (count v)))
