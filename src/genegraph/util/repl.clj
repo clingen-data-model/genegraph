@@ -450,11 +450,6 @@
 ;; NM_004700.4(KCNQ4):c.853G>A (p.Gly285Ser)
 ;; variation 6241
 
-["SCV000840524"
- "SCV000198442"
- "SCV000026802"
- "SCV000041116"]
-
 
 #_(->> ["SCV000840524"
       "SCV000198442"
@@ -464,10 +459,10 @@
       #(rocks/rocks-get-raw-key clinvar-raw-complete (.getBytes (str "clinical_assertion_" %))))
      pprint)
 
-(def some-assertions (-> "test_events/clinvar.edn" io/resource slurp edn/read-string))
+#_(def some-assertions (-> "test_events/clinvar.edn" io/resource slurp edn/read-string))
 
 
-(->> some-assertions
+#_(->> some-assertions
      (map #(-> % ::event/value (json/parse-string true) :content))
      (filter #(= "trait_set" (:entity_type %)))
      (map :trait_ids)
@@ -479,10 +474,161 @@
      pprint
      )
 
-(->> some-assertions
+#_(->> some-assertions
      (map #(-> % ::event/value (json/parse-string true) :content))
      (filter #(= "trait" (:entity_type %)))
 
      pprint
-)
+     )
 
+
+
+(defn current-sop-version [report]
+  (if-let [sop (first (q/select "select ?sop where { ?r :bfo/has-part / :sepio/is-specified-by ?sop } " {:r report}))]
+    {:sop (re-find #"[0-9]" (q/ld1-> sop [:rdfs/label]))}
+    {:error-sop :no-sop}))
+
+(defn report-text [report]
+  (when-let [content-node (first (q/select "select ?cnt where
+{ ?r a :sepio/GeneValidityReport ;
+ :bfo/has-part ?cnt .
+ ?cnt :cnt/chars [] } " {:r report}))]
+    (json/parse-string (q/ld1-> content-node [:cnt/chars]) true)))
+
+(defn legacy-sop-versions [report]
+  (if-let [content-node (first (q/select "select ?cnt where
+{ ?r a :sepio/GeneValidityReport ;
+ :bfo/has-part ?cnt .
+ ?cnt :cnt/chars [] } " {:r report}))]
+    (let [report-text (json/parse-string (q/ld1-> content-node [:cnt/chars]) true)]
+      (select-keys report-text [:jsonMessageVersion
+                                :selectedSOPVersion
+                                :sopVersion]))
+    {:error :no-text}))
+
+(defn sop-versions [report]
+  (assoc 
+   (merge (current-sop-version report)
+          (legacy-sop-versions report))
+   :report report))
+
+(defonce sops (mapv sop-versions (q/select "select ?r where { ?r a :sepio/GeneValidityReport ;
+ :bfo/has-part ?cnt .
+ ?cnt :cnt/chars [] } ")))
+
+;; This one may be hard to track down... 
+;; ( :sop :report ) = 392
+;; error-sop are all unpublished
+;; ( :error-sop :jsonMessageVersion :sopVersion :report ) = 64
+;; This seems to reveal many problems
+;; ( :sop :jsonMessageVersion :sopVersion :report ) = 95
+;; Problem -- GRHL2
+;; ( :sop :jsonMessageVersion :selectedSOPVersion :sopVersion :report ) = 1
+
+;; All unpublished
+;; ( :error-sop :jsonMessageVersion :selectedSOPVersion :sopVersion :report ) = 17
+;; All GCILite
+  ;; ( :sop :jsonMessageVersion :report ) = 33
+
+;; Identifies GRHL2 curation as being problematic
+#_(->> (filter #(and (not= (:sop %) (:selectedSOPVersion %))
+                   (:jsonMessageVersion %)
+                   (:selectedSOPVersion %)
+                   (:sop %)) sops)
+       (map #(report-text (:report %))))
+
+;; Discovered GCILite
+#_(->> (filter #(and (not= (:sop %) (or (:selectedSOPVersion %)
+                                      (:sopVersion %)))
+                   (= (set (keys %)) #{:sop :jsonMessageVersion :report}))
+             sops)
+     (map :jsonMessageVersion)
+     frequencies)
+
+#_(->> (filter #(and (not= (:sop %) (or (:selectedSOPVersion %)
+                                      (:sopVersion %)))
+                   (= (set (keys %)) #{:sop :jsonMessageVersion :sopVersion :report}))
+             sops)
+     (map #(-> % :report report-text))
+     first)
+
+#_(->> (filter #(and (not= (:sop %) (or (:selectedSOPVersion %)
+                                      (:sopVersion %)))
+                 )
+             sops)
+     (map keys)
+     frequencies)
+
+#_(->> (filter :error-sop sops)
+     (map #(-> % :report report-text :statusPublishFlag))
+     frequencies)
+
+;; note unpublished reports leave legacy problems
+
+#_(defonce gci-original-batch (event-seq-from-directory "/users/tristan/data/genegraph/2022-09-19T1935/events/:gci-raw-snapshot"))
+
+#_(defonce slc17a8 (->> gci-original-batch (events-with-value #"8c399400") first))
+
+#_(->> (event-recorder/events-for-topic :gene-validity-raw) (take 3) (pmap event-analyzer/model-changed?) frequencies)
+
+(defn model-diff
+  "Compare the changes between the original model in EVENT and the model
+  created applying the current transformation."
+  [first-model second-model]
+  {:created (q/difference second-model first-model)
+   :deleted (q/difference first-model second-model)})
+
+#_(defonce blk (->> (event-recorder/events-for-topic :gene-validity-raw) (events-with-value #"b0e41840")  last))
+
+#_(write-event-value-to-disk "/users/tristan/Desktop/blk.edn" blk)
+
+(defn is-shitty-curation [event]
+  (let [model (-> event ::event/value gene-validity-refactor/parse-gdm)]
+    (seq (q/select "select ?individual where
+ { ?individual a <http://dataexchange.clinicalgenome.org/gci/individual> ;
+    <http://dataexchange.clinicalgenome.org/gci/scores> [] .
+[] <http://dataexchange.clinicalgenome.org/gci/probandWithPredictedOrProvenNull> [] .
+   FILTER NOT EXISTS { ?individual <http://dataexchange.clinicalgenome.org/gci/variantScores> [] } }" {} model))))
+
+#_(defonce shitty-curations
+  (->> (event-recorder/events-for-topic :gene-validity-raw)
+       (filter is-shitty-curation)))
+
+
+(defn shitty-curation-csv [shitty-curations]
+  (->> shitty-curations
+       (map #(get-in % [::ann/iri]))
+       set
+       (map
+        (fn [iri]
+          (let [r (q/resource iri)
+                gcep (first (q/select "select ?gcep where { ?assertion :sepio/has-subject ?r ;
+a :sepio/GeneValidityEvidenceLevelAssertion ;
+:sepio/qualified-contribution / :sepio/has-agent ?gcep }" {:r r}))]
+            [(s/replace iri "http://dataexchange.clinicalgenome.org/gci/" "https://curation.clinicalgenome.org/curation-central/")
+             (count (q/select "select ?evidence where { ?x ^ :sepio/has-subject / :sepio/has-evidence * ?evidence . ?evidence a / :rdfs/sub-class-of * :sepio/VariantEvidenceItem }" {:x r}))
+             (q/ld1-> r [:sepio/has-subject :skos/preferred-label])
+             (q/ld1-> r [:sepio/has-object :rdfs/label])
+             (q/ld1-> r [:sepio/has-qualifier :rdfs/label])
+             (when gcep (q/ld1-> gcep [:skos/preferred-label]))])))))
+
+#_(with-open [w (io/writer "/users/tristan/desktop/suspect-curations.csv")] (csv/write-csv w (shitty-curation-csv shitty-curations)))
+
+
+#_(:skos/preferred-label (first (q/select "select ?gcep where { ?assertion :sepio/has-subject ?r ;
+a :sepio/GeneValidityEvidenceLevelAssertion ;
+:sepio/qualified-contribution / :sepio/has-agent ?gcep }" {:r (q/resource "http://dataexchange.clinicalgenome.org/gci/fbe05e68-04fe-48b5-80e7-940e7f672aeb")})))
+
+
+
+#_(defonce aass
+  (->> (event-recorder/events-for-topic :gene-validity-raw) (events-with-value #"92e04f9e") last))
+
+#_(defonce abat
+  (->> (event-recorder/events-for-topic :gene-validity-raw) (events-with-value #"3a5138ad-d4b8-4ea1") last))
+
+#_(q/ld1-> (first (q/select "select ?activity where { ?approval :bfo/realizes  :sepio/ApproverRole }" {} (::q/model abat))) [:sepio/activity-date])
+
+#_(-> abat ::q/model gene-validity-refactor/legacy-website-id)
+
+#_(event-analyzer/model-diff abat)
