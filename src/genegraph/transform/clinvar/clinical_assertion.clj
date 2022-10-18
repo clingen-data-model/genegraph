@@ -127,26 +127,6 @@
         (assoc :genegraph.annotate/iri tid)
         add-contextualized)))
 
-
-#_(defn get-trait-by-id [trait-id release-date]
-    (let [;; Most recent trait with trait-id no later than release-date
-          rs (q/select "select ?i where {
-                      { ?i a :vrs/Disease } union { ?i a :vrs/Phenotype }
-                      ?i :cg/clinvar-trait-id ?trait_id .
-                      ?i :cg/release-date ?release_date .
-                      FILTER(?release_date <= ?max_release_date)
-                      }
-                      order by desc(?release_date)
-                      limit 1"
-                       {:trait_id trait-id
-                        :max_release_date release-date})]
-      (when (= 0 (count rs))
-        (log/error :fn :get-trait-by-id
-                   :msg "No matching trait found"
-                   :trait-id trait-id
-                   :release-date release-date))
-      (first rs)))
-
 (defn trait-id-to-medgen-id
   "The reason we can keep the fully qualified trait-iri URI as the id and still
    validate against the schema requiring a CURIE is that 'http:' is a valid prefix."
@@ -193,20 +173,7 @@
                                      :trait-ids trait-ids)
                           ;; Unversioned identifiers for the traits
                           (map #(str (ns-cg "trait") "_" %)
-                               trait-ids)
-                          ;; This code looks up the members. Commented out
-                          ;; because we are deferring this operation.
-                          #_(->> trait-ids
-                                 (map #(get-trait-by-id % (:release_date message)))
-                                 ((fn [traits]
-                                    (when (some #(= nil %) traits)
-                                      (log/error :msg "Got nil traits"
-                                                 :trait-set trait-set
-                                                 :trait-ids trait-ids
-                                                 :traits traits
-                                                 :release-date (:release_date message)))
-                                    traits))
-                                 (map #(trait-resource-for-output %))))})]
+                               trait-ids))})]
     (-> (assoc
          event
          :genegraph.annotate/data
@@ -261,29 +228,6 @@
           {:id (str trait-set)
            :type (str trait-set-type)}))))
 
-#_(defn get-trait-set-by-id [trait-set-id release-date]
-    (log/debug :fn :get-trait-set-by-id
-               :trait-set-id trait-set-id
-               :release-date release-date)
-    (let [rs (q/select "select ?i where {
-                      { ?i a :vrs/Condition }
-                      union { ?i a :vrs/Disease }
-                      union { ?i a :vrs/Phenotype }
-                      ?i :vrs/record-metadata ?rmd .
-                      ?rmd :owl/version-info ?release_date .
-                      ?i :cg/clinvar-trait-set-id ?trait_set_id .
-                      FILTER(?release_date <= ?max_release_date) }
-                      order by desc(?release_date)
-                      limit 1"
-                       {:trait_set_id trait-set-id
-                        :max_release_date release-date})]
-      (when (= 0 (count rs))
-        (log/error :fn :get-trait-set-by-id
-                   :msg "No matching trait set"
-                   :trait-set-id trait-set-id
-                   :release-date release-date))
-      (first rs)))
-
 (defn get-trait-set-by-version-of
   [^RDFResource trait-set-vof ^String release-date]
   (log/debug :fn :get-trait-set-by-version-of
@@ -311,15 +255,6 @@
                  :trait-set-vof trait-set-vof
                  :release-date release-date))
     (first rs)))
-
-#_(defn ^RDFResource proposition-object [event]
-    (let [message (:genegraph.transform.clinvar.core/parsed-value event)
-          assertion (:content message)
-          trait-set-id (:trait_set_id assertion)]
-      (if (not (nil? trait-set-id))
-        (let [trait-set-resource (get-trait-set-by-id trait-set-id (:release_date message))]
-          trait-set-resource)
-        (log/warn :fn :proposition-object :msg :nil-trait-set-id :message message))))
 
 ;; TODO This function is slower than it should be. Look into this.
 (defn variation-descriptor-by-clinvar-id [clinvar-id release-date]
@@ -419,34 +354,14 @@
   [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
-        #_#_subject-descriptor (variation-descriptor-by-clinvar-id
-                                (get assertion :variation_id)
-                                (get message :release_date))
         stmt-type (statement-type (:interpretation_description assertion))]
     (merge {:type (get statement-type-to-proposition-type stmt-type)
             :subject (get assertion :variation_id)
-            #_(if (not (nil? subject-descriptor))
-                (let [subject (q/ld1-> subject-descriptor [:rdf/value])]
-                  (str subject))
-                (do (log/error :fn :proposition
-                               :msg "No matching subject descriptor found"
-                               :variation-id (get assertion :variation_id)
-                               :release-date (get message :release_date)
-                               :message message)
-                    nil))
             :predicate (clinsig-and-statement-type-to-predicate
                         (normalize-clinsig-term (:interpretation_description assertion))
-                        stmt-type)
-            #_(let [;; Condition, Disease, Phenotype
-                    proposition-object-resource (proposition-object event)]
-                (if proposition-object-resource
-                  (trait-set-resource-for-output proposition-object-resource)
-                 ;; Not Provided (or some error in upstream trait mapping)
-                  {:id (str (ns-cg "not_provided"))
-                   :type "Phenotype"}))}
+                        stmt-type)}
            (when (:trait_set_id assertion)
              {:object (str (ns-cg "trait_set_") (:trait_set_id assertion))}))))
-
 
 (defn method
   ;; pubmed method citation format:
@@ -629,10 +544,10 @@
   (let [release-date (q/ld1-> assertion-resource [:vrs/record-metadata
                                                   :owl/version-info])
         ;; Assertion is stored with the subject-descriptor just being the variation id
+        ;; TODO try to speed up the variation-descriptor-by-clinvar-id function call
         subject-descriptor (variation-descriptor-by-clinvar-id
                             (q/ld1-> assertion-resource [:vrs/subject-descriptor])
-                            release-date)
-        _ (log/debug :finished :variation-descriptor-by-clinvar-id)]
+                            release-date)]
     {:id (str assertion-resource)
      :type (q/ld1-> assertion-resource [:rdf/type])
      :label (q/ld1-> assertion-resource [:rdfs/label])

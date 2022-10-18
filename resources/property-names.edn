@@ -230,7 +230,7 @@
  [:cg/medgen-id "http://dataexchange.clinicalgenome.org/terms/medgen_id"]
  [:cg/variation-id "http://dataexchange.clinicalgenome.org/terms/variation_id"]
  [:cg/deleted "http://dataexchange.clinicalgenome.org/terms/deleted"]
- [:cg/total_copies "http://dataexchange.clinicalgenome.org/terms/total_copies"] ; CNV normalization param
+ [:cg/total-copies "http://dataexchange.clinicalgenome.org/terms/total_copies"] ; CNV normalization param
  [:vrs/xrefs "https://vrs.ga4gh.org/terms/xrefs"]
  [:vrs/extensions "https://vrs.ga4gh.org/terms/extensions"]
  [:vrs/type "https://vrs.ga4gh.org/terms/type"]

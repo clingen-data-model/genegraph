@@ -4,14 +4,13 @@
             [clojure.java.io :as io]
             [clojure.string :as s]
             [genegraph.database.load :as l]
-            [genegraph.database.names :refer [local-class-names
-                                              local-property-names]]
-            [genegraph.database.names :as names]
+            [genegraph.database.names :as names :refer [local-class-names
+                                                        local-property-names]]
             [genegraph.database.query :as q]
             [genegraph.database.query.types :as types]
             [genegraph.transform.clinvar.iri :as iri]
             [io.pedestal.log :as log])
-  (:import (org.apache.jena.rdf.model Model) ;; (org.apache.jena.riot.writer JsonLDWriter) ; can remove? =tristan
+  (:import (org.apache.jena.rdf.model Model)
            (genegraph.database.query.types RDFResource)))
 
 (defmulti transform-clinvar :genegraph.transform.clinvar/format)
@@ -116,6 +115,9 @@
 
 
 ;;;;; BEGIN REMOVE
+;; This clinvar_clinsig-map.csv file should be obsoleted and removed.
+;; But it is referenced in some functions which implement functionality that may
+;; be re-incorporated soon. When that happens it should be refactored to remove these
 (def clinvar-clinsig-map
   (doall (read-csv-with-header (io/reader (io/resource "clinvar_clinsig-map.csv")))))
 
