@@ -340,18 +340,19 @@
                             :is_version_of vrd-unversioned
                             :version (:release_date message)}})
         ;; Add some info about how the canonical variation expression was selected
-        (update-in [:genegraph.annotate/data :extensions]
-                   (fn [extensions] (concat extensions
-                                            (common/fields-to-extension-maps
-                                             {:canonical_expression
-                                              (:expr (:expression nce))
-                                              :candidate_expressions
-                                              (map #_#(:expr %)
-                                                   #(identity {#_#_:type (:type %)
-                                                               :expression (:expr %)
-                                                               :label (:label %)})
-                                                   (::canonical-candidate-expressions event))}
-                                             {:expand-seqs? false}))))
+        (update-in
+         [:genegraph.annotate/data :extensions]
+         (fn [extensions]
+           (concat extensions
+                   (common/fields-to-extension-maps
+                    {:canonical_expression
+                     (:expr (:expression nce))
+                     :candidate_expressions
+                     (map #_#(:expr %)
+                          #(identity {#_#_:type (:type %)
+                                      :expression (:expr %)
+                                      :label (:label %)})
+                          (::canonical-candidate-expressions event))}))))
         (assoc :genegraph.annotate/iri vd-iri)
         add-contextualized)))
 

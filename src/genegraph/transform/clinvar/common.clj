@@ -297,20 +297,11 @@ LIMIT 1")
                 [ext-iri :rdf/value v]])))))
 
 (defn fields-to-extension-maps
-  "Returns a seq of Extension maps for each field in input-map.
-   If a value in input-map is a seq, and expand-seqs? is true,
-   create an Extension for each element."
-  ([input-map] (fields-to-extension-maps input-map {}))
-  ([input-map {:keys [expand-seqs?]}]
-   (->> (for [[k v] input-map]
-          (if (and expand-seqs? (sequential? v))
-            (->> (for [vi v]
-                   (fields-to-extension-maps {k vi}))
-                 (apply concat))
-            [{:type "Extension"
-              :name (name k)
-              :value v}]))
-        (apply concat))))
+  "Return Extension maps for the key/value items from INPUT-MAP. "
+  [input-map]
+  (letfn [(extension [m [k v]]
+            (conj m {:type "Extension" :name (name k) :value v}))]
+    (reduce extension [] input-map)))
 
 (comment
   (def variation {:id 23 :release_date "yesterday" :name "fnord" :content "content" :a 0})
