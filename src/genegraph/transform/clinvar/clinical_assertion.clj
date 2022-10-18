@@ -240,16 +240,17 @@
      query will perform successfully without it. If this assumption becomes no longer
      true, it will need to be re-added"
     "{ ?i a :vrs/Condition } union { ?i a :vrs/Disease } union { ?i a :vrs/Phenotype }")
-  (let [rs (q/select (str/join \space
-                               ["select ?i where {"
-                                "?i :vrs/record-metadata ?rmd ."
-                                "?rmd :dc/is-version-of ?vof ."
-                                "?rmd :owl/version-info ?release_date ."
-                                "FILTER(?release_date <= ?max_release_date) }"
-                                "order by desc(?release_date)"
-                                "limit 1"])
-                     {:vof (q/resource trait-set-vof)
-                      :max_release_date release-date})]
+  (let [rs (q/select
+            (str/join \space
+                      ["select ?i where {"
+                       "?i :vrs/record-metadata ?rmd ."
+                       "?rmd :dc/is-version-of ?vof ."
+                       "?rmd :owl/version-info ?release_date ."
+                       "FILTER(?release_date <= ?max_release_date) }"
+                       "order by desc(?release_date)"
+                       "limit 1"])
+            {:vof (q/resource trait-set-vof)
+             :max_release_date release-date})]
     (when-not (== 1 (count rs))
       (log/error :fn :get-trait-set-by-version-of
                  :msg "No matching trait set"
