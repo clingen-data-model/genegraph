@@ -61,6 +61,7 @@
   (let [prop-iri (resource (str gci-express-root "proposition_" id))
         contribution-iri (l/blank-node)]
     (concat [[iri :rdf/type :sepio/GeneValidityEvidenceLevelAssertion]
+             [iri :cg/website-legacy-id iri] ; for backward compatibility
              [iri :sepio/has-subject prop-iri]
              [iri :sepio/has-predicate :sepio/HasEvidenceLevel]
              [iri :sepio/has-object (evidence-level-label-to-concept
