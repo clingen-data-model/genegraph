@@ -50,8 +50,8 @@
                construct-variant-score
                construct-ar-variant-score
                construct-unscoreable-evidence
-               unlink-variant-scores-when-proband-scores-exist)
-
+               unlink-variant-scores-when-proband-scores-exist
+               unlink-segregations-when-no-proband-and-lod-scores)
 
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -271,13 +271,26 @@
 (defn clear-associated-snapshots [m]
   (if (map? m) (dissoc m "associatedClassificationSnapshots") m))
 
+
+(defn remove-key-when-empty
+  [m key]
+  (postwalk (fn [x] (if (and (map? x)
+                             (some-> (get x key)
+                                     empty?))
+                      (dissoc x key)
+                      x))
+            m))
+
+
 (defn preprocess-json
   "Walk GCI JSON prior to parsing as JSON-LD to clean up data."
   [gci-json]
   (->> (json/parse-string gci-json)
        (postwalk #(-> %
                       clear-associated-snapshots
-                      fix-hpo-ids))
+                      fix-hpo-ids
+                      (remove-key-when-empty "geneWithSameFunctionSameDisease")
+                      (remove-key-when-empty "normalExpression")))
        json/generate-string))
 
 
@@ -373,10 +386,12 @@
                         (construct-ar-variant-score params)
                         (construct-unscoreable-evidence params)
                         )
-        linked-model (q/union unlinked-model
+        unlinked-modified (unlink-segregations-when-no-proband-and-lod-scores
+                             {::q/model unlinked-model})
+        linked-model (q/union unlinked-modified
                               (construct-evidence-connections 
                                {::q/model
-                                (q/union unlinked-model
+                                (q/union unlinked-modified
                                          gdm-sepio-relationships)}))]
     (unlink-variant-scores-when-proband-scores-exist
      {::q/model (add-proband-scores linked-model)})))
