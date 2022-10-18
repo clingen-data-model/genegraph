@@ -1,6 +1,6 @@
 (ns genegraph.transform.clinvar.clinical-assertion
   (:require [cheshire.core :as json]
-            [clojure.string :as s]
+            [clojure.string :as str]
             [genegraph.database.load :as l]
             [genegraph.database.names :refer [local-class-names
                                               local-property-names
@@ -71,14 +71,14 @@
   "Returns the mapped normalized term for the raw input term.
    If the term is not known, return the mapping for 'other'"
   [term]
-  (get common/normalize-clinsig-map (s/lower-case term)
+  (get common/normalize-clinsig-map (str/lower-case term)
        (get common/normalize-clinsig-map "other")))
 
 (defn normalize-clinsig-code
   "Returns the mapped normalized code for the raw input term.
    If the term is not known, return the mapping for 'other'"
   [term]
-  (get common/normalize-clinsig-codes-map (s/lower-case term)
+  (get common/normalize-clinsig-codes-map (str/lower-case term)
        (get common/normalize-clinsig-codes-map "other")))
 
 (defn get-clinsig-class
@@ -97,8 +97,8 @@
     {:id qualified
      :type "Coding"
      :label (-> (normalize-clinsig-term (:interpretation_description assertion))
-                (s/replace " " "_")
-                (s/replace "/" "_"))}))
+                (str/replace " " "_")
+                (str/replace "/" "_"))}))
 
 (defn add-contextualized [event]
   (let [data (:genegraph.annotate/data event)]
@@ -189,15 +189,17 @@
   (comment
     "See comment in get-trait-set-resource-by-version-of"
     "{ ?i a :vrs/Disease } union { ?i a :vrs/Phenotype }")
-  (let [rs (q/select "select ?i where {
-                      ?i :vrs/record-metadata ?rmd .
-                      ?rmd :dc/is-version-of ?vof .
-                      ?rmd :owl/version-info ?release_date .
-                      FILTER(?release_date <= ?max_release_date) }
-                      order by desc(?release_date)
-                      limit 1"
-                     {:vof (q/resource trait-vof)
-                      :max_release_date max-release-date})]
+  (let [rs (q/select
+            (str/join \space
+                      ["select ?i where {"
+                       "?i :vrs/record-metadata ?rmd ."
+                       "?rmd :dc/is-version-of ?vof ."
+                       "?rmd :owl/version-info ?release_date ."
+                       "FILTER(?release_date <= ?max_release_date) }"
+                       "order by desc(?release_date)"
+                       "limit 1"])
+            {:vof (q/resource trait-vof)
+             :max_release_date max-release-date})]
     (if (= 0 (count rs))
       (log/error :msg "No trait found with version-of"
                  :is-version-of trait-vof)
@@ -209,7 +211,7 @@
   [trait-set]
   (let [trait-set-type (q/ld1-> trait-set [:rdf/type])]
     (log/debug :trait-set-type trait-set-type)
-    (case (s/replace (str trait-set-type) (get prefix-ns-map "vrs") "")
+    (case (str/replace (str trait-set-type) (get prefix-ns-map "vrs") "")
       "Disease" {:id (trait-id-to-medgen-id (str trait-set))
                  :type (str trait-set-type)}
       "Phenotype" {:id (trait-id-to-medgen-id (str trait-set))
@@ -240,15 +242,17 @@
      query will perform successfully without it. If this assumption becomes no longer
      true, it will need to be re-added"
     "{ ?i a :vrs/Condition } union { ?i a :vrs/Disease } union { ?i a :vrs/Phenotype }")
-  (let [rs (q/select "select ?i where {
-                      ?i :vrs/record-metadata ?rmd .
-                      ?rmd :dc/is-version-of ?vof .
-                      ?rmd :owl/version-info ?release_date .
-                      FILTER(?release_date <= ?max_release_date) }
-                      order by desc(?release_date)
-                      limit 1"
-                     {:vof (q/resource trait-set-vof)
-                      :max_release_date release-date})]
+  (let [rs (q/select
+            (str/join \space
+                      ["select ?i where {"
+                       "?i :vrs/record-metadata ?rmd ."
+                       "?rmd :dc/is-version-of ?vof ."
+                       "?rmd :owl/version-info ?release_date ."
+                       "FILTER(?release_date <= ?max_release_date) }"
+                       "order by desc(?release_date)"
+                       "limit 1"])
+            {:vof (q/resource trait-set-vof)
+             :max_release_date release-date})]
     (when (= 0 (count rs))
       (log/error :fn :get-trait-set-by-version-of
                  :msg "No matching trait set"
@@ -279,18 +283,19 @@
         ;; TODO the "clinvar_variation" pattern for ext[:vrs/name] should be
         ;; included, but it is very slow.
         ;;#?ext :vrs/name \"clinvar_variation \" .
-        rs (q/select "select ?i where {
-                      ?i a :vrs/CanonicalVariationDescriptor .
-                      ?i :vrs/extensions ?ext .
-
-                      ?ext :rdf/value ?variation_id .
-                      ?i :vrs/record-metadata ?rmd .
-                      ?rmd :owl/version-info ?version .
-                      FILTER(?version <= ?max_release_date) }
-                      order by desc(?version)
-                      limit 1"
-                     {:variation_id qualified-id
-                      :max_release_date release-date})]
+        rs (q/select
+            (str/join \space
+                      ["select ?i where {"
+                       "?i a :vrs/CanonicalVariationDescriptor ."
+                       "?i :vrs/extensions ?ext ."
+                       "?ext :rdf/value ?variation_id ."
+                       "?i :vrs/record-metadata ?rmd ."
+                       "?rmd :owl/version-info ?version ."
+                       "FILTER(?version <= ?max_release_date) }"
+                       "order by desc(?version)"
+                       "limit 1"])
+            {:variation_id qualified-id
+             :max_release_date release-date})]
     (when (and (< 1 (count rs))
                (< 1 (count (set (map :id rs)))))
       (log/error :fn :variation-descriptor-by-clinvar-id
@@ -411,9 +416,9 @@
                      [:genegraph.transform.clinvar.core/parsed-value
                       :content
                       :interpretation_comments])]
-    (s/join "\n" (->> interpretation-comments
-                      (map #(json/parse-string % true))
-                      (map :text)))))
+    (str/join "\n" (->> interpretation-comments
+                        (map #(json/parse-string % true))
+                        (map :text)))))
 
 (defn contributions [event]
   ;; TODO add Agent type to property-names and context
