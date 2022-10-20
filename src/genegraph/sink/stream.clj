@@ -95,17 +95,12 @@
                    :exception e
                    :msg "exception caught"
                    :partitions (.assignment consumer))
-         (ex-info (ex-message e)
-                  {:fn :poll-catch-exception
-                   :exception e
-                   :msg "exception caught"
-                   :partitions (.assignment consumer)}
-                  e))))
+         ::error)))
 
 (defn- poll-once
   "Poll the Kafka CONSUMER once. Retry up to RETRY times on failure."
   [consumer]
-  (loop [milliseconds 10 retry 4 cause nil]
+  (loop [milliseconds 10 retry 4]
     (when (zero? retry)
       (log/error :fn :poll-once
                  :msg "Polling failed"
@@ -114,12 +109,11 @@
       (throw (ex-info "Polling failed"
                       {:fn :poll-once
                        :milliseconds milliseconds
-                       :partitions (.assignment consumer)}
-                      cause)))
+                       :partitions (.assignment consumer)})))
     (let [result (poll-catch-exception consumer)]
-      (if-let [cause (ex-data result)]
+      (if (= ::error result)
         (do (Thread/sleep milliseconds)
-            (recur (* 2 milliseconds) (dec retry) cause))
+            (recur (* 2 milliseconds) (dec retry)))
         result))))
 
 (defn topic-cluster-key [topic]
