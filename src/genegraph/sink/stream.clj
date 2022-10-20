@@ -106,10 +106,7 @@
                  :msg "Polling failed"
                  :milliseconds milliseconds
                  :partitions (.assignment consumer))
-      (throw (ex-info "Polling failed"
-                      {:fn :poll-once
-                       :milliseconds milliseconds
-                       :partitions (.assignment consumer)})))
+      (throw (ex-info "Polling failed" {:partitions (.assignment consumer)})))
     (let [result (poll-catch-exception consumer)]
       (if (= ::error result)
         (do (Thread/sleep milliseconds)
