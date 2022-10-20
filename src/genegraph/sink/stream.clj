@@ -18,6 +18,8 @@
 
 (def config (->> "kafka.edn" io/resource slurp edn/read-string (postwalk #(if (symbol? %) (-> % resolve var-get) %))))
 
+(def backoff-interval 10)
+
 (defn consumer-topics []
   (mapv keyword (s/split env/dx-topics #";")))
       
@@ -94,8 +96,7 @@
       :error)))
 
 (defn- poll-once [consumer]
-  (let [max-retries 4
-        backoff-interval 10]
+  (let [max-retries 4]
     (loop [attempt-number 0]
       (let [poll-result (poll-catch-exception consumer)]
         (if-not (= :error poll-result)
@@ -104,9 +105,10 @@
             (when (>= attempt-number max-retries)
               (log/error :fn :poll-once
                          :msg "polling exceeds max retries"
-                         :partitions (.assignment consumer)))
+                         :partitions (.assignment consumer))
+              (throw (Exception. "Signal exception - polling at max retries")))
             (Thread/sleep (Math/pow backoff-interval attempt-number))
-            (recur (+ 1 attempt-number))))))))
+            (recur (inc attempt-number))))))))
 
 (defn topic-cluster-key [topic]
   (-> config :topics topic :cluster))
@@ -227,35 +229,53 @@
         latest-acceptable-poll (- (System/currentTimeMillis) max-drift)]
     (->> @consumers vals (map :last-polled) (some #(< latest-acceptable-poll %)))))
 
+
+(defn- get-topic-consumer!
+  [event-processing-fn topic]
+  (with-open [consumer (consumer-for-topic topic)]
+    (let [tp (topic-partitions consumer topic)
+          topic-name (-> config :topics topic :name)]
+      (swap! consumers assoc topic {:kafka-consumer consumer})
+      (.assign consumer tp)
+      (doseq [part tp]
+        (if-let [offset (get @current-offsets [topic-name (.partition part)])]
+          (.seek consumer part offset)
+          (.seekToBeginning consumer [part])))
+      (update-consumer-offsets! consumer tp)
+      (while @run-consumer
+        (swap! consumers assoc-in [topic :last-polled] (System/currentTimeMillis))
+        (when-let [records (poll-once consumer)]
+          (->> records
+               (map #(consumer-record-to-clj % topic))
+               event-processing-fn))
+        (update-consumer-offsets! consumer tp))
+      (swap! consumer-topic-state assoc topic :stopped)
+      (log/debug :fn :get-topic-consumer!
+                 :consumer-topic-state @consumer-topic-state
+                 :consumers-closed? (consumers-closed?))
+      (when (consumers-closed?)
+        (deliver consumer-topics-closed true)))))
+  
 (defn- assign-topic-consumer!
   "Return a function that creates a consumer, sets it to listen to all partitions available
   for that topic, assigns the most recently read offsets for those partitions, and keeps them
   up-to-date while they are read. Terminates when the run-consumer atom returns false"
   [event-processing-fn topic]
   (fn []
-    (with-open [consumer (consumer-for-topic topic)]
-      (let [tp (topic-partitions consumer topic)
-            topic-name (-> config :topics topic :name)]
-        (swap! consumers assoc topic {:kafka-consumer consumer})
-        (.assign consumer tp)
-        (doseq [part tp]
-          (if-let [offset (get @current-offsets [topic-name (.partition part)])]
-            (.seek consumer part offset)
-            (.seekToBeginning consumer [part])))
-        (update-consumer-offsets! consumer tp)
-        (while @run-consumer
-          (swap! consumers assoc-in [topic :last-polled] (System/currentTimeMillis))
-          (when-let [records (poll-once consumer)]
-            (->> records
-                 (map #(consumer-record-to-clj % topic))
-                 event-processing-fn))
-          (update-consumer-offsets! consumer tp))
-        (swap! consumer-topic-state assoc topic :stopped)
-        (log/debug :fn :assign-topic-consumer!
-                   :consumer-topic-state @consumer-topic-state
-                   :consumers-closed? (consumers-closed?))
-        (when (consumers-closed?)
-          (deliver consumer-topics-closed true))))))
+    (let [max-retries 5]
+      (loop [attempt-number 0]
+        (try
+          (get-topic-consumer! event-processing-fn topic)
+          (catch Exception e
+            (log/debug :fn :assign-topic-consumer!
+                       :msg "Caught exception on consumer failure"
+                       :topic topic)))
+        (when (>= attempt-number max-retries)
+          (log/error :fn :assign-topic-consumer!
+                     :msg "Kafka consumer re-open exceeds max retries"
+                     :topic topic))
+        (Thread/sleep (Math/pow backoff-interval (if (>= attempt-number max-retries) max-retries attempt-number)))
+        (recur (inc attempt-number))))))
 
 (defn wait-for-topics-up-to-date []
   @consumer-offsets-up-to-date)
