@@ -18,16 +18,18 @@
 
 (def config (->> "kafka.edn" io/resource slurp edn/read-string (postwalk #(if (symbol? %) (-> % resolve var-get) %))))
 
-(def backoff-interval 10)
+(def backoff-interval-ms
+  "The retry backoff interval in milliseconds."
+  10)
 
 (defn consumer-topics []
   (mapv keyword (s/split env/dx-topics #";")))
-      
+
 (defn offset-file []
   (str env/data-vol "/partition_offsets.edn"))
 
-;; This atom file may contain some, none, or all of the consumer topics defined 
-;; for processing in the environment. All offsets that have been previously 
+;; This atom file may contain some, none, or all of the consumer topics defined
+;; for processing in the environment. All offsets that have been previously
 ;; recorded in partition_offsets.edn are be preserved, and any new consumer topics
 ;; defined for processing will have their offset state tracked.
 ;; Map is in the form { [topic-name partition] current-offset}
@@ -68,7 +70,7 @@
                                  :producer-topic)})
 
 ;; Java Properties object defining configuration of Kafka client
-(defn- client-configuration 
+(defn- client-configuration
   "Create client "
   [broker-config]
   (let [props (new Properties)]
@@ -82,33 +84,43 @@
         partition-infos (.partitionsFor consumer topic-name)]
     (map #(TopicPartition. (.topic %) (.partition %)) partition-infos)))
 
-(defn- poll-catch-exception [consumer]
-  (try
-    (-> consumer
-        (.poll (Duration/ofMillis 500))
-        .iterator
-        iterator-seq)
-    (catch Exception e
-      (log/info :fn :poll-catch-exception
-                :exception e
-                :msg "exception caught"
-                :partitions (.assignment consumer))
-      :error)))
+(defn- poll-catch-exception
+  "Return result of polling Kafka CONSUMER or any Exception thrown."
+  [consumer]
+  (try (-> consumer
+           (.poll (Duration/ofMillis 500))
+           .iterator iterator-seq)
+       (catch Exception e
+         (log/info :fn :poll-catch-exception
+                   :exception e
+                   :msg "exception caught"
+                   :partitions (.assignment consumer))
+         (ex-info (ex-message e)
+                  {:fn :poll-catch-exception
+                   :exception e
+                   :msg "exception caught"
+                   :partitions (.assignment consumer)}
+                  e))))
 
-(defn- poll-once [consumer]
-  (let [max-retries 4]
-    (loop [attempt-number 0]
-      (let [poll-result (poll-catch-exception consumer)]
-        (if-not (= :error poll-result)
-          poll-result
-          (do
-            (when (>= attempt-number max-retries)
-              (log/error :fn :poll-once
-                         :msg "polling exceeds max retries"
-                         :partitions (.assignment consumer))
-              (throw (Exception. "Signal exception - polling at max retries")))
-            (Thread/sleep (Math/pow backoff-interval attempt-number))
-            (recur (inc attempt-number))))))))
+(defn- poll-once
+  "Poll the Kafka CONSUMER once. Retry up to RETRY times on failure."
+  [consumer]
+  (loop [milliseconds 10 retry 4 cause nil]
+    (when (zero? retry)
+      (log/error :fn :poll-once
+                 :msg "Polling failed"
+                 :milliseconds milliseconds
+                 :partitions (.assignment consumer))
+      (throw (ex-info "Polling failed"
+                      {:fn :poll-once
+                       :milliseconds milliseconds
+                       :partitions (.assignment consumer)}
+                      cause)))
+    (let [result (poll-catch-exception consumer)]
+      (if-let [cause (ex-data result)]
+        (do (Thread/sleep milliseconds)
+            (recur (* 2 milliseconds) (dec retry) cause))
+        result))))
 
 (defn topic-cluster-key [topic]
   (-> config :topics topic :cluster))
@@ -120,10 +132,13 @@
         cluster-key
         client-configuration)))
 
-(defn- consumer-for-topic [topic]
-  (let [cluster-config (topic-cluster-config topic)
-        consumer-config (merge-with into (:common cluster-config) (:consumer cluster-config))] 
-    (KafkaConsumer. consumer-config)))
+(defn- consumer-for-topic
+  "Return the KafkaConsumer for TOPIC."
+  [topic]
+  (->> topic topic-cluster-config
+       ((juxt :common :consumer))
+       (apply merge-with into)
+       KafkaConsumer.))
 
 (defn producer-for-topic!
   "Returns a single KafkaProducer per cluster, as KafkaProducers are thread-safe
@@ -255,7 +270,7 @@
                  :consumers-closed? (consumers-closed?))
       (when (consumers-closed?)
         (deliver consumer-topics-closed true)))))
-  
+
 (defn- assign-topic-consumer!
   "Return a function that creates a consumer, sets it to listen to all partitions available
   for that topic, assigns the most recently read offsets for those partitions, and keeps them
@@ -274,7 +289,7 @@
           (log/error :fn :assign-topic-consumer!
                      :msg "Kafka consumer re-open exceeds max retries"
                      :topic topic))
-        (Thread/sleep (Math/pow backoff-interval (if (>= attempt-number max-retries) max-retries attempt-number)))
+        (Thread/sleep (Math/pow backoff-interval-ms (if (>= attempt-number max-retries) max-retries attempt-number)))
         (recur (inc attempt-number))))))
 
 (defn wait-for-topics-up-to-date []
@@ -327,7 +342,7 @@
                 records))
             (mapv #(consumer-record-to-clj % topic)))))))
 
-(defn topic-data-to-disk 
+(defn topic-data-to-disk
   "Read topic data to disk. Assumes single partition topic."
   [topic dest]
   (with-open [c (consumer-for-topic topic)]
@@ -345,7 +360,7 @@
 
 (defn topic-data-to-rocksdb
   "Read topic data to disk. Assumes single partition topic. Optiionally accepts key-fn that accepts the
-  value off the topic and returns a sequence to use as key. In the event that key-fn returns nil or is not supplied, 
+  value off the topic and returns a sequence to use as key. In the event that key-fn returns nil or is not supplied,
   will use offset as key."
   ([topic db-name]
    (topic-data-to-rocksdb topic db-name {:key-fn (constantly nil)}))
@@ -385,7 +400,7 @@
            (let [annotated-record (consumer-record-to-clj record topic)
                  k (.array
                     (doto (ByteBuffer/allocate Long/BYTES)
-                      (.putLong (::offset annotated-record))))] 
+                      (.putLong (::offset annotated-record))))]
              (rocksdb/rocks-put-raw-key! db k annotated-record)))
          (when (< (.position c (first tps)) end)
            (recur (poll-once c))))))))
