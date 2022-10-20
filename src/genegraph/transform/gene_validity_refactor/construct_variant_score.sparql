@@ -108,7 +108,13 @@ where {
 
   OPTIONAL {
     ?individual gci:ageType ?ageType .
+  }
+
+  OPTIONAL {
     ?individual gci:ageValue ?ageValue .
+  }
+
+  OPTIONAL {
     ?individual gci:ageUnit ?ageUnit .
   }
 
