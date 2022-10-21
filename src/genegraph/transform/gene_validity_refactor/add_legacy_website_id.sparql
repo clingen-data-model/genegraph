@@ -1,0 +1,4 @@
+construct
+{ ?assertion :cg/website-legacy-id ?legacy_id }
+where
+{ ?assertion a :sepio/GeneValidityEvidenceLevelAssertion }

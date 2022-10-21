@@ -125,4 +125,5 @@
    :args {:iri {:type 'String}}
    :type :Resource
    :resolve (fn [_ args _]
-              (q/resource (:iri args)))})
+              (let [r (q/resource (:iri args))]
+                (or (q/ld1-> r [[:cg/website-legacy-id :<]]) r)))})
