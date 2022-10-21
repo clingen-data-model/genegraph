@@ -374,7 +374,7 @@
                                 first
                                 str
                                 (re-find #"^(.*/)([a-z0-9-]*)$"))]
-    (str assertion-base "assertion_" assertion-id "-" approval-date)))
+    (q/resource (str assertion-base "assertion_" assertion-id "-" approval-date))))
 
 (defn transform-gdm [gdm]
   (.setNsPrefixes gdm ns-prefixes)
