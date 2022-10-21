@@ -1,5 +1,7 @@
 (ns genegraph.env
-  (:require [io.pedestal.log :as log]))
+  "Read configuration from the process environment."
+  (:require [clojure.string  :as str]
+            [io.pedestal.log :as log]))
 
 (def base-dir (let [base-dir-env (or (System/getenv "GENEGRAPH_DATA_PATH")
                                      (System/getenv "CG_SEARCH_DATA_VOL"))]
@@ -12,7 +14,7 @@
 (def ^:dynamic data-vol (if data-version
                           (str base-dir "/" data-version)
                           base-dir))
-(def dx-topics (System/getenv "CG_SEARCH_TOPICS"))
+(def ^:private dx-topics (System/getenv "CG_SEARCH_TOPICS"))
 (def dx-jaas-config (System/getenv "DX_JAAS_CONFIG"))
 (def genegraph-bucket (System/getenv "GENEGRAPH_BUCKET"))
 (def use-gql-cache (Boolean/valueOf (System/getenv "GENEGRAPH_GQL_CACHE")))
@@ -33,7 +35,7 @@
 (def dx-key-pass (System/getenv "SERVEUR_KEY_PASS"))
 
 (def environment {:data-vol data-vol
-                  :dx-topics dx-topics
+                  :dx-topics (set (map keyword (str/split dx-topics #";")))
                   :genegraph-data-version data-version
                   :genegraph-bucket genegraph-bucket
                   :genegraph-gql-cache use-gql-cache

@@ -1,5 +1,5 @@
 (ns genegraph.sink.stream
-  "What is this namespace for?"
+  "This is the Kafka API?"
   (:require [clojure.edn        :as edn]
             [clojure.java.io    :as io]
             [clojure.string     :as str]
@@ -16,18 +16,14 @@
            [org.apache.kafka.common TopicPartition]
            [java.time Duration]))
 
-;; Why not just pull kafka.edn into here? =tbl
-
 (def config
+  "Why not just pull kafka.edn into here? =tbl"
   (->> "kafka.edn" io/resource slurp edn/read-string
        (postwalk #(if (symbol? %) (-> % resolve var-get) %))))
 
 (def backoff-interval-ms
   "The retry backoff interval in milliseconds."
   10)
-
-(defn consumer-topics []
-  (mapv keyword (str/split env/dx-topics #";")))
 
 (defn offset-file []
   (str env/data-vol "/partition_offsets.edn"))
@@ -133,7 +129,7 @@
   (->> topic topic-cluster-config
        ((juxt :common :consumer))
        (apply merge-with into)
-       KafkaConsumer.))
+       (new KafkaConsumer)))
 
 (defn producer-for-topic!
   "Returns a single KafkaProducer per cluster, as KafkaProducers are thread-safe
@@ -143,13 +139,12 @@
   (let [cluster-key (topic-cluster-key topic)
         cluster-config (topic-cluster-config topic)
         producer (get @producers cluster-key)]
-    (if producer
-      producer
-      (let [producer (-> (merge-with into (:common cluster-config) (:producer cluster-config))
-                         client-configuration
-                         KafkaProducer.)]
-        (swap! producers assoc cluster-key producer)
-        producer))))
+    (or producer
+        (let [producer (-> (merge-with into (:common cluster-config) (:producer cluster-config))
+                           client-configuration
+                           KafkaProducer.)]
+          (swap! producers assoc cluster-key producer)
+          producer))))
 
 (defn producer-record-for [kafka-topic-name key value]
    (ProducerRecord. kafka-topic-name key value))
@@ -162,31 +157,38 @@
     (swap! end-offsets merge end-offset-map)))
 
 (defn consumer-topic-names []
-  (->> (consumer-topics) (select-keys (:topics config)) vals (map :name) set))
+  (->> env/environment :dx-topics
+       (select-keys (:topics config))
+       vals (map :name) set))
 
-(defn filter-by-consumer-topic-names [offset-coll]
+(defn- filter-by-consumer-topic-names
   "Filter any map collection that is keyed by [topic partition]
    by the current list of topics defined in the environment."
+  [offset-coll]
   (reduce (fn [acc [[topic-name partition] offset]]
-            (if (contains? (consumer-topic-names) topic-name)
+            (if ((consumer-topic-names) topic-name)
               (assoc acc [topic-name partition] offset)
               acc))
           {}
           offset-coll))
 
 (defn offsets-up-to-date-status []
-(if (= (-> (filter-by-consumer-topic-names @current-offsets) keys set) (-> @end-offsets keys set))
-    (merge-with <= @end-offsets (filter-by-consumer-topic-names @current-offsets))
+  (if (= (-> (filter-by-consumer-topic-names @current-offsets) keys set)
+         (-> @end-offsets keys set))
+    (merge-with <= @end-offsets
+                (filter-by-consumer-topic-names @current-offsets))
     {}))
 
-(defn end-offsets-has-all-consumer-topics? []
-  "This is a gate to ensure that all topic for processing in the environment
-   have their end offsets recorded"
-  (= (->> @end-offsets keys (map first) count) (count (set (consumer-topics)))))
+(defn end-offsets-has-all-consumer-topics?
+  "True when offsets are recorded for all topics in the environment."
+  []
+  (= (->> @end-offsets keys (map first) count)
+     (-> env/environment :dx-topics count)))
 
-(defn consumers-up-to-date? []
+(defn consumers-up-to-date?
   "Checks if the consumers for the list of topics defined for processing
    in the environment have processed up to their topic partitions end offsets"
+  []
   (let [offsets-status (offsets-up-to-date-status)]
     (and (end-offsets-has-all-consumer-topics?)
          (some? (keys offsets-status))
@@ -267,9 +269,10 @@
         (deliver consumer-topics-closed true)))))
 
 (defn- assign-topic-consumer!
-  "Return a function that creates a consumer, sets it to listen to all partitions available
-  for that topic, assigns the most recently read offsets for those partitions, and keeps them
-  up-to-date while they are read. Terminates when the run-consumer atom returns false"
+  "Return a function that creates a consumer, sets it to listen to all
+  partitions available for that topic, assigns the most recently read
+  offsets for those partitions, and keeps them up-to-date while they
+  are read. Terminates when the run-consumer atom returns false"
   [event-processing-fn topic]
   (fn []
     (let [max-retries 5]
@@ -284,7 +287,10 @@
           (log/error :fn :assign-topic-consumer!
                      :msg "Kafka consumer re-open exceeds max retries"
                      :topic topic))
-        (Thread/sleep (Math/pow backoff-interval-ms (if (>= attempt-number max-retries) max-retries attempt-number)))
+        (Thread/sleep
+         (Math/pow backoff-interval-ms (if (>= attempt-number max-retries)
+                                         max-retries
+                                         attempt-number)))
         (recur (inc attempt-number))))))
 
 (defn wait-for-topics-up-to-date []
@@ -304,10 +310,10 @@
       (swap! consumer-topic-state assoc topic :running))))
 
 (defn run-consumers!
-  ([event-processing-fn]
-   (subscribe-consumers! event-processing-fn (consumer-topics)))
-  ([event-processing-fn consumer-topics]
-   (subscribe-consumers! event-processing-fn consumer-topics)))
+  "Do whatever this does with EVENT-PROCESSING-FN."
+  [event-processing-fn]
+  (->> env/environment :dx-topics
+       (subscribe-consumers! event-processing-fn)))
 
 (defn start-consumers! []
   (reset! run-consumer true))
@@ -347,16 +353,18 @@
       (.seekToBeginning c tps)
       (loop [records (poll-once c)]
         (doseq [r records]
-          (with-open [w (io/output-stream (str dest "/" (name topic) "-" (.offset r)))]
+          (with-open [w (io/output-stream
+                         (str dest "/" (name topic) "-" (.offset r)))]
             (.write w (nippy/freeze (consumer-record-to-clj r topic)))))
         (when (< (.position c (first tps)) end)
           (recur (poll-once c)))))))
 
 
 (defn topic-data-to-rocksdb
-  "Read topic data to disk. Assumes single partition topic. Optiionally accepts key-fn that accepts the
-  value off the topic and returns a sequence to use as key. In the event that key-fn returns nil or is not supplied,
-  will use offset as key."
+  "Read topic data to disk. Assumes single partition
+  topic. Optiionally accepts key-fn that accepts the value off the
+  topic and returns a sequence to use as key. In the event that key-fn
+  returns nil or is not supplied, will use offset as key."
   ([topic db-name]
    (topic-data-to-rocksdb topic db-name {:key-fn (constantly nil)}))
   ([topic db-name options]
