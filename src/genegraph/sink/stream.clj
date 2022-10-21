@@ -1,29 +1,33 @@
 (ns genegraph.sink.stream
-  (:require [genegraph.annotate :as annotate]
-            [genegraph.env :as env]
-            [clojure.java.io :as io]
-            [clojure.edn :as edn]
-            [io.pedestal.log :as log]
-            [clojure.string :as s]
-            [clojure.walk :refer [postwalk]]
-            [taoensso.nippy :as nippy]
-            [genegraph.rocksdb :as rocksdb])
-  (:import java.util.Properties
-           java.nio.ByteBuffer
-           [org.apache.kafka.clients.consumer KafkaConsumer Consumer ConsumerRecord ConsumerRecords]
-           [org.apache.kafka.clients.producer KafkaProducer Producer ProducerRecord]
-           [org.apache.kafka.common PartitionInfo TopicPartition]
-           [java.time Duration ZonedDateTime ZoneOffset LocalDateTime LocalDate Instant]
-           [java.time.format DateTimeFormatter]))
+  "What is this namespace for?"
+  (:require [clojure.edn        :as edn]
+            [clojure.java.io    :as io]
+            [clojure.string     :as str]
+            [clojure.walk       :refer [postwalk]]
+            [genegraph.annotate :as annotate]
+            [genegraph.env      :as env]
+            [genegraph.rocksdb  :as rocksdb]
+            [io.pedestal.log    :as log]
+            [taoensso.nippy     :as nippy])
+  (:import [java.util Properties]
+           [java.nio ByteBuffer]
+           [org.apache.kafka.clients.consumer KafkaConsumer]
+           [org.apache.kafka.clients.producer KafkaProducer ProducerRecord]
+           [org.apache.kafka.common TopicPartition]
+           [java.time Duration]))
 
-(def config (->> "kafka.edn" io/resource slurp edn/read-string (postwalk #(if (symbol? %) (-> % resolve var-get) %))))
+;; Why not just pull kafka.edn into here? =tbl
+
+(def config
+  (->> "kafka.edn" io/resource slurp edn/read-string
+       (postwalk #(if (symbol? %) (-> % resolve var-get) %))))
 
 (def backoff-interval-ms
   "The retry backoff interval in milliseconds."
   10)
 
 (defn consumer-topics []
-  (mapv keyword (s/split env/dx-topics #";")))
+  (mapv keyword (str/split env/dx-topics #";")))
 
 (defn offset-file []
   (str env/data-vol "/partition_offsets.edn"))
@@ -100,7 +104,7 @@
 (defn- poll-once
   "Poll the Kafka CONSUMER once. Retry up to RETRY times on failure."
   [consumer]
-  (loop [milliseconds 10 retry 4]
+  (loop [milliseconds 100 retry 7]
     (when (zero? retry)
       (log/error :fn :poll-once
                  :msg "Polling failed"
@@ -113,11 +117,11 @@
             (recur (* 2 milliseconds) (dec retry)))
         result))))
 
-(defn topic-cluster-key [topic]
+(defn- topic-cluster-key [topic]
   (-> config :topics topic :cluster))
 
-(defn topic-cluster-config [topic]
-   (let [cluster-key (topic-cluster-key topic)]
+(defn- topic-cluster-config [topic]
+  (let [cluster-key (topic-cluster-key topic)]
     (-> config
         :clusters
         cluster-key
@@ -235,8 +239,8 @@
         latest-acceptable-poll (- (System/currentTimeMillis) max-drift)]
     (->> @consumers vals (map :last-polled) (some #(< latest-acceptable-poll %)))))
 
-
 (defn- get-topic-consumer!
+  "Do something with EVENT-PROCESSING-FN on TOPIC?"
   [event-processing-fn topic]
   (with-open [consumer (consumer-for-topic topic)]
     (let [tp (topic-partitions consumer topic)
