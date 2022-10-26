@@ -70,7 +70,7 @@
 
 (defn normalize-canonical
   [^String variation-expression ^Keyword expression-type]
-  (log/info :fn :normalize-canonical :variation-expression variation-expression)
+  (log/debug :fn :normalize-canonical :variation-expression variation-expression)
   (let [response (http-get-with-cache vicc-db
                                       url-to-canonical
                                       {:query-params {"q" variation-expression
