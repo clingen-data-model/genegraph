@@ -215,6 +215,7 @@
  [:cg/diseases "http://dataexchange.clinicalgenome.org/terms/diseases"]
  [:cg/has-total-actionability-score "http://dataexchange.clinicalgenome.org/terms/has_total_actionability_score"]
  [:cg/has-total-actionability-outcome-intervention-pairs "http://dataexchange.clinicalgenome.org/terms/has_total_actionability_outcome_intervention_pairs"]
+ [:cg/website-legacy-id "http://dataexchange.clinicalgenome.org/terms/website_legacy_id"]
  [:cg/website-display-label "http://dataexchange.clinicalgenome.org/terms/website_display_label"]
  [:cg/review-status "http://dataexchange.clinicalgenome.org/terms/review_status"]
  [:cg/allele-origin "http://dataexchange.clinicalgenome.org/terms/allele_origin"]

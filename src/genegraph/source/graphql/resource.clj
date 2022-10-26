@@ -3,10 +3,12 @@
             [genegraph.source.graphql.common.cache :refer [defresolver]]))
 
 (defn iri [context args value]
-  (str value))
+  (or (some-> value (q/ld1-> [:cg/website-legacy-id]) str)
+      (str value)))
 
 (defn curie [context args value]
-  (q/curie value))
+  (q/curie (or (q/ld1-> value [:cg/website-legacy-id])
+               value)))
 
 (defresolver label [args resource]
   (first (concat (:skos/preferred-label resource)

@@ -51,7 +51,8 @@
                construct-ar-variant-score
                construct-unscoreable-evidence
                unlink-variant-scores-when-proband-scores-exist
-               unlink-segregations-when-no-proband-and-lod-scores)
+               unlink-segregations-when-no-proband-and-lod-scores
+               add-legacy-website-id)
 
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -351,6 +352,30 @@
                         :sepio/evidence-line-strength-score]))))
        proband-evidence-lines)))))
 
+(defn legacy-website-id
+  "The website uses a version of the assertion ID that incorporates
+  the approval date. Annotate the curation with this ID to retain
+  backward compatibility with the legacy schema."
+  [model]
+  (let [approval-date (some-> (q/select
+                               "select ?activity where { ?activity :bfo/realizes  :sepio/ApproverRole }"
+                               {}
+                               model)
+                              first
+                              (q/ld1-> [:sepio/activity-date]))
+        
+        [_
+         assertion-base
+         assertion-id]
+        (some->> (q/select
+                                 "select ?assertion where { ?assertion a :sepio/GeneValidityEvidenceLevelAssertion }"
+                           {}
+                           model)                                
+                                first
+                                str
+                                (re-find #"^(.*/)([a-z0-9-]*)$"))]
+    (q/resource (str assertion-base "assertion_" assertion-id "-" approval-date))))
+
 (defn transform-gdm [gdm]
   (.setNsPrefixes gdm ns-prefixes)
   (let [gdm-is-about-gene (first (gdm-is-about-gene-query {::q/model gdm}))
@@ -392,7 +417,11 @@
                               (construct-evidence-connections 
                                {::q/model
                                 (q/union unlinked-modified
-                                         gdm-sepio-relationships)}))]
+                                         gdm-sepio-relationships)})
+                              (add-legacy-website-id
+                               {::q/model unlinked-modified
+                                :legacy_id (legacy-website-id unlinked-modified)}
+                               ))]
     (unlink-variant-scores-when-proband-scores-exist
      {::q/model (add-proband-scores linked-model)})))
 
