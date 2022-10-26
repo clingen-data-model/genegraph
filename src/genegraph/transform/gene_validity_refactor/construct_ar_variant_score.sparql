@@ -12,10 +12,13 @@ prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
 construct {
   ?probandScoreEvidenceLine a :sepio/ProbandScoreCapEvidenceLine ;
+  :sepio/score-status ?scoreStatus ;
   :sepio/has-evidence ?individual , ?variantEvidenceLine .
 } where {
 
   ?individual gci:variantScores ?variantEvidenceLine .
+  
+  ?variantEvidenceLine gci:scoreStatus ?scoreStatus .
 
   # Need to construct evidence line for individual
   BIND(IRI(CONCAT(STR(?individual), "_proband_score_evidence_line")) AS ?probandScoreEvidenceLine ) .
