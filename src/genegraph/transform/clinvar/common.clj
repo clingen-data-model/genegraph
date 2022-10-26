@@ -1,17 +1,16 @@
 (ns genegraph.transform.clinvar.common
-  (:require [cheshire.core :as json]
-            [clojure.data.csv :as csv]
+  (:require [clojure.data.csv :as csv]
             [clojure.java.io :as io]
-            [clojure.string :as s]
+            [clojure.pprint :refer [pprint]]
+            [clojure.string :as str]
             [genegraph.database.load :as l]
-            [genegraph.database.names :as names :refer [local-class-names
-                                                        local-property-names]]
+            [genegraph.database.names :as names]
             [genegraph.database.query :as q]
             [genegraph.database.query.types :as types]
             [genegraph.transform.clinvar.iri :as iri]
             [io.pedestal.log :as log])
-  (:import (org.apache.jena.rdf.model Model)
-           (genegraph.database.query.types RDFResource)))
+  (:import (genegraph.database.query.types RDFResource)
+           (org.apache.jena.rdf.model Model)))
 
 (defmulti transform-clinvar :genegraph.transform.clinvar/format)
 
@@ -26,8 +25,8 @@
   event)
 
 (defmulti clinvar-model-to-jsonld
-  "Multimethod for ClinVar events.
-          Takes an event, returns it annotated with the JSON-LD representation of the model."
+  "Multimethod for ClinVar events. Takes an event, returns it annotated
+  with the JSON-LD representation of the model."
   :genegraph.transform.clinvar/format)
 
 (defmethod clinvar-model-to-jsonld :default [event]
@@ -50,14 +49,6 @@
                                          "clingen" iri/cgterms
                                          "sepio" "http://purl.obolibrary.org/obo/SEPIO_"
                                          "clinvar" "https://www.ncbi.nlm.nih.gov/clinvar/"}})
-
-(defn ^String json-prettify
-  [^String s]
-  (json/generate-string (json/parse-string s) {:pretty true}))
-
-(defn ^String json-unprettify
-  [^String s]
-  (json/generate-string (json/parse-string s)))
 
 (defn read-csv-with-header
   "Reads a CSV file, using the first line as headers, converting each remaining
@@ -127,7 +118,7 @@
                 clinvar-clinsig-map)))
 
 (defn normalize-clinvar-clinsig [clinsig]
-  (or (get clinvar-clinsig-map-by-clinsig (s/lower-case clinsig))
+  (or (get clinvar-clinsig-map-by-clinsig (str/lower-case clinsig))
       "other"))
 ;;;;; END REMOVE
 
@@ -139,8 +130,8 @@
         :vrs/TextUtilityVariation
         (= "Genotype" clinvar-type)
         :vrs/TextUtilityVariation
-        :default (do (log/error :msg "Unknown variation type")
-                     :geno/Allele)))
+        :else (do (log/error :msg "Unknown variation type")
+                  :geno/Allele)))
 
 (defn variation-geno-type
   [variation-type]
@@ -150,8 +141,8 @@
         :geno/Haplotype
         (= "Genotype" variation-type)
         :geno/Genotype
-        :default (do (log/error :msg "Unknown variation type")
-                     :geno/Allele)))
+        :else (do (log/error :msg "Unknown variation type")
+                  :geno/Allele)))
 
 (defn contribution-role
   "Define contribution type for different entities"
@@ -191,8 +182,8 @@
   [m]
   (letfn [(resolve-key [k]
             (if (keyword? k)
-              (if (some #(= k %) (keys local-property-names))
-                (let [mapped-k (local-property-names k)]
+              (if (some #(= k %) (keys names/local-property-names))
+                (let [mapped-k (names/local-property-names k)]
                   (assert (not (nil? mapped-k)) (format "%s mapped from %s was nil" k mapped-k))
                   (str mapped-k))
                 (name k))
@@ -200,15 +191,15 @@
           (resolve-value [v]
             (cond (map? v) (genegraph-kw-to-iri v)
                   (vector? v) (map #(resolve-value %) v)
-                  (keyword? v) (if (some #(= v %) (keys local-class-names))
-                                 (let [mapped-v (local-class-names v)]
-                                   (assert (not (nil? mapped-v))) (format "%s mapped from %s was nil" v mapped-v)
+                  (keyword? v) (if (some #(= v %) (keys names/local-class-names))
+                                 (let [mapped-v (names/local-class-names v)]
+                                   (assert (not (nil? mapped-v)) (format "%s mapped from %s was nil" v mapped-v))
                                    (str mapped-v))
                                  (name v))
-                  :default v))]
+                  :else v))]
     (into {} (map (fn [[k v]]
-                    ; Take each k and v that are keywords and try to resolve k against local-property-names, and
-                    ; v against local-class-names. If keyword not in those maps, convert keyword to string (name)
+                    ;; Take each k and v that are keywords and try to resolve k against local-property-names, and
+                    ;; v against local-class-names. If keyword not in those maps, convert keyword to string (name)
                     (let [k2 (resolve-key k)
                           v2 (resolve-value v)]
                       (log/trace :mapped-values (format "%s -> %s, %s -> %s" k k2 v v2))
@@ -247,12 +238,12 @@ LIMIT 1")
   [iri-resource rdf-type]
   (log/debug :fn ::get-previous-resource :iri-resource iri-resource :rdf-type rdf-type)
   (let [;rdf-type (q/resource (ns-cg "ClinVarVCVStatement"))
-        ; Get the resource of the thing this model is a version of
-        ; For variation archive this is the unversioned iri
+        ;: Get the resource of the thing this model is a version of
+        ;: For variation archive this is the unversioned iri
         ;iri-resource (first (iri-for-type rdf-type model))
         version-of (q/ld1-> iri-resource [:dc/is-version-of])
-        ; other-versions (q/ld-> version-of [[:dc/is-version-of :<]])
-        ; Query whole database for any resources which are also a version of this
+        ;: other-versions (q/ld-> version-of [[:dc/is-version-of :<]])
+        ;: Query whole database for any resources which are also a version of this
         previous (q/select previous-resource-sparql
                            {:type rdf-type
                             :input_release_date (q/ld1-> iri-resource [:cg/release-date])
@@ -287,7 +278,7 @@ LIMIT 1")
   (apply concat
          (for [[k v] m]
            (if (sequential? v)
-             ; Take the list of lists of triples for each element, flatten one level
+             ;; Take the list of lists of triples for each element, flatten one level
              (apply concat
                     (for [v1 v]
                       (fields-to-extensions node-iri {k v1})))
@@ -300,18 +291,18 @@ LIMIT 1")
 (defn fields-to-extension-maps
   "Returns a seq of Extension maps for each field in input-map.
    If a value in input-map is a seq, and expand-seqs? is true,
-   create an Extension for each element."
+   create an Extension for each element.
+   example:
+   (fields-to-extension-maps
+    {:a :A :b :B :d [:D1 :D2]}
+    {:expand-seqs? true})"
   ([input-map] (fields-to-extension-maps input-map {}))
   ([input-map {:keys [expand-seqs?]}]
-   (->> (for [[k v] input-map]
-          (if (and expand-seqs? (sequential? v))
-            (->> (for [vi v]
-                   (fields-to-extension-maps {k vi}))
-                 (apply concat))
-            [{:type "Extension"
-              :name (name k)
-              :value v}]))
-        (apply concat))))
+   (letfn [(make-ext [agg [k v]]
+             (if (and (sequential? v) expand-seqs?)
+               (reduce make-ext agg (map #(vector k %) v)) ;; reduce pairs of k with each v
+               (conj agg {:type "Extension" :name (name k) :value v})))]
+     (reduce make-ext [] input-map))))
 
 (defn replace-kvs
   "Recursively replace keys in input-map and its values by applying kv-mutate-fn.
@@ -374,9 +365,9 @@ LIMIT 1")
   "Recursively look up keys in property-names, if there, apply un-namespace-term to its value"
   [input-map]
   (letfn [(mutator [k v]
-            (let [property (get local-property-names k)]
+            (let [property (get names/local-property-names k)]
               (if property
-                (let [unnamespaced (un-namespace-term (str (get local-property-names k)))]
+                (let [unnamespaced (un-namespace-term (str (get names/local-property-names k)))]
                   (log/info :property property
                             :unnamespaced unnamespaced)
                   [unnamespaced v])
@@ -424,7 +415,7 @@ LIMIT 1")
   them into a Model. These triples can be used as input to l/statements-to-model.
   NOTE: that only works when all the properties of the resource are in property-names.edn"
   [resource]
-  ; [k v] -> [r k v]
+  ;: [k v] -> [r k v]
   (map #(cons resource %) (into {} resource)))
 
 (defn is-RDFResource? [thing]

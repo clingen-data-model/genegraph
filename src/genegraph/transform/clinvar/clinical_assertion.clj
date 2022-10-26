@@ -253,7 +253,7 @@
                        "limit 1"])
             {:vof (q/resource trait-set-vof)
              :max_release_date release-date})]
-    (when (= 0 (count rs))
+    (when-not (== 1 (count rs))
       (log/error :fn :get-trait-set-by-version-of
                  :msg "No matching trait set"
                  :trait-set-vof trait-set-vof

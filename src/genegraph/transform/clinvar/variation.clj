@@ -2,26 +2,20 @@
   (:require [genegraph.database.query :as q]
             [genegraph.database.names :as names :refer [local-property-names
                                                         local-class-names
-                                                        property-uri->keyword
                                                         prefix-ns-map]]
-            [genegraph.util :refer [str->bytestream
-                                    dissoc-ns]]
             [genegraph.transform.clinvar.common :as common]
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.jsonld.common :as jsonld]
             [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.annotate.cnv :as cnv]
-            [clojure.pprint :refer [pprint]]
             [cheshire.core :as json]
             [io.pedestal.log :as log]))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
 (def variation-frame
   "Frame map for variation"
-  {#_#_"@type" clinvar-variation-type
-   #_#_"@type" "https://vrs.ga4gh.org/terms/CategoricalVariationDescriptor"
-   "@type" "https://vrs.ga4gh.org/terms/CanonicalVariationDescriptor"})
+  {"@type" "https://vrs.ga4gh.org/terms/CanonicalVariationDescriptor"})
 
 (declare variation-context)
 
@@ -342,24 +336,25 @@
                                            (:syntax-version expr)))
                         (into []))
           :subject_variation_descriptor ()
-            ;;  :value_id ()
+          ;;  :value_id ()
           :canonical_variation (:normalized nce)
           :record_metadata {:type "RecordMetadata"
                             :is_version_of vrd-unversioned
                             :version (:release_date message)}})
         ;; Add some info about how the canonical variation expression was selected
-        (update-in [:genegraph.annotate/data :extensions]
-                   (fn [extensions] (concat extensions
-                                            (common/fields-to-extension-maps
-                                             {:canonical_expression
-                                              (:expr (:expression nce))
-                                              :candidate_expressions
-                                              (map #_#(:expr %)
-                                               #(identity {;;:type (:type %)
-                                                           :expression (:expr %)
-                                                           :label (:label %)})
-                                                   (::canonical-candidate-expressions event))}
-                                             {:expand-seqs? false}))))
+        (update-in
+         [:genegraph.annotate/data :extensions]
+         (fn [extensions] (concat extensions
+                                  (common/fields-to-extension-maps
+                                   {:canonical_expression
+                                    (:expr (:expression nce))
+                                    :candidate_expressions
+                                    (map #_#(:expr %)
+                                     #(identity {;;:type (:type %)
+                                                 :expression (:expr %)
+                                                 :label (:label %)})
+                                         (::canonical-candidate-expressions event))}
+                                   {:expand-seqs? false}))))
         (assoc :genegraph.annotate/iri vd-iri)
         add-contextualized)))
 
@@ -606,14 +601,14 @@
 
 (def variation-context
   {"@context"
-   {; Properties
+   {;; Properties
     "is_version_of" {"@id" (str (get local-property-names :dc/is-version-of))
                      "@type" "@id"}
     "type" {"@id" "@type"
             "@type" "@id"}
     "name" {"@id" (str (get local-property-names :vrs/name))}
 
-    ;"value" {"@id" "@value"}
+    ;;"value" {"@id" "@value"}
     "value" {"@id" "rdf:value"}
     "label" {"@id" "rdfs:label"}
 
@@ -627,8 +622,8 @@
     ;; "_id" {"@id" "@id"
     ;;        "@type" "@id"}
 
-    ; eliminate vrs prefixes on vrs variation terms
-    ; VRS properties
+    ;; eliminate vrs prefixes on vrs variation terms
+    ;; VRS properties
     "variation" {"@id" (str (get prefix-ns-map "vrs") "variation")}
     "complement" {"@id" (str (get prefix-ns-map "vrs") "complement")}
     "interval" {"@id" (str (get prefix-ns-map "vrs") "interval")}
@@ -657,7 +652,7 @@
     "relative_copy_class" {"@id" (str (get prefix-ns-map "vrs") "relative_copy_class")}
 
 
-    ; map plurals to known guaranteed array types
+    ;; map plurals to known guaranteed array types
     "members" {"@id" (str (get local-property-names :vrs/members))
                "@container" "@set"}
     "extensions" {"@id" (str (get local-property-names :vrs/extensions))
@@ -665,7 +660,7 @@
     "expressions" {"@id" (str (get local-property-names :vrs/expressions))
                    "@container" "@set"}
 
-    ; VRS entities
+    ;; VRS entities
     "Extension" {"@id" (str (get local-class-names :vrs/Extension))}
     "CanonicalVariationDescriptor" {"@id" (str (get local-class-names :vrs/CanonicalVariationDescriptor))
                                     "@type" "@id"}
@@ -700,8 +695,8 @@
     "Expression" {"@id" (str (get local-class-names :vrs/Expression))
                   "@type" "@id"}
 
-    ; Prefixes
-    ;"https://vrs.ga4gh.org/terms/"
+    ;; Prefixes
+    ;; "https://vrs.ga4gh.org/terms/"
     "rdf" {"@id" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
            "@prefix" true}
     "rdfs" {"@id" "http://www.w3.org/2000/01/rdf-schema#"
@@ -784,5 +779,5 @@ fragment alleleFields on Allele {
     (-> model
         (jsonld/model-to-jsonld)
         (jsonld/jsonld-to-jsonld-framed (json/generate-string variation-frame))
-        ; TODO may consider adding scoped context to the vrs variation object, with vocab=vrs
+        ;; TODO may consider adding scoped context to the vrs variation object, with vocab=vrs
         (jsonld/jsonld-compact (json/generate-string (merge variation-context))))))
