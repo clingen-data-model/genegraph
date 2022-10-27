@@ -37,8 +37,10 @@ where {
   gci:rescue ?gciRescue  ;
   gci:label ?evidenceLabel .
 
-  ?gciRescue gci:explanation ?evidenceDescription ;
-  gci:rescueType ?gciType .
+  OPTIONAL {
+    ?gciRescue gci:explanation ?evidenceDescription .
+  }
+  ?gciRescue gci:rescueType ?gciType .
 
   ?evidenceLineType gcixform:hasGCIType ?gciType ;
   gcixform:hasEvidenceItemType ?evidenceItemType ;
