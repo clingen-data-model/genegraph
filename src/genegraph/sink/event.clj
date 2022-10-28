@@ -1,19 +1,15 @@
 (ns genegraph.sink.event
-  (:require [genegraph.env :as env]
-            [genegraph.database.query :as q]
+  (:require [genegraph.database.query :as q]
             [genegraph.database.load :refer [load-model remove-model]]
-            [genegraph.database.util :refer [begin-write-tx close-write-tx write-tx]]
+            [genegraph.database.util :refer [write-tx]]
             [genegraph.source.graphql.common.cache :as cache]
             [genegraph.response-cache :as response-cache]
             [genegraph.sink.event-recorder :as event-recorder]
             [genegraph.interceptor :as ggintercept :refer [interceptor-enter-def]]
-            [genegraph.annotate :as ann :refer [add-model-interceptor
-                                                add-iri-interceptor
-                                                add-validation-interceptor
-                                                add-subjects-interceptor]]
+            [genegraph.annotate :as ann]
             [genegraph.annotate.serialization :as ser]
             [genegraph.sink.stream :as stream]
-            [genegraph.suggest.suggesters :as suggest :refer [update-suggesters-interceptor]]
+            [genegraph.suggest.suggesters :as suggest]
             [mount.core :as mount :refer [defstate]]
             [io.pedestal.interceptor :as intercept]
             [io.pedestal.interceptor.chain :as chain :refer [terminate]]
