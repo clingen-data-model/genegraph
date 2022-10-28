@@ -24,7 +24,9 @@
   (log/debug :fn :add-data)
   (try
     (let [event-with-json (add-parsed-value event)
-          _ (log/info :entity_type (get-in event-with-json
+          _ (log/info :fn :genegraph.transform.clinvar.core/add-data
+                      :offset (:genegraph.sink.stream/offset event)
+                      :entity_type (get-in event-with-json
                                            [::parsed-value :content :entity_type])
                       :id (get-in event-with-json [::parsed-value :content :id]
                                   (get-in event-with-json [::parsed-value :content]))
@@ -63,21 +65,28 @@
                                         (json/generate-string
                                          (:genegraph.annotate/data-contextualized event)))
                                        {:format :json-ld}))
-    event))
+    (-> event
+        ;; Construct an empty model so downstream interceptors that try to read it dont get NPE
+        (assoc ::q/model (l/statements-to-model []))
+        (update :exception conj {:fn :add-model-from-contextualized-data
+                                 :msg "Event did not have contextualized data"
+                                 :entity-type (-> event :genegraph.transform.clinvar/format)}))))
 
-(defmethod add-model :clinvar-raw [event]
-  "Construct an Apache Jena Model for the message contained in event under :genegraph.sink.event/value.
-  Set it to key :genegraph.database.query/model."
+(defmethod add-model :clinvar-raw
+  [event]
+  ;; Construct an Apache Jena Model for the message contained in event under :genegraph.sink.event/value.
+  ;; Set it to key :genegraph.database.query/model.
   (try
     (let [event (-> event
                     add-parsed-value
                     (#(assoc % :genegraph.transform.clinvar/format (get-clinvar-format (::parsed-value %))))
+                    xform-types/add-data
                     add-model-from-contextualized-data)]
       (log/trace :fn :add-model :event event)
       event)
     (catch Exception e
       (log/error :fn :add-model :msg "Exception in clinvar add-model" :exception e)
-      (assoc event :exception e))))
+      (update event :exception conj e))))
 
 (defmethod clinvar-model-to-jsonld :default [event]
   (log/warn :fn ::clinvar-model-to-jsonld
