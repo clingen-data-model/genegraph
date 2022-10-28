@@ -283,6 +283,15 @@
                       :variation)
      :label (-> event ::prioritized-expression :expr)}
     (let [candidate-expressions (::canonical-candidate-expressions event)
+
+          ;; Temporary fix for timing out dup exprs
+          ;; https://github.com/clingen-data-model/genegraph/issues/698
+          non-cnv-dup? (fn [{:keys [expr type]}]
+                         (and (string? expr)
+                              (.contains expr "dup") ; implies not spdi or cnv
+                              (not= :cnv type)))
+          candidate-expressions (filter (comp not non-cnv-dup?) candidate-expressions)
+
           _ (log/info :candidate-expressions candidate-expressions)
           ;; each vrs-ret[:variation] is the structure in the 'variation', 'canonical_variaton' (or equivalent)
           ;; field in the normalization service response body
@@ -293,13 +302,13 @@
                                            :expression-type (-> ce :type)})
                                          :variation)
                         :expression ce
-                        :label (-> ce :label)}))]
-      (let [selected (or (some #(when (not= "Text" (get-in (%) [:normalized :canonical_context :type]))
-                                  (%))
-                               vrs-rets)
-                         ((first vrs-rets)))]
-        (log/debug :selected selected)
-        selected))))
+                        :label (-> ce :label)}))
+          selected (or (some #(when (not= "Text" (get-in (%) [:normalized :canonical_context :type]))
+                                (%))
+                             vrs-rets)
+                       ((first vrs-rets)))]
+      (log/debug :selected selected)
+      selected)))
 
 (defn add-data-for-variation
   "Returns msg with :genegraph.annotate/data and :genegraph.annotate/data-contextualized added.
