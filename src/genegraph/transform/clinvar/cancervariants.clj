@@ -70,10 +70,11 @@
 
 (defn normalize-canonical
   [^String variation-expression ^Keyword expression-type]
-  (log/debug :fn :normalize-canonical :variation-expression variation-expression)
+  (log/info :fn :normalize-canonical :variation-expression variation-expression)
   (let [response (http-get-with-cache vicc-db
                                       url-to-canonical
-                                      {:query-params {"q" variation-expression
+                                      {:throw-exceptions false
+                                       :query-params {"q" variation-expression
                                                       "fmt" (name expression-type)
                                                       "untranslatable_returns_text" true}})
         status (:status response)]
@@ -89,7 +90,8 @@
   (log/info :fn :normalize-absolute-copy-number :input-map input-map)
   (let [response (http-get-with-cache vicc-db
                                       url-absolute-cnv
-                                      {:query-params
+                                      {:throw-exceptions false
+                                       :query-params
                                        (into {"untranslatable_returns_text" true}
                                              (map #(vector (-> % first name) (-> % second))
                                                   (select-keys input-map [:assembly
