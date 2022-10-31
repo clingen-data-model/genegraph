@@ -1,0 +1,2002 @@
+({:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     ({"@Assembly" "NCBI36",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "NCBI36",
+        "@change" "g.(?_31474518)_(33323031_?)dup",
+        "@sequenceAccession" "NC_000017",
+        "@sequenceAccessionVersion" "NC_000017.9",
+        "@sequenceVersion" "9",
+        "Expression"
+        {"$" "NC_000017.9:g.(?_31474518)_(33323031_?)dup"}}}
+      {"@Assembly" "GRCh38",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "GRCh38",
+        "@change" "g.(?_357933)_(2127304_?)dup",
+        "@sequenceAccession" "NT_187614",
+        "@sequenceAccessionVersion" "NT_187614.1",
+        "@sequenceVersion" "1",
+        "Expression" {"$" "NT_187614.1:g.(?_357933)_(2127304_?)dup"}}}
+      {"@Assembly" "GRCh37",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "GRCh37",
+        "@change" "g.(?_34508117)_(36248918_?)dup",
+        "@sequenceAccession" "NC_000017",
+        "@sequenceAccessionVersion" "NC_000017.10",
+        "@sequenceVersion" "10",
+        "Expression"
+        {"$" "NC_000017.10:g.(?_34508117)_(36248918_?)dup"}}})},
+    "Location"
+    {"CytogeneticLocation" {"$" "17q12"},
+     "SequenceLocation"
+     ({"@display_stop" "33323031",
+       "@innerStop" "33323031",
+       "@AssemblyStatus" "previous",
+       "@Accession" "NC_000017.9",
+       "@Assembly" "NCBI36",
+       "@AssemblyAccessionVersion" "GCF_000001405.12",
+       "@innerStart" "31474518",
+       "@Chr" "17",
+       "@display_start" "31474518"}
+      {"@display_stop" "2127304",
+       "@innerStop" "2127304",
+       "@AssemblyStatus" "current",
+       "@Accession" "NT_187614.1",
+       "@Assembly" "GRCh38",
+       "@AssemblyAccessionVersion" "GCF_000001405.38",
+       "@innerStart" "357933",
+       "@forDisplay" "true",
+       "@Chr" "17",
+       "@display_start" "357933"}
+      {"@display_stop" "36248918",
+       "@innerStop" "36248918",
+       "@AssemblyStatus" "previous",
+       "@variantLength" "1798514",
+       "@Accession" "NC_000017.10",
+       "@Assembly" "GRCh37",
+       "@AssemblyAccessionVersion" "GCF_000001405.25",
+       "@innerStart" "34508117",
+       "@Chr" "17",
+       "@Strand" "+",
+       "@display_start" "34508117"})},
+    "OtherNameList"
+    {"Name" {"$" "NR_036056.1(MIR2909):n.(?_-853004)_(1135855_?)dup"}},
+    "XRefList"
+    {"XRef"
+     ({"@DB" "dbVar", "@ID" "nsv491660"}
+      {"@DB" "dbVar", "@ID" "nssv3396193"}
+      {"@DB" "dbVar", "@ID" "nssv575325"}
+      {"@DB" "dbVar", "@ID" "nssv576767"})}},
+   :clingen_version 0,
+   :name "NT_187614.1:g.(?_357933)_(2127304_?)dup",
+   :child_ids [],
+   :allele_id "41169",
+   :subclass_type "SimpleAllele",
+   :id "32504",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "1q43"},
+     "SequenceLocation"
+     {"@display_stop" "237540797",
+      "@innerStop" "237540797",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000001.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "237413038",
+      "@forDisplay" "true",
+      "@Chr" "1",
+      "@display_start" "237413038"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 1q43(chr1:237413038-237540797)",
+   :child_ids [],
+   :allele_id "613918",
+   :subclass_type "SimpleAllele",
+   :id "625614",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "15q13.2-13.3"},
+     "SequenceLocation"
+     {"@display_stop" "32929514",
+      "@innerStop" "32929514",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000015.9",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "30927362",
+      "@forDisplay" "true",
+      "@Chr" "15",
+      "@display_start" "30927362"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 15q13.2-13.3(chr15:30927362-32929514)",
+   :child_ids [],
+   :allele_id "614052",
+   :subclass_type "SimpleAllele",
+   :id "625748",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_121588391)_(121754337_?)dup",
+       "@sequenceAccession" "NC_000002",
+       "@sequenceAccessionVersion" "NC_000002.11",
+       "@sequenceVersion" "11",
+       "Expression"
+       {"$" "NC_000002.11:g.(?_121588391)_(121754337_?)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "2q14.2"},
+     "SequenceLocation"
+     {"@display_stop" "121754337",
+      "@innerStop" "121754337",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000002.11",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "121588391",
+      "@forDisplay" "true",
+      "@Chr" "2",
+      "@display_start" "121588391"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 2q14.2(chr2:121588391-121754337)",
+   :child_ids [],
+   :allele_id "227940",
+   :subclass_type "SimpleAllele",
+   :id "226137",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_44073185)_(44716100_?)dup",
+       "@sequenceAccession" "NC_000023",
+       "@sequenceAccessionVersion" "NC_000023.10",
+       "@sequenceVersion" "10",
+       "Expression"
+       {"$" "NC_000023.10:g.(?_44073185)_(44716100_?)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "Xp11.3"},
+     "SequenceLocation"
+     {"@display_stop" "44716100",
+      "@innerStop" "44716100",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000023.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "44073185",
+      "@forDisplay" "true",
+      "@Chr" "X",
+      "@display_start" "44073185"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 Xp11.3(chrX:44073185-44716100)",
+   :child_ids [],
+   :allele_id "228097",
+   :subclass_type "SimpleAllele",
+   :id "226294",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "NCBI36",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "NCBI36",
+       "@change" "g.(40550036_40589822)_(46915388_46944323)del",
+       "@sequenceAccession" "NC_000021",
+       "@sequenceAccessionVersion" "NC_000021.7",
+       "@sequenceVersion" "7",
+       "Expression"
+       {"$"
+        "NC_000021.7:g.(40550036_40589822)_(46915388_46944323)del"}}}},
+    "Location"
+    {"SequenceLocation"
+     {"@display_stop" "46944323",
+      "@innerStop" "46915388",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000021.7",
+      "@outerStart" "40550036",
+      "@Assembly" "NCBI36",
+      "@AssemblyAccessionVersion" "GCF_000001405.12",
+      "@innerStart" "40589822",
+      "@outerStop" "46944323",
+      "@forDisplay" "true",
+      "@Chr" "21",
+      "@display_start" "40550036"}},
+    "XRefList"
+    {"XRef"
+     ({"@DB" "dbVar", "@ID" "nssv13653268"}
+      {"@DB" "dbVar", "@ID" "nsv2776156"})}},
+   :clingen_version 0,
+   :name "NC_000021.7:g.(40550036_40589822)_(46915388_46944323)del",
+   :child_ids [],
+   :allele_id "387841",
+   :subclass_type "SimpleAllele",
+   :id "400868",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_93949)_(5427855_?)del",
+       "@sequenceAccession" "NC_000003",
+       "@sequenceAccessionVersion" "NC_000003.11",
+       "@sequenceVersion" "11",
+       "Expression" {"$" "NC_000003.11:g.(?_93949)_(5427855_?)del"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "3p26.3-26.1"},
+     "SequenceLocation"
+     {"@display_stop" "5427855",
+      "@innerStop" "5427855",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000003.11",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "93949",
+      "@forDisplay" "true",
+      "@Chr" "3",
+      "@display_start" "93949"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 3p26.3-26.1(chr3:93949-5427855)",
+   :child_ids [],
+   :allele_id "514194",
+   :subclass_type "SimpleAllele",
+   :id "523278",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_43361)_(159119707_?)dup",
+       "@sequenceAccession" "NC_000007",
+       "@sequenceAccessionVersion" "NC_000007.13",
+       "@sequenceVersion" "13",
+       "Expression"
+       {"$" "NC_000007.13:g.(?_43361)_(159119707_?)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "7p22.3-q36.3"},
+     "SequenceLocation"
+     {"@display_stop" "159119707",
+      "@innerStop" "159119707",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000007.13",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "43361",
+      "@forDisplay" "true",
+      "@Chr" "7",
+      "@display_start" "43361"}},
+    "XRefList"
+    {"XRef"
+     ({"@DB" "dbVar", "@ID" "nssv13641948"}
+      {"@DB" "dbVar", "@ID" "nsv2775509"})}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 7p22.3-q36.3(chr7:43361-159119707)",
+   :child_ids [],
+   :allele_id "436495",
+   :subclass_type "SimpleAllele",
+   :id "442833",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "Xq28"},
+     "SequenceLocation"
+     {"@display_stop" "153609996",
+      "@innerStop" "153609996",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000023.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "153174571",
+      "@forDisplay" "true",
+      "@Chr" "X",
+      "@display_start" "153174571"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 Xq28(chrX:153174571-153609996)",
+   :child_ids [],
+   :allele_id "613957",
+   :subclass_type "SimpleAllele",
+   :id "625653",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     ({"@Assembly" "GRCh37",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "GRCh37",
+        "@change" "g.73000565_73006826del",
+        "@sequenceAccession" "NC_000015",
+        "@sequenceAccessionVersion" "NC_000015.9",
+        "@sequenceVersion" "9",
+        "Expression" {"$" "NC_000015.9:g.73000565_73006826del"}}}
+      {"@Assembly" "GRCh38",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "GRCh38",
+        "@change" "g.72708224_72714485del",
+        "@sequenceAccession" "NC_000015",
+        "@sequenceAccessionVersion" "NC_000015.10",
+        "@sequenceVersion" "10",
+        "Expression" {"$" "NC_000015.10:g.72708224_72714485del"}}})},
+    "Location"
+    {"CytogeneticLocation" {"$" "15q24.1"},
+     "SequenceLocation"
+     ({"@display_stop" "73006826",
+       "@start" "73000565",
+       "@AssemblyStatus" "previous",
+       "@variantLength" "6262",
+       "@Accession" "NC_000015.9",
+       "@Assembly" "GRCh37",
+       "@AssemblyAccessionVersion" "GCF_000001405.25",
+       "@stop" "73006826",
+       "@Chr" "15",
+       "@display_start" "73000565"}
+      {"@display_stop" "72714485",
+       "@start" "72708224",
+       "@AssemblyStatus" "current",
+       "@variantLength" "6262",
+       "@Accession" "NC_000015.10",
+       "@Assembly" "GRCh38",
+       "@AssemblyAccessionVersion" "GCF_000001405.38",
+       "@forDisplay" "true",
+       "@stop" "72714485",
+       "@Chr" "15",
+       "@display_start" "72708224"})}},
+   :clingen_version 0,
+   :name "GRCh38/hg38 15q24.1(chr15:72708224-72714485)",
+   :child_ids [],
+   :allele_id "425247",
+   :subclass_type "SimpleAllele",
+   :id "431741",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_85149690)_(85666309_?)del",
+       "@sequenceAccession" "NC_000015",
+       "@sequenceAccessionVersion" "NC_000015.9",
+       "@sequenceVersion" "9",
+       "Expression"
+       {"$" "NC_000015.9:g.(?_85149690)_(85666309_?)del"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "15q25.2-25.3"},
+     "SequenceLocation"
+     {"@display_stop" "85666309",
+      "@innerStop" "85666309",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000015.9",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "85149690",
+      "@forDisplay" "true",
+      "@Chr" "15",
+      "@display_start" "85149690"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 15q25.2-25.3(chr15:85149690-85666309)",
+   :child_ids [],
+   :allele_id "514168",
+   :subclass_type "SimpleAllele",
+   :id "523252",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_12019879)_(12028775_?)dup",
+       "@sequenceAccession" "NC_000001",
+       "@sequenceAccessionVersion" "NC_000001.10",
+       "@sequenceVersion" "10",
+       "Expression"
+       {"$" "NC_000001.10:g.(?_12019879)_(12028775_?)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "1p36.22"},
+     "SequenceLocation"
+     {"@display_stop" "12028775",
+      "@innerStop" "12028775",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000001.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "12019879",
+      "@forDisplay" "true",
+      "@Chr" "1",
+      "@display_start" "12019879"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 1p36.22(chr1:12019879-12028775)",
+   :child_ids [],
+   :allele_id "514156",
+   :subclass_type "SimpleAllele",
+   :id "523240",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_17316541)_(17349835_?)del",
+       "@sequenceAccession" "NC_000017",
+       "@sequenceAccessionVersion" "NC_000017.10",
+       "@sequenceVersion" "10",
+       "Expression"
+       {"$" "NC_000017.10:g.(?_17316541)_(17349835_?)del"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "17p11.2"},
+     "SequenceLocation"
+     {"@display_stop" "17349835",
+      "@innerStop" "17349835",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000017.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "17316541",
+      "@forDisplay" "true",
+      "@Chr" "17",
+      "@display_start" "17316541"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 17p11.2(chr17:17316541-17349835)",
+   :child_ids [],
+   :allele_id "228062",
+   :subclass_type "SimpleAllele",
+   :id "226259",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_17592647)_(17859657_?)dup",
+       "@sequenceAccession" "NC_000008",
+       "@sequenceAccessionVersion" "NC_000008.10",
+       "@sequenceVersion" "10",
+       "Expression"
+       {"$" "NC_000008.10:g.(?_17592647)_(17859657_?)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "8p22"},
+     "SequenceLocation"
+     {"@display_stop" "17859657",
+      "@innerStop" "17859657",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000008.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "17592647",
+      "@forDisplay" "true",
+      "@Chr" "8",
+      "@display_start" "17592647"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 8p22(chr8:17592647-17859657)",
+   :child_ids [],
+   :allele_id "227995",
+   :subclass_type "SimpleAllele",
+   :id "226192",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_44928342)_(45378475_?)del",
+       "@sequenceAccession" "NC_000014",
+       "@sequenceAccessionVersion" "NC_000014.8",
+       "@sequenceVersion" "8",
+       "Expression"
+       {"$" "NC_000014.8:g.(?_44928342)_(45378475_?)del"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "14q21.2"},
+     "SequenceLocation"
+     {"@display_stop" "45378475",
+      "@innerStop" "45378475",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000014.8",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "44928342",
+      "@forDisplay" "true",
+      "@Chr" "14",
+      "@display_start" "44928342"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 14q21.2(chr14:44928342-45378475)",
+   :child_ids [],
+   :allele_id "228045",
+   :subclass_type "SimpleAllele",
+   :id "226242",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "22q11.21"},
+     "SequenceLocation"
+     {"@display_stop" "21075586",
+      "@innerStop" "21075586",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000022.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "18900755",
+      "@forDisplay" "true",
+      "@Chr" "22",
+      "@display_start" "18900755"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 22q11.21(chr22:18900755-21075586)",
+   :child_ids [],
+   :allele_id "613894",
+   :subclass_type "SimpleAllele",
+   :id "625590",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_95529039)_(108518266_?)dup",
+       "@sequenceAccession" "NC_000002",
+       "@sequenceAccessionVersion" "NC_000002.11",
+       "@sequenceVersion" "11",
+       "Expression"
+       {"$" "NC_000002.11:g.(?_95529039)_(108518266_?)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "2q11.1-12.3"},
+     "SequenceLocation"
+     {"@display_stop" "108518266",
+      "@innerStop" "108518266",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000002.11",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "95529039",
+      "@forDisplay" "true",
+      "@Chr" "2",
+      "@display_start" "95529039"}},
+    "XRefList"
+    {"XRef"
+     ({"@DB" "dbVar", "@ID" "nssv585227"}
+      {"@DB" "dbVar", "@ID" "nsv498511"})}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 2q11.1-12.3(chr2:95529039-108518266)",
+   :child_ids [],
+   :allele_id "382583",
+   :subclass_type "SimpleAllele",
+   :id "395690",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "11p13"},
+     "SequenceLocation"
+     {"@display_stop" "31813509",
+      "@innerStop" "31813509",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000011.9",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "31541617",
+      "@forDisplay" "true",
+      "@Chr" "11",
+      "@display_start" "31541617"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 11p13(chr11:31541617-31813509)",
+   :child_ids [],
+   :allele_id "613865",
+   :subclass_type "SimpleAllele",
+   :id "625561",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "22q13.32-13.33"},
+     "SequenceLocation"
+     {"@display_stop" "51178264",
+      "@innerStop" "51178264",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000022.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "48533991",
+      "@forDisplay" "true",
+      "@Chr" "22",
+      "@display_start" "48533991"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 22q13.32-13.33(chr22:48533991-51178264)",
+   :child_ids [],
+   :allele_id "613967",
+   :subclass_type "SimpleAllele",
+   :id "625663",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     ({"@Assembly" "GRCh37",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "GRCh37",
+        "@change" "g.(?_28861531)_(29031059_?)del",
+        "@sequenceAccession" "NC_000016",
+        "@sequenceAccessionVersion" "NC_000016.9",
+        "@sequenceVersion" "9",
+        "Expression"
+        {"$" "NC_000016.9:g.(?_28861531)_(29031059_?)del"}}}
+      {"@Assembly" "GRCh38",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "GRCh38",
+        "@change" "g.(?_28850210)_(29019738_?)del",
+        "@sequenceAccession" "NC_000016",
+        "@sequenceAccessionVersion" "NC_000016.10",
+        "@sequenceVersion" "10",
+        "Expression"
+        {"$" "NC_000016.10:g.(?_28850210)_(29019738_?)del"}}})},
+    "Location"
+    {"CytogeneticLocation" {"$" "16p11.2"},
+     "SequenceLocation"
+     {"@display_stop" "29031059",
+      "@innerStop" "29031059",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000016.9",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "28861531",
+      "@forDisplay" "true",
+      "@Chr" "16",
+      "@display_start" "28861531"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 16p11.2(chr16:28861531-29031059)",
+   :child_ids [],
+   :allele_id "514169",
+   :subclass_type "SimpleAllele",
+   :id "523253",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_123596909)_(123989546_?)dup",
+       "@sequenceAccession" "NC_000012",
+       "@sequenceAccessionVersion" "NC_000012.11",
+       "@sequenceVersion" "11",
+       "Expression"
+       {"$" "NC_000012.11:g.(?_123596909)_(123989546_?)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "12q24.31"},
+     "SequenceLocation"
+     {"@display_stop" "123989546",
+      "@innerStop" "123989546",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000012.11",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "123596909",
+      "@forDisplay" "true",
+      "@Chr" "12",
+      "@display_start" "123596909"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 12q24.31(chr12:123596909-123989546)",
+   :child_ids [],
+   :allele_id "228026",
+   :subclass_type "SimpleAllele",
+   :id "226223",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_99519242)_(99568648_?)del",
+       "@sequenceAccession" "NC_000011",
+       "@sequenceAccessionVersion" "NC_000011.9",
+       "@sequenceVersion" "9",
+       "Expression"
+       {"$" "NC_000011.9:g.(?_99519242)_(99568648_?)del"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "11q22.1"},
+     "SequenceLocation"
+     {"@display_stop" "99568648",
+      "@innerStop" "99568648",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000011.9",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "99519242",
+      "@forDisplay" "true",
+      "@Chr" "11",
+      "@display_start" "99519242"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 11q22.1(chr11:99519242-99568648)",
+   :child_ids [],
+   :allele_id "228021",
+   :subclass_type "SimpleAllele",
+   :id "226218",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     ({"@Assembly" "NCBI36",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "NCBI36",
+        "@change" "g.(?_701)_(127355367_?)del",
+        "@sequenceAccession" "NC_000023",
+        "@sequenceAccessionVersion" "NC_000023.9",
+        "@sequenceVersion" "9",
+        "Expression" {"$" "NC_000023.9:g.(?_701)_(127355367_?)del"}}}
+      {"@Assembly" "GRCh37",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "GRCh37",
+        "@change" "g.(?_60701)_(127527686_?)del",
+        "@sequenceAccession" "NC_000023",
+        "@sequenceAccessionVersion" "NC_000023.10",
+        "@sequenceVersion" "10",
+        "Expression"
+        {"$" "NC_000023.10:g.(?_60701)_(127527686_?)del"}}}
+      {"@Assembly" "GRCh38",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "GRCh38",
+        "@change" "g.(?_10701)_(128393708_?)del",
+        "@sequenceAccession" "NC_000023",
+        "@sequenceAccessionVersion" "NC_000023.11",
+        "@sequenceVersion" "11",
+        "Expression"
+        {"$" "NC_000023.11:g.(?_10701)_(128393708_?)del"}}})},
+    "Location"
+    {"CytogeneticLocation" {"$" "Xp22.33-q25"},
+     "SequenceLocation"
+     ({"@display_stop" "127355367",
+       "@innerStop" "127355367",
+       "@AssemblyStatus" "previous",
+       "@Accession" "NC_000023.9",
+       "@Assembly" "NCBI36",
+       "@AssemblyAccessionVersion" "GCF_000001405.12",
+       "@innerStart" "701",
+       "@Chr" "X",
+       "@display_start" "701"}
+      {"@display_stop" "127527686",
+       "@innerStop" "127527686",
+       "@AssemblyStatus" "previous",
+       "@variantLength" "127466986",
+       "@Accession" "NC_000023.10",
+       "@Assembly" "GRCh37",
+       "@AssemblyAccessionVersion" "GCF_000001405.25",
+       "@innerStart" "60701",
+       "@Chr" "X",
+       "@display_start" "60701"}
+      {"@display_stop" "128393708",
+       "@innerStop" "128393708",
+       "@AssemblyStatus" "current",
+       "@variantLength" "128383008",
+       "@Accession" "NC_000023.11",
+       "@Assembly" "GRCh38",
+       "@AssemblyAccessionVersion" "GCF_000001405.38",
+       "@innerStart" "10701",
+       "@forDisplay" "true",
+       "@Chr" "X",
+       "@display_start" "10701"})},
+    "XRefList"
+    {"XRef"
+     ({"@DB" "dbVar", "@ID" "nssv707040"}
+      {"@DB" "dbVar", "@ID" "nsv533389"})}},
+   :clingen_version 0,
+   :name "GRCh38/hg38 Xp22.33-q25(chrX:10701-128393708)",
+   :child_ids [],
+   :allele_id "156608",
+   :subclass_type "SimpleAllele",
+   :id "146857",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "17q11.2"},
+     "SequenceLocation"
+     {"@display_stop" "30183819",
+      "@innerStop" "30183819",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000017.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "29111368",
+      "@forDisplay" "true",
+      "@Chr" "17",
+      "@display_start" "29111368"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 17q11.2(chr17:29111368-30183819)",
+   :child_ids [],
+   :allele_id "614035",
+   :subclass_type "SimpleAllele",
+   :id "625731",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "NCBI36",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "NCBI36",
+       "@change" "g.(142727264_142766618)_(154899838_154913754)dup",
+       "@sequenceAccession" "NC_000023",
+       "@sequenceAccessionVersion" "NC_000023.9",
+       "@sequenceVersion" "9",
+       "Expression"
+       {"$"
+        "NC_000023.9:g.(142727264_142766618)_(154899838_154913754)dup"}}}},
+    "Location"
+    {"SequenceLocation"
+     {"@display_stop" "154913754",
+      "@innerStop" "154899838",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000023.9",
+      "@outerStart" "142727264",
+      "@Assembly" "NCBI36",
+      "@AssemblyAccessionVersion" "GCF_000001405.12",
+      "@innerStart" "142766618",
+      "@outerStop" "154913754",
+      "@forDisplay" "true",
+      "@Chr" "X",
+      "@display_start" "142727264"}},
+    "XRefList"
+    {"XRef"
+     ({"@DB" "dbVar", "@ID" "nssv13643833"}
+      {"@DB" "dbVar", "@ID" "nsv2776036"})}},
+   :clingen_version 0,
+   :name
+   "NC_000023.9:g.(142727264_142766618)_(154899838_154913754)dup",
+   :child_ids [],
+   :allele_id "387794",
+   :subclass_type "SimpleAllele",
+   :id "400821",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "NCBI36",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "NCBI36",
+       "@change" "g.(?_23618355)_(23916582_57772954)del",
+       "@sequenceAccession" "NC_000024",
+       "@sequenceAccessionVersion" "NC_000024.8",
+       "@sequenceVersion" "8",
+       "Expression"
+       {"$" "NC_000024.8:g.(?_23618355)_(23916582_57772954)del"}}}},
+    "Location"
+    {"SequenceLocation"
+     {"@display_stop" "57772954",
+      "@innerStop" "23916582",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000024.8",
+      "@Assembly" "NCBI36",
+      "@AssemblyAccessionVersion" "GCF_000001405.12",
+      "@innerStart" "23618355",
+      "@outerStop" "57772954",
+      "@forDisplay" "true",
+      "@Chr" "Y",
+      "@display_start" "23618355"}},
+    "XRefList"
+    {"XRef"
+     ({"@DB" "dbVar", "@ID" "nssv13648109"}
+      {"@DB" "dbVar", "@ID" "nssv13653792"}
+      {"@DB" "dbVar", "@ID" "nsv2776079"})}},
+   :clingen_version 0,
+   :name "NC_000024.8:g.(?_23618355)_(23916582_57772954)del",
+   :child_ids [],
+   :allele_id "387811",
+   :subclass_type "SimpleAllele",
+   :id "400838",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_16842163)_(20217777_?)dup",
+       "@sequenceAccession" "NC_000017",
+       "@sequenceAccessionVersion" "NC_000017.10",
+       "@sequenceVersion" "10",
+       "Expression"
+       {"$" "NC_000017.10:g.(?_16842163)_(20217777_?)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "17p11.2"},
+     "SequenceLocation"
+     {"@display_stop" "20217777",
+      "@innerStop" "20217777",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000017.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "16842163",
+      "@forDisplay" "true",
+      "@Chr" "17",
+      "@display_start" "16842163"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 17p11.2(chr17:16842163-20217777)",
+   :child_ids [],
+   :allele_id "514173",
+   :subclass_type "SimpleAllele",
+   :id "523257",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "15q11.2-13.1"},
+     "SequenceLocation"
+     {"@display_stop" "28525505",
+      "@innerStop" "28525505",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000015.9",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "23810184",
+      "@forDisplay" "true",
+      "@Chr" "15",
+      "@display_start" "23810184"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 15q11.2-13.1(chr15:23810184-28525505)",
+   :child_ids [],
+   :allele_id "614022",
+   :subclass_type "SimpleAllele",
+   :id "625718",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_19030055)_(19591281_?)dup",
+       "@sequenceAccession" "NC_000023",
+       "@sequenceAccessionVersion" "NC_000023.10",
+       "@sequenceVersion" "10",
+       "Expression"
+       {"$" "NC_000023.10:g.(?_19030055)_(19591281_?)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "Xp22.13-22.12"},
+     "SequenceLocation"
+     {"@display_stop" "19591281",
+      "@innerStop" "19591281",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000023.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "19030055",
+      "@forDisplay" "true",
+      "@Chr" "X",
+      "@display_start" "19030055"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 Xp22.13-22.12(chrX:19030055-19591281)",
+   :child_ids [],
+   :allele_id "514213",
+   :subclass_type "SimpleAllele",
+   :id "523297",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_158049)_(146295771_?)dup",
+       "@sequenceAccession" "NC_000008",
+       "@sequenceAccessionVersion" "NC_000008.10",
+       "@sequenceVersion" "10",
+       "Expression"
+       {"$" "NC_000008.10:g.(?_158049)_(146295771_?)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "8p23.3-q24.3"},
+     "SequenceLocation"
+     {"@display_stop" "146295771",
+      "@innerStop" "146295771",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000008.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "158049",
+      "@forDisplay" "true",
+      "@Chr" "8",
+      "@display_start" "158049"}},
+    "XRefList"
+    {"XRef"
+     ({"@DB" "dbVar", "@ID" "nssv13642392"}
+      {"@DB" "dbVar", "@ID" "nssv13646957"}
+      {"@DB" "dbVar", "@ID" "nsv2771806"})}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 8p23.3-q24.3(chr8:158049-146295771)",
+   :child_ids [],
+   :allele_id "435862",
+   :subclass_type "SimpleAllele",
+   :id "442200",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "2p21"},
+     "SequenceLocation"
+     {"@display_stop" "46844565",
+      "@innerStop" "46844565",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000002.11",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "46844284",
+      "@forDisplay" "true",
+      "@Chr" "2",
+      "@display_start" "46844284"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 2p21(chr2:46844284-46844565)",
+   :child_ids [],
+   :allele_id "613847",
+   :subclass_type "SimpleAllele",
+   :id "625543",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location" {"CytogeneticLocation" {"$" "4q21"}},
+    "OtherNameList" {"Name" {"$" "SNCA, TRIPLICATION"}},
+    "XRefList"
+    {"XRef"
+     {"@DB" "OMIM", "@ID" "163890.0003", "@Type" "Allelic variant"}}},
+   :clingen_version 0,
+   :name "SNCA, TRIPLICATION",
+   :child_ids [],
+   :allele_id "29048",
+   :subclass_type "SimpleAllele",
+   :id "14009",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(8206748_8213468)_(8227432_8235774)dup",
+       "@sequenceAccession" "NC_000019",
+       "@sequenceAccessionVersion" "NC_000019.9",
+       "@sequenceVersion" "9",
+       "Expression"
+       {"$" "NC_000019.9:g.(8206748_8213468)_(8227432_8235774)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "19p13.2"},
+     "SequenceLocation"
+     {"@display_stop" "8235774",
+      "@innerStop" "8227432",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000019.9",
+      "@outerStart" "8206748",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "8213468",
+      "@outerStop" "8235774",
+      "@forDisplay" "true",
+      "@Chr" "19",
+      "@display_start" "8206748"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 19p13.2(chr19:8213468-8227432)",
+   :child_ids [],
+   :allele_id "581902",
+   :subclass_type "SimpleAllele",
+   :id "590954",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_13354873)_(13493086_?)dup",
+       "@sequenceAccession" "NC_000023",
+       "@sequenceAccessionVersion" "NC_000023.10",
+       "@sequenceVersion" "10",
+       "Expression"
+       {"$" "NC_000023.10:g.(?_13354873)_(13493086_?)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "Xp22.2"},
+     "SequenceLocation"
+     {"@display_stop" "13493086",
+      "@innerStop" "13493086",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000023.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "13354873",
+      "@forDisplay" "true",
+      "@Chr" "X",
+      "@display_start" "13354873"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 Xp22.2(chrX:13354873-13493086)",
+   :child_ids [],
+   :allele_id "228087",
+   :subclass_type "SimpleAllele",
+   :id "226284",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_90346994)_(102354798_?)del",
+       "@sequenceAccession" "NC_000015",
+       "@sequenceAccessionVersion" "NC_000015.9",
+       "@sequenceVersion" "9",
+       "Expression"
+       {"$" "NC_000015.9:g.(?_90346994)_(102354798_?)del"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "15q26.1-26.3"},
+     "SequenceLocation"
+     {"@display_stop" "102354798",
+      "@innerStop" "102354798",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000015.9",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "90346994",
+      "@forDisplay" "true",
+      "@Chr" "15",
+      "@display_start" "90346994"}},
+    "XRefList"
+    {"XRef"
+     ({"@DB" "dbVar", "@ID" "nssv13644299"}
+      {"@DB" "dbVar", "@ID" "nsv2775769"})}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 15q26.1-26.3(chr15:90346994-102354798)",
+   :child_ids [],
+   :allele_id "381949",
+   :subclass_type "SimpleAllele",
+   :id "395056",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     ({"@Type" "genomic",
+       "NucleotideExpression"
+       {"@change" "g.56128_56292[3]",
+        "@sequenceAccession" "LRG_426",
+        "@sequenceAccessionVersion" "LRG_426",
+        "Expression" {"$" "LRG_426:g.56128_56292[3]"}}}
+      {"@Type" "genomic",
+       "NucleotideExpression"
+       {"@change" "g.56128_56292[3]",
+        "@sequenceAccession" "NG_032120",
+        "@sequenceAccessionVersion" "NG_032120.1",
+        "@sequenceVersion" "1",
+        "Expression" {"$" "NG_032120.1:g.56128_56292[3]"}}}
+      {"@Assembly" "GRCh37",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "GRCh37",
+        "@change" "g.3168815_3168979dup",
+        "@sequenceAccession" "NC_000018",
+        "@sequenceAccessionVersion" "NC_000018.9",
+        "@sequenceVersion" "9",
+        "Expression" {"$" "NC_000018.9:g.3168815_3168979dup"}}}
+      {"@Assembly" "GRCh38",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "GRCh38",
+        "@change" "g.3168817_3168981dup",
+        "@sequenceAccession" "NC_000018",
+        "@sequenceAccessionVersion" "NC_000018.10",
+        "@sequenceVersion" "10",
+        "Expression" {"$" "NC_000018.10:g.3168817_3168981dup"}}}
+      {"@Type" "coding",
+       "NucleotideExpression"
+       {"@change" "c.1175_1339[3]",
+        "@sequenceAccession" "NM_003803",
+        "@sequenceAccessionVersion" "NM_003803.3",
+        "@sequenceVersion" "3",
+        "Expression" {"$" "NM_003803.3:c.1175_1339[3]"}},
+       "ProteinExpression"
+       {"@change"
+        "p.Asn446_Gly447insValGlyValThrProTyrGlyTyrAlaSerArgPheGluIleHisPheAspAspLysPheAspValSerPheGlyArgGluGlyGluThrMetSerLeuGlyCysArgValValIleThrProGluIleLysHisPheGlnProGluIleGlnTrpTyrArgAsnValGlyValThrProTyrGlyTyrAlaSerArgPheGluIleHisPheAspAspL...(Total360)",
+        "@sequenceAccession" "NP_003794",
+        "@sequenceAccessionVersion" "NP_003794.3",
+        "@sequenceVersion" "3",
+        "Expression"
+        {"$"
+         "NP_003794.3:p.Asn446_Gly447insValGlyValThrProTyrGlyTyrAlaSerArgPheGluIleHisPheAspAspLysPheAspValSerPheGlyArgGluGlyGluThrMetSerLeuGlyCysArgValValIleThrProGluIleLysHisPheGlnProGluIleGlnTrpTyrArgAsnValGlyValThrProTyrGlyTyrAlaSerArgPheGluIleHisPheAspAspL...(Total 360)"}}}
+      {"@Type" "coding",
+       "NucleotideExpression"
+       {"@change" "c.1175_1339[3]",
+        "@sequenceAccession" "LRG_426t1",
+        "@sequenceAccessionVersion" "LRG_426t1",
+        "Expression" {"$" "LRG_426t1:c.1175_1339[3]"}},
+       "ProteinExpression"
+       {"@change"
+        "p.Asn446_Gly447insValGlyValThrProTyrGlyTyrAlaSerArgPheGluIleHisPheAspAspLysPheAspValSerPheGlyArgGluGlyGluThrMetSerLeuGlyCysArgValValIleThrProGluIleLysHisPheGlnProGluIleGlnTrpTyrArgAsnValGlyValThrProTyrGlyTyrAlaSerArgPheGluIleHisPheAspAspL...(Total360)",
+        "@sequenceAccession" "LRG_426p1",
+        "@sequenceAccessionVersion" "LRG_426p1",
+        "Expression"
+        {"$"
+         "LRG_426p1:p.Asn446_Gly447insValGlyValThrProTyrGlyTyrAlaSerArgPheGluIleHisPheAspAspLysPheAspValSerPheGlyArgGluGlyGluThrMetSerLeuGlyCysArgValValIleThrProGluIleLysHisPheGlnProGluIleGlnTrpTyrArgAsnValGlyValThrProTyrGlyTyrAlaSerArgPheGluIleHisPheAspAspL...(Total360)"}}})},
+    "Location"
+    {"CytogeneticLocation" {"$" "18p11.31"},
+     "SequenceLocation"
+     ({"@display_stop" "3168979",
+       "@start" "3168815",
+       "@AssemblyStatus" "previous",
+       "@Accession" "NC_000018.9",
+       "@Assembly" "GRCh37",
+       "@referenceAlleleVCF" "C",
+       "@AssemblyAccessionVersion" "GCF_000001405.25",
+       "@alternateAlleleVCF"
+       "CCGTTTCTGTACCACTGGATCTCTGGCTGGAAATGTTTAATTTCAGGAGTGATGACAACACGACAGCCTAGACTCATTGTCTCTCCCTCTCTCCCAAAAGACACATCAAATTTGTCATCAAAGTGGATCTCAAACCGGGATGCATAACCATATGGGGTCACACCAACGTTTCTGTACCACTGGATCTCTGGCTGGAAATGTTTAATTTCAGGAGTGATGACAACACGACAGCCTAGACTCATTGTCTCTCCCTCTCTCCCAAAAGACACATCAAATTTGTCATCAAAGTGGATCTCAAACCGGGATGCATAACCATATGGGGTCACACCAA",
+       "@positionVCF" "3168814",
+       "@stop" "3168979",
+       "@Chr" "18",
+       "@display_start" "3168815"}
+      {"@display_stop" "3168981",
+       "@start" "3168817",
+       "@AssemblyStatus" "current",
+       "@Accession" "NC_000018.10",
+       "@Assembly" "GRCh38",
+       "@referenceAlleleVCF" "C",
+       "@AssemblyAccessionVersion" "GCF_000001405.38",
+       "@alternateAlleleVCF"
+       "CCGTTTCTGTACCACTGGATCTCTGGCTGGAAATGTTTAATTTCAGGAGTGATGACAACACGACAGCCTAGACTCATTGTCTCTCCCTCTCTCCCAAAAGACACATCAAATTTGTCATCAAAGTGGATCTCAAACCGGGATGCATAACCATATGGGGTCACACCAACGTTTCTGTACCACTGGATCTCTGGCTGGAAATGTTTAATTTCAGGAGTGATGACAACACGACAGCCTAGACTCATTGTCTCTCCCTCTCTCCCAAAAGACACATCAAATTTGTCATCAAAGTGGATCTCAAACCGGGATGCATAACCATATGGGGTCACACCAA",
+       "@positionVCF" "3168816",
+       "@forDisplay" "true",
+       "@stop" "3168981",
+       "@Chr" "18",
+       "@display_start" "3168817"})},
+    "OtherNameList"
+    {"Name" ({"$" "NM_003803.3:c.(?_1175)_(1339_?)[3]"} {"$" "p.?"})}},
+   :clingen_version 0,
+   :name
+   "NM_003803.3(MYOM1):c.1175_1339[3] (p.Asn446_Gly447insValGlyValThrProTyrGlyTyrAlaSerArgPheGluIleHisPheAspAspLysPheAspValSerPheGlyArgGluGlyGluThrMetSerLeuGlyCysArgValValIleThrProGluIleLysHisPheGlnProGluIleGlnTrpTyrArgAsnValGlyValThrProTyrGlyTyrAlaSerArgPheGluIleHisPheAspAspL...(Total 360))",
+   :child_ids [],
+   :allele_id "231428",
+   :subclass_type "SimpleAllele",
+   :id "229013",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "6q27"},
+     "SequenceLocation"
+     {"@display_stop" "170881789",
+      "@innerStop" "170881789",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000006.11",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "168311806",
+      "@forDisplay" "true",
+      "@Chr" "6",
+      "@display_start" "168311806"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 6q27(chr6:168311806-170881789)",
+   :child_ids [],
+   :allele_id "613970",
+   :subclass_type "SimpleAllele",
+   :id "625666",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_69668636)_(69713319_?)del",
+       "@sequenceAccession" "NC_000004",
+       "@sequenceAccessionVersion" "NC_000004.11",
+       "@sequenceVersion" "11",
+       "Expression"
+       {"$" "NC_000004.11:g.(?_69668636)_(69713319_?)del"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "4q13.2"},
+     "SequenceLocation"
+     {"@display_stop" "69713319",
+      "@innerStop" "69713319",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000004.11",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "69668636",
+      "@forDisplay" "true",
+      "@Chr" "4",
+      "@display_start" "69668636"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 4q13.2(chr4:69668636-69713319)",
+   :child_ids [],
+   :allele_id "227968",
+   :subclass_type "SimpleAllele",
+   :id "226165",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Comment"
+    {"$" "Duplication of MARS2 coding sequence.",
+     "@DataSource" "NCBI curation",
+     "@Type" "public"},
+    "HGVSlist"
+    {"HGVS"
+     ({"@Type" "coding",
+       "NucleotideExpression"
+       {"@change" "c.1_1782dup",
+        "@sequenceAccession" "NM_138395",
+        "@sequenceAccessionVersion" "NM_138395.3",
+        "@sequenceVersion" "3",
+        "Expression" {"$" "NM_138395.3:c.1_1782dup"}}}
+      {"@Type" "genomic",
+       "NucleotideExpression"
+       {"@change" "g.5103_6884dup",
+        "@sequenceAccession" "NG_034122",
+        "@sequenceAccessionVersion" "NG_034122.1",
+        "@sequenceVersion" "1",
+        "Expression" {"$" "NG_034122.1:g.5103_6884dup"}}})},
+    "Location"
+    {"CytogeneticLocation" {"$" "2q33.1"},
+     "SequenceLocation"
+     ({"@display_stop" "198571911",
+       "@start" "198570130",
+       "@AssemblyStatus" "previous",
+       "@variantLength" "1782",
+       "@Accession" "NC_000002.11",
+       "@Assembly" "GRCh37",
+       "@AssemblyAccessionVersion" "GCF_000001405.25",
+       "@stop" "198571911",
+       "@Chr" "2",
+       "@display_start" "198570130"}
+      {"@display_stop" "197707187",
+       "@start" "197705406",
+       "@AssemblyStatus" "current",
+       "@variantLength" "1782",
+       "@Accession" "NC_000002.12",
+       "@Assembly" "GRCh38",
+       "@AssemblyAccessionVersion" "GCF_000001405.38",
+       "@forDisplay" "true",
+       "@stop" "197707187",
+       "@Chr" "2",
+       "@Strand" "+",
+       "@display_start" "197705406"})},
+    "OtherNameList" {"Name" {"$" "DUP1"}},
+    "XRefList"
+    {"XRef"
+     {"@DB" "OMIM", "@ID" "609728.0002", "@Type" "Allelic variant"}}},
+   :clingen_version 0,
+   :name "NM_138395.3(MARS2):c.1_1782dup1782",
+   :child_ids [],
+   :allele_id "106532",
+   :subclass_type "SimpleAllele",
+   :id "100660",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "NCBI36",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "NCBI36",
+       "@change" "g.(75594856_75615389)_(76113881_76117153)del",
+       "@sequenceAccession" "NC_000018",
+       "@sequenceAccessionVersion" "NC_000018.8",
+       "@sequenceVersion" "8",
+       "Expression"
+       {"$"
+        "NC_000018.8:g.(75594856_75615389)_(76113881_76117153)del"}}}},
+    "Location"
+    {"SequenceLocation"
+     {"@display_stop" "76117153",
+      "@innerStop" "76113881",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000018.8",
+      "@outerStart" "75594856",
+      "@Assembly" "NCBI36",
+      "@AssemblyAccessionVersion" "GCF_000001405.12",
+      "@innerStart" "75615389",
+      "@outerStop" "76117153",
+      "@forDisplay" "true",
+      "@Chr" "18",
+      "@display_start" "75594856"}},
+    "XRefList"
+    {"XRef"
+     ({"@DB" "dbVar", "@ID" "nssv13645984"}
+      {"@DB" "dbVar", "@ID" "nsv2770599"})}},
+   :clingen_version 0,
+   :name "NC_000018.8:g.(75594856_75615389)_(76113881_76117153)del",
+   :child_ids [],
+   :allele_id "385611",
+   :subclass_type "SimpleAllele",
+   :id "398638",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_203861)_(68262804_?)dup",
+       "@sequenceAccession" "NC_000009",
+       "@sequenceAccessionVersion" "NC_000009.11",
+       "@sequenceVersion" "11",
+       "Expression"
+       {"$" "NC_000009.11:g.(?_203861)_(68262804_?)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "9p24.3-q13"},
+     "SequenceLocation"
+     {"@display_stop" "68262804",
+      "@innerStop" "68262804",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000009.11",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "203861",
+      "@forDisplay" "true",
+      "@Chr" "9",
+      "@display_start" "203861"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 9p24.3-q13(chr9:203861-68262804)x3,4",
+   :child_ids [],
+   :allele_id "554869",
+   :subclass_type "SimpleAllele",
+   :id "563685",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     ({"@Assembly" "GRCh37",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "GRCh37",
+        "@change" "g.27040563_27060990del",
+        "@sequenceAccession" "NC_000009",
+        "@sequenceAccessionVersion" "NC_000009.11",
+        "@sequenceVersion" "11",
+        "Expression" {"$" "NC_000009.11:g.27040563_27060990del"}}}
+      {"@Assembly" "GRCh38",
+       "@Type" "genomic, top-level",
+       "NucleotideExpression"
+       {"@Assembly" "GRCh38",
+        "@change" "g.27040565_27060992del",
+        "@sequenceAccession" "NC_000009",
+        "@sequenceAccessionVersion" "NC_000009.12",
+        "@sequenceVersion" "12",
+        "Expression" {"$" "NC_000009.12:g.27040565_27060992del"}}})},
+    "Location"
+    {"CytogeneticLocation" {"$" "9p21.2"},
+     "SequenceLocation"
+     ({"@display_stop" "27060990",
+       "@start" "27040563",
+       "@AssemblyStatus" "previous",
+       "@variantLength" "20428",
+       "@Accession" "NC_000009.11",
+       "@Assembly" "GRCh37",
+       "@AssemblyAccessionVersion" "GCF_000001405.25",
+       "@stop" "27060990",
+       "@Chr" "9",
+       "@display_start" "27040563"}
+      {"@display_stop" "27060992",
+       "@start" "27040565",
+       "@AssemblyStatus" "current",
+       "@variantLength" "20428",
+       "@Accession" "NC_000009.12",
+       "@Assembly" "GRCh38",
+       "@AssemblyAccessionVersion" "GCF_000001405.38",
+       "@forDisplay" "true",
+       "@stop" "27060992",
+       "@Chr" "9",
+       "@display_start" "27040565"})},
+    "OtherNameList" {"Name" {"$" "20.4-KB DEL, EX14-19DEL"}},
+    "XRefList"
+    {"XRef"
+     {"@DB" "OMIM", "@ID" "608040.0002", "@Type" "Allelic variant"}}},
+   :clingen_version 0,
+   :name "GRCh38/hg38 9p21.2(chr9:27040565-27060992)",
+   :child_ids [],
+   :allele_id "425254",
+   :subclass_type "SimpleAllele",
+   :id "431748",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "16p13.11"},
+     "SequenceLocation"
+     {"@display_stop" "16292235",
+      "@innerStop" "16292235",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000016.9",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "15521713",
+      "@forDisplay" "true",
+      "@Chr" "16",
+      "@display_start" "15521713"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 16p13.11(chr16:15521713-16292235)",
+   :child_ids [],
+   :allele_id "613878",
+   :subclass_type "SimpleAllele",
+   :id "625574",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_168807)_(13134517_?)dup",
+       "@sequenceAccession" "NC_000024",
+       "@sequenceAccessionVersion" "NC_000024.9",
+       "@sequenceVersion" "9",
+       "Expression"
+       {"$" "NC_000024.9:g.(?_168807)_(13134517_?)dup"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "Yp11.32-q11.1"},
+     "SequenceLocation"
+     {"@display_stop" "13134517",
+      "@innerStop" "13134517",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000024.9",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "168807",
+      "@forDisplay" "true",
+      "@Chr" "Y",
+      "@display_start" "168807"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 Yp11.32-q11.1(chrY:168807-13134517)x1,2",
+   :child_ids [],
+   :allele_id "556152",
+   :subclass_type "SimpleAllele",
+   :id "564968",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "17p12"},
+     "SequenceLocation"
+     {"@display_stop" "15449627",
+      "@innerStop" "15449627",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000017.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "14063251",
+      "@forDisplay" "true",
+      "@Chr" "17",
+      "@display_start" "14063251"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 17p12(chr17:14063251-15449627)",
+   :child_ids [],
+   :allele_id "614028",
+   :subclass_type "SimpleAllele",
+   :id "625724",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_19417785)_(19579313_?)del",
+       "@sequenceAccession" "NC_000017",
+       "@sequenceAccessionVersion" "NC_000017.10",
+       "@sequenceVersion" "10",
+       "Expression"
+       {"$" "NC_000017.10:g.(?_19417785)_(19579313_?)del"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "17p11.2"},
+     "SequenceLocation"
+     {"@display_stop" "19579313",
+      "@innerStop" "19579313",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000017.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "19417785",
+      "@forDisplay" "true",
+      "@Chr" "17",
+      "@display_start" "19417785"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 17p11.2(chr17:19417785-19579313)",
+   :child_ids [],
+   :allele_id "228063",
+   :subclass_type "SimpleAllele",
+   :id "226260",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "10q22.3-23.2"},
+     "SequenceLocation"
+     {"@display_stop" "88768847",
+      "@innerStop" "88768847",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000010.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "81697811",
+      "@forDisplay" "true",
+      "@Chr" "10",
+      "@display_start" "81697811"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 10q22.3-23.2(chr10:81697811-88768847)",
+   :child_ids [],
+   :allele_id "613861",
+   :subclass_type "SimpleAllele",
+   :id "625557",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number gain",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"Location"
+    {"CytogeneticLocation" {"$" "15q11.2-13.1"},
+     "SequenceLocation"
+     {"@display_stop" "29213896",
+      "@innerStop" "29213896",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000015.9",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "23810184",
+      "@forDisplay" "true",
+      "@Chr" "15",
+      "@display_start" "23810184"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 15q11.2-13.1(chr15:23810184-29213896)",
+   :child_ids [],
+   :allele_id "614049",
+   :subclass_type "SimpleAllele",
+   :id "625745",
+   :descendant_ids []}}
+ {:release_date "2019-07-01",
+  :event_type "create",
+  :content
+  {:variation_type "copy number loss",
+   :entity_type "variation",
+   :protein_change [],
+   :content
+   {"HGVSlist"
+    {"HGVS"
+     {"@Assembly" "GRCh37",
+      "@Type" "genomic, top-level",
+      "NucleotideExpression"
+      {"@Assembly" "GRCh37",
+       "@change" "g.(?_1361431)_(2573023_?)del",
+       "@sequenceAccession" "NC_000017",
+       "@sequenceAccessionVersion" "NC_000017.10",
+       "@sequenceVersion" "10",
+       "Expression"
+       {"$" "NC_000017.10:g.(?_1361431)_(2573023_?)del"}}}},
+    "Location"
+    {"CytogeneticLocation" {"$" "17p13.3"},
+     "SequenceLocation"
+     {"@display_stop" "2573023",
+      "@innerStop" "2573023",
+      "@AssemblyStatus" "previous",
+      "@Accession" "NC_000017.10",
+      "@Assembly" "GRCh37",
+      "@AssemblyAccessionVersion" "GCF_000001405.25",
+      "@innerStart" "1361431",
+      "@forDisplay" "true",
+      "@Chr" "17",
+      "@display_start" "1361431"}}},
+   :clingen_version 0,
+   :name "GRCh37/hg19 17p13.3(chr17:1361431-2573023)",
+   :child_ids [],
+   :allele_id "514176",
+   :subclass_type "SimpleAllele",
+   :id "523260",
+   :descendant_ids []}})

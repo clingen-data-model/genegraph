@@ -184,7 +184,19 @@
                                                :content
                                                :variation_type)
                                            "copy number"))
-        (#(if (::copy-number? %) (assoc % ::cnv (cnv/parse (-> value :content :name))) %))
+        (#(if (::copy-number? %)
+            (let [parsed-cnv (cnv/parse (-> value :content :name))]
+              (if (empty? parsed-cnv)
+                (do (log/error :fn :variation-preprocess
+                               :msg "Variation was marked as copy number, but could not parse cnv parameters"
+                               :variation-name (-> value :content :name)
+                               :event-value value)
+                    ;; Set copy-number to false to make further processing no longer see it as CNV
+                    (-> %
+                        (dissoc ::copy-number?)
+                        (assoc ::unparseable-cnv (-> value :content :name))))
+                (assoc % ::cnv parsed-cnv)))
+            %))
 
         ;; Add the list of canonical-candidate expressions for non-cnv
         (#(if (not (::copy-number? %))
@@ -266,6 +278,9 @@
         (log/debug :fn :add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj-pretty)
         {:iri vrs-id :variation vrs-obj-pretty}))))
 
+(defn unchunk [s]
+  (lazy-cat [(first s)] (unchunk (rest s))))
+
 (defn normalize-canonical-expression
   "Selects the canonical expression and returns it and the normalized form
    {:expression ... :normalized ...}"
@@ -275,40 +290,47 @@
     {:expr "...." :type :hgvs}
     {:expr "...." :type :spdi}
     {:expr {"..." "..."} :type :cnv})
-  (if (::copy-number? event)
-    {:expression (-> event ::prioritized-expression)
-     :normalized (get (get-vrs-variation-map
-                       {:expression (-> event ::prioritized-expression :expr)
-                        :expression-type (-> event ::prioritized-expression :type)})
-                      :variation)
-     :label (-> event ::prioritized-expression :expr)}
-    (let [candidate-expressions (::canonical-candidate-expressions event)
+  (try
+    (if (::copy-number? event)
+      {:expression (-> event ::prioritized-expression)
+       :normalized (get (get-vrs-variation-map
+                         {:expression (-> event ::prioritized-expression :expr)
+                          :expression-type (-> event ::prioritized-expression :type)})
+                        :variation)
+       :label (-> event ::prioritized-expression :expr)}
+      (let [candidate-expressions (::canonical-candidate-expressions event)
 
           ;; Temporary fix for timing out dup exprs
           ;; https://github.com/clingen-data-model/genegraph/issues/698
-          non-cnv-dup? (fn [{:keys [expr type]}]
-                         (and (string? expr)
-                              (.contains expr "dup") ; implies not spdi or cnv
-                              (not= :cnv type)))
-          candidate-expressions (filter (comp not non-cnv-dup?) candidate-expressions)
+            non-cnv-dup? (fn [{:keys [expr type]}]
+                           (and (string? expr)
+                                (.contains expr "dup") ; above two imply not spdi or cnv, so dup hgvs
+                                (not= :cnv type)))
+            candidate-expressions (filter (comp not non-cnv-dup?) candidate-expressions)
 
-          _ (log/info :candidate-expressions candidate-expressions)
+            _ (log/info :candidate-expressions candidate-expressions)
           ;; each vrs-ret[:variation] is the structure in the 'variation', 'canonical_variaton' (or equivalent)
           ;; field in the normalization service response body
-          vrs-rets (for [ce candidate-expressions]
-                     (fn []
-                       {:normalized (get (get-vrs-variation-map
-                                          {:expression (-> ce :expr)
-                                           :expression-type (-> ce :type)})
-                                         :variation)
-                        :expression ce
-                        :label (-> ce :label)}))
-          selected (or (some #(when (not= "Text" (get-in (%) [:normalized :canonical_context :type]))
-                                (%))
-                             vrs-rets)
-                       ((first vrs-rets)))]
-      (log/debug :selected selected)
-      selected)))
+            vrs-rets (unchunk
+                      (for [ce candidate-expressions]
+                        {:normalized (get (get-vrs-variation-map
+                                           {:expression (-> ce :expr)
+                                            :expression-type (-> ce :type)})
+                                          :variation)
+                         :expression ce
+                         :label (-> ce :label)}))
+            ;; Try to get one that doesn't yield Text. If none, just use the first.
+            selected (or (first (filter #(not= "Text" (get-in % [:normalized :canonical_context :type]))
+                                        vrs-rets))
+                         (first vrs-rets))]
+        (log/debug :selected selected)
+        selected))
+    (catch Exception e
+      (log/error :fn :normalize-canonical-expression
+                 :message "Exception normalizing canonical variation"
+                 :ex-data (ex-data e)
+                 :ex-message (ex-message e))
+      (update event :exception conj {:exception e}))))
 
 (defn add-data-for-variation
   "Returns msg with :genegraph.annotate/data and :genegraph.annotate/data-contextualized added.
@@ -325,6 +347,12 @@
         clinvar-variation-iri (str iri/clinvar-variation (:id variation))
         ;; normalize-canonical-expression must be called after variation-preprocess
         nce (normalize-canonical-expression event)]
+    (log/info :fn :add-data-for-variation :nce nce)
+    (when (empty? nce)
+      (log/error :fn :add-data-for-variation
+                 :msg "Could not normalize canonical variation expression"
+                 :value message
+                 :event event))
     (-> event
         (assoc
          :genegraph.annotate/data
