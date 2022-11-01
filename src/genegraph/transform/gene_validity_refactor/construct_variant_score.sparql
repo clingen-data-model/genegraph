@@ -102,9 +102,11 @@ where {
 
   ?individual gci:variantScores ?evidenceLine ;
   gci:label ?individualLabel ;
-
-  gci:sex ?sex ;
   gci:proband true .
+
+  OPTIONAL {
+    ?individual gci:sex ?sex .
+  }
 
   OPTIONAL {
     ?individual gci:ageType ?ageType .
