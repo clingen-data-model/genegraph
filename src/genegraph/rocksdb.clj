@@ -17,16 +17,26 @@
     ;; todo add logging...
     (RocksDB/open opts full-path)))
 
-(defn- key-digest [k]
+(defn- key-digest
+  "Return a byte array of the md5 hash of the nippy frozen object"
+  [k]
   (-> k nippy/fast-freeze digest/md5 .getBytes))
 
-(defn- range-upper-bound
+(defn range-upper-bound
   "Return the key defining the (exclusive) upper bound of a scan,
   as defined by RANGE-KEY"
   [^bytes range-key]
   (let [last-byte-idx (dec (alength range-key))]
     (doto (Arrays/copyOf range-key (alength range-key))
       (aset-byte last-byte-idx (inc (aget range-key last-byte-idx))))))
+
+(defn range-upper-bound2
+  "Return the key defining the (exclusive) upper bound of a scan,
+  as defined by RANGE-KEY"
+  [^bytes range-key]
+  (let [last-byte-idx (dec (alength range-key))]
+    (doto (Arrays/copyOf range-key (inc (alength range-key)))
+      (aset-byte (inc last-byte-idx) 1))))
 
 (defn- key-tail-digest
   [k]
@@ -66,6 +76,11 @@
 
 (defn rocks-delete! [db k]
   (.delete db (key-digest k)))
+
+(defn rocks-delete-raw-key!
+  "Delete a key."
+  [db k]
+  (.delete db k))
 
 (defn rocks-delete-multipart-key! [db ks]
   (.delete db (multipart-key-digest ks)))
@@ -107,6 +122,18 @@
                                              (Slice. (range-upper-bound prefix))))
     (.seek prefix)))
 
+(defn raw-prefix-iter2
+  [db prefix]
+  (doto (.newIterator db
+                      (.setIterateUpperBound (ReadOptions.)
+                                             (Slice. (range-upper-bound2 prefix))))
+    (.seek prefix)))
+
+(defn raw-prefix-iter3
+  [db prefix]
+  (doto (.newIterator db (.setPrefixSameAsStart (ReadOptions.) true))
+    (.seek prefix)))
+
 (defn prefix-iter
   "return a RocksIterator that covers records with prefix"
   [db prefix]
@@ -126,6 +153,19 @@
        (cons v
              (rocks-iterator-seq iter)))
      nil)))
+
+(defn rocks-entry-iterator-seq [^org.rocksdb.RocksIterator iter]
+  (lazy-seq
+   (if (.isValid iter)
+     (let [k (.key iter)
+           v (nippy/fast-thaw (.value iter))]
+       (.next iter)
+       (cons [k v]
+             (rocks-entry-iterator-seq iter)))
+     nil)))
+
+(defn entire-db-entry-seq [^RocksDB db]
+  (-> db entire-db-iter rocks-entry-iterator-seq))
 
 (defn prefix-seq
   "Return a lazy-seq over all records beginning with prefix"
