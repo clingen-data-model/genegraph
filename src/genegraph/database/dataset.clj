@@ -1,11 +1,13 @@
 (ns genegraph.database.dataset
-  "Namespace for handling operations on persistent Jena datasets"
+  "Namespace for handling operations on persistent Jena datasets.
+  Specifically designed around handling asychronous writes. "
   (:require [clojure.spec.alpha :as spec]
             [clojure.core.async :as async])
   (:import [org.apache.jena.tdb2 TDB2Factory]
            [org.apache.jena.query Dataset ReadWrite]
            [java.util.concurrent BlockingQueue ArrayBlockingQueue TimeUnit]
-           [java.util List ArrayList]))
+           [java.util List ArrayList]
+           [org.apache.jena.query.text TextDatasetFactory]))
 
 
 (defrecord PersistentDataset [dataset
@@ -17,7 +19,6 @@
   
   java.io.Closeable
   (close [this]
-    (println "closing dataset")
     (reset! run-atom false)
     (if (deref complete-promise (* 5 1000) false)
       (.close dataset)
@@ -38,25 +39,29 @@
                                (:model-name command))
     (throw (ex-info "Invalid command" command))))
 
+(defn deliver-commit-promise
+  "Deliver promise when command is committed to the database."
+  [command]
+  (when-let [committed-promise (:committed command)]
+    (deliver committed-promise true)))
+
 (defn write-loop
   "Read commands from queue and execute them on dataset. Pulls multiple records
   from the queue if possible given buffer limit and availability"
   [{:keys [write-queue-size write-queue run-atom complete-promise dataset] :as dataset-record}]
   (let [write-buffer (ArrayList. write-queue-size)]
-    (println  "init write loop")
     (while @run-atom
       (try
         (when-let [first-command (.poll write-queue 1000 TimeUnit/MILLISECONDS)]
-          (.begin dataset ReadWrite/WRITE)
-          (println "write lock acquired")
-          (execute dataset first-command)
           (.drainTo write-queue write-buffer write-queue-size)
-          (run! #(execute dataset %) write-buffer)
-          (.clear write-buffer)
-          (.commit dataset)
-          (.end dataset))
+          (let [commands (cons first-command write-buffer)]
+            (.begin dataset ReadWrite/WRITE)
+            (run! #(execute dataset %) commands)
+            (.clear write-buffer)
+            (.commit dataset)
+            (.end dataset)
+            (run! deliver-commit-promise commands)))
         (catch Exception e (println e))))
-    (println "complete write loop")      
     (deliver complete-promise true)))
 
 (defn execute-async
@@ -78,15 +83,16 @@
         persistent-dataset (map->PersistentDataset
                             (merge
                              opts
-                             {:dataset (if (:path opts)
+                             {:dataset (cond
+                                         (:assembly-path opts)
+                                         (TextDatasetFactory/create (:assembly-path))
+                                         (:path opts)
                                          (TDB2Factory/connectDataset (:path opts))
-                                         (TDB2Factory/createDataset))
+                                         :else (TDB2Factory/createDataset))
                               :run-atom (atom true)
                               :complete-promise (promise)
                               :write-queue-size write-queue-size
                               :write-queue (ArrayBlockingQueue.
                                             write-queue-size)}))]
-
-    (.start (Thread. #(println "initializing dataset async thread")))
     (.start (Thread. #(write-loop persistent-dataset)))
     persistent-dataset))

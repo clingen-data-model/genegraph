@@ -2,7 +2,7 @@
   (:require [clojure.string :as str]
             [mount.core :as mount :refer [defstate]]
             [genegraph.env :as env]
-            [genegraph.database.instance :refer [db]]
+            #_[genegraph.database.instance :refer [db]] ;; TODO remove if this works
             [genegraph.database.query :as q]
             [genegraph.source.graphql.condition :as condition]
             [genegraph.source.graphql.common.curation :as curation]

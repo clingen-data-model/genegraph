@@ -1,5 +1,5 @@
 (ns genegraph.database.query.algebra
-    (:require [genegraph.database.instance :refer [db]]
+  (:require    #_[genegraph.database.instance :refer [db]] ; TODO remove if this works
               [genegraph.database.query.types :as types]
             [genegraph.database.util :as util :refer [tx]]
             [genegraph.database.names :as names :refer
