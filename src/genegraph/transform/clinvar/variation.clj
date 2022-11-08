@@ -257,7 +257,7 @@
 (defn get-vrs-variation-map
   "Takes a map with :expression (String or Map) and :expression-type (Keyword).
 
-   Returns a map containing :model and :iri"
+   Returns a map containing :iri (String) and :variation (map)"
   [{expression :expression
     expression-type :expression-type}]
   (let [vrs-obj (vicc/vrs-variation-for-expression
