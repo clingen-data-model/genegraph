@@ -17,7 +17,7 @@
     ;; todo add logging...
     (RocksDB/open opts full-path)))
 
-(defn- key-digest
+(defn key-digest
   "Return a byte array of the md5 hash of the nippy frozen object"
   [k]
   (-> k nippy/fast-freeze digest/md5 .getBytes))
@@ -30,19 +30,11 @@
     (doto (Arrays/copyOf range-key (alength range-key))
       (aset-byte last-byte-idx (inc (aget range-key last-byte-idx))))))
 
-(defn range-upper-bound2
-  "Return the key defining the (exclusive) upper bound of a scan,
-  as defined by RANGE-KEY"
-  [^bytes range-key]
-  (let [last-byte-idx (dec (alength range-key))]
-    (doto (Arrays/copyOf range-key (inc (alength range-key)))
-      (aset-byte (inc last-byte-idx) 1))))
-
 (defn- key-tail-digest
   [k]
   (-> k nippy/fast-freeze digest/md5 .getBytes range-upper-bound))
 
-(defn- multipart-key-digest [ks]
+(defn multipart-key-digest [ks]
   (->> ks (map #(-> % nippy/fast-freeze digest/md5)) (apply str) .getBytes))
 
 (defn rocks-put!
@@ -120,18 +112,6 @@
   (doto (.newIterator db
                       (.setIterateUpperBound (ReadOptions.)
                                              (Slice. (range-upper-bound prefix))))
-    (.seek prefix)))
-
-(defn raw-prefix-iter2
-  [db prefix]
-  (doto (.newIterator db
-                      (.setIterateUpperBound (ReadOptions.)
-                                             (Slice. (range-upper-bound2 prefix))))
-    (.seek prefix)))
-
-(defn raw-prefix-iter3
-  [db prefix]
-  (doto (.newIterator db (.setPrefixSameAsStart (ReadOptions.) true))
     (.seek prefix)))
 
 (defn prefix-iter

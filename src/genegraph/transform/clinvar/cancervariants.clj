@@ -2,9 +2,11 @@
   (:require [cheshire.core :as json]
             [genegraph.database.names :as names :refer [prefix-ns-map]]
             [genegraph.rocksdb :as rocksdb]
-            [genegraph.util.http-client :as ghttp :refer [http-get-with-cache]]
+            [genegraph.source.registry.redis :as redis]
+            [clj-http.client :as http-client]
+            #_[genegraph.util.http-client :as ghttp :refer [http-get-with-cache]]
             [io.pedestal.log :as log]
-            [mount.core :refer [defstate]])
+            [mount.core :as mount])
   (:import (clojure.lang Keyword)
            (org.rocksdb RocksDB)))
 
@@ -48,35 +50,36 @@
 (def vicc-db-name "cancervariants-cache.db")
 (def vicc-expr-db-name "cancervariants-expr-cache.db")
 
-(defstate ^RocksDB vicc-db
+(mount/defstate ^RocksDB vicc-db
   :start (rocksdb/open vicc-db-name)
   :stop (rocksdb/close vicc-db))
 
-(defstate ^RocksDB vicc-expr-db
+(mount/defstate ^RocksDB vicc-expr-db
   :start (rocksdb/open vicc-expr-db-name)
   :stop (rocksdb/close vicc-expr-db))
 
-(def normalize-canonical-cache
-  "Maps two keys :get and :put to get and put cached values for normalize-canonical function calls"
-  (letfn [(key-fn [^String variation-expression ^Keyword expression-type]
-            (-> {:variation-expression variation-expression :expression-type expression-type}
-                seq (->> (into [])) str))]
-    {:put (fn [^String variation-expression ^Keyword expression-type value]
-            (rocksdb/rocks-put! vicc-expr-db
-                                (key-fn variation-expression expression-type)
-                                value))
-     :get (fn [^String variation-expression ^Keyword expression-type value]
-            (rocksdb/rocks-get vicc-expr-db (key-fn variation-expression expression-type)))}))
+#_(def normalize-canonical-cache
+    "Maps two keys :get and :put to get and put cached values for normalize-canonical function calls"
+    (letfn [(key-fn [^String variation-expression ^Keyword expression-type]
+              (-> {:variation-expression variation-expression :expression-type expression-type}
+                  seq (->> (into [])) str))]
+      {:put (fn [^String variation-expression ^Keyword expression-type value]
+              (rocksdb/rocks-put! vicc-expr-db
+                                  (key-fn variation-expression expression-type)
+                                  value))
+       :get (fn [^String variation-expression ^Keyword expression-type value]
+              (rocksdb/rocks-get vicc-expr-db (key-fn variation-expression expression-type)))}))
 
 (defn normalize-canonical
   [^String variation-expression ^Keyword expression-type]
-  (log/info :fn :normalize-canonical :variation-expression variation-expression)
-  (let [response (http-get-with-cache vicc-db
-                                      url-to-canonical
-                                      {:throw-exceptions false
-                                       :query-params {"q" variation-expression
-                                                      "fmt" (name expression-type)
-                                                      "untranslatable_returns_text" true}})
+  (log/info :fn :normalize-canonical
+            :variation-expression variation-expression
+            :expression-type expression-type)
+  (let [response (http-client/get url-to-canonical
+                                  {:throw-exceptions false
+                                   :query-params {"q" variation-expression
+                                                  "fmt" (name expression-type)
+                                                  "untranslatable_returns_text" true}})
         status (:status response)]
     (case status
       200 (let [body (-> response :body json/parse-string)]
@@ -88,17 +91,16 @@
 (defn normalize-absolute-copy-number
   [input-map]
   (log/info :fn :normalize-absolute-copy-number :input-map input-map)
-  (let [response (http-get-with-cache vicc-db
-                                      url-absolute-cnv
-                                      {:throw-exceptions false
-                                       :query-params
-                                       (into {"untranslatable_returns_text" true}
-                                             (map #(vector (-> % first name) (-> % second))
-                                                  (select-keys input-map [:assembly
-                                                                          :chr
-                                                                          :start
-                                                                          :end
-                                                                          :total_copies])))})
+  (let [response (http-client/get url-absolute-cnv
+                                  {:throw-exceptions false
+                                   :query-params
+                                   (into {"untranslatable_returns_text" true}
+                                         (map #(vector (-> % first name) (-> % second))
+                                              (select-keys input-map [:assembly
+                                                                      :chr
+                                                                      :start
+                                                                      :end
+                                                                      :total_copies])))})
         status (:status response)]
     (case status
       200 (let [body (-> response :body json/parse-string)]
@@ -110,18 +112,102 @@
                  :msg "Error in VRS normalization request"
                  :status status
                  :response response))))
+(def _redis-opts
+  "Pool opts:
+   https://github.com/ptaoussanis/carmine/blob/e4835506829ef7fe0af68af39caef637e2008806/src/taoensso/carmine/connections.clj#L146"
+  {:pool {#_(comment Default pool options)}
+   :spec {:uri (System/getenv "CACHE_REDIS_URI")}})
+
+(mount/defstate redis-db
+  :start (if (redis/connectable? _redis-opts)
+           _redis-opts
+           (throw (ex-info "Could not connect to redis"
+                           {:conn-opts _redis-opts})))
+  :stop (log/warn :msg "No stop behavior defined for redis connection and thread pool"))
+
+(defn expression-key-serializer
+  "TODO variation-expression can be a map if its a CNV.
+   Need to explicitly order those map entries?"
+  [variation-expression expression-type]
+  (doto (-> [variation-expression
+             expression-type]
+            prn-str)
+    (#(log/debug :fn :expression-key-serializer
+                 :variation-expression variation-expression
+                 :expression-type expression-type
+                 :result %))))
+
+(defn redis-expression-cache-put
+  "Put the value in the cache keyed on the expression and its type."
+  [variation-expression expression-type value]
+  (log/debug :fn :redis-expression-cache-put
+             :variation-expression variation-expression
+             :expression-type expression-type
+             :value value)
+  (redis/put-key redis-db
+                 (expression-key-serializer variation-expression
+                                            expression-type)
+                 value))
+
+(defn redis-expression-cache-get
+  "Looks up expression with its type in the cache. Returns nil when not found."
+  [variation-expression expression-type]
+  (log/debug :fn :redis-expression-cache-get
+             :variation-expression variation-expression
+             :expression-type expression-type)
+  (redis/get-key redis-db
+                 (expression-key-serializer variation-expression
+                                            expression-type)))
+
+(defn redis-configured? []
+  (System/getenv "CACHE_REDIS_URI"))
+
+(defn store-in-cache
+  [variation-expression expression-type value]
+  (cond
+    (redis-configured?) (redis-expression-cache-put
+                         variation-expression
+                         expression-type
+                         value)
+    :else (rocksdb/rocks-put! vicc-expr-db
+                              (expression-key-serializer
+                               variation-expression
+                               expression-type)
+                              value)))
+
+(defn get-from-cache
+  [variation-expression expression-type]
+  (cond
+    (redis-configured?) (redis-expression-cache-get
+                         variation-expression
+                         expression-type)
+    :else (rocksdb/rocks-get vicc-expr-db
+                             (expression-key-serializer
+                              variation-expression
+                              expression-type))))
+
 
 (defn vrs-variation-for-expression
   "`variation` should be a string understood by the VICC variant normalization service.
   Example: HGVS or SPDI expressions. If type is :cnv, the expression should be a map.
   https://normalize.cancervariants.org/variation"
-  ([^String variation-expression]
+  ([variation-expression]
    (vrs-variation-for-expression variation-expression nil))
-  ([^String variation-expression ^Keyword expression-type]
+  ([variation-expression ^Keyword expression-type]
    (log/debug :fn :vrs-allele-for-variation :variation-expression variation-expression :expr-type expression-type)
-   (case expression-type
-     :cnv (normalize-absolute-copy-number variation-expression)
-     :spdi (normalize-canonical variation-expression :spdi)
-     :hgvs (normalize-canonical variation-expression :hgvs)
+   (let [cached-value (get-from-cache variation-expression expression-type)]
+     (when ((comp not not) cached-value)
+       (log/info :fn :vrs-variation-for-expression
+                 :cache-hit? true
+                 :cached-value cached-value
+                 :variation-expression variation-expression
+                 :expr-type expression-type))
      ;; By default, tell the service to try hgvs. Will return as Text variation if unable to parse
-     (normalize-canonical variation-expression :hgvs))))
+     (if cached-value
+       cached-value
+       (doto (case expression-type
+               :cnv (normalize-absolute-copy-number variation-expression)
+               :spdi (normalize-canonical variation-expression :spdi)
+               :hgvs (normalize-canonical variation-expression :hgvs)
+               (normalize-canonical variation-expression :hgvs))
+         (#(store-in-cache variation-expression expression-type %)))))))

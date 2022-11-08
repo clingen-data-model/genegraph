@@ -1,15 +1,14 @@
 (ns genegraph.server
   (:gen-class) ; for -main method in uberjar
-  (:require [io.pedestal.http :as server]
-            [io.pedestal.http.route :as route]
-            [genegraph.service :as service]
-            [mount.core :as mount :refer [defstate]]
-            [genegraph.sink.base :as base]
-            [genegraph.sink.stream :as stream]
+  (:require [genegraph.env :as env]
             [genegraph.migration :as migration]
+            [genegraph.service :as service]
+            [genegraph.sink.stream :as stream]
+            [genegraph.source.registry.vrs-registry :as vrs-registry]
             [genegraph.source.snapshot.core :as snapshot]
-            [genegraph.env :as env]
-            [io.pedestal.log :as log])
+            [io.pedestal.http :as server]
+            [io.pedestal.log :as log]
+            [mount.core :as mount :refer [defstate]])
   (:import com.google.firebase.FirebaseApp))
 
 (def initialized? (atom false))
@@ -118,6 +117,7 @@
     (if (env/transformer-mode?)
       (run-server-transformer nil)
       (run-server-genegraph nil))
-    (if (= "snapshot" (first args))
-      (apply snapshot/-main (rest args))
-      (run-migration))))
+    (cond
+      (= "snapshot" (first args)) (apply snapshot/-main (rest args))
+      (= "variantregistry" (first args)) (apply vrs-registry/-main (rest args))
+      :else (run-migration))))

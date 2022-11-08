@@ -108,6 +108,7 @@
   ;; alternative to REBL
   djblue/portal                                     {:mvn/version "0.23.0"}
   org.rocksdb/rocksdbjni                            {:mvn/version "7.1.2"}
+  com.taoensso/carmine                              {:mvn/version "3.1.0"}
   io.pedestal/pedestal.interceptor                  {:mvn/version "0.5.10"}
   io.pedestal/pedestal.jetty                        {:mvn/version "0.5.10"}
   io.pedestal/pedestal.service                      {:mvn/version "0.5.10"}
@@ -116,6 +117,7 @@
   ;; medley included for filter-keys and deep-merge. =tbl
   medley/medley                                     {:mvn/version "1.4.0"}
   mount/mount                                       {:mvn/version "0.1.16"}
+  org.clj-commons/claypoole                         {:mvn/version "1.2.2"}
   org.apache.jena/jena-arq                          {:mvn/version "4.5.0"}
   org.apache.jena/jena-core                         {:mvn/version "4.5.0"}
   org.apache.jena/jena-iri                          {:mvn/version "4.5.0"}
