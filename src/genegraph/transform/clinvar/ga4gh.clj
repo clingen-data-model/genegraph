@@ -33,7 +33,7 @@
 
 (defn eventify [input-map]
   ;; Mostly replicating
-  ;; (map #(stream/consumer-record-to-clj % :clinvar-raw))
+  ;; (map #(stream/consumer-record-to-event % :clinvar-raw))
   ;; but without some fields that are not used here
   {:genegraph.annotate/format :clinvar-raw
    :genegraph.sink.event/key nil
