@@ -71,6 +71,9 @@
               (rocksdb/rocks-get vicc-expr-db (key-fn variation-expression expression-type)))}))
 
 (defn normalize-canonical
+  "Normalizes an :hgvs or :spdi expression.
+   Throws exception if the request fails. If the normalization
+   fails but the request succeeds, should return Text variation type."
   [^String variation-expression ^Keyword expression-type]
   (log/info :fn :normalize-canonical
             :variation-expression variation-expression
@@ -86,9 +89,15 @@
             (log/debug :fn :normalize-canonical :body body)
             (-> body (get "canonical_variation") add-vicc-context))
       ;; Error case
-      (log/error :fn :normalize-canonical :msg "Error in VRS normalization request" :status status :response response))))
+      (throw (ex-info "Error in VRS normalization request"
+                      {:fn :normalize-canonical
+                       :status status
+                       :response response})))))
 
 (defn normalize-absolute-copy-number
+  "Normalizes an absolute copy number map of
+   assembly, chr, start, end, total_copies.
+   Throws exception on error."
   [input-map]
   (log/info :fn :normalize-absolute-copy-number :input-map input-map)
   (let [response (http-client/get url-absolute-cnv
@@ -108,10 +117,11 @@
             (assert not-empty (-> body (get "absolute_copy_number")))
             (-> body (get "absolute_copy_number") add-vicc-context))
       ;; Error case
-      (log/error :fn :normalize-absolute-copy-number
-                 :msg "Error in VRS normalization request"
-                 :status status
-                 :response response))))
+      (throw (ex-info "Error in VRS normalization request"
+                      {:fn :normalize-absolute-copy-number
+                       :status status
+                       :response response
+                       :input-map input-map})))))
 (def _redis-opts
   "Pool opts:
    https://github.com/ptaoussanis/carmine/blob/e4835506829ef7fe0af68af39caef637e2008806/src/taoensso/carmine/connections.clj#L146"
@@ -188,20 +198,21 @@
 
 
 (defn vrs-variation-for-expression
-  "`variation` should be a string understood by the VICC variant normalization service.
-  Example: HGVS or SPDI expressions. If type is :cnv, the expression should be a map.
-  https://normalize.cancervariants.org/variation"
+  "Accepts :hgvs, :spdi, or :cnv types of expressions.
+   Example: HGVS or SPDI expressions. If type is :cnv, the expression should be a map.
+   When
+   https://normalize.cancervariants.org/variation"
   ([variation-expression]
    (vrs-variation-for-expression variation-expression nil))
   ([variation-expression ^Keyword expression-type]
    (log/debug :fn :vrs-allele-for-variation :variation-expression variation-expression :expr-type expression-type)
    (let [cached-value (get-from-cache variation-expression expression-type)]
      (when ((comp not not) cached-value)
-       (log/info :fn :vrs-variation-for-expression
-                 :cache-hit? true
-                 :cached-value cached-value
-                 :variation-expression variation-expression
-                 :expr-type expression-type))
+       (log/debug :fn :vrs-variation-for-expression
+                  :cache-hit? true
+                  :cached-value cached-value
+                  :variation-expression variation-expression
+                  :expr-type expression-type))
      ;; By default, tell the service to try hgvs. Will return as Text variation if unable to parse
      (if cached-value
        cached-value
@@ -210,4 +221,5 @@
                :spdi (normalize-canonical variation-expression :spdi)
                :hgvs (normalize-canonical variation-expression :hgvs)
                (normalize-canonical variation-expression :hgvs))
+         ;; Error cases throw exception so are not persisted in cache
          (#(store-in-cache variation-expression expression-type %)))))))

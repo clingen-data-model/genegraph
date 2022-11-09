@@ -1,15 +1,16 @@
 (ns genegraph.transform.clinvar.variation
-  (:require [genegraph.database.query :as q]
-            [genegraph.database.names :as names :refer [local-property-names
-                                                        local-class-names
-                                                        prefix-ns-map]]
-            [genegraph.transform.clinvar.common :as common]
-            [genegraph.transform.clinvar.util :as util]
-            [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
-            [genegraph.transform.jsonld.common :as jsonld]
-            [genegraph.transform.clinvar.cancervariants :as vicc]
+  (:require [cheshire.core :as json]
+            [clojure.stacktrace :as stacktrace]
             [genegraph.annotate.cnv :as cnv]
-            [cheshire.core :as json]
+            [genegraph.database.names :as names :refer [local-class-names
+                                                        local-property-names
+                                                        prefix-ns-map]]
+            [genegraph.database.query :as q]
+            [genegraph.transform.clinvar.cancervariants :as vicc]
+            [genegraph.transform.clinvar.common :as common]
+            [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
+            [genegraph.transform.clinvar.util :as util]
+            [genegraph.transform.jsonld.common :as jsonld]
             [io.pedestal.log :as log]))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
@@ -163,7 +164,7 @@
                                                          (protein-hgvs hgvs-obj)])]
                           (when (empty? outputs)
                             (let [e (ex-info "Found no HGVS expressions" {:hgvs-obj hgvs-obj :variation-msg variation-msg})]
-                              (log/error :message (ex-message e) :data (ex-data e))))
+                              (log/warn :message (ex-message e) :data (ex-data e))))
                           outputs)))
                  (apply concat))
             [(let [spdi-expr (-> nested-content (get "CanonicalSPDI") (get "$"))]
@@ -278,7 +279,9 @@
         (log/debug :fn :add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj-pretty)
         {:iri vrs-id :variation vrs-obj-pretty}))))
 
-(defn unchunk [s]
+(defn unchunk
+  "Return a lazy seq over s that is not chunked."
+  [s]
   (lazy-cat [(first s)] (unchunk (rest s))))
 
 (defn normalize-canonical-expression
@@ -326,11 +329,13 @@
         (log/debug :selected selected)
         selected))
     (catch Exception e
-      (log/error :fn :normalize-canonical-expression
-                 :message "Exception normalizing canonical variation"
-                 :ex-data (ex-data e)
-                 :ex-message (ex-message e))
-      (update event :exception conj {:exception e}))))
+      #_(log/error :fn :normalize-canonical-expression
+                   :message "Exception normalizing canonical variation"
+                   :ex-data (ex-data e)
+                   :ex-message (ex-message e))
+      (update event :exception conj {:fn :normalize-canonical-expression
+                                     :message "Exception normalizing canonical variation"
+                                     :exception e}))))
 
 (defn add-data-for-variation
   "Returns msg with :genegraph.annotate/data and :genegraph.annotate/data-contextualized added.
@@ -347,7 +352,7 @@
         clinvar-variation-iri (str iri/clinvar-variation (:id variation))
         ;; normalize-canonical-expression must be called after variation-preprocess
         nce (normalize-canonical-expression event)]
-    (log/info :fn :add-data-for-variation :nce nce)
+    #_(log/debug :fn :add-data-for-variation :nce nce)
     (when (empty? nce)
       (log/error :fn :add-data-for-variation
                  :msg "Could not normalize canonical variation expression"
