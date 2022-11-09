@@ -1,6 +1,7 @@
 (ns build
   "Build this thing."
-  (:require [clojure.tools.build.api :as b]))
+  (:require [clojure.pprint          :refer [pprint]]
+            [clojure.tools.build.api :as b]))
 
 (def root
   "Start here."
@@ -14,9 +15,12 @@
 (defn uber
   "Make an uberjar from source."
   [_]
-  (let [{:keys [paths] :as basis} (b/create-basis root)
-        project                   (assoc root :basis basis)]
-    (b/delete      project)
-    (b/copy-dir    (assoc project :src-dirs paths))
-    (b/compile-clj (assoc project :src-dirs ["src"]))
-    (b/uber        project)))
+  (try (let [{:keys [paths] :as basis} (b/create-basis root)
+             project                   (assoc root :basis basis)]
+         (b/delete      project)
+         (b/copy-dir    (assoc project :src-dirs paths))
+         (b/compile-clj (assoc project :src-dirs ["src"]))
+         (b/uber        project))
+       (catch Exception x
+         (pprint x)
+         (throw x))))
