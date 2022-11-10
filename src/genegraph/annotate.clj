@@ -1,9 +1,11 @@
 (ns genegraph.annotate
-  (:require [genegraph.annotate.action :as action]
+  (:require [genegraph.annotate.interface :as annotate-interface]
+            [genegraph.annotate.action :as action]
             [genegraph.annotate.replaces :as replaces]
             [genegraph.database.query :as q]
             [genegraph.database.validation :as validate]
             [genegraph.database.util :as util :refer [tx]]
+            [genegraph.database.instance :as instance]
             [genegraph.env :as env]
             [genegraph.interceptor :as intercept :refer [interceptor-enter-def]]
             [genegraph.transform.core :as transform]
@@ -206,3 +208,33 @@
 (def add-jsonld-interceptor
   {:name ::add-jsonld-interceptor
    :enter (fn [event] (xform-types/add-model-jsonld event))})
+
+(defmethod annotate-interface/add-dataset :default [event]
+  (assoc event ::dataset instance/db))
+
+(def add-dataset-interceptor
+  {:name ::add-dataset-interceptor
+   :enter annotate-interface/add-dataset})
+
+(defn add-command [event command]
+  (update event ::dataset-commands conj command))
+
+(defmethod annotate-interface/add-dataset-commands :default [event]
+  (cond-> event
+    (= :publish (::action event)) (add-command 
+                                   {:command :replace
+                                    :model-name (::iri event)
+                                    :model (::q/model event)})
+    (= :unpublish (::action event)) (add-command 
+                                     {:command :remove
+                                      :model-name (::iri event)})
+    (= :unpublish (::action event)) (add-command 
+                                     {:command :remove
+                                      :model-name (::iri event)})
+    (::replaces event) (add-command
+                        {:command :remove
+                         :model-name (::replaces event)})))
+
+(def add-dataset-commands-interceptor
+  {:name ::add-dataset-commands-interceptor
+   :enter annotate-interface/add-dataset-commands})

@@ -4,7 +4,8 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [mount.core :as mount :refer [defstate]]
-            [genegraph.env :as env])
+            [genegraph.env :as env]
+            [genegraph.database.dataset :as ds])
   (:import [org.apache.jena.query.text TextDatasetFactory]))
 
 (def assembly-file "genegraph-assembly.ttl")
@@ -27,5 +28,6 @@
     path))
 
 (defstate db
-  :start (TextDatasetFactory/create (get-expanded-assembly-file))
+  :start (ds/dataset {:assembly-path (get-expanded-assembly-file)})
+  #_(TextDatasetFactory/create (get-expanded-assembly-file))
   :stop (.close db))
