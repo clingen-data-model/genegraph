@@ -4,7 +4,7 @@
             [clojure.tools.build.api :as b]))
 
 (def root
-  "Start here."
+  "The defaults to configure a build."
   {:class-dir  "target/classes"
    :main       'genegraph.server
    :path       "target"
@@ -13,7 +13,7 @@
    :uber-file  "target/genegraph.jar"})
 
 (defn uber
-  "Make an uberjar from source."
+  "Throw or make an uberjar from source."
   [_]
   (try (let [{:keys [paths] :as basis} (b/create-basis root)
              project                   (assoc root :basis basis)]
