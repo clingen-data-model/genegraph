@@ -369,6 +369,25 @@
     {:gene (q/ld1-> assertion [:sepio/has-subject :sepio/has-subject :skos/preferred-label])
      :disease (q/ld1-> assertion [:sepio/has-subject :sepio/has-object :rdfs/label])}))
 
+(defn topic-data-to-disk 
+  "Read topic data to disk. Converts the topic record to a genegraph event and writes a
+  nippy compressed version of the entire genegraph event to disk."
+  [topic dest]
+  (stream/topic-data-to-output topic
+                        (fn [record] 
+                          (with-open [w (io/output-stream (str dest "/" (name topic) "-" (.offset record)))]
+                            (.write w (nippy/freeze (stream/consumer-record-to-event record topic)))))))
+
+(defn topic-json-to-disk 
+  "Read topic data, converts to genegraph event, writes the raw value (usually json) to disk."
+  [topic dest]
+  (stream/topic-data-to-output topic
+                        (fn [record]
+                          (->> (stream/consumer-record-to-event record topic)
+                               :genegraph.sink.event/value
+                               (spit (str dest "/" (name topic) "-" (.offset record) ".json"))))))
+
+
 ;;types 
 
   ;; 0. "clinical_assertion_variation"
