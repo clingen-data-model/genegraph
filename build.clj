@@ -3,7 +3,7 @@
   (:require [clojure.pprint          :refer [pprint]]
             [clojure.tools.build.api :as b]))
 
-(def root
+(def defaults
   "The defaults to configure a build."
   {:class-dir  "target/classes"
    :main       'genegraph.server
@@ -15,8 +15,8 @@
 (defn uber
   "Throw or make an uberjar from source."
   [_]
-  (try (let [{:keys [paths] :as basis} (b/create-basis root)
-             project                   (assoc root :basis basis)]
+  (try (let [{:keys [paths] :as basis} (b/create-basis defaults)
+             project                   (assoc defaults :basis basis)]
          (b/delete      project)
          (b/copy-dir    (assoc project :src-dirs paths))
          (b/compile-clj (assoc project :src-dirs ["src"]))
