@@ -280,14 +280,14 @@
            event-processing-fn))
     (update-consumer-offsets! consumer topic-partitions)))
 
-(defn- pre-process-topic-consumer!
+(defn- setup-topic-consumer!
   "Perform setup tasks on consumer which includes assigning the topic topic-partitions to
   the consumer and seeking to the current recorded offset for each."
   [consumer topic topic-partitions]
   (assign-topic-partitions-to-consumer! consumer topic topic-partitions)
   (initialize-topic-consumer-offset! consumer topic topic-partitions))
 
-(defn- post-process-topic-consumer!
+(defn- mark-topic-consumer-stopped!
   "Log the state of the topic as closed and deliver promise
   when all of the consumers are closed."
   [topic]
@@ -305,9 +305,9 @@
   [event-processing-fn topic]
   (with-open [consumer (consumer-for-topic topic)]
     (let [topic-partitions (topic-partitions consumer topic)]
-      (pre-process-topic-consumer! consumer topic topic-partitions)
+      (setup-topic-consumer! consumer topic topic-partitions)
       (poll-topic-consumer! event-processing-fn consumer topic topic-partitions)
-      (post-process-topic-consumer! topic))))
+      (mark-topic-consumer-stopped! topic))))
 
 (defn- assign-topic-consumer!
   "Returns a fn that, while the run-consumer atom is true, will attempt to open
@@ -379,7 +379,7 @@
                 records))
             (mapv #(consumer-record-to-event % topic)))))))
 
-(defn- topic-data-to-output
+(defn topic-data-to-output
   "Read topic data to disk. Assumes single partition topic.
   fn is a single argument function accepting a stream record,
   and handles the output formatting and file naming of the topic data."
@@ -394,24 +394,6 @@
           (fn record))
         (when (< (.position c (first tps)) end)
           (recur (poll-once c)))))))
-
-(defn topic-data-to-disk 
-  "Read topic data to disk. Converts the topic record to a genegraph event and writes a
-  nippy compressed version of the entire genegraph event to disk."
-  [topic dest]
-  (topic-data-to-output topic
-                        (fn [record] 
-                          (with-open [w (io/output-stream (str dest "/" (name topic) "-" (.offset record)))]
-                            (.write w (nippy/freeze (consumer-record-to-event record topic)))))))
-
-(defn topic-json-to-disk 
-  "Read topic data, converts to genegraph event, writes the raw value (usually json) to disk."
-  [topic dest]
-  (topic-data-to-output topic
-                        (fn [record]
-                          (->> (consumer-record-to-event record topic)
-                               :genegraph.sink.event/value
-                               (spit (str dest "/" (name topic) "-" (.offset record) ".json"))))))
 
 (defn topic-data-to-rocksdb
   "Read topic data to disk. Assumes single partition topic. Optiionally accepts key-fn that accepts the
