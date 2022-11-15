@@ -111,7 +111,7 @@
             "scoreStatus" {"@type" "@vocab"}
             "interactionType" {"@type" "@vocab"}
             "probandIs" {"@type" "@vocab"}
-            ;; "testingMethods" {"@type" "@vocab"}
+            "genotypingMethods" {"@container" "@list"}
 
             ;; ;; Category names
             "Model Systems" "gcixform:ModelSystems"
@@ -424,6 +424,35 @@
                                ))]
     (unlink-variant-scores-when-proband-scores-exist
      {::q/model (add-proband-scores linked-model)})))
+
+(defn sopDataModelVersion
+    [event]
+  (let [json (-> event :genegraph.sink.event/value json/parse-string)
+        classificationPoints (get-in json ["resource" "classificationPoints"])
+        autosomalRecessiveDisorder (get classificationPoints "autosomalRecessiveDisorder")
+        probandWithOtherVariantType (contains? autosomalRecessiveDisorder "probandWithOtherVariantType")
+        segregation (get classificationPoints "segregation")
+        evidenceCountExome (contains? segregation "evidenceCountExome")]
+    (if (some? json)
+        (if probandWithOtherVariantType
+          8
+          (if evidenceCountExome
+            7
+            5))
+        nil)))
+
+(defn check [e]
+  (let [json (-> e :genegraph.sink.event/value json/parse-string)
+        sopVersion (get-in json ["resource" "sopVersion"])
+        dmVersion (sopDataModelVersion e)
+        evidenceScore (re-find #"\"evidenceScore\"" (:genegraph.sink.event/value e))
+        variantScore (re-find #"\"variantScore\"" (:genegraph.sink.event/value e))]
+    (when (and (some? sopVersion) 
+               (< dmVersion 8)
+               (some? variantScore)
+               (some? evidenceScore))
+      [(get json "resourceId") sopVersion dmVersion])))
+
 
 (defmethod add-model :gci-refactor
   [event]

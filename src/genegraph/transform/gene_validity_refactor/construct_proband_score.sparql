@@ -2,6 +2,8 @@
 prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
 prefix sepio: <http://purl.obolibrary.org/obo/SEPIO_>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix list: <http://jena.apache.org/ARQ/list#>
 
 construct {
   ?probandScoreEvidenceLine a ?lineType ;
@@ -125,7 +127,9 @@ where {
   ?individual gci:method ?method .
 
   OPTIONAL {
-    ?method gci:genotypingMethods ?methods .
+    ?method gci:genotypingMethods ?methodList .
+    #?methodList rdf:rest*/rdf:first ?methods .
+    ?methodList list:member ?methods .
   }
 
   OPTIONAL {
