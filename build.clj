@@ -6,6 +6,7 @@
 (def defaults
   "The defaults to configure a build."
   {:class-dir  "target/classes"
+   :java-opts  ["-Dclojure.main.report=stderr"]
    :main       'genegraph.server
    :path       "target"
    :project    "deps.edn"
