@@ -41,7 +41,8 @@
                construct-functional-evidence
                construct-rescue-evidence
                construct-case-control-evidence
-               construct-segregation-evidence
+               construct-proband-segregation-evidence
+               construct-family-segregation-evidence
                construct-evidence-connections
                construct-alleles
                construct-articles
@@ -291,7 +292,8 @@
                       clear-associated-snapshots
                       fix-hpo-ids
                       (remove-key-when-empty "geneWithSameFunctionSameDisease")
-                      (remove-key-when-empty "normalExpression")))
+                      (remove-key-when-empty "normalExpression")
+                      (remove-key-when-empty "scores")))
        json/generate-string))
 
 
@@ -402,7 +404,8 @@
                         (construct-functional-alteration-evidence params)
                         (construct-rescue-evidence params)
                         (construct-case-control-evidence params)
-                        (construct-segregation-evidence params)
+                        (construct-proband-segregation-evidence params)
+                        (construct-family-segregation-evidence params)
                         (construct-alleles params)
                         (construct-articles params)
                         (construct-earliest-articles params)
