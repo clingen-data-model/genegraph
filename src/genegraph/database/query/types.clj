@@ -313,3 +313,4 @@
   
   Literal
   (to-clj [x model] (.getValue x)))
+fnord
