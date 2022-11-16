@@ -16,12 +16,9 @@
 (defn uber
   "Throw or make an uberjar from source."
   [_]
-  (try (let [{:keys [paths] :as basis} (b/create-basis defaults)
-             project                   (assoc defaults :basis basis)]
-         (b/delete      project)
-         (b/copy-dir    (assoc project :src-dirs paths))
-         (b/compile-clj (assoc project :src-dirs ["src"]))
-         (b/uber        project))
-       (catch Exception x
-         (pprint x)
-         (throw x))))
+  (let [{:keys [paths] :as basis} (b/create-basis defaults)
+        project                   (assoc defaults :basis basis)]
+    (b/delete      project)
+    (b/copy-dir    (assoc project :src-dirs paths))
+    (b/compile-clj (assoc project :src-dirs ["src"]))
+    (b/uber        project)))
