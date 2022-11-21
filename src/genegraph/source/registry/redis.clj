@@ -13,16 +13,7 @@
 ;; Might also be able to kick the threadpool out of hte memoize cache
 ;; by sending the db spec with :mem/del as the first vararg.
 ;; http://ptaoussanis.github.io/encore/taoensso.encore.html#var-memoize
-(def conn {:pool {} :spec {:uri "redis://localhost:6379/"}})
 
-(defmacro wcar* [& body] `(car/wcar conn ~@body))
-
-(wcar* (car/ping)
-       (dorun (map #(car/set (str "key" %) (str "val" %)) (range 20))))
-
-(wcar* (car/get "key1"))
-
-(wcar* (car/scan 0 "match" "key*"))
 
 (defn default-serializer
   "Takes a key of arbitrary data, return byte array (or maybe string).
@@ -69,9 +60,22 @@
   [conn]
   (car/wcar conn (car/flushall)))
 
-;;(put-key conn "key1" "val1")
 
-#_(time (dorun (pmap #(put-key conn (str "key" %) (str "val" %)) (range 1000))))
-#_(time (def result-vals (car/wcar conn
-                                   (into '() (pmap #(get-key conn (str "key" %))
-                                                   (range 100))))))
+(comment
+  (def conn {:pool {} :spec {:uri "redis://localhost:6379/"}})
+
+  (defmacro wcar* [& body] `(car/wcar conn ~@body))
+  (wcar* (car/ping)
+         (dorun (map #(car/set (str "key" %) (str "val" %)) (range 20))))
+
+  (wcar* (car/get "key1"))
+
+  (wcar* (car/scan 0 "match" "key*")))
+
+(comment
+  #_(put-key conn "key1" "val1")
+
+  #_(time (dorun (pmap #(put-key conn (str "key" %) (str "val" %)) (range 1000))))
+  #_(time (def result-vals (car/wcar conn
+                                     (into '() (pmap #(get-key conn (str "key" %))
+                                                     (range 100)))))))
