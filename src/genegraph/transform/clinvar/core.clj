@@ -24,13 +24,13 @@
   (log/debug :fn :add-data)
   (try
     (let [event-with-json (add-parsed-value event)
-          _ (log/info :fn :genegraph.transform.clinvar.core/add-data
-                      :offset (:genegraph.sink.stream/offset event)
-                      :entity_type (get-in event-with-json
-                                           [::parsed-value :content :entity_type])
-                      :id (get-in event-with-json [::parsed-value :content :id]
-                                  (get-in event-with-json [::parsed-value :content]))
-                      :release_date (get-in event-with-json [::parsed-value :release_date]))
+          _ (log/debug :fn :genegraph.transform.clinvar.core/add-data
+                       :offset (:genegraph.sink.stream/offset event)
+                       :entity_type (get-in event-with-json
+                                            [::parsed-value :content :entity_type])
+                       :id (get-in event-with-json [::parsed-value :content :id]
+                                   (get-in event-with-json [::parsed-value :content]))
+                       :release_date (get-in event-with-json [::parsed-value :release_date]))
           event-with-data (case (get-in event-with-json
                                         [::parsed-value :content :entity_type])
                             "trait" (clinical-assertion/add-data-for-trait

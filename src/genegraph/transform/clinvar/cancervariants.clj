@@ -75,9 +75,9 @@
    Throws exception if the request fails. If the normalization
    fails but the request succeeds, should return Text variation type."
   [^String variation-expression ^Keyword expression-type]
-  (log/info :fn :normalize-canonical
-            :variation-expression variation-expression
-            :expression-type expression-type)
+  (log/debug :fn :normalize-canonical
+             :variation-expression variation-expression
+             :expression-type expression-type)
   (let [response (http-client/get url-to-canonical
                                   {:throw-exceptions false
                                    :query-params {"q" variation-expression
@@ -99,7 +99,7 @@
    assembly, chr, start, end, total_copies.
    Throws exception on error."
   [input-map]
-  (log/info :fn :normalize-absolute-copy-number :input-map input-map)
+  (log/debug :fn :normalize-absolute-copy-number :input-map input-map)
   (let [response (http-client/get url-absolute-cnv
                                   {:throw-exceptions false
                                    :query-params
@@ -113,7 +113,7 @@
         status (:status response)]
     (case status
       200 (let [body (-> response :body json/parse-string)]
-            (log/info :fn :normalize-absolute-copy-number :body body)
+            (log/debug :fn :normalize-absolute-copy-number :body body)
             (assert not-empty (-> body (get "absolute_copy_number")))
             (-> body (get "absolute_copy_number") add-vicc-context))
       ;; Error case
