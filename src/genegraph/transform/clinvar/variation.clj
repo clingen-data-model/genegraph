@@ -329,10 +329,10 @@
         (log/debug :selected selected)
         selected))
     (catch Exception e
-      #_(log/error :fn :normalize-canonical-expression
-                   :message "Exception normalizing canonical variation"
-                   :ex-data (ex-data e)
-                   :ex-message (ex-message e))
+      (log/error :fn :normalize-canonical-expression
+                 :message "Exception normalizing canonical variation"
+                 :ex-data (ex-data e)
+                 :ex-message (ex-message e))
       (update event :exception conj {:fn :normalize-canonical-expression
                                      :message "Exception normalizing canonical variation"
                                      :exception e}))))

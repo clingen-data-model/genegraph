@@ -1,15 +1,18 @@
 (ns genegraph.source.registry.vrs-registry
   (:require [clojure.core.async :as async]
+            [com.climate.claypoole :as cp]
             [genegraph.annotate :as ann]
+            [genegraph.database.util :refer [tx]]
+            [genegraph.migration :as migration]
             [genegraph.sink.event :as ev]
             [genegraph.sink.stream :as stream]
             [genegraph.source.registry.redis :as redis]
             [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.transform.types :as xform-types]
             [io.pedestal.log :as log]
-            [com.climate.claypoole :as cp]
             [mount.core :as mount])
-  (:import (java.time Duration)))
+  (:import (java.time Duration Instant)
+           (org.apache.kafka.common TopicPartition)))
 
 (def add-data-interceptor
   {:name ::add-data-interceptor
@@ -17,18 +20,11 @@
    :leave (fn [event] event)})
 
 (def interceptor-chain
-  [#_event-recorder/record-event-interceptor
-   ann/add-metadata-interceptor
+  [ann/add-metadata-interceptor
    #_add-data-interceptor
    ;; Right now add-model calls add-data internally for clinvar messages
    ann/add-model-interceptor
    ann/add-iri-interceptor
-   #_ann/add-validation-shape-interceptor
-   #_ann/add-validation-context-interceptor
-   #_ann/add-validation-interceptor
-   #_ann/add-subjects-interceptor
-   #_ann/add-action-interceptor
-   #_ann/add-replaces-interceptor
    #_event/stream-producer-interceptor])
 
 (defn channel-worker
@@ -48,24 +44,24 @@
    subseqs of event-seq instead of single elements of event-seq
    in order to increase the amount of work each thread task does."
   [pool event-seq]
-  (let [batches (partition-all 10 event-seq)]
-    (doall
-     (flatten-one-level
-      (cp/pmap pool
-               (fn [batch]
-                 (mapv (fn [event]
-                         (-> event
-                             (assoc ::ev/interceptors interceptor-chain)
-                             (ev/process-event!)))
-                       batch))
-               batches)))))
+  (flatten-one-level
+   (doall
+    (cp/pmap pool
+             (fn [batch]
+               (doall
+                (mapv (fn [event]
+                        (-> event
+                            (assoc ::ev/interceptors interceptor-chain)
+                            (ev/process-event!)))
+                      batch)))
+             (partition-all 20 event-seq)))))
 
 (defn event-processing-fn
   "Used as an arg to genegraph.sink.stream/assign-topic-consumer.
    Takes a seq of clojurified Kafka messages. (consumer-record-to-clj)"
   [pool event-seq]
   (log/info :fn :event-processing-fn :batch-size (count event-seq))
-  (dorun (cp/pmap pool
+  (doall (cp/pmap pool
                   (fn [event]
                     (-> event
                         (assoc ::ev/interceptors interceptor-chain)
@@ -76,39 +72,67 @@
 (def running-atom (atom true))
 
 (mount/defstate thread-pool
-  :start (cp/threadpool 10)
+  :start (cp/threadpool 20)
   :stop (cp/shutdown thread-pool))
 
 (def events-with-exceptions (atom []))
+
+(defn reset-consumer-position
+  "Resets the consumer position either to the stored offset in partition_offsets.edn,
+   or to the beginning of the topic if no offset was stored."
+  [consumer topic-partition]
+  (if-let [offset (get @stream/current-offsets [(.topic topic-partition)
+                                                (.partition topic-partition)])]
+    (.seek consumer topic-partition offset)
+    (.seekToBeginning consumer [topic-partition]))
+  consumer)
 
 (defn -main [& args]
   ;; Don't start the cancervariants rocksdb states. If redis is not configured,
   ;; those calls will fail.
   ;; Starting genegraph.transform.clinvar.cancervariants/redis-db
   ;; will throw an exception if Redis is not configured, or is not connectable.
-  (assert (genegraph.transform.clinvar.cancervariants/redis-configured?)
+  (assert (vicc/redis-configured?)
           "Redis must be configured with CACHE_REDIS_URI")
-  (assert (redis/connectable? vicc/_redis-opts)
-          (str "Could not connect to redis instance " (prn-str vicc/_redis-opts)))
+
+  ;; TODO add a genegraph.main module so that the genegraph.server isn't so tightly coupled
+  ;; and creating circular dependencies when trying to refer to the http server from elsewhere in the codebase
+  (require 'genegraph.server)
+  (mount/start (resolve 'genegraph.server/server))
+  (while (not (redis/connectable? vicc/_redis-opts))
+    (log/warn :fn ::-main
+              :msg "Could not connect to redis instance"
+              :opts vicc/_redis-opts)
+    (Thread/sleep (* 5 1000)))
+  (migration/populate-data-vol-if-needed)
   (mount/start #'genegraph.database.instance/db
                #'genegraph.database.property-store/property-store
                #'genegraph.transform.clinvar.cancervariants/redis-db
                #'genegraph.source.registry.vrs-registry/thread-pool)
+  (log/info :fn ::-main :running-states (mount/running-states))
   (let [batch-limit Long/MAX_VALUE
-        batch-counter (atom 0)]
-    (with-open [consumer (stream/assigned-consumer-for-topic :clinvar-raw)]
-      (.seekToBeginning consumer (.assignment consumer))
+        batch-counter (atom 0)
+        topic-kw :clinvar-raw
+        topic-name (-> stream/config :topics topic-kw :name)]
+    (stream/initialize-current-offsets!) ; Reads partition_offsets.edn
+    (with-open [consumer (stream/assigned-consumer-for-topic topic-kw)]
+      (doseq [tp (.assignment consumer)]
+        (reset-consumer-position consumer tp))
       (while (and @running-atom (<= (swap! batch-counter inc) batch-limit))
         (when-let [batch (.poll consumer (Duration/ofSeconds 5))]
-          (dorun
-           (->> batch
-                (map #(stream/consumer-record-to-clj % :clinvar-raw))
-                (event-processing-fn-batched thread-pool)
-                (filter #(:exception %))
-                (map #(swap! events-with-exceptions conj %)))))))))
-
-
-;; (get-key vicc/redis-db
-;;          ["NC_000003.12:g.37048629_37048631delCTA" :hgvs])
-
-;; (vicc/get-from-cache "NC_000002.12:g.237527482delC" :hgvs)
+          (when (not-empty batch)
+            (let [time-start (Instant/now)]
+              (dorun
+               (->> batch
+                    (map #(stream/consumer-record-to-clj % topic-kw))
+                    (event-processing-fn-batched thread-pool)
+                    (filter #(:exception %))
+                    (map #(swap! events-with-exceptions conj %))))
+              (let [batch-duration (Duration/between time-start (Instant/now))]
+                (log/info :fn ::-main
+                          :batch-start (some-> batch first .offset)
+                          :batch-end (some-> batch last .offset)
+                          :batch-size (.count batch)
+                          :batch-duration (.toString batch-duration)
+                          :time-per-event (.toString (.dividedBy batch-duration (long (.count batch))))))))
+          (stream/update-consumer-offsets! consumer [(TopicPartition. topic-name 0)]))))))
