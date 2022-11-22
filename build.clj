@@ -1,21 +1,24 @@
 (ns build
-  (:require [clojure.tools.build.api :as b]))
+  "Build this thing."
+  (:require [clojure.pprint          :refer [pprint]]
+            [clojure.tools.build.api :as b]))
 
-(def class-dir "target/classes")
-(def basis (b/create-basis {:project "deps.edn"}))
-(def uber-file "target/genegraph.jar")
+(def defaults
+  "The defaults to configure a build."
+  {:class-dir  "target/classes"
+   :java-opts  ["-Dclojure.main.report=stderr"]
+   :main       'genegraph.server
+   :path       "target"
+   :project    "deps.edn"
+   :target-dir "target/classes"
+   :uber-file  "target/genegraph.jar"})
 
-(defn clean [_]
-  (b/delete {:path "target"}))
-
-(defn uber [_]
-  (clean _)
-  (b/copy-dir {:src-dirs ["src" "resources" "config"]
-               :target-dir class-dir})
-  (b/compile-clj {:basis basis
-                  :src-dirs ["src"]
-                  :class-dir class-dir})
-  (b/uber {:class-dir class-dir
-           :uber-file uber-file
-           :basis basis
-           :main 'genegraph.server}))
+(defn uber
+  "Throw or make an uberjar from source."
+  [_]
+  (let [{:keys [paths] :as basis} (b/create-basis defaults)
+        project                   (assoc defaults :basis basis)]
+    (b/delete      project)
+    (b/copy-dir    (assoc project :src-dirs paths))
+    (b/compile-clj (assoc project :src-dirs ["src"]))
+    (b/uber        project)))
