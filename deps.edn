@@ -9,6 +9,7 @@
   {:url "https://dev-tools.cognitect.com/maven/releases/"}}
 
  :paths ["src" "resources" "config"]
+ :jvm-opts ["-Dclojure.main.report=stderr"]
 
  :aliases
 
@@ -58,6 +59,10 @@
     "-m" "reply.main"
     ;; REPL-y main function evalutes this.
     "-e" "(in-ns 'genegraph.server)"]}
+
+  :genegraph-with-repl
+  {:extra-deps {nrepl/nrepl {:mvn/version "0.9.0"}}
+   :main-opts ["-m" "genegraph.main-repl"]}
 
   ;; Starts an nREPL server on port 6000. Pre-compiles the genegraph.server ns.
   ;; There's a problem with all output not being sent to client.
