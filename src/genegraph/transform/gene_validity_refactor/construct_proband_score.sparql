@@ -82,8 +82,11 @@ where {
   ?individual gci:scores ?evidenceLine ;
   gci:variants ?variant ;
   gci:label ?individualLabel ;
-  gci:proband true ;
-  gci:sex ?sex .
+  gci:proband true .
+
+  OPTIONAL {
+    ?individual gci:sex ?sex .
+  }
 
   OPTIONAL {
       ?individual gci:denovo ?deNovo .

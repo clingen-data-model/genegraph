@@ -13,8 +13,8 @@
  :aliases
 
  {:build                                ; clj -T:build uber
-  {:deps       {io.github.clojure/tools.build       {:tag "v0.8.1"
-                                                     :sha "7d40500"}}
+  {:deps       {io.github.clojure/tools.build       {:tag "v0.8.4"
+                                                     :sha "8c3cd69"}}
    :ns-default build}
 
   :eastwood                             ; clj -M:eastwood
