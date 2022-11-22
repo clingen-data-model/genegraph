@@ -2,9 +2,9 @@
   (:require [clojure.core.async :as async]
             [com.climate.claypoole :as cp]
             [genegraph.annotate :as ann]
-            [genegraph.database.util :refer [tx]]
             [genegraph.migration :as migration]
             [genegraph.sink.event :as ev]
+            [genegraph.server :as server]
             [genegraph.sink.stream :as stream]
             [genegraph.source.registry.redis :as redis]
             [genegraph.transform.clinvar.cancervariants :as vicc]
@@ -94,11 +94,7 @@
   ;; will throw an exception if Redis is not configured, or is not connectable.
   (assert (vicc/redis-configured?)
           "Redis must be configured with CACHE_REDIS_URI")
-
-  ;; TODO add a genegraph.main module so that the genegraph.server isn't so tightly coupled
-  ;; and creating circular dependencies when trying to refer to the http server from elsewhere in the codebase
-  (require 'genegraph.server)
-  (mount/start (resolve 'genegraph.server/server))
+  (mount/start #'genegraph.server/server)
   (while (not (redis/connectable? vicc/_redis-opts))
     (log/warn :fn ::-main
               :msg "Could not connect to redis instance"
