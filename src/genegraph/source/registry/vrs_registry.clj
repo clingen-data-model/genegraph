@@ -124,7 +124,7 @@
             (let [time-start (Instant/now)]
               (dorun
                (->> batch
-                    (map #(stream/consumer-record-to-clj % topic-kw))
+                    (map #(stream/consumer-record-to-event % topic-kw))
                     (event-processing-fn-batched thread-pool)
                     (filter #(:exception %))
                     (map #(swap! events-with-exceptions conj %))))
