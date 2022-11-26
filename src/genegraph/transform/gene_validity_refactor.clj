@@ -400,9 +400,9 @@
                     OPTIONAL {
                       ?proposition gci:affiliation ?gdmAffiliationIRI .
                     }
-                    ?classification a gci:provisionalClassification .
-                    ?classification gci:approvedClassification true .
+
                     OPTIONAL {
+                      ?classification a gci:provisionalClassification .
                       ?classification gci:affiliation ?classificationAffiliationIRI .
                     }
                     BIND(COALESCE(?classificationAffiliationIRI, ?gdmAffiliationIRI) AS ?affiliationIRI) }"))
