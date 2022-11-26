@@ -22,13 +22,11 @@ construct {
   :sepio/ethnicity ?familyEthnicity .
 }
 where {
-  ?gdm a gci:gdm ;
-  gci:affiliation ?gdmAffiliation .
   
   ?family a gci:family ;
   gci:segregation ?segregation ;
   gci:label ?evidenceLabel ;
-  gci:affiliation ?gdmAffiliation .
+  gci:affiliation ?affiliation .
 
   BIND(IRI(CONCAT(STR(?family), "_family_segregation")) AS ?segregationID) .
 
@@ -91,7 +89,7 @@ where {
     { FILTER NOT EXISTS { [] gci:variantScores [] }
       ?proband gci:scores ?scores }
     FILTER NOT EXISTS { ?scores gci:scoreStatus <http://purl.obolibrary.org/obo/SEPIO_0004585> }
-    ?scores gci:affiliation ?gdmAffiliation .
+    ?scores gci:affiliation ?affiliation .
     ?scores gci:scoreStatus ?scoreStatus .
   }
 }

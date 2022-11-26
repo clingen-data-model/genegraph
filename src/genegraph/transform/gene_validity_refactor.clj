@@ -9,8 +9,8 @@
             [clojure.java.io :as io :refer [resource]]))
 
 (def base "http://dataexchange.clinicalgenome.org/gci/")
-
 (def legacy-report-base "http://dataexchange.clinicalgenome.org/gci/legacy-report_")
+(def affbase "http://dataexchange.clinicalgenome.org/agent/")
 
 (def gdm-sepio-relationships (l/read-rdf (str (resource "genegraph/transform/gene_validity_refactor/gdm_sepio_relationships.ttl")) {:format :turtle}))
 
@@ -91,7 +91,8 @@
             "diseaseId" {"@type" "@id"}
             "caseInfoType" {"@type" "@id"}
             "variantType" {"@type" "@id"}
-            "caseControl" {"@type" "@id"}                           
+            "caseControl" {"@type" "@id"}
+            "affiliation" {"@type" "@id"}
             ;; "experimental_scored" {"@type" "@id"}
             ;; "caseControl_scored" {"@type" "@id"}
             ;; "variants" {"@type" "@id"}
@@ -241,6 +242,16 @@
             
             }}))))
 
+(defn expand-affiliation-to-iri
+  "Expand affiliation when a simple string field, to be an iri"
+  [m]
+  (if (and (map? m) (get m "affiliation"))
+    (update m "affiliation" (fn [affiliation]
+                              (if (coll? affiliation)
+                                affiliation
+                                (str affbase affiliation))))
+          m))
+
 (defn fix-hpo-ids [m]
   (if (and (map? m) (get m "hpoIdInDiagnosis"))
     (update m "hpoIdInDiagnosis" (fn [phenotypes]
@@ -291,6 +302,7 @@
        (postwalk #(-> %
                       clear-associated-snapshots
                       fix-hpo-ids
+                      expand-affiliation-to-iri
                       (remove-key-when-empty "geneWithSameFunctionSameDisease")
                       (remove-key-when-empty "normalExpression")
                       (remove-key-when-empty "scores")))
@@ -378,17 +390,36 @@
                                 (re-find #"^(.*/)([a-z0-9-]*)$"))]
     (q/resource (str assertion-base "assertion_" assertion-id "-" approval-date))))
 
+
+(def has-affiliation-query
+  "Query that returns a curations full affiliation IRI as a Resource.
+  Expects affiliations to have been preprocessed to IRIs from string form."
+  (q/create-query "prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
+                  select ?affiliationIRI where {
+                    ?proposition a gci:gdm .
+                    OPTIONAL {
+                      ?proposition gci:affiliation ?gdmAffiliationIRI .
+                    }
+                    ?classification a gci:provisionalClassification .
+                    ?classification gci:approvedClassification true .
+                    OPTIONAL {
+                      ?classification gci:affiliation ?classificationAffiliationIRI .
+                    }
+                    BIND(COALESCE(?classificationAffiliationIRI, ?gdmAffiliationIRI) AS ?affiliationIRI) }"))
+
 (defn transform-gdm [gdm]
   (.setNsPrefixes gdm ns-prefixes)
   (let [gdm-is-about-gene (first (gdm-is-about-gene-query {::q/model gdm}))
         entrez-gene (first (hgnc-has-equiv-entrez-gene-query {:hgnc_gene gdm-is-about-gene}))
+        affiliation (first (has-affiliation-query {::q/model gdm}))
         params {::q/model (q/union gdm gdm-sepio-relationships)
                 :gcibase base
                 :legacy_report_base legacy-report-base
+                :affiliation affiliation
                 :arbase "http://reg.genome.network/allele/"
                 :cvbase "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
                 :pmbase "https://pubmed.ncbi.nlm.nih.gov/"
-                :affbase "http://dataexchange.clinicalgenome.org/agent/"
+                :affbase affbase
                 :entrez_gene entrez-gene}
         unlinked-model (q/union 
                         (construct-proposition params)
