@@ -14,13 +14,11 @@ construct {
   :rdfs/label ?evidenceLabel .
 }
 where {
-  ?gdm a gci:gdm ;
-  gci:affiliation ?gdmAffiliation .
 
   ?evidenceLine a gci:evidenceScore ;
   gci:calculatedScore ?calculatedScore ;
   gci:scoreStatus ?scoreStatus ;
-  gci:affiliation ?gdmAffiliation .
+  gci:affiliation ?affiliation .
 
   OPTIONAL {
     ?evidenceLine gci:scoreExplanation ?scoreDescription .
