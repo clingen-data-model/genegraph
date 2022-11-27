@@ -122,17 +122,18 @@
                        :status status
                        :response response
                        :input-map input-map})))))
-(def _redis-opts
+
+(def redis-opts
   "Pool opts:
    https://github.com/ptaoussanis/carmine/blob/e4835506829ef7fe0af68af39caef637e2008806/src/taoensso/carmine/connections.clj#L146"
   {:pool {#_(comment Default pool options)}
    :spec {:uri (System/getenv "CACHE_REDIS_URI")}})
 
 (mount/defstate redis-db
-  :start (if (redis/connectable? _redis-opts)
-           _redis-opts
+  :start (if (redis/connectable? redis-opts)
+           redis-opts
            (throw (ex-info "Could not connect to redis"
-                           {:conn-opts _redis-opts})))
+                           {:conn-opts redis-opts})))
   :stop (log/warn :msg "No stop behavior defined for redis connection and thread pool"))
 
 (defn expression-key-serializer
@@ -200,7 +201,6 @@
 (defn vrs-variation-for-expression
   "Accepts :hgvs, :spdi, or :cnv types of expressions.
    Example: HGVS or SPDI expressions. If type is :cnv, the expression should be a map.
-   When
    https://normalize.cancervariants.org/variation"
   ([variation-expression]
    (vrs-variation-for-expression variation-expression nil))

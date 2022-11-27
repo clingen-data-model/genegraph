@@ -78,6 +78,7 @@
 (def events-with-exceptions (atom []))
 
 (defn reset-consumer-position
+  ;; Try to remove this function and replace with a stream.clj function
   "Resets the consumer position either to the stored offset in partition_offsets.edn,
    or to the beginning of the topic if no offset was stored."
   [consumer topic-partition]
@@ -95,10 +96,13 @@
   (assert (vicc/redis-configured?)
           "Redis must be configured with CACHE_REDIS_URI")
   (mount/start #'genegraph.server/server)
-  (while (not (redis/connectable? vicc/_redis-opts))
+  ;; TODO add a max like 5 min with an error message
+  ;; TODO add a graceful rollout for the redis pod so node cycling doesn't crash connections
+  ;; TODO add catch of connection refused on further get/put to the redis
+  (while (not (redis/connectable? vicc/redis-opts))
     (log/warn :fn ::-main
               :msg "Could not connect to redis instance"
-              :opts vicc/_redis-opts)
+              :opts vicc/redis-opts)
     (Thread/sleep (* 5 1000)))
   (migration/populate-data-vol-if-needed)
   (mount/start #'genegraph.database.instance/db
