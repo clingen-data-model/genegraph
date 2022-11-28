@@ -113,10 +113,8 @@
   (assert (vicc/redis-configured?)
           "Redis must be configured with CACHE_REDIS_URI")
   (mount/start #'genegraph.server/server)
-  ;; TODO add a max like 5 min with an error message
   ;; TODO add a graceful rollout for the redis pod so node cycling doesn't crash connections
-  ;; TODO add catch of connection refused on further get/put to the redis
-  (wait-for-redis-connectability vicc/redis-opts 30)
+  (wait-for-redis-connectability vicc/redis-opts (* 30 1000))
   (migration/populate-data-vol-if-needed)
   (mount/start #'genegraph.database.instance/db
                #'genegraph.database.property-store/property-store

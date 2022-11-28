@@ -175,13 +175,10 @@
   (System/getenv "CACHE_REDIS_URI"))
 
 (defn with-retries
-  "Tries to execute body-fn retry-count times. body-fn can either
-   be a fn or an evaluatable list of clojure code."
+  "Tries to execute body-fn retry-count times."
   [retry-count retry-interval-ms body-fn]
   (try
-    (if (list? body-fn)
-      ((eval body-fn))
-      (body-fn))
+    (body-fn)
     (catch Exception e
       (if (> retry-count 0)
         (do (log/info :fn :with-retries
@@ -199,7 +196,7 @@
   [variation-expression expression-type value]
   (cond
     (redis-configured?) (with-retries 12 5000 ; retry up to 1m, every 5s
-                          '(redis-expression-cache-put
+                          #(redis-expression-cache-put
                             variation-expression
                             expression-type
                             value))
@@ -213,7 +210,7 @@
   [variation-expression expression-type]
   (cond
     (redis-configured?) (with-retries 12 5000
-                          '(redis-expression-cache-get
+                          #(redis-expression-cache-get
                             variation-expression
                             expression-type))
     :else (rocksdb/rocks-get vicc-expr-db
