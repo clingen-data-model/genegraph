@@ -75,8 +75,6 @@
   :start (cp/threadpool 20)
   :stop (cp/shutdown thread-pool))
 
-(def events-with-exceptions (atom []))
-
 (defn reset-consumer-position
   ;; Try to remove this function and replace with a stream.clj function
   "Resets the consumer position either to the stored offset in partition_offsets.edn,
@@ -88,8 +86,10 @@
     (.seekToBeginning consumer [topic-partition]))
   consumer)
 
-
-(defn wait-for-redis-connectability [redis-opts max-ms]
+(defn wait-for-redis-connectability
+  "Will wait up to max-ms milliseconds for the redis server specified by
+   redis-opts to accept connections."
+  [redis-opts max-ms]
   (loop [i 0]
     (when (not (redis/connectable? redis-opts))
       (if (>= (* i 1000) max-ms)
@@ -109,11 +109,10 @@
   ;; Don't start the cancervariants rocksdb states. If redis is not configured,
   ;; those calls will fail.
   ;; Starting genegraph.transform.clinvar.cancervariants/redis-db
-  ;; will throw an exception if Redis is not configured, or is not connectable.
+  ;; will throw an exception if Redis is not configured or is not connectable.
   (assert (vicc/redis-configured?)
           "Redis must be configured with CACHE_REDIS_URI")
   (mount/start #'genegraph.server/server)
-  ;; TODO add a graceful rollout for the redis pod so node cycling doesn't crash connections
   (wait-for-redis-connectability vicc/redis-opts (* 30 1000))
   (migration/populate-data-vol-if-needed)
   (mount/start #'genegraph.database.instance/db
@@ -138,7 +137,7 @@
                     (map #(stream/consumer-record-to-event % topic-kw))
                     (event-processing-fn-batched thread-pool)
                     (filter #(:exception %))
-                    (map #(swap! events-with-exceptions conj %))))
+                    (map #(log/error :fn ::-main :event-with-exception %))))
               (let [batch-duration (Duration/between time-start (Instant/now))]
                 (log/info :fn ::-main
                           :batch-start (some-> batch first .offset)
