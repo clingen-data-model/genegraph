@@ -125,7 +125,8 @@
 
 (def redis-opts
   "Pool opts:
-   https://github.com/ptaoussanis/carmine/blob/e4835506829ef7fe0af68af39caef637e2008806/src/taoensso/carmine/connections.clj#L146"
+   https://github.com/ptaoussanis/carmine/blob/e4835506829ef7fe0af68af39caef637e2008806/src/taoensso/carmine/connections.clj#L146
+   Note: nil .spec values defaults to 127.0.0.1:6379"
   {:pool {#_(comment Default pool options)}
    :spec {:uri (System/getenv "CACHE_REDIS_URI")}})
 
@@ -173,13 +174,35 @@
 (defn redis-configured? []
   (System/getenv "CACHE_REDIS_URI"))
 
+(defn with-retries
+  "Tries to execute body-fn retry-count times. body-fn can either
+   be a fn or an evaluatable list of clojure code."
+  [retry-count retry-interval-ms body-fn]
+  (try
+    (if (list? body-fn)
+      ((eval body-fn))
+      (body-fn))
+    (catch Exception e
+      (if (> retry-count 0)
+        (do (log/info :fn :with-retries
+                      :msg (format "body-fn failed, trying again in %s ms"
+                                   retry-interval-ms))
+            (Thread/sleep retry-interval-ms)
+            (with-retries
+              (dec retry-count)
+              retry-interval-ms
+              body-fn))
+        (do (log/error :fn :with-retries :msg "Retry limit exceeded")
+            (throw e))))))
+
 (defn store-in-cache
   [variation-expression expression-type value]
   (cond
-    (redis-configured?) (redis-expression-cache-put
-                         variation-expression
-                         expression-type
-                         value)
+    (redis-configured?) (with-retries 12 5000 ; retry up to 1m, every 5s
+                          '(redis-expression-cache-put
+                            variation-expression
+                            expression-type
+                            value))
     :else (rocksdb/rocks-put! vicc-expr-db
                               (expression-key-serializer
                                variation-expression
@@ -189,9 +212,10 @@
 (defn get-from-cache
   [variation-expression expression-type]
   (cond
-    (redis-configured?) (redis-expression-cache-get
-                         variation-expression
-                         expression-type)
+    (redis-configured?) (with-retries 12 5000
+                          '(redis-expression-cache-get
+                            variation-expression
+                            expression-type))
     :else (rocksdb/rocks-get vicc-expr-db
                              (expression-key-serializer
                               variation-expression

@@ -89,10 +89,10 @@
   consumer)
 
 
-(defn wait-for-redis-connectability [redis-opts max-seconds]
+(defn wait-for-redis-connectability [redis-opts max-ms]
   (loop [i 0]
     (when (not (redis/connectable? redis-opts))
-      (if (>= i max-seconds)
+      (if (>= (* i 1000) max-ms)
         (throw (ex-info (str "Could not connect to redis " redis-opts)
                         {:redis-opts redis-opts}))
         (do (log/info :fn :wait-for-redis-connectability
