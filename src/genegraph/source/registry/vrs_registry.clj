@@ -88,6 +88,23 @@
     (.seekToBeginning consumer [topic-partition]))
   consumer)
 
+
+(defn wait-for-redis-connectability [redis-opts max-seconds]
+  (loop [i 0]
+    (when (not (redis/connectable? redis-opts))
+      (if (>= i max-seconds)
+        (throw (ex-info (str "Could not connect to redis " redis-opts)
+                        {:redis-opts redis-opts}))
+        (do (log/info :fn :wait-for-redis-connectability
+                      :msg "Waiting for redis availability"
+                      :redis-opts redis-opts
+                      :waited-seconds i)
+            (Thread/sleep (* 1 1000))
+            (recur (inc i))))))
+  (log/info :fn :wait-for-redis-connectability
+            :msg "Connected"
+            :redis-opts redis-opts))
+
 (defn -main [& args]
   ;; Don't start the cancervariants rocksdb states. If redis is not configured,
   ;; those calls will fail.
@@ -99,11 +116,7 @@
   ;; TODO add a max like 5 min with an error message
   ;; TODO add a graceful rollout for the redis pod so node cycling doesn't crash connections
   ;; TODO add catch of connection refused on further get/put to the redis
-  (while (not (redis/connectable? vicc/redis-opts))
-    (log/warn :fn ::-main
-              :msg "Could not connect to redis instance"
-              :opts vicc/redis-opts)
-    (Thread/sleep (* 5 1000)))
+  (wait-for-redis-connectability vicc/redis-opts 30)
   (migration/populate-data-vol-if-needed)
   (mount/start #'genegraph.database.instance/db
                #'genegraph.database.property-store/property-store
