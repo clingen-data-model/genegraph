@@ -55,10 +55,10 @@
    ;; Genegraph starts multiple background threads, so sending ctrl+d to the REPL kills the main thread but the process
    ;; hangs because the other threads are still active. (System/exit 0) will terminate the process.
    [;; clj.main evaluates this, which compiles the src dependency tree.
-    "-e" "(require 'genegraph.server)"
+    "-e" "(require 'genegraph.main)"
     "-m" "reply.main"
     ;; REPL-y main function evalutes this.
-    "-e" "(in-ns 'genegraph.server)"]}
+    "-e" "(in-ns 'genegraph.main)"]}
 
   :genegraph-with-repl
   {:extra-deps {nrepl/nrepl {:mvn/version "0.9.0"}}
