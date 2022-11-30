@@ -81,15 +81,15 @@
 
 (test/deftest test-parsed-expression-span
   (test/testing "Normal case single bounds"
-    (test/is (= 10 (hgvs/parsed-expression-span
+    (test/is (= 11 (hgvs/parsed-expression-span
                     {:start 10 :end 20}))))
   (test/testing "Normal case definite range bounds"
-    (test/is (= 10 (hgvs/parsed-expression-span
+    (test/is (= 11 (hgvs/parsed-expression-span
                     {:start [10 11] :end [19 20]}))))
   (test/testing "Normal case single and definite range"
-    (test/is (= 10 (hgvs/parsed-expression-span
+    (test/is (= 11 (hgvs/parsed-expression-span
                     {:start [10 11] :end 20})))
-    (test/is (= 10 (hgvs/parsed-expression-span
+    (test/is (= 11 (hgvs/parsed-expression-span
                     {:start 10 :end [19 20]}))))
   (test/testing "Missing endpoint"
     (test/is (= 0 (hgvs/parsed-expression-span
@@ -97,9 +97,9 @@
     (test/is (= 0 (hgvs/parsed-expression-span
                    {:end 20}))))
   (test/testing "Indefinite endpoint"
-    (test/is (= 10 (hgvs/parsed-expression-span
+    (test/is (= 11 (hgvs/parsed-expression-span
                     {:start ["?" 10] :end [20 "?"]})))
-    (test/is (= 10 (hgvs/parsed-expression-span
+    (test/is (= 11 (hgvs/parsed-expression-span
                     {:start [10 "?"] :end ["?" 20]}))))
   (test/testing "Unusably indefinite endpoint"
     (test/is (= 0 (hgvs/parsed-expression-span

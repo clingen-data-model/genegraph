@@ -71,4 +71,4 @@
   (let [min-start (some->> [start] flatten (filter int?) not-empty (apply min))
         max-end (some->> [end] flatten (filter int?) not-empty (apply max))]
     (if (and min-start max-end)
-      (- max-end min-start) 0)))
+      (+ 1 (- max-end min-start)) 0)))
