@@ -61,3 +61,14 @@
               add-start
               add-end
               start-end-ints))))
+
+(defn parsed-expression-span
+  "Takes a map of expression terms returned by hgvs-parse-sequence-and-location.
+   Returns the largest span length that the variant can be definitively said to span.
+   For example if either endpoint has an indefinite outer bound, the length is calculated
+   using that endpoint's inner bound. If either endpoint has no definite bound, the span is 0."
+  [{:keys [start end] :as expr-map}]
+  (let [min-start (some->> [start] flatten (filter int?) not-empty (apply min))
+        max-end (some->> [end] flatten (filter int?) not-empty (apply max))]
+    (if (and min-start max-end)
+      (- max-end min-start) 0)))
