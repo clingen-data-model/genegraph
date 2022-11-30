@@ -7,13 +7,6 @@
 (def coord-ranges-re #"\([\d_\?]+_[\d_\?]+\)_\([\d_\?]+_[\d_\?]+\)")
 (def coord-range-re #"\(([\d_\?]+)_([\d_\?]+)\)")
 
-(def expressions
-  ["NC_000003.12:g.177772523_185716872dup"
-   "NC_000017.10:g.(?_34508117)_(36248918_?)dup"
-   "NC_000021.7:g.(40550036_40589822)_(46915388_46944323)del"])
-
-(def totally-invalid
-  ["asdf"])
 
 (defn hgvs-parse-sequence-and-location
   "Attempts to parse out HGVS terms from input-expression.
@@ -44,7 +37,7 @@
            accession
            sequence-type
            remainder]
-          (re-find (re-pattern sequence-info-re) input-expression)]
+          (re-find (re-pattern sequence-info-re) (or input-expression ""))]
       (some-> matching-substring
               (#(identity {:expression input-expression
                            :matching-substring %
@@ -53,12 +46,3 @@
                            :remainder remainder}))
               add-start
               add-end))))
-
-(comment
-  (pprint
-   (for [expr expressions]
-     (hgvs-parse-sequence-and-location expr)))
-
-  (pprint
-   (for [expr totally-invalid]
-     (hgvs-parse-sequence-and-location expr))))
