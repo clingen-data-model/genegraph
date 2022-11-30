@@ -108,7 +108,7 @@
                    {:start ["?" 10] :end ["?" "?"]})))))
 
 
-(test/run-tests)
+#_(test/run-tests)
 
 
 (def expressions
@@ -124,6 +124,6 @@
    (for [expr expressions]
      (hgvs/hgvs-parse-sequence-and-location expr)))
 
-  (pprint
+  (clojure.pprint/pprint
    (for [expr totally-invalid]
-     (hgvs-parse-sequence-and-location expr))))
+     (hgvs/hgvs-parse-sequence-and-location expr))))
