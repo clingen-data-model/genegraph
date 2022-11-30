@@ -31,10 +31,6 @@ where {
   ?proposition a gci:gdm ;
   gci:gene / gci:hgncId ?hgnc . # Adding path to gene to fix bug related to incomplete GDM
 
-  OPTIONAL {
-    ?proposition gci:affiliation ?gdmAffiliationID ;
-  }
-  
   ?classification a gci:provisionalClassification ;
   gci:approvedClassification true ;
   gci:publishClassification true ;
@@ -46,12 +42,6 @@ where {
     ?classification gci:evidenceSummary ?description_text .
   }
   
-  OPTIONAL {
-    ?classification gci:affiliation ?classificationAffiliationID ;
-  }
-
-  BIND(IRI(CONCAT(?affbase, COALESCE(?classificationAffiliationID, ?gdmAffiliationID))) AS ?affiliation) .
-
   OPTIONAL {
     ?classification gci:sopVersion ?declaredSopVersion .
   }

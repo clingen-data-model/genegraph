@@ -45,13 +45,10 @@ where {
   # Ensure this pattern does not exist for >= SOPV8 curations
   FILTER NOT EXISTS { ?otherScore a gci:variantScore } .
 
-  ?gdm a gci:gdm ;
-  gci:affiliation ?gdmAffiliation .
-  
   ?evidenceLine a gci:evidenceScore ;
   gci:scoreStatus ?scoreStatus ;
   gci:date_created ?dateCreated ;
-  gci:affiliation ?gdmAffiliation .
+  gci:affiliation ?affiliation .
 
   # maschinations due to contradicts score_status do not have gci:caseInfoType
   OPTIONAL {
