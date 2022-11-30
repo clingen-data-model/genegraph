@@ -11,7 +11,8 @@
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.jsonld.common :as jsonld]
-            [io.pedestal.log :as log]))
+            [io.pedestal.log :as log]
+            [genegraph.transform.clinvar.hgvs :as hgvs]))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
 (def variation-frame
@@ -303,13 +304,29 @@
        :label (-> event ::prioritized-expression :expr)}
       (let [candidate-expressions (::canonical-candidate-expressions event)
 
-          ;; Temporary fix for timing out dup exprs
-          ;; https://github.com/clingen-data-model/genegraph/issues/698
-            non-cnv-dup? (fn [{:keys [expr type]}]
-                           (and (string? expr)
-                                (.contains expr "dup") ; above two imply not spdi or cnv, so dup hgvs
-                                (not= :cnv type)))
-            candidate-expressions (filter (comp not non-cnv-dup?) candidate-expressions)
+            ;; Temporary fix for timing out dup exprs
+            ;; https://github.com/clingen-data-model/genegraph/issues/698
+            ;; non-iscn-cnv-too-long? (fn [{:keys [expr type]}]
+            ;;                          (and (string? expr)
+            ;;                               (-> expr
+            ;;                                   hgvs/hgvs-parse-sequence-and-location
+            ;;                                   (#(do (log/info :parsed-hgvs %) %))
+            ;;                                   hgvs/parsed-expression-span
+            ;;                                   (#(> % 50)))))
+            ;; candidate-expressions (filter (comp not non-iscn-cnv-too-long?) candidate-expressions)
+
+
+            ;; Temporary fix for timing out dup exprs
+            ;; https://github.com/clingen-data-model/genegraph/issues/698
+            ;; Remove del/dup hgvs expressions which are on a variation labeled
+            ;; as being a copy number variation in ClinVar
+            non-iscn-deldup? (fn [{:keys [expr type]}]
+                               (and (string? expr)
+                                    ; above two imply not spdi or cnv, so dup/del hgvs
+                                    (or (.contains expr "dup")
+                                        (.contains expr "del"))
+                                    (not= :cnv type)))
+            candidate-expressions (filter (comp not non-iscn-deldup?) candidate-expressions)
 
             _ (log/info :candidate-expressions candidate-expressions)
           ;; each vrs-ret[:variation] is the structure in the 'variation', 'canonical_variaton' (or equivalent)
