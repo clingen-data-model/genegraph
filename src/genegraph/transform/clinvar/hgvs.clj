@@ -1,5 +1,4 @@
-(ns genegraph.transform.clinvar.hgvs
-  (:require [clojure.pprint :refer [pprint]]))
+(ns genegraph.transform.clinvar.hgvs)
 
 (def sequence-info-re #"(.+)?:(.+)?\.(.*)")
 
@@ -7,6 +6,17 @@
 (def coord-ranges-re #"\([\d_\?]+_[\d_\?]+\)_\([\d_\?]+_[\d_\?]+\)")
 (def coord-range-re #"\(([\d_\?]+)_([\d_\?]+)\)")
 
+(defn maybe-parse-int
+  "Parses s as a java.lang.Long, or returns s if it can't"
+  [^String s]
+  (or (parse-long s) s))
+
+(defn do-to-one-or-more
+  "If thing is a collection, map f to (seq thing), otherwise call f on thing."
+  [thing f]
+  (cond
+    (coll? thing) (map f thing)
+    :else (f thing)))
 
 (defn hgvs-parse-sequence-and-location
   "Attempts to parse out HGVS terms from input-expression.
@@ -17,7 +27,11 @@
     :remainder Everything after the end location. A substitution, del, dup
     :input-expression The original expression passed in}"
   [input-expression]
-  (letfn [(add-start [{:keys [remainder] :as %}]
+  (letfn [(start-end-ints [{:keys [start end] :as %}]
+            (-> %
+                (assoc :start (do-to-one-or-more start maybe-parse-int))
+                (assoc :end (do-to-one-or-more end maybe-parse-int))))
+          (add-start [{:keys [remainder] :as %}]
             (if-let [start-range (re-find (re-pattern (str "^" coord-range-re "_" "(.+)")) remainder)]
               (assoc %
                      :start (-> start-range rest drop-last)
@@ -45,4 +59,5 @@
                            :sequence-type sequence-type
                            :remainder remainder}))
               add-start
-              add-end))))
+              add-end
+              start-end-ints))))

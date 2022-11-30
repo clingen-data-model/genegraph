@@ -18,40 +18,40 @@
     (let [expr "NC_1.1:g.100_101dup"
           expected {:accession "NC_1.1"
                     :sequence-type "g"
-                    :start "100"
-                    :end "101"
+                    :start 100
+                    :end 101
                     :remainder "dup"}]
       (test/is (m<= expected (hgvs/hgvs-parse-sequence-and-location expr)))))
   (test/testing "Simple del"
     (let [expr "NC_1.1:g.100_101del"
           expected {:accession "NC_1.1"
                     :sequence-type "g"
-                    :start "100"
-                    :end "101"
+                    :start 100
+                    :end 101
                     :remainder "del"}]
       (test/is (m<= expected (hgvs/hgvs-parse-sequence-and-location expr)))))
   (test/testing "del with definite range"
     (let [expr "NC_1.1:g.(100_110)_(120_130)del"
           expected {:accession "NC_1.1"
                     :sequence-type "g"
-                    :start ["100" "110"]
-                    :end ["120" "130"]
+                    :start [100 110]
+                    :end [120 130]
                     :remainder "del"}]
       (test/is (m<= expected (hgvs/hgvs-parse-sequence-and-location expr)))))
   (test/testing "dup with indefinite outer"
     (let [expr "NC_1.1:g.(?_100)_(110_?)dup"
           expected {:accession "NC_1.1"
                     :sequence-type "g"
-                    :start ["?" "100"]
-                    :end ["110" "?"]
+                    :start ["?" 100]
+                    :end [110 "?"]
                     :remainder "dup"}]
       (test/is (m<= expected (hgvs/hgvs-parse-sequence-and-location expr)))))
   (test/testing "dup with indefinite inner"
     (let [expr "NC_1.1:g.(100_?)_(?_110)dup"
           expected {:accession "NC_1.1"
                     :sequence-type "g"
-                    :start ["100" "?"]
-                    :end ["?" "110"]
+                    :start [100 "?"]
+                    :end ["?" 110]
                     :remainder "dup"}]
       (test/is (m<= expected (hgvs/hgvs-parse-sequence-and-location expr)))))
   (test/testing "Real examples"
@@ -61,18 +61,18 @@
            "NC_000021.7:g.(40550036_40589822)_(46915388_46944323)del"]
           expected1 {:accession "NC_000003.12"
                      :sequence-type "g"
-                     :start "177772523"
-                     :end "185716872"
+                     :start 177772523
+                     :end 185716872
                      :remainder "dup"}
           expected2 {:accession "NC_000017.10"
                      :sequence-type "g"
-                     :start ["?" "34508117"]
-                     :end ["36248918" "?"]
+                     :start ["?" 34508117]
+                     :end [36248918 "?"]
                      :remainder "dup"}
           expected3 {:accession "NC_000021.7"
                      :sequence-type "g"
-                     :start ["40550036" "40589822"]
-                     :end ["46915388" "46944323"]
+                     :start [40550036 40589822]
+                     :end [46915388 46944323]
                      :remainder "del"}]
       (test/is (m<= expected1 (hgvs/hgvs-parse-sequence-and-location expr1)))
       (test/is (m<= expected2 (hgvs/hgvs-parse-sequence-and-location expr2)))
