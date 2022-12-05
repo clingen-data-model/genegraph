@@ -348,10 +348,7 @@
   to feed a new cap in, should that change."
   [model]
   (let [proband-evidence-lines
-        (q/select "select ?x where 
-{ ?prop :sepio/has-qualifier :hpo/AutosomalRecessiveInheritance ;
- ^( :sepio/has-subject ) / ( :sepio/has-evidence )+ ?x .
- ?x a :sepio/ProbandScoreCapEvidenceLine . }" {} model)]
+        (q/select "select ?x where { ?x a :sepio/ProbandScoreCapEvidenceLine }" {} model)]
     (q/union
      model
      (l/statements-to-model
