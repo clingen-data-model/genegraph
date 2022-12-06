@@ -155,14 +155,30 @@ where {
      ?individual gci:termsInDiagnosis ?phenotypeFreeText .
   }
 
+  # Below is a score fix based dependent on mode of inheritance, based on the
+  # conversation with Gloria Cheung from Slack:
+  
+  # https://clingen.slack.com/archives/C03TR9RA4DP/p1665181171371129
+
+#   Hi 
+# @Tristan Nelson, here is my findings.
+# Looks like most of the recessiveZygosity=“Homozygous” are left over data from previous SOPv7.For SOPv8, the recessiveZygosity value for Semidominant curation is evaluated as below in GCI. If probandIs is “Monoallelic heterozygous” or “Hemizygous” then treat as AUTOSOMAL_DOMINANT. And if “Hemizygous” is checked then recessiveZygosity=“Hemizyous”
+# So in these cases, recessiveZygosity=“Homozygous” should not be evaluated (is not valid). In SOPv8, if “Hemizygous” is unchecked, recessiveZygosity attribute is removed.
+# If probandIs is “Biallelic homozygous” or “Biallelic compound heterozygous” then treat as AUTOSOMAL_RECESSIVE. And recessiveZygosity=“TwoTrans” if “Check here if there are 2 variants AND they are both located in trans with respect to one another” option is checked. And recessiveZygosity=“Homozygous” if “Homozygous” option is checked. So in these cases, recessiveZygosity=“Homozygous” is used to consider how the point is counted. If “Biallelic homozygous” is selected, recessiveZygosity is forced to be “Homozygous”, or if “Biallelic compound heterozygous” is selected and “Homozygous” is checked then in these cases only one variant score can be added and score will be double counted.
+# For example, user HOU336_904 and LU_II:7, both have “probandIs”=“Biallelic homozygous” and recessiveZygosity=“Homozygous” and have one variantScore which score is double counted.
+
   OPTIONAL {
-    ?individual gci:recessiveZygosity ?zygosity .
+    ?individual gci:recessiveZygosity ?recessiveZygosity .
   }
 
-  BIND(IF( bound(?zygosity) && ?zygosity = :geno/Homozygous , ?baseScore * 2 , ?baseScore) AS ?score) .
+  OPTIONAL {
+    ?individual gci:probandIs ?semidominantZygosity .
+  }
 
-  BIND(IF( bound(?zygosity) && ?zygosity = :geno/Homozygous , ?calculatedScore * 2 , ?calculatedScore) AS ?resultCalculatedScore) .
-  
+  BIND(COALESCE(?semidominantZygosity, ?recessiveZygosity, :geno/Heterozygous ) AS ?zygosity) .
+  BIND(IF( ?zygosity = :geno/Homozygous , ?baseScore * 2 , ?baseScore) AS ?score) .
+  BIND(IF( ?zygosity = :geno/Homozygous , ?calculatedScore * 2 , ?calculatedScore) AS ?resultCalculatedScore) .
+
   ?annotation  gci:individuals|gci:individualIncluded ?individual ;
   ^gci:familyIncluded? / ^(gci:families|gci:groups)? / gci:article ?publication .
 
