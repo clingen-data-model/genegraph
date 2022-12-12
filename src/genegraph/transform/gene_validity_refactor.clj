@@ -392,17 +392,18 @@
   "Query that returns a curations full affiliation IRI as a Resource.
   Expects affiliations to have been preprocessed to IRIs from string form."
   (q/create-query "prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
-                  select ?affiliationIRI where {
-                    ?proposition a gci:gdm .
-                    OPTIONAL {
+                   select ?affiliationIRI where {
+                     ?proposition a gci:gdm .
+                     OPTIONAL {
                       ?proposition gci:affiliation ?gdmAffiliationIRI .
-                    }
-
-                    OPTIONAL {
+                     }
+                     OPTIONAL {
                       ?classification a gci:provisionalClassification .
                       ?classification gci:affiliation ?classificationAffiliationIRI .
-                    }
-                    BIND(COALESCE(?classificationAffiliationIRI, ?gdmAffiliationIRI) AS ?affiliationIRI) }"))
+                      ?classification gci:last_modified ?date .
+                     }
+                     BIND(COALESCE(?classificationAffiliationIRI, ?gdmAffiliationIRI) AS ?affiliationIRI) }
+                     ORDER BY DESC(?date) LIMIT 1"))
 
 (defn transform-gdm [gdm]
   (.setNsPrefixes gdm ns-prefixes)
