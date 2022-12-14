@@ -265,6 +265,7 @@
   (let [vrs-obj (vicc/vrs-variation-for-expression
                  (-> expression)
                  (-> expression-type keyword))]
+    (log/debug :fn :get-vrs-variation-map :vrs-obj vrs-obj)
     (if (empty? vrs-obj)
       (let [e (ex-info "No variation received from VRS normalization" {:fn :add-vrs-model :expression expression})]
         (log/error :message (ex-message e) :data (ex-data e))
@@ -349,7 +350,8 @@
       (log/error :fn :normalize-canonical-expression
                  :message "Exception normalizing canonical variation"
                  :ex-data (ex-data e)
-                 :ex-message (ex-message e))
+                 :ex-message (ex-message e)
+                 :ex-stacktrace (with-out-str (clojure.stacktrace/print-stack-trace e)))
       (update event :exception conj {:fn :normalize-canonical-expression
                                      :message "Exception normalizing canonical variation"
                                      :exception e}))))
