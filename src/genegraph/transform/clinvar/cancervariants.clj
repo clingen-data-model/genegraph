@@ -126,16 +126,28 @@
 (def redis-opts
   "Pool opts:
    https://github.com/ptaoussanis/carmine/blob/e4835506829ef7fe0af68af39caef637e2008806/src/taoensso/carmine/connections.clj#L146
+   Can pass a predefined pool and shut this down when finished with it
+   https://github.com/ptaoussanis/carmine/commit/a1d0c4ec1dd4848a9323eaa149ab284509664515
    Note: nil .spec values defaults to 127.0.0.1:6379"
-  {:pool {#_(comment Default pool options)}
+  {:pool-fn #(redis/make-connection-pool {#_(comment Default pool options)})
    :spec {:uri (System/getenv "CACHE_REDIS_URI")}})
 
 (mount/defstate redis-db
   :start (if (redis/connectable? redis-opts)
-           redis-opts
+           (assoc redis-opts :pool ((:pool-fn redis-opts)))
            (throw (ex-info "Could not connect to redis"
                            {:conn-opts redis-opts})))
-  :stop (log/warn :msg "No stop behavior defined for redis connection and thread pool"))
+  ;; TODO test that this .close actually terminates the connections that are idle
+  ;; Look at threads
+  ;; https://stackoverflow.com/a/3018672/2172133
+  ;; Potentially tweak pool options:
+  #_{:time-between-eviction-runs-ms 1000
+     :min-evictable-idle-time-ms 1000
+     :test-on-borrow? true
+     :test-on-return? true
+     :test-while-idle? true}
+  :stop (.close (:pool redis-db)))
+
 
 (defn expression-key-serializer
   "TODO variation-expression can be a map if its a CNV.

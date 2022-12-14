@@ -1,7 +1,8 @@
 (ns genegraph.source.registry.redis
   (:require [genegraph.rocksdb :as rocksdb]
             [io.pedestal.log :as log]
-            [taoensso.carmine :as car]))
+            [taoensso.carmine :as car]
+            [taoensso.carmine.connections :as car-conn]))
 
 ;; Carmine uses memoization to store the threadpool for each connection config.
 ;; This might leave dangling threads in the pool even when the application code
@@ -10,10 +11,18 @@
 ;; https://github.com/ptaoussanis/carmine/issues/266
 ;; Might be able to get the handle to the threadpool by calling
 ;; taoensso.carmine.connections/conn-pool.
-;; Might also be able to kick the threadpool out of hte memoize cache
+;; Might also be able to kick the threadpool out of the memoize cache
 ;; by sending the db spec with :mem/del as the first vararg.
 ;; http://ptaoussanis.github.io/encore/taoensso.encore.html#var-memoize
+;; Resolve with an explicitly defined threadpool:
+;; https://github.com/ptaoussanis/carmine/commit/a1d0c4ec1dd4848a9323eaa149ab284509664515
 
+
+(defn make-connection-pool
+  "connections/conn-pool supports :mem/del and :mem/fresh via encore/cache
+   https://github.com/ptaoussanis/encore/blob/0034c80e5caea4cf1d413c5eb918798761e40570/src/taoensso/encore.cljc#L2475"
+  [pool-opts]
+  (car-conn/conn-pool :mem/fresh pool-opts))
 
 (defn default-serializer
   "Takes a key of arbitrary data, return byte array (or maybe string).
