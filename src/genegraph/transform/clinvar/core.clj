@@ -68,9 +68,9 @@
     (-> event
         ;; Construct an empty model so downstream interceptors that try to read it dont get NPE
         (assoc ::q/model (l/statements-to-model []))
-        (update :exception conj {:fn :add-model-from-contextualized-data
-                                 :msg "Event did not have contextualized data"
-                                 :entity-type (-> event :genegraph.transform.clinvar/format)}))))
+        (update :warning conj {:fn :add-model-from-contextualized-data
+                               :msg "Event did not have contextualized data"
+                               :entity-type (-> event :genegraph.transform.clinvar/format)}))))
 
 (defmethod add-model :clinvar-raw
   [event]
