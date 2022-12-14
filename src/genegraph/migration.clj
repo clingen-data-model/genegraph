@@ -16,18 +16,13 @@
             [mount.core :refer [start stop]]
             [clojure.java.shell :refer [sh]]
             [io.pedestal.log :as log])
-  (:import [java.time ZonedDateTime ZoneOffset]
-           java.time.format.DateTimeFormatter
-           [java.nio ByteBuffer]
-           [java.nio.file Path Paths]
-           [java.io InputStream OutputStream FileInputStream File]
-           [com.google.common.io ByteStreams]
-           [com.google.cloud.storage Bucket BucketInfo Storage StorageOptions
-                                     BlobId BlobInfo Blob]
-           [com.google.cloud.storage Storage$BlobWriteOption
-                                     Storage$BlobTargetOption
-                                     Storage$BlobSourceOption
-                                     Blob$BlobSourceOption]))
+  (:import (java.time ZonedDateTime ZoneOffset)
+           (java.time.format DateTimeFormatter)
+           (java.nio.file Paths)
+           (java.io FileInputStream)
+           (com.google.common.io ByteStreams)
+           (com.google.cloud.storage StorageOptions BlobId BlobInfo)
+           (com.google.cloud.storage Storage$BlobWriteOption)))
 
 (defn- new-version-identifier
   "Generate a new identifier for a migration"
@@ -119,11 +114,9 @@
 (defn get-version-id
   "Generates a version id string based on env/data-version (or a timestamp) plus the docker image version of the code"
   []
-  (let [data-version-id (if (some? env/data-version) env/data-version (new-version-identifier))
-        version-id (if (some? env/genegraph-image-version)
-                     (str data-version-id ":" env/genegraph-image-version)
-                     data-version-id)]
-    version-id))
+  (if (some? env/data-version)
+    env/data-version
+    (new-version-identifier)))
 
 (defn create-migration
   "Populate a new database, package and upload to Google Cloud"
