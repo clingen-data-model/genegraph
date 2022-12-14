@@ -23,12 +23,12 @@
 
 (defn consumer-topics []
   (mapv keyword (str/split env/dx-topics #";")))
-      
+
 (defn offset-file []
   (str env/data-vol "/partition_offsets.edn"))
 
-;; This atom file may contain some, none, or all of the consumer topics defined 
-;; for processing in the environment. All offsets that have been previously 
+;; This atom file may contain some, none, or all of the consumer topics defined
+;; for processing in the environment. All offsets that have been previously
 ;; recorded in partition_offsets.edn are be preserved, and any new consumer topics
 ;; defined for processing will have their offset state tracked.
 ;; Map is in the form { [topic-name partition] current-offset}
@@ -73,7 +73,7 @@
                                  :producer-topic)})
 
 ;; Java Properties object defining configuration of Kafka client
-(defn- client-configuration 
+(defn- client-configuration
   "Create client "
   [broker-config]
   (let [props (new Properties)]
@@ -98,9 +98,9 @@
         iterator-seq)
     (catch Exception e
       (log/error :fn :poll-catch-exception
-                :exception e
-                :msg "Polling exception caught."
-                :partitions (.assignment consumer))
+                 :exception e
+                 :msg "Polling exception caught."
+                 :partitions (.assignment consumer))
       :error)))
 
 (defn- poll-once
@@ -116,17 +116,17 @@
         (do
           (when (nil? sleep-ms)
             (log/error :fn :poll-once
-                         :msg "Polling exceeds max retries."
-                         :partitions (.assignment consumer))
+                       :msg "Polling exceeds max retries."
+                       :partitions (.assignment consumer))
             (throw (Exception. "Signal exception - polling at max retries")))
           (Thread/sleep sleep-ms)
           (recur (rest sleep-times-ms)))))))
-            
+
 (defn topic-cluster-key [topic]
   (-> config :topics topic :cluster))
 
 (defn topic-cluster-config [topic]
-   (let [cluster-key (topic-cluster-key topic)]
+  (let [cluster-key (topic-cluster-key topic)]
     (-> config
         :clusters
         cluster-key
@@ -136,8 +136,16 @@
   "Return consumer for topic"
   [topic]
   (let [cluster-config (topic-cluster-config topic)
-        consumer-config (merge-with into (:common cluster-config) (:consumer cluster-config))] 
+        consumer-config (merge-with into (:common cluster-config) (:consumer cluster-config))]
     (KafkaConsumer. consumer-config)))
+
+(defn assigned-consumer-for-topic
+  "Constructs a KafkaConsumer for the topic's cluster configuration in kafka.edn
+   and assigns all of the topic's partitions.
+   Does not adjust any offsets. With default consumer config, will resume from end."
+  [topic-kw]
+  (doto (consumer-for-topic topic-kw)
+    (#(.assign % (topic-partitions % topic-kw)))))
 
 (defn producer-for-topic!
   "Returns a single KafkaProducer per cluster, as KafkaProducers are thread-safe
@@ -156,7 +164,7 @@
         producer))))
 
 (defn producer-record-for [kafka-topic-name key value]
-   (ProducerRecord. kafka-topic-name key value))
+  (ProducerRecord. kafka-topic-name key value))
 
 (defn- read-end-offsets! [consumer topic-partitions]
   (let [kafka-end-offsets (.endOffsets consumer topic-partitions)
@@ -180,7 +188,7 @@
           offset-coll))
 
 (defn offsets-up-to-date-status []
-(if (= (-> (filter-by-consumer-topic-names @current-offsets) keys set) (-> @end-offsets keys set))
+  (if (= (-> (filter-by-consumer-topic-names @current-offsets) keys set) (-> @end-offsets keys set))
     (merge-with <= @end-offsets (filter-by-consumer-topic-names @current-offsets))
     {}))
 
@@ -259,7 +267,7 @@
 
 (defn- initialize-topic-consumer-offset!
   "Sets the consumer offset to the last saved offset for the topic/partition pairs
-   or to the beginning when no offset has been saved. Records the offsets."  
+   or to the beginning when no offset has been saved. Records the offsets."
   [consumer topic partitions]
   (doseq [partition partitions]
     (if-let [offset (get @current-offsets [(topic-name topic) (.partition partition)])]
@@ -397,7 +405,7 @@
 
 (defn topic-data-to-rocksdb
   "Read topic data to disk. Assumes single partition topic. Optiionally accepts key-fn that accepts the
-  value off the topic and returns a sequence to use as key. In the event that key-fn returns nil or is not supplied, 
+  value off the topic and returns a sequence to use as key. In the event that key-fn returns nil or is not supplied,
   will use offset as key."
   ([topic db-name]
    (topic-data-to-rocksdb topic db-name {:key-fn (constantly nil)}))
@@ -437,7 +445,7 @@
            (let [annotated-record (consumer-record-to-event record topic)
                  k (.array
                     (doto (ByteBuffer/allocate Long/BYTES)
-                      (.putLong (::offset annotated-record))))] 
+                      (.putLong (::offset annotated-record))))]
              (rocksdb/rocks-put-raw-key! db k annotated-record)))
          (when (< (.position c (first tps)) end)
            (recur (poll-once c))))))))

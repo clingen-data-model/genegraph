@@ -1,33 +1,28 @@
 (ns genegraph.transform.clinvar.variation-test
-  (:require [genegraph.transform.clinvar.cancervariants :as vicc]
-            [genegraph.transform.clinvar.variation :as variation]
-            [genegraph.transform.clinvar.util :as util]
-            [genegraph.transform.types :as xform-types]
-            [genegraph.transform.jsonld.common :as jsonld]
-            [genegraph.database.names :refer [local-property-names
-                                              local-class-names
-                                              property-uri->keyword
-                                              prefix-ns-map]]
-            [genegraph.annotate :as ann]
+  (:require [cheshire.core :as json]
+            [clojure.java.io :as io]
+            [clojure.string :as s]
+            [clojure.test :as test :refer [deftest is testing use-fixtures]]
             [genegraph.database.load :as l]
             [genegraph.database.query :as q]
-            ;[genegraph.server-test :refer [mount-database-fixture]]
-            [clojure.test :as test :refer [deftest testing is use-fixtures]]
-            [clojure.java.io :as io]
-            [cheshire.core :as json]
-            [io.pedestal.log :as log]
-            [clojure.string :as s])
-  (:import (java.time LocalDate)
-           (org.apache.jena.rdf.model Model)
-           (clojure.lang Keyword)))
+            [genegraph.transform.clinvar.core :as clinvar]
+            [genegraph.transform.clinvar.util :as util]
+            [genegraph.transform.clinvar.variation :as variation]
+            [genegraph.transform.types :as xform-types]
+            [io.pedestal.log :as log])
+  (:import (clojure.lang Keyword)))
 
-(defn fixtures [f]
-  (mount.core/start #'genegraph.database.instance/db #'genegraph.database.property-store/property-store)
-  (f))
+#_(defn fixtures [f]
+    (mount.core/start #'genegraph.database.instance/db #'genegraph.database.property-store/property-store)
+    (f))
 
-(use-fixtures :once fixtures)
-;(use-fixtures :each mount-database-fixture)
+#_(use-fixtures :once fixtures)
+#_(use-fixtures :each mount-database-fixture)
 
+(defn edn-test-input [basename]
+  (->> (str "test/genegraph/transform/clinvar/" basename)
+       slurp
+       read-string))
 
 (defn eventify [input-map]
   {:genegraph.sink.event/value (json/generate-string input-map)
@@ -60,71 +55,83 @@
               (str "Third value must be single value " triple))
       triple)))
 
-(deftest test-prioritized-variation-expression
-  (testing "Trivial cases"
-    (let [variant-no-content {}
-          variant-no-nested-content {:content {}}
-          variant-no-hgvslist {:content {:content {}}}
-          variant-empty-hgvslist {:content {:content (json/generate-string
-                                                      {"HGVSlist" {}})}}
-          variant-empty-hgvs-array {:content {:content (json/generate-string
-                                                        {"HGVSlist" {"HGVS" []}})}}]
-      (test/is (nil? (variation/prioritized-variation-expression variant-no-content)))
-      (test/is (nil? (variation/prioritized-variation-expression variant-no-nested-content)))
-      (test/is (nil? (variation/prioritized-variation-expression variant-no-hgvslist)))
-      (test/is (nil? (variation/prioritized-variation-expression variant-empty-hgvslist)))
-      (test/is (nil? (variation/prioritized-variation-expression variant-empty-hgvs-array)))))
+(deftest test-copy-number-normalize
+  (testing "Testing copy number detection"
+    (let [events (->> (edn-test-input "test-events-cnv-unparsable.edn")
+                      (map eventify)
+                      (map clinvar/add-parsed-value))]
+      (doseq [event events]
+        (let [event2 (variation/variation-preprocess event)]
+          (is (::variation/unparseable-cnv event2)
+              "Expected unparseable-cnv flag to be set"))))))
 
-  (testing "Invalid SPDI, but valid GRCh38"
+#_(test/run-tests *ns*)
+
+#_(deftest test-prioritized-variation-expression
+    (testing "Trivial cases"
+      (let [variant-no-content {}
+            variant-no-nested-content {:content {}}
+            variant-no-hgvslist {:content {:content {}}}
+            variant-empty-hgvslist {:content {:content (json/generate-string
+                                                        {"HGVSlist" {}})}}
+            variant-empty-hgvs-array {:content {:content (json/generate-string
+                                                          {"HGVSlist" {"HGVS" []}})}}]
+        (test/is (nil? (variation/prioritized-variation-expression variant-no-content)))
+        (test/is (nil? (variation/prioritized-variation-expression variant-no-nested-content)))
+        (test/is (nil? (variation/prioritized-variation-expression variant-no-hgvslist)))
+        (test/is (nil? (variation/prioritized-variation-expression variant-empty-hgvslist)))
+        (test/is (nil? (variation/prioritized-variation-expression variant-empty-hgvs-array)))))
+
+    (testing "Invalid SPDI, but valid GRCh38"
     ; Has CanonicalSPDI field but no $ value for it, so continues to look at HGVS ones
-    (let [variant-invalid-spdi {:content {:content (json/generate-string
-                                                    {"CanonicalSPDI" {"somefield" "somevalue"}
-                                                     "HGVSlist" {"HGVS" [{"NucleotideExpression" {"@Assembly" "GRCh38"
-                                                                                                  "Expression" {"$" "NE38"}}}
-                                                                         {"NucleotideExpression" {"@Assembly" "GRCh37"
-                                                                                                  "Expression" {"$" "NE37"}}}
-                                                                         {"ProteinExpression" {"Expression" {"$" "PE1"}}}]}})}}]
-      (test/is (= {:expr "NE38", :type :hgvs} (variation/prioritized-variation-expression variant-invalid-spdi)))))
+      (let [variant-invalid-spdi {:content {:content (json/generate-string
+                                                      {"CanonicalSPDI" {"somefield" "somevalue"}
+                                                       "HGVSlist" {"HGVS" [{"NucleotideExpression" {"@Assembly" "GRCh38"
+                                                                                                    "Expression" {"$" "NE38"}}}
+                                                                           {"NucleotideExpression" {"@Assembly" "GRCh37"
+                                                                                                    "Expression" {"$" "NE37"}}}
+                                                                           {"ProteinExpression" {"Expression" {"$" "PE1"}}}]}})}}]
+        (test/is (= {:expr "NE38", :type :hgvs} (variation/prioritized-variation-expression variant-invalid-spdi)))))
 
-  (testing "Invalid SPDI and GRCh38, valid GRCh37"
-    (let [variant {:content {:content (json/generate-string
-                                       {"CanonicalSPDI" {"somefield" "somevalue"}
-                                        "HGVSlist" {"HGVS" [{"NucleotideExpression" {"@Assembly" "GRCh38"
-                                                                                     "Expression" {"somefield" "somevalue"}}}
-                                                            {"NucleotideExpression" {"@Assembly" "GRCh37"
-                                                                                     "Expression" {"$" "NE37"}}}
-                                                            {"ProteinExpression" {"Expression" {"$" "PE1"}}}]}})}}]
-      (test/is (= {:expr "NE37", :type :hgvs} (variation/prioritized-variation-expression variant)))))
+    (testing "Invalid SPDI and GRCh38, valid GRCh37"
+      (let [variant {:content {:content (json/generate-string
+                                         {"CanonicalSPDI" {"somefield" "somevalue"}
+                                          "HGVSlist" {"HGVS" [{"NucleotideExpression" {"@Assembly" "GRCh38"
+                                                                                       "Expression" {"somefield" "somevalue"}}}
+                                                              {"NucleotideExpression" {"@Assembly" "GRCh37"
+                                                                                       "Expression" {"$" "NE37"}}}
+                                                              {"ProteinExpression" {"Expression" {"$" "PE1"}}}]}})}}]
+        (test/is (= {:expr "NE37", :type :hgvs} (variation/prioritized-variation-expression variant)))))
 
-  (testing "Normal expression cases"
-    (let [variant-37 {:content {:content (json/generate-string
-                                          {"HGVSlist" {"HGVS" [{"NucleotideExpression" {"@Assembly" "GRCh37"
-                                                                                        "Expression" {"$" "NE37"}}}
-                                                               {"ProteinExpression" {"Expression" {"$" "PE1"}}}]}})}}
-          variant-38 {:content {:content (json/generate-string
-                                          {"HGVSlist" {"HGVS" [{"NucleotideExpression" {"@Assembly" "GRCh38"
-                                                                                        "Expression" {"$" "NE38"}}}
-                                                               {"NucleotideExpression" {"@Assembly" "GRCh37"
-                                                                                        "Expression" {"$" "NE37"}}}
-                                                               {"ProteinExpression" {"Expression" {"$" "PE1"}}}]}})}}
-          variant-spdi {:content {:content (json/generate-string
-                                            {"CanonicalSPDI" {"$" "SPDI1"}
-                                             "HGVSlist" {"HGVS" [{"NucleotideExpression" {"@Assembly" "GRCh38"
+    (testing "Normal expression cases"
+      (let [variant-37 {:content {:content (json/generate-string
+                                            {"HGVSlist" {"HGVS" [{"NucleotideExpression" {"@Assembly" "GRCh37"
+                                                                                          "Expression" {"$" "NE37"}}}
+                                                                 {"ProteinExpression" {"Expression" {"$" "PE1"}}}]}})}}
+            variant-38 {:content {:content (json/generate-string
+                                            {"HGVSlist" {"HGVS" [{"NucleotideExpression" {"@Assembly" "GRCh38"
                                                                                           "Expression" {"$" "NE38"}}}
                                                                  {"NucleotideExpression" {"@Assembly" "GRCh37"
                                                                                           "Expression" {"$" "NE37"}}}
                                                                  {"ProteinExpression" {"Expression" {"$" "PE1"}}}]}})}}
-          variant-parsed-content {:content {:content
-                                            {"CanonicalSPDI" {"$" "SPDI1"}
-                                             "HGVSlist" {"HGVS" [{"NucleotideExpression" {"@Assembly" "GRCh38"
-                                                                                          "Expression" {"$" "NE38"}}}
-                                                                 {"NucleotideExpression" {"@Assembly" "GRCh37"
-                                                                                          "Expression" {"$" "NE37"}}}
-                                                                 {"ProteinExpression" {"Expression" {"$" "PE1"}}}]}}}}]
-      (test/is (= {:expr "NE37" :type :hgvs} (variation/prioritized-variation-expression variant-37)))
-      (test/is (= {:expr "NE38" :type :hgvs} (variation/prioritized-variation-expression variant-38)))
-      (test/is (= {:expr "SPDI1" :type :spdi} (variation/prioritized-variation-expression variant-spdi)))
-      (test/is (= {:expr "SPDI1" :type :spdi} (variation/prioritized-variation-expression variant-parsed-content))))))
+            variant-spdi {:content {:content (json/generate-string
+                                              {"CanonicalSPDI" {"$" "SPDI1"}
+                                               "HGVSlist" {"HGVS" [{"NucleotideExpression" {"@Assembly" "GRCh38"
+                                                                                            "Expression" {"$" "NE38"}}}
+                                                                   {"NucleotideExpression" {"@Assembly" "GRCh37"
+                                                                                            "Expression" {"$" "NE37"}}}
+                                                                   {"ProteinExpression" {"Expression" {"$" "PE1"}}}]}})}}
+            variant-parsed-content {:content {:content
+                                              {"CanonicalSPDI" {"$" "SPDI1"}
+                                               "HGVSlist" {"HGVS" [{"NucleotideExpression" {"@Assembly" "GRCh38"
+                                                                                            "Expression" {"$" "NE38"}}}
+                                                                   {"NucleotideExpression" {"@Assembly" "GRCh37"
+                                                                                            "Expression" {"$" "NE37"}}}
+                                                                   {"ProteinExpression" {"Expression" {"$" "PE1"}}}]}}}}]
+        (test/is (= {:expr "NE37" :type :hgvs} (variation/prioritized-variation-expression variant-37)))
+        (test/is (= {:expr "NE38" :type :hgvs} (variation/prioritized-variation-expression variant-38)))
+        (test/is (= {:expr "SPDI1" :type :spdi} (variation/prioritized-variation-expression variant-spdi)))
+        (test/is (= {:expr "SPDI1" :type :spdi} (variation/prioritized-variation-expression variant-parsed-content))))))
 
 
 (comment

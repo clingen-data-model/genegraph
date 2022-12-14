@@ -1,16 +1,18 @@
 (ns genegraph.transform.clinvar.variation
-  (:require [genegraph.database.query :as q]
-            [genegraph.database.names :as names :refer [local-property-names
-                                                        local-class-names
-                                                        prefix-ns-map]]
-            [genegraph.transform.clinvar.common :as common]
-            [genegraph.transform.clinvar.util :as util]
-            [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
-            [genegraph.transform.jsonld.common :as jsonld]
-            [genegraph.transform.clinvar.cancervariants :as vicc]
+  (:require [cheshire.core :as json]
+            [clojure.stacktrace :as stacktrace]
             [genegraph.annotate.cnv :as cnv]
-            [cheshire.core :as json]
-            [io.pedestal.log :as log]))
+            [genegraph.database.names :as names :refer [local-class-names
+                                                        local-property-names
+                                                        prefix-ns-map]]
+            [genegraph.database.query :as q]
+            [genegraph.transform.clinvar.cancervariants :as vicc]
+            [genegraph.transform.clinvar.common :as common]
+            [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
+            [genegraph.transform.clinvar.util :as util]
+            [genegraph.transform.jsonld.common :as jsonld]
+            [io.pedestal.log :as log]
+            [genegraph.transform.clinvar.hgvs :as hgvs]))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
 (def variation-frame
@@ -163,7 +165,7 @@
                                                          (protein-hgvs hgvs-obj)])]
                           (when (empty? outputs)
                             (let [e (ex-info "Found no HGVS expressions" {:hgvs-obj hgvs-obj :variation-msg variation-msg})]
-                              (log/error :message (ex-message e) :data (ex-data e))))
+                              (log/warn :message (ex-message e) :data (ex-data e))))
                           outputs)))
                  (apply concat))
             [(let [spdi-expr (-> nested-content (get "CanonicalSPDI") (get "$"))]
@@ -184,7 +186,19 @@
                                                :content
                                                :variation_type)
                                            "copy number"))
-        (#(if (::copy-number? %) (assoc % ::cnv (cnv/parse (-> value :content :name))) %))
+        (#(if (::copy-number? %)
+            (let [parsed-cnv (cnv/parse (-> value :content :name))]
+              (if (empty? parsed-cnv)
+                (do (log/error :fn :variation-preprocess
+                               :msg "Variation was marked as copy number, but could not parse cnv parameters"
+                               :variation-name (-> value :content :name)
+                               :event-value value)
+                    ;; Set copy-number to false to make further processing no longer see it as CNV
+                    (-> %
+                        (dissoc ::copy-number?)
+                        (assoc ::unparseable-cnv (-> value :content :name))))
+                (assoc % ::cnv parsed-cnv)))
+            %))
 
         ;; Add the list of canonical-candidate expressions for non-cnv
         (#(if (not (::copy-number? %))
@@ -245,7 +259,7 @@
 (defn get-vrs-variation-map
   "Takes a map with :expression (String or Map) and :expression-type (Keyword).
 
-   Returns a map containing :model and :iri"
+   Returns a map containing :iri (String) and :variation (map)"
   [{expression :expression
     expression-type :expression-type}]
   (let [vrs-obj (vicc/vrs-variation-for-expression
@@ -266,6 +280,11 @@
         (log/debug :fn :add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj-pretty)
         {:iri vrs-id :variation vrs-obj-pretty}))))
 
+(defn unchunk
+  "Return a lazy seq over s that is not chunked."
+  [s]
+  (lazy-cat [(first s)] (unchunk (rest s))))
+
 (defn normalize-canonical-expression
   "Selects the canonical expression and returns it and the normalized form
    {:expression ... :normalized ...}"
@@ -275,31 +294,65 @@
     {:expr "...." :type :hgvs}
     {:expr "...." :type :spdi}
     {:expr {"..." "..."} :type :cnv})
-  (if (::copy-number? event)
-    {:expression (-> event ::prioritized-expression)
-     :normalized (get (get-vrs-variation-map
-                       {:expression (-> event ::prioritized-expression :expr)
-                        :expression-type (-> event ::prioritized-expression :type)})
-                      :variation)
-     :label (-> event ::prioritized-expression :expr)}
-    (let [candidate-expressions (::canonical-candidate-expressions event)
-          _ (log/info :candidate-expressions candidate-expressions)
+  (try
+    (if (::copy-number? event)
+      {:expression (-> event ::prioritized-expression)
+       :normalized (get (get-vrs-variation-map
+                         {:expression (-> event ::prioritized-expression :expr)
+                          :expression-type (-> event ::prioritized-expression :type)})
+                        :variation)
+       :label (-> event ::prioritized-expression :expr)}
+      (let [candidate-expressions (::canonical-candidate-expressions event)
+
+            ;; Temporary fix for timing out dup exprs
+            ;; https://github.com/clingen-data-model/genegraph/issues/698
+            ;; non-iscn-cnv-too-long? (fn [{:keys [expr type]}]
+            ;;                          (and (string? expr)
+            ;;                               (-> expr
+            ;;                                   hgvs/hgvs-parse-sequence-and-location
+            ;;                                   (#(do (log/info :parsed-hgvs %) %))
+            ;;                                   hgvs/parsed-expression-span
+            ;;                                   (#(> % 50)))))
+            ;; candidate-expressions (filter (comp not non-iscn-cnv-too-long?) candidate-expressions)
+
+
+            ;; Temporary fix for timing out dup exprs
+            ;; https://github.com/clingen-data-model/genegraph/issues/698
+            ;; Remove del/dup hgvs expressions which are on a variation labeled
+            ;; as being a copy number variation in ClinVar
+            non-iscn-deldup? (fn [{:keys [expr type]}]
+                               (and (string? expr)
+                                    ; above two imply not spdi or cnv, so dup/del hgvs
+                                    (or (.contains expr "dup")
+                                        (.contains expr "del"))
+                                    (not= :cnv type)))
+            candidate-expressions (filter (comp not non-iscn-deldup?) candidate-expressions)
+
+            _ (log/info :candidate-expressions candidate-expressions)
           ;; each vrs-ret[:variation] is the structure in the 'variation', 'canonical_variaton' (or equivalent)
           ;; field in the normalization service response body
-          vrs-rets (for [ce candidate-expressions]
-                     (fn []
-                       {:normalized (get (get-vrs-variation-map
-                                          {:expression (-> ce :expr)
-                                           :expression-type (-> ce :type)})
-                                         :variation)
-                        :expression ce
-                        :label (-> ce :label)}))]
-      (let [selected (or (some #(when (not= "Text" (get-in (%) [:normalized :canonical_context :type]))
-                                  (%))
-                               vrs-rets)
-                         ((first vrs-rets)))]
+            vrs-rets (unchunk
+                      (for [ce candidate-expressions]
+                        {:normalized (get (get-vrs-variation-map
+                                           {:expression (-> ce :expr)
+                                            :expression-type (-> ce :type)})
+                                          :variation)
+                         :expression ce
+                         :label (-> ce :label)}))
+            ;; Try to get one that doesn't yield Text. If none, just use the first.
+            selected (or (first (filter #(not= "Text" (get-in % [:normalized :canonical_context :type]))
+                                        vrs-rets))
+                         (first vrs-rets))]
         (log/debug :selected selected)
-        selected))))
+        selected))
+    (catch Exception e
+      (log/error :fn :normalize-canonical-expression
+                 :message "Exception normalizing canonical variation"
+                 :ex-data (ex-data e)
+                 :ex-message (ex-message e))
+      (update event :exception conj {:fn :normalize-canonical-expression
+                                     :message "Exception normalizing canonical variation"
+                                     :exception e}))))
 
 (defn add-data-for-variation
   "Returns msg with :genegraph.annotate/data and :genegraph.annotate/data-contextualized added.
@@ -316,6 +369,12 @@
         clinvar-variation-iri (str iri/clinvar-variation (:id variation))
         ;; normalize-canonical-expression must be called after variation-preprocess
         nce (normalize-canonical-expression event)]
+    #_(log/debug :fn :add-data-for-variation :nce nce)
+    (when (empty? nce)
+      (log/error :fn :add-data-for-variation
+                 :msg "Could not normalize canonical variation expression"
+                 :value message
+                 :event event))
     (-> event
         (assoc
          :genegraph.annotate/data

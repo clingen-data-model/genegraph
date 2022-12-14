@@ -30,7 +30,9 @@
 (defmulti transform-doc :format)
 
 (defmulti add-data
-  "Add an edn-based representation of the data in the event."
+  "Add an edn-based representation of the data in the event in genegraph.annotate/data.
+   For some data formats, may do nothing. Downstream interceptors that read this
+   must handle empty values."
   :genegraph.transform.core/format)
 
 (defn target-base []

@@ -9,8 +9,7 @@
             [genegraph.transform.clinvar.util :as util])
   (:import (java.nio.channels WritableByteChannel)
            (java.nio.charset StandardCharsets)
-           (java.nio ByteBuffer)
-           ))
+           (java.nio ByteBuffer)))
 
 (def snapshot-bucket env/genegraph-bucket)
 (def snapshot-path "snapshots")
@@ -32,8 +31,8 @@
                      (conj terms trimmed)))))]
     ; Add back leading and trailing delims if they were present in first/last input values
     (cond-> processed
-            (.startsWith (first values) delim) (->> (str delim))
-            (.endsWith (last values) delim) (str delim))))
+      (.startsWith (first values) delim) (->> (str delim))
+      (.endsWith (last values) delim) (str delim))))
 
 (defn run-snapshots
   "Accepts a map of params
