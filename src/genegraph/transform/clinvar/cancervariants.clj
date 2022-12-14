@@ -205,6 +205,8 @@
             (throw e))))))
 
 (defn store-in-cache
+  "Puts the value in the cache, keyed by the first two arguments.
+   Overwrites any existing value."
   [variation-expression expression-type value]
   (cond
     (redis-configured?) (with-retries 12 5000 ; retry up to 1m, every 5s
@@ -219,16 +221,18 @@
                               value)))
 
 (defn get-from-cache
+  "Returns nil if no cache entry matches the arguments"
   [variation-expression expression-type]
   (cond
     (redis-configured?) (with-retries 12 5000
                           #(redis-expression-cache-get
                             variation-expression
                             expression-type))
-    :else (rocksdb/rocks-get vicc-expr-db
-                             (expression-key-serializer
-                              variation-expression
-                              expression-type))))
+    :else (-> (rocksdb/rocks-get vicc-expr-db
+                                 (expression-key-serializer
+                                  variation-expression
+                                  expression-type))
+              (#(when (not= :genegraph.rocksdb/miss %) %)))))
 
 
 (defn vrs-variation-for-expression
