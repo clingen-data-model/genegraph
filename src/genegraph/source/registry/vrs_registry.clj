@@ -117,8 +117,9 @@
   (migration/populate-data-vol-if-needed)
   (mount/start #'genegraph.database.instance/db
                #'genegraph.database.property-store/property-store
-               #'genegraph.transform.clinvar.cancervariants/redis-db
+               #'genegraph.transform.clinvar.cancervariants/cache-db
                #'genegraph.source.registry.vrs-registry/thread-pool)
+  (assert (= :redis (:type genegraph.transform.clinvar.cancervariants/cache-db)))
   (log/info :fn ::-main :running-states (mount/running-states))
   (let [batch-limit Long/MAX_VALUE
         batch-counter (atom 0)

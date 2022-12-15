@@ -211,10 +211,11 @@
              #(redis-expression-cache-get
                variation-expression
                expression-type))
-    :rocksdb (rocksdb/rocks-get (:db cache-db)
-                                (expression-key-serializer
-                                 variation-expression
-                                 expression-type))
+    :rocksdb (-> (rocksdb/rocks-get (:db cache-db)
+                                    (expression-key-serializer
+                                     variation-expression
+                                     expression-type))
+                 (#(when (not= :genegraph.rocksdb/miss %) %)))
     (throw (ex-info (str "Unknown cache-db type: " (:type cache-db))
                     {:cache-db cache-db}))))
 
