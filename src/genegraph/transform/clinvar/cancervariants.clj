@@ -4,11 +4,9 @@
             [genegraph.rocksdb :as rocksdb]
             [genegraph.source.registry.redis :as redis]
             [clj-http.client :as http-client]
-            #_[genegraph.util.http-client :as ghttp :refer [http-get-with-cache]]
             [io.pedestal.log :as log]
             [mount.core :as mount])
-  (:import (clojure.lang Keyword)
-           (org.rocksdb RocksDB)))
+  (:import (clojure.lang Keyword)))
 
 (def variation-base-url-prod
   "https://normalize.cancervariants.org/variation/")
@@ -47,28 +45,12 @@
 ;; but really all we need is the expression -> variation object cached.
 ;; each normalization function may use a slightly different expr specification, so each
 ;; should define their own key fn for how the expr is deterministically serialized.
-(def vicc-db-name "cancervariants-cache.db")
+;; (def vicc-db-name "cancervariants-cache.db")
 (def vicc-expr-db-name "cancervariants-expr-cache.db")
 
-(mount/defstate ^RocksDB vicc-db
-  :start (rocksdb/open vicc-db-name)
-  :stop (rocksdb/close vicc-db))
-
-(mount/defstate ^RocksDB vicc-expr-db
-  :start (rocksdb/open vicc-expr-db-name)
-  :stop (rocksdb/close vicc-expr-db))
-
-#_(def normalize-canonical-cache
-    "Maps two keys :get and :put to get and put cached values for normalize-canonical function calls"
-    (letfn [(key-fn [^String variation-expression ^Keyword expression-type]
-              (-> {:variation-expression variation-expression :expression-type expression-type}
-                  seq (->> (into [])) str))]
-      {:put (fn [^String variation-expression ^Keyword expression-type value]
-              (rocksdb/rocks-put! vicc-expr-db
-                                  (key-fn variation-expression expression-type)
-                                  value))
-       :get (fn [^String variation-expression ^Keyword expression-type value]
-              (rocksdb/rocks-get vicc-expr-db (key-fn variation-expression expression-type)))}))
+;; (mount/defstate ^RocksDB vicc-expr-db
+;;   :start (rocksdb/open vicc-expr-db-name)
+;;   :stop (rocksdb/close vicc-expr-db))
 
 (defn normalize-canonical
   "Normalizes an :hgvs or :spdi expression.
@@ -129,25 +111,53 @@
    Can pass a predefined pool and shut this down when finished with it
    https://github.com/ptaoussanis/carmine/commit/a1d0c4ec1dd4848a9323eaa149ab284509664515
    Note: nil .spec values defaults to 127.0.0.1:6379"
-  {:pool-fn #(redis/make-connection-pool {#_(comment Default pool options)})
+  {:pool {#_(comment Default pool options)}
    :spec {:uri (System/getenv "CACHE_REDIS_URI")}})
 
-(mount/defstate redis-db
-  :start (if (redis/connectable? redis-opts)
-           (assoc redis-opts :pool ((:pool-fn redis-opts)))
-           (throw (ex-info "Could not connect to redis"
-                           {:conn-opts redis-opts})))
-  ;; TODO test that this .close actually terminates the connections that are idle
-  ;; Look at threads
-  ;; https://stackoverflow.com/a/3018672/2172133
-  ;; Potentially tweak pool options:
-  #_{:time-between-eviction-runs-ms 1000
-     :min-evictable-idle-time-ms 1000
-     :test-on-borrow? true
-     :test-on-return? true
-     :test-while-idle? true}
-  :stop (.close (:pool redis-db)))
+(comment
+  "I had thought the carmine connection pool might be leaving dangling threads
+   but after investigating a bit it doesn't seem like it is.
+   Can delete this."
+  (mount/defstate redis-db
+    ;; :pool-fn #(redis/make-connection-pool {#_(comment Default pool options)})
+    :start (if (redis/connectable? redis-opts)
+             (assoc redis-opts :pool ((:pool-fn redis-opts)))
+             (throw (ex-info "Could not connect to redis"
+                             {:conn-opts redis-opts})))
+   ;; TODO test that this .close actually terminates the connections that are idle
+   ;; Look at threads
+   ;; https://stackoverflow.com/a/3018672/2172133
+   ;; Potentially tweak pool options:
+    #_{:time-between-eviction-runs-ms 1000
+       :min-evictable-idle-time-ms 1000
+       :test-on-borrow? true
+       :test-on-return? true
+       :test-while-idle? true}
+    :stop (.close (:pool redis-db))))
 
+(defn redis-configured? []
+  (System/getenv "CACHE_REDIS_URI"))
+
+(mount/defstate cache-db
+  "Has a :db and :type. :db is either a redis conn spec, or an open RocksDB handle object"
+  :start (letfn [(use-redis [] {:type :redis
+                                :db redis-opts})
+                 (use-rocks [] {:type :rocksdb
+                                :db (rocksdb/open vicc-expr-db-name)})]
+           (if (redis-configured?)
+             (if (redis/connectable? redis-opts)
+               (use-redis)
+               (do (log/error :msg (str "Redis is configured but not connectable."
+                                        " Falling back to rocksdb")
+                              :redis-opts redis-opts
+                              :rocks-path vicc-expr-db-name)
+                   (use-rocks)))
+             (use-rocks)))
+  :stop (case (:type cache-db)
+          :redis (log/info :msg "No close implemented for redis client")
+          :rocksdb (rocksdb/close (:db cache-db))
+          (throw (ex-info (str "Unknown cache-db type: " (:type cache-db))
+                          {:cache-db cache-db}))))
 
 (defn expression-key-serializer
   "TODO variation-expression can be a map if its a CNV.
@@ -168,7 +178,8 @@
              :variation-expression variation-expression
              :expression-type expression-type
              :value value)
-  (redis/put-key redis-db
+  (assert (= :redis (:type cache-db)))
+  (redis/put-key (:db cache-db)
                  (expression-key-serializer variation-expression
                                             expression-type)
                  value))
@@ -179,12 +190,10 @@
   (log/debug :fn :redis-expression-cache-get
              :variation-expression variation-expression
              :expression-type expression-type)
-  (redis/get-key redis-db
+  (assert (= :redis (:type cache-db)))
+  (redis/get-key (:db cache-db)
                  (expression-key-serializer variation-expression
                                             expression-type)))
-
-(defn redis-configured? []
-  (System/getenv "CACHE_REDIS_URI"))
 
 (defn with-retries
   "Tries to execute body-fn retry-count times."
@@ -208,32 +217,33 @@
   "Puts the value in the cache, keyed by the first two arguments.
    Overwrites any existing value."
   [variation-expression expression-type value]
-  (cond
-    (redis-configured?) (with-retries 12 5000 ; retry up to 1m, every 5s
-                          #(redis-expression-cache-put
-                            variation-expression
-                            expression-type
-                            value))
-    :else (rocksdb/rocks-put! vicc-expr-db
-                              (expression-key-serializer
-                               variation-expression
-                               expression-type)
-                              value)))
+  (case (:type cache-db)
+    :redis (with-retries 12 5000 ; retry up to 1m, every 5s
+             #(redis-expression-cache-put
+               variation-expression
+               expression-type
+               value))
+    :rocksdb (rocksdb/rocks-put! (:db cache-db)
+                                 (expression-key-serializer
+                                  variation-expression
+                                  expression-type)
+                                 value)))
 
 (defn get-from-cache
   "Returns nil if no cache entry matches the arguments"
   [variation-expression expression-type]
-  (cond
-    (redis-configured?) (with-retries 12 5000
-                          #(redis-expression-cache-get
-                            variation-expression
-                            expression-type))
-    :else (-> (rocksdb/rocks-get vicc-expr-db
-                                 (expression-key-serializer
-                                  variation-expression
-                                  expression-type))
-              (#(when (not= :genegraph.rocksdb/miss %) %)))))
-
+  (case (:type cache-db)
+    :redis (with-retries 12 5000
+             #(redis-expression-cache-get
+               variation-expression
+               expression-type))
+    :rocksdb (-> (rocksdb/rocks-get (:db cache-db)
+                                    (expression-key-serializer
+                                     variation-expression
+                                     expression-type))
+                 (#(when (not= :genegraph.rocksdb/miss %) %)))
+    (throw (ex-info (str "Unknown cache-db type: " (:type cache-db))
+                    {:cache-db cache-db}))))
 
 (defn vrs-variation-for-expression
   "Accepts :hgvs, :spdi, or :cnv types of expressions.
