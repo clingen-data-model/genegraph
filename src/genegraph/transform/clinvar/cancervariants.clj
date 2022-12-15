@@ -4,11 +4,9 @@
             [genegraph.rocksdb :as rocksdb]
             [genegraph.source.registry.redis :as redis]
             [clj-http.client :as http-client]
-            #_[genegraph.util.http-client :as ghttp :refer [http-get-with-cache]]
             [io.pedestal.log :as log]
             [mount.core :as mount])
-  (:import (clojure.lang Keyword)
-           (org.rocksdb RocksDB)))
+  (:import (clojure.lang Keyword)))
 
 (def variation-base-url-prod
   "https://normalize.cancervariants.org/variation/")
@@ -47,28 +45,12 @@
 ;; but really all we need is the expression -> variation object cached.
 ;; each normalization function may use a slightly different expr specification, so each
 ;; should define their own key fn for how the expr is deterministically serialized.
-(def vicc-db-name "cancervariants-cache.db")
+;; (def vicc-db-name "cancervariants-cache.db")
 (def vicc-expr-db-name "cancervariants-expr-cache.db")
 
-(mount/defstate ^RocksDB vicc-db
-  :start (rocksdb/open vicc-db-name)
-  :stop (rocksdb/close vicc-db))
-
-(mount/defstate ^RocksDB vicc-expr-db
-  :start (rocksdb/open vicc-expr-db-name)
-  :stop (rocksdb/close vicc-expr-db))
-
-#_(def normalize-canonical-cache
-    "Maps two keys :get and :put to get and put cached values for normalize-canonical function calls"
-    (letfn [(key-fn [^String variation-expression ^Keyword expression-type]
-              (-> {:variation-expression variation-expression :expression-type expression-type}
-                  seq (->> (into [])) str))]
-      {:put (fn [^String variation-expression ^Keyword expression-type value]
-              (rocksdb/rocks-put! vicc-expr-db
-                                  (key-fn variation-expression expression-type)
-                                  value))
-       :get (fn [^String variation-expression ^Keyword expression-type value]
-              (rocksdb/rocks-get vicc-expr-db (key-fn variation-expression expression-type)))}))
+;; (mount/defstate ^RocksDB vicc-expr-db
+;;   :start (rocksdb/open vicc-expr-db-name)
+;;   :stop (rocksdb/close vicc-expr-db))
 
 (defn normalize-canonical
   "Normalizes an :hgvs or :spdi expression.
@@ -130,12 +112,29 @@
   {:pool {#_(comment Default pool options)}
    :spec {:uri (System/getenv "CACHE_REDIS_URI")}})
 
-(mount/defstate redis-db
-  :start (if (redis/connectable? redis-opts)
-           redis-opts
-           (throw (ex-info "Could not connect to redis"
-                           {:conn-opts redis-opts})))
-  :stop (log/warn :msg "No stop behavior defined for redis connection and thread pool"))
+(defn redis-configured? []
+  (System/getenv "CACHE_REDIS_URI"))
+
+(mount/defstate cache-db
+  "Has a :db and :type. :db is either a redis conn spec, or an open RocksDB handle object"
+  :start (letfn [(use-redis [] {:type :redis
+                                :db redis-opts})
+                 (use-rocks [] {:type :rocksdb
+                                :db (rocksdb/open vicc-expr-db-name)})]
+           (if (redis-configured?)
+             (if (redis/connectable? redis-opts)
+               (use-redis)
+               (do (log/error :msg (str "Redis is configured but not connectable."
+                                        " Falling back to rocksdb")
+                              :redis-opts redis-opts
+                              :rocks-path vicc-expr-db-name)
+                   (use-rocks)))
+             (use-rocks)))
+  :stop (case (:type cache-db)
+          :redis (log/info :msg "No close implemented for redis client")
+          :rocksdb (rocksdb/close (:db cache-db))
+          (throw (ex-info (str "Unknown cache-db type: " (:type cache-db))
+                          {:cache-db cache-db}))))
 
 (defn expression-key-serializer
   "TODO variation-expression can be a map if its a CNV.
@@ -156,7 +155,8 @@
              :variation-expression variation-expression
              :expression-type expression-type
              :value value)
-  (redis/put-key redis-db
+  (assert (= :redis (:type cache-db)))
+  (redis/put-key (:db cache-db)
                  (expression-key-serializer variation-expression
                                             expression-type)
                  value))
@@ -167,12 +167,10 @@
   (log/debug :fn :redis-expression-cache-get
              :variation-expression variation-expression
              :expression-type expression-type)
-  (redis/get-key redis-db
+  (assert (= :redis (:type cache-db)))
+  (redis/get-key (:db cache-db)
                  (expression-key-serializer variation-expression
                                             expression-type)))
-
-(defn redis-configured? []
-  (System/getenv "CACHE_REDIS_URI"))
 
 (defn with-retries
   "Tries to execute body-fn retry-count times."
@@ -194,29 +192,32 @@
 
 (defn store-in-cache
   [variation-expression expression-type value]
-  (cond
-    (redis-configured?) (with-retries 12 5000 ; retry up to 1m, every 5s
-                          #(redis-expression-cache-put
-                            variation-expression
-                            expression-type
-                            value))
-    :else (rocksdb/rocks-put! vicc-expr-db
-                              (expression-key-serializer
-                               variation-expression
-                               expression-type)
-                              value)))
+  (case (:type cache-db)
+    :redis (with-retries 12 5000 ; retry up to 1m, every 5s
+             #(redis-expression-cache-put
+               variation-expression
+               expression-type
+               value))
+    :rocksdb (rocksdb/rocks-put! (:db cache-db)
+                                 (expression-key-serializer
+                                  variation-expression
+                                  expression-type)
+                                 value)))
 
 (defn get-from-cache
   [variation-expression expression-type]
-  (cond
-    (redis-configured?) (with-retries 12 5000
-                          #(redis-expression-cache-get
-                            variation-expression
-                            expression-type))
-    :else (rocksdb/rocks-get vicc-expr-db
-                             (expression-key-serializer
-                              variation-expression
-                              expression-type))))
+  (case (:type cache-db)
+    :redis (with-retries 12 5000
+             #(redis-expression-cache-get
+               variation-expression
+               expression-type))
+    :rocksdb (-> (rocksdb/rocks-get (:db cache-db)
+                                    (expression-key-serializer
+                                     variation-expression
+                                     expression-type))
+                 (#(when (not= :genegraph.rocksdb/miss %) %)))
+    (throw (ex-info (str "Unknown cache-db type: " (:type cache-db))
+                    {:cache-db cache-db}))))
 
 
 (defn vrs-variation-for-expression
