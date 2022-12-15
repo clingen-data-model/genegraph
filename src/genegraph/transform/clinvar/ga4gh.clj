@@ -32,7 +32,7 @@
   (mount/start
    #'genegraph.database.instance/db
    #'genegraph.database.property-store/property-store
-   #'genegraph.transform.clinvar.cancervariants/vicc-db
+   #'genegraph.transform.clinvar.cancervariants/vicc-expr-db
    #'genegraph.sink.event-recorder/event-database))
 
 (defn eventify [input-map]
@@ -205,6 +205,11 @@
                               (json/generate-string)))
            (.write writer "\n")))))))
 
+(defn seq-progress
+  "Whenever an item in the seq s is realized, it also has metadata {:index <N>}
+   where N is the count of how many items have been realized prior, plus one"
+  [s])
+
 (defn process-topic-file [input-filename]
   (let [messages (map #(json/parse-string % true) (line-seq (io/reader input-filename)))]
     (with-open [statement-writer (io/writer (str input-filename "-output-statements"))
@@ -259,11 +264,15 @@
                (q/select (str "select distinct ?vof where { "
                               "?i a ?type . "
                               "?i :vrs/record-metadata ?rmd . "
-                              "?rmd :dc/is-version-of ?vof . } ")
+                              "?rmd :dc/is-version-of ?vof . "
+                              "?i :vrs/extensions ?ext . "
+                              "?ext :vrs/name \"local_key\" . "
+                              " } ")
                          {:type type-kw})
                _ (log/info :fn :snapshot-latest-statements
                            :msg (str "unversioned-resources count: "
-                                     (count unversioned-resources)))
+                                     (count unversioned-resources))
+                           :resources (map str unversioned-resources))
                latest-versioned-resources
                (map (fn [vof]
                       (let [rs (q/select (str "select ?i where { "
@@ -280,7 +289,7 @@
                                      :vof vof :rs rs)
                           (first rs))))
                     (->> unversioned-resources
-                         #_(take 100)))]
+                         #_(take 10)))]
            (doseq [[i statement-resource] (->> latest-versioned-resources
                                                (map-indexed vector))]
              (log/info :latest-statement-resource statement-resource)
@@ -426,8 +435,14 @@
 (comment
   (start-states!)
   (process-topic-file "cg-vcep-2019-07-01/variation.txt")
-  (process-topic-file "cg-vcep-inputs/variation.txt")
-  (process-topic-file "variation-inputs-556853.txt")
+  (process-topic-file "cg-vcep-2019-07-01/trait.txt")
+  (process-topic-file "cg-vcep-2019-07-01/trait_set.txt")
+
+  (process-topic-file "cg-vcep-2019-07-01/clinical_assertion.txt")
+  (process-topic-file "one-scv.txt")
+
+  #_(process-topic-file "cg-vcep-inputs/variation.txt")
+  #_(process-topic-file "variation-inputs-556853.txt")
   (snapshot-latest-variations))
 
 
