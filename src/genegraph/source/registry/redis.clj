@@ -1,5 +1,6 @@
 (ns genegraph.source.registry.redis
   (:require [genegraph.rocksdb :as rocksdb]
+            [genegraph.transform.clinvar.common :refer [with-retries]]
             [io.pedestal.log :as log]
             [taoensso.carmine :as car]
             [taoensso.carmine.connections :as car-conn]))
@@ -68,6 +69,23 @@
   "Removes all entries from the db"
   [conn]
   (car/wcar conn (car/flushall)))
+
+
+(defn key-seq
+  "Returns a lazy seq over the keys in the db specified by conn.
+   Uses default SCAN COUNT argument."
+  [conn & {:keys [scan-count] :or {scan-count 1000}}]
+  (let [total (atom 0)]
+    (letfn [(get-batch [cursor]
+              (let [[next-cursor rs]
+                    (with-retries 12 5000 #(car/wcar conn (car/scan cursor "COUNT" scan-count)))
+                    next-cursor (parse-long next-cursor)]
+                (reset! total (+ @total (count rs)))
+                (println {:next-cursor next-cursor :rs-count (count rs) :total @total})
+                (cond-> rs
+                  (not= 0 next-cursor)
+                  (lazy-cat (get-batch next-cursor)))))]
+      (lazy-seq (get-batch 0)))))
 
 
 (comment

@@ -3,6 +3,7 @@
             [genegraph.database.names :as names :refer [prefix-ns-map]]
             [genegraph.rocksdb :as rocksdb]
             [genegraph.source.registry.redis :as redis]
+            [genegraph.transform.clinvar.common :refer [with-retries]]
             [clj-http.client :as http-client]
             [io.pedestal.log :as log]
             [mount.core :as mount])
@@ -194,24 +195,6 @@
   (redis/get-key (:db cache-db)
                  (expression-key-serializer variation-expression
                                             expression-type)))
-
-(defn with-retries
-  "Tries to execute body-fn retry-count times."
-  [retry-count retry-interval-ms body-fn]
-  (try
-    (body-fn)
-    (catch Exception e
-      (if (> retry-count 0)
-        (do (log/info :fn :with-retries
-                      :msg (format "body-fn failed, trying again in %s ms"
-                                   retry-interval-ms))
-            (Thread/sleep retry-interval-ms)
-            (with-retries
-              (dec retry-count)
-              retry-interval-ms
-              body-fn))
-        (do (log/error :fn :with-retries :msg "Retry limit exceeded")
-            (throw e))))))
 
 (defn store-in-cache
   "Puts the value in the cache, keyed by the first two arguments.

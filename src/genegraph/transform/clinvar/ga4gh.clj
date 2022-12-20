@@ -12,10 +12,11 @@
             [genegraph.server]
             [genegraph.sink.event :as event]
             [genegraph.transform.clinvar.clinical-assertion :as ca]
-            [genegraph.transform.clinvar.common :as common :refer [replace-kvs
-                                                                   map-rdf-resource-values-to-str
-                                                                   map-unnamespace-values
-                                                                   map-compact-namespaced-values]]
+            [genegraph.transform.clinvar.common
+             :as common
+             :refer [map-compact-namespaced-values
+                     map-rdf-resource-values-to-str
+                     map-unnamespace-values]]
             [genegraph.transform.clinvar.core :refer [add-parsed-value]]
             [genegraph.transform.clinvar.iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :as util]

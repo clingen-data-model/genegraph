@@ -87,7 +87,7 @@
         partition-infos (.partitionsFor consumer topic-name)]
     (map #(TopicPartition. (.topic %) (.partition %)) partition-infos)))
 
-(defn- poll-catch-exception
+(defn poll-catch-exception
   "Performs periodic polling on consumer, returns a seq of consumed
   messages or :error on poll exception"
   [consumer]
