@@ -5,8 +5,7 @@
             [clojure.pprint :refer [pprint]]
             [clojure.stacktrace :refer [print-stack-trace]]
             [genegraph.annotate :as ann]
-            [genegraph.database.names :refer [prefix-ns-map]]
-            [genegraph.database.names :as names]
+            [genegraph.database.names :as names :refer [prefix-ns-map]]
             [genegraph.database.query :as q]
             [genegraph.database.util :refer [tx write-tx]]
             [genegraph.server]
@@ -32,7 +31,7 @@
   (mount/start
    #'genegraph.database.instance/db
    #'genegraph.database.property-store/property-store
-   #'genegraph.transform.clinvar.cancervariants/vicc-expr-db
+   #'genegraph.transform.clinvar.cancervariants/cache-db
    #'genegraph.sink.event-recorder/event-database))
 
 (defn eventify [input-map]

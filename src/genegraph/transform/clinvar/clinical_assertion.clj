@@ -587,7 +587,7 @@
      :target_proposition (-> assertion-resource
                              (q/ld1-> [:vrs/target-proposition])
                              (proposition-resource-for-output
-                              (q/ld1-> subject-descriptor [:vrs/canonical_variation])
+                              (some-> subject-descriptor (q/ld1-> [:vrs/canonical_variation]))
                               release-date))
      :extensions (->> (q/ld-> assertion-resource [:vrs/extensions])
                       (map extension-resource-for-output))}))
