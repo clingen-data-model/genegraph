@@ -46,12 +46,7 @@
 ;; but really all we need is the expression -> variation object cached.
 ;; each normalization function may use a slightly different expr specification, so each
 ;; should define their own key fn for how the expr is deterministically serialized.
-;; (def vicc-db-name "cancervariants-cache.db")
 (def vicc-expr-db-name "cancervariants-expr-cache.db")
-
-;; (mount/defstate ^RocksDB vicc-expr-db
-;;   :start (rocksdb/open vicc-expr-db-name)
-;;   :stop (rocksdb/close vicc-expr-db))
 
 (defn normalize-canonical
   "Normalizes an :hgvs or :spdi expression.
@@ -114,27 +109,6 @@
    Note: nil .spec values defaults to 127.0.0.1:6379"
   {:pool {#_(comment Default pool options)}
    :spec {:uri (System/getenv "CACHE_REDIS_URI")}})
-
-(comment
-  "I had thought the carmine connection pool might be leaving dangling threads
-   but after investigating a bit it doesn't seem like it is.
-   Can delete this."
-  (mount/defstate redis-db
-    ;; :pool-fn #(redis/make-connection-pool {#_(comment Default pool options)})
-    :start (if (redis/connectable? redis-opts)
-             (assoc redis-opts :pool ((:pool-fn redis-opts)))
-             (throw (ex-info "Could not connect to redis"
-                             {:conn-opts redis-opts})))
-   ;; TODO test that this .close actually terminates the connections that are idle
-   ;; Look at threads
-   ;; https://stackoverflow.com/a/3018672/2172133
-   ;; Potentially tweak pool options:
-    #_{:time-between-eviction-runs-ms 1000
-       :min-evictable-idle-time-ms 1000
-       :test-on-borrow? true
-       :test-on-return? true
-       :test-while-idle? true}
-    :stop (.close (:pool redis-db))))
 
 (defn redis-configured? []
   (System/getenv "CACHE_REDIS_URI"))
