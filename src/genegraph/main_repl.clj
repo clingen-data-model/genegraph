@@ -1,5 +1,6 @@
 (ns genegraph.main-repl
   (:require [genegraph.main]
+            [io.pedestal.log :as log]
             [mount.core :as mount]
             [nrepl.server])
   (:gen-class))
@@ -11,5 +12,6 @@
   :stop (nrepl.server/stop-server nrepl-server))
 
 (defn -main [& args]
+  (log/info :msg "Starting nrepl server")
   (mount/start #'nrepl-server)
   (apply genegraph.main/-main args))
