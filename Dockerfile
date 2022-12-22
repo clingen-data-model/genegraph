@@ -6,7 +6,7 @@ COPY deps.edn /usr/src/app/deps.edn
 WORKDIR /usr/src/app
 RUN clojure -P
 COPY . /usr/src/app
-RUN clojure -T:build uber
+RUN clojure -T:build uber-repl
 
 # Using image without lein for deployment.
 FROM eclipse-temurin:17-focal
