@@ -127,31 +127,35 @@
         topic-kw :clinvar-raw
         topic-name (-> stream/config :topics topic-kw :name)]
     (stream/initialize-current-offsets!) ; Reads partition_offsets.edn
-    (with-open [consumer (stream/assigned-consumer-for-topic topic-kw)]
-      (doseq [tp (.assignment consumer)]
-        (reset-consumer-position consumer tp))
-      (while (and @running-atom (<= (swap! batch-counter inc) batch-limit))
-        (when-let [batch (with-retries 60 (* 60 1000) ; 1 hr, retrying every 60 seconds
-                           #(let [pb (stream/poll-catch-exception consumer)]
-                              (if (= :error pb)
-                                (throw (ex-info "Exception in polling" {:assignment (.assignment consumer)}))
-                                pb)))]
-          (when (not-empty batch)
-            (let [time-start (Instant/now)]
-              (dorun
-               (->> batch
-                    (map #(stream/consumer-record-to-event % topic-kw))
-                    (event-processing-fn-batched thread-pool)
-                    (filter #(:exception %))
-                    (map #(log/error :fn ::-main :event-with-exception %))))
-              (let [batch-duration (Duration/between time-start (Instant/now))]
-                (log/info :fn ::-main
-                          :batch-start (some-> batch first .offset)
-                          :batch-end (some-> batch last .offset)
-                          :batch-size (.count batch)
-                          :batch-duration (.toString batch-duration)
-                          :time-per-event (.toString (.dividedBy batch-duration (long (.count batch))))))))
-          (stream/update-consumer-offsets! consumer [(TopicPartition. topic-name 0)]))))))
+    (with-retries 60 (* 60 1000) ; 60 1min retries
+      (fn []
+        (when @running-atom ; Returning nil will short-circuit with-retries
+          (log/info :fn ::-main :msg "Opening consumer")
+          (with-open [consumer (stream/assigned-consumer-for-topic topic-kw)]
+            (doseq [tp (.assignment consumer)]
+              (reset-consumer-position consumer tp))
+            (while (and @running-atom (<= (swap! batch-counter inc) batch-limit))
+              (when-let [batch (with-retries 60 (* 60 1000) ; 60 1min retries
+                                 #(let [pb (stream/poll-catch-exception consumer)]
+                                    (if (= :error pb)
+                                      (throw (ex-info "Exception in polling" {:assignment (.assignment consumer)}))
+                                      pb)))]
+                (when (not-empty batch)
+                  (let [time-start (Instant/now)]
+                    (dorun
+                     (->> batch
+                          (map #(stream/consumer-record-to-event % topic-kw))
+                          (event-processing-fn-batched thread-pool)
+                          (filter #(:exception %))
+                          (map #(log/error :fn ::-main :event-with-exception %))))
+                    (let [batch-duration (Duration/between time-start (Instant/now))]
+                      (log/info :fn ::-main
+                                :batch-start (some-> batch first .offset)
+                                :batch-end (some-> batch last .offset)
+                                :batch-size (.count batch)
+                                :batch-duration (.toString batch-duration)
+                                :time-per-event (.toString (.dividedBy batch-duration (long (.count batch))))))))
+                (stream/update-consumer-offsets! consumer [(TopicPartition. topic-name 0)])))))))))
 
 
 #_(def redis-opts {:spec {:uri "redis://localhost:6380"}})
