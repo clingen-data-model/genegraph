@@ -520,13 +520,13 @@ LIMIT 1")
     (let [[ran? ret]
           (try [true (body-fn)]
                (catch Exception e
-                 (if (= 0 remaining-retries)
-                   (do (log/error :fn :with-retries :msg "Retry limit exceeded")
-                       (throw e))
-                   (do (log/info :fn :with-retries
-                                 :msg (format "body-fn failed, trying again in %s ms"
-                                              retry-interval-ms))
-                       (Thread/sleep retry-interval-ms)))))]
+                 (when (zero? remaining-retries)
+                   (log/error :fn :with-retries :msg "Retry limit exceeded")
+                   (throw e))
+                 (log/info :fn :with-retries
+                           :msg (format "body-fn failed, trying again in %s ms"
+                                        retry-interval-ms))
+                 (Thread/sleep retry-interval-ms)))]
       (if ran?
         ret
         (recur (dec retry-count))))))
