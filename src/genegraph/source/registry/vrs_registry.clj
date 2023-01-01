@@ -158,20 +158,15 @@
                 (stream/update-consumer-offsets! consumer [(TopicPartition. topic-name 0)])))))))))
 
 
-#_(def redis-opts {:spec {:uri "redis://localhost:6380"}})
-
 (defn count-variant-types
+  "Gets keys and values from the redis instance and counts them by the :type field in the value"
   [redis-opts]
-  (letfn [;; Build and eval the code form to pipeline all the GETs for ks in one wcar call
-          (get-keys-pipelined [redis-opts ks]
-            (-> (concat '(car/wcar redis-opts)
-                        (map #(list 'car/get %) ks))
-                eval))
-          (count-fn [agg v]
+  (assert (redis/connectable? redis-opts) (str "not connectable: " redis-opts))
+  (letfn [(count-fn [agg v]
             (assoc agg (get v "type") (inc (get agg (get v "type") 0))))
           (flatten1 [things] (for [thing things a thing] a))]
-    (let [cache-vals (->> (redis/key-seq redis-opts :scan-count 10000)
+    (let [cache-vals (->> (redis/key-seq redis-opts :scan-count 1000)
                           (partition-all 1000)
-                          (map #(get-keys-pipelined redis-opts %))
+                          (map #(redis/get-keys-pipelined redis-opts %))
                           flatten1)]
       (reduce count-fn {} cache-vals))))
