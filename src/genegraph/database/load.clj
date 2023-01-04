@@ -51,7 +51,7 @@
                            (keyword? p) (local-property-names p)
                            :else (ResourceFactory/createProperty p))
            object (cond
-                    (keyword? o) (local-class-names o)
+                    (keyword? o) (or (local-class-names o) (local-property-names o))
                     (= :Resource (:object (meta stmt))) (ResourceFactory/createResource o)
                     (or (string? o)
                         (int? o)
