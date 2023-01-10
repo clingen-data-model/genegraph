@@ -373,7 +373,8 @@
                                {}
                                model)
                               first
-                              (q/ld1-> [:sepio/activity-date]))
+                              (q/ld1-> [:sepio/activity-date])
+                              (s/replace #":" ""))
         
         [_
          assertion-base
