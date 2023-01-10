@@ -732,6 +732,7 @@
  [:pav/retrieved-from "http://purl.org/pav/retrievedFrom"]
  [:pav/version "http://purl.org/pav/version"]
  [:rdf/first "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"]
+ [:rdf/nil "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"]
  [:rdf/object "http://www.w3.org/1999/02/22-rdf-syntax-ns#object"]
  [:rdf/predicate
   "http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate"]
@@ -1354,8 +1355,10 @@
  [:sepio/strongly-contradicts
   "http://purl.obolibrary.org/obo/SEPIO_0000100"]
  [:sepio/estimated-lod-score "http://purl.obolibrary.org/obo/SEPIO_0004125"]
+ [:sepio/first-testing-method "http://purl.obolibrary.org/obo/SEPIO_0004136"]
  [:sepio/published-lod-score "http://purl.obolibrary.org/obo/SEPIO_0004124"]
  [:sepio/score-status "http://purl.obolibrary.org/obo/SEPIO_0004130"]
+ [:sepio/second-testing-method "http://purl.obolibrary.org/obo/SEPIO_0004137"]
  [:sepio/statistical-significance
   "http://purl.obolibrary.org/obo/SEPIO_0004164"]
  [:sepio/statistical-significance-type
@@ -1364,8 +1367,6 @@
   "http://purl.obolibrary.org/obo/SEPIO_0004166"]
  [:sepio/statistical-significance-value
   "http://purl.obolibrary.org/obo/SEPIO_0004167"]
-
- [:sepio/testing-methods "http://purl.obolibrary.org/obo/SEPIO_0004136"]
  [:sepio/total-allele-count
   "http://purl.obolibrary.org/obo/SEPIO_0000298"]
  [:sepio/total-individual-count

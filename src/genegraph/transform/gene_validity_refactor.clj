@@ -113,7 +113,7 @@
             "scoreStatus" {"@type" "@vocab"}
             "interactionType" {"@type" "@vocab"}
             "probandIs" {"@type" "@vocab"}
-            ;; "testingMethods" {"@type" "@vocab"}
+            "genotypingMethods" {"@container" "@list"}
 
             ;; ;; Category names
             "Model Systems" "gcixform:ModelSystems"
