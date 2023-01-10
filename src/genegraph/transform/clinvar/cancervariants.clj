@@ -3,6 +3,7 @@
             [genegraph.database.names :as names :refer [prefix-ns-map]]
             [genegraph.rocksdb :as rocksdb]
             [genegraph.source.registry.redis :as redis]
+            [genegraph.transform.clinvar.common :refer [with-retries]]
             [clj-http.client :as http-client]
             [io.pedestal.log :as log]
             [mount.core :as mount])
@@ -45,12 +46,7 @@
 ;; but really all we need is the expression -> variation object cached.
 ;; each normalization function may use a slightly different expr specification, so each
 ;; should define their own key fn for how the expr is deterministically serialized.
-;; (def vicc-db-name "cancervariants-cache.db")
 (def vicc-expr-db-name "cancervariants-expr-cache.db")
-
-;; (mount/defstate ^RocksDB vicc-expr-db
-;;   :start (rocksdb/open vicc-expr-db-name)
-;;   :stop (rocksdb/close vicc-expr-db))
 
 (defn normalize-canonical
   "Normalizes an :hgvs or :spdi expression.
@@ -108,6 +104,8 @@
 (def redis-opts
   "Pool opts:
    https://github.com/ptaoussanis/carmine/blob/e4835506829ef7fe0af68af39caef637e2008806/src/taoensso/carmine/connections.clj#L146
+   Can pass a predefined pool and shut this down when finished with it
+   https://github.com/ptaoussanis/carmine/commit/a1d0c4ec1dd4848a9323eaa149ab284509664515
    Note: nil .spec values defaults to 127.0.0.1:6379"
   {:pool {#_(comment Default pool options)}
    :spec {:uri (System/getenv "CACHE_REDIS_URI")}})
@@ -172,25 +170,9 @@
                  (expression-key-serializer variation-expression
                                             expression-type)))
 
-(defn with-retries
-  "Tries to execute body-fn retry-count times."
-  [retry-count retry-interval-ms body-fn]
-  (try
-    (body-fn)
-    (catch Exception e
-      (if (> retry-count 0)
-        (do (log/info :fn :with-retries
-                      :msg (format "body-fn failed, trying again in %s ms"
-                                   retry-interval-ms))
-            (Thread/sleep retry-interval-ms)
-            (with-retries
-              (dec retry-count)
-              retry-interval-ms
-              body-fn))
-        (do (log/error :fn :with-retries :msg "Retry limit exceeded")
-            (throw e))))))
-
 (defn store-in-cache
+  "Puts the value in the cache, keyed by the first two arguments.
+   Overwrites any existing value."
   [variation-expression expression-type value]
   (case (:type cache-db)
     :redis (with-retries 12 5000 ; retry up to 1m, every 5s
@@ -205,6 +187,7 @@
                                  value)))
 
 (defn get-from-cache
+  "Returns nil if no cache entry matches the arguments"
   [variation-expression expression-type]
   (case (:type cache-db)
     :redis (with-retries 12 5000
@@ -218,7 +201,6 @@
                  (#(when (not= :genegraph.rocksdb/miss %) %)))
     (throw (ex-info (str "Unknown cache-db type: " (:type cache-db))
                     {:cache-db cache-db}))))
-
 
 (defn vrs-variation-for-expression
   "Accepts :hgvs, :spdi, or :cnv types of expressions.

@@ -20,6 +20,12 @@
              (json/parse-string true)
              (util/parse-nested-content))))
 
+(def data-fns-for-type
+  {"trait" #(clinical-assertion/add-data-for-trait %)
+   "trait_set" #(clinical-assertion/add-data-for-trait-set %)
+   "clinical_assertion" #(clinical-assertion/add-data-for-clinical-assertion %)
+   "variation" #(variation/add-data-for-variation %)})
+
 (defmethod xform-types/add-data :clinvar-raw [event]
   (log/debug :fn :add-data)
   (try
@@ -31,17 +37,9 @@
                        :id (get-in event-with-json [::parsed-value :content :id]
                                    (get-in event-with-json [::parsed-value :content]))
                        :release_date (get-in event-with-json [::parsed-value :release_date]))
-          event-with-data (case (get-in event-with-json
-                                        [::parsed-value :content :entity_type])
-                            "trait" (clinical-assertion/add-data-for-trait
-                                     event-with-json)
-                            "trait_set" (clinical-assertion/add-data-for-trait-set
-                                         event-with-json)
-                            "clinical_assertion" (clinical-assertion/add-data-for-clinical-assertion
-                                                  event-with-json)
-                            "variation" (variation/add-data-for-variation
-                                         event-with-json)
-                            event-with-json)]
+          event-with-data (let [entity-type (get-in event-with-json [::parsed-value :content :entity_type])
+                                add-data-fn (get data-fns-for-type entity-type identity)]
+                            (add-data-fn event-with-json))]
       event-with-data)
     (catch Exception e
       (log/error :fn ::add-data :msg "Exception caught in add-data for :clinvar-raw"
@@ -68,9 +66,13 @@
     (-> event
         ;; Construct an empty model so downstream interceptors that try to read it dont get NPE
         (assoc ::q/model (l/statements-to-model []))
-        (update :exception conj {:fn :add-model-from-contextualized-data
-                                 :msg "Event did not have contextualized data"
-                                 :entity-type (-> event :genegraph.transform.clinvar/format)}))))
+        ;; Add a warning if this type has a transformer registered but no data was added
+        (#(let [entity-type (get-in % [::parsed-value :content :entity_type])]
+            (cond-> %
+              (data-fns-for-type entity-type)
+              (update :warning conj {:fn :add-model-from-contextualized-data
+                                     :msg "Event did not have contextualized data"
+                                     :entity-type (-> % :genegraph.transform.clinvar/format)})))))))
 
 (defmethod add-model :clinvar-raw
   [event]

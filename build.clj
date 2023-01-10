@@ -23,3 +23,15 @@
                           :src-dirs ["src"]
                           :ns-compile ['genegraph.main]))
     (b/uber        project)))
+
+(defn uber-repl [_]
+  ;; https://clojure.github.io/tools.build/clojure.tools.build.api.html#var-compile-clj
+  (let [{:keys [paths] :as basis} (b/create-basis (assoc defaults :aliases [:with-nrepl-deps]))
+        project                   (assoc defaults
+                                         :basis basis
+                                         :ns-compile ['genegraph.main-repl]
+                                         :main 'genegraph.main-repl)]
+    (b/delete      project)
+    (b/copy-dir    (assoc project :src-dirs paths))   ;; include all resource dirs in target/
+    (b/compile-clj (assoc project :src-dirs ["src"])) ;; but only compile src/
+    (b/uber        project)))

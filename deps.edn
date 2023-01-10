@@ -60,6 +60,9 @@
     ;; REPL-y main function evalutes this.
     "-e" "(in-ns 'genegraph.main)"]}
 
+  :with-nrepl-deps
+  {:extra-deps {nrepl/nrepl {:mvn/version "0.9.0"}}}
+
   :genegraph-with-repl
   {:extra-deps {nrepl/nrepl {:mvn/version "0.9.0"}}
    :main-opts ["-m" "genegraph.main-repl"]}

@@ -29,3 +29,16 @@ docker run --rm --net host -it redis redis-cli -p 6378
 # Get db size increases over 100 seconds at 10 second intervals
 
 for i in $(seq 1 10); do nc -w 1 vrs-cache-redis-svc 6379 <<< DBSIZE; sleep 10; done
+
+
+# Port forwarding into a redis pod and connecting to it locally
+
+Port forward local 6380 to remote 6379
+```
+kubectl port-forward sts/vrs-cache-redis 6380:6379
+```
+
+Connect using redisredis docker image and docker-for-mac localhost hostname.
+```
+docker run -it --rm redis redis-cli -h docker.for.mac.localhost -p 6380
+```

@@ -1,7 +1,6 @@
 (ns genegraph.transform.clinvar.common
   (:require [clojure.data.csv :as csv]
             [clojure.java.io :as io]
-            [clojure.pprint :refer [pprint]]
             [clojure.string :as str]
             [genegraph.database.load :as l]
             [genegraph.database.names :as names]
@@ -513,3 +512,21 @@ LIMIT 1")
             (when (not (nil? v))
               (vector k v)))]
     (replace-kvs input-map mutator)))
+
+(defn with-retries
+  "Tries to execute body-fn retry-count times."
+  [retry-count retry-interval-ms body-fn]
+  (loop [remaining-retries retry-count]
+    (let [[ran? ret]
+          (try [true (body-fn)]
+               (catch Exception e
+                 (when (zero? remaining-retries)
+                   (log/error :fn :with-retries :msg "Retry limit exceeded")
+                   (throw e))
+                 (log/info :fn :with-retries
+                           :msg (format "body-fn failed, trying again in %s ms"
+                                        retry-interval-ms))
+                 (Thread/sleep retry-interval-ms)))]
+      (if ran?
+        ret
+        (recur (dec retry-count))))))

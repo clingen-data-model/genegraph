@@ -539,6 +539,15 @@
      :is_reported_in (let [doc-resource (q/ld1-> method-resource [:vrs/is_reported_in])]
                        (document-resource-for-output doc-resource))}))
 
+(defn extension-resource-for-output
+  [extension-resource]
+  (when extension-resource
+    (common/map-pop-out-lone-seq-values
+     {:type (q/ld1-> extension-resource [:rdf/type])
+      :name (q/ld1-> extension-resource [:vrs/name])
+      :value (map #(-> % common/rdf-select-tree common/map-unnamespace-property-kw-keys)
+                  (q/ld-> extension-resource [:rdf/value]))})))
+
 (defn clinical-assertion-resource-for-output
   ;; TODO remove keys with nil values
   ;; TODO handle :event_type delete for all these records.
@@ -553,6 +562,11 @@
         subject-descriptor (variation-descriptor-by-clinvar-id
                             (q/ld1-> assertion-resource [:vrs/subject-descriptor])
                             release-date)]
+    (when (nil? subject-descriptor)
+      (log/warn :fn :clinical-assertion-resource-for-output
+                :msg (str/join " " ["No subject descriptor found."
+                                    "This could be because the variant for this assertion"
+                                    "has not been loaded yet."])))
     {:id (str assertion-resource)
      :type (q/ld1-> assertion-resource [:rdf/type])
      :label (q/ld1-> assertion-resource [:rdfs/label])
@@ -573,8 +587,10 @@
      :target_proposition (-> assertion-resource
                              (q/ld1-> [:vrs/target-proposition])
                              (proposition-resource-for-output
-                              (q/ld1-> subject-descriptor [:vrs/canonical_variation])
-                              release-date))}))
+                              (some-> subject-descriptor (q/ld1-> [:vrs/canonical_variation]))
+                              release-date))
+     :extensions (->> (q/ld-> assertion-resource [:vrs/extensions])
+                      (map extension-resource-for-output))}))
 
 (defn add-data-for-clinical-assertion [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
@@ -589,7 +605,13 @@
           :type stmt-type
           :label (:title assertion)
           ;; TODO
-          ;;:extensions nil
+          ;; https://github.com/clingen-data-model/genegraph/issues/697
+          :extensions (let [local-key (get assertion :local_key)]
+                        (log/info :fn :add-data-for-clinical-assertion
+                                  :local-key local-key
+                                  :assertion assertion)
+                        (common/fields-to-extension-maps
+                         (select-keys assertion [:local_key])))
           :description (description event)
           :method (method event)
           :contributions (contributions event)
@@ -608,7 +630,10 @@
           :target_proposition (proposition event)}
          :genegraph.annotate/iri
          (str (ns-cg "clinical_assertion_") (:id assertion) "." (:release_date message)))
-        add-contextualized)))
+        add-contextualized
+        (#(do (log/info :fn :clinical-assertion-contextualized-data
+                        :data (:genegraph.annotate/data-contextualized %))
+              %)))))
 
 
 (def statement-context

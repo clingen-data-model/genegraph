@@ -4,18 +4,19 @@
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
             [clojure.stacktrace :refer [print-stack-trace]]
+            [clojure.string :as str]
             [genegraph.annotate :as ann]
-            [genegraph.database.names :refer [prefix-ns-map]]
-            [genegraph.database.names :as names]
+            [genegraph.database.names :as names :refer [prefix-ns-map]]
             [genegraph.database.query :as q]
             [genegraph.database.util :refer [tx write-tx]]
             [genegraph.server]
             [genegraph.sink.event :as event]
             [genegraph.transform.clinvar.clinical-assertion :as ca]
-            [genegraph.transform.clinvar.common :as common :refer [replace-kvs
-                                                                   map-rdf-resource-values-to-str
-                                                                   map-unnamespace-values
-                                                                   map-compact-namespaced-values]]
+            [genegraph.transform.clinvar.common
+             :as common
+             :refer [map-compact-namespaced-values
+                     map-rdf-resource-values-to-str
+                     map-unnamespace-values]]
             [genegraph.transform.clinvar.core :refer [add-parsed-value]]
             [genegraph.transform.clinvar.iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :as util]
@@ -32,7 +33,7 @@
   (mount/start
    #'genegraph.database.instance/db
    #'genegraph.database.property-store/property-store
-   #'genegraph.transform.clinvar.cancervariants/vicc-db
+   #'genegraph.transform.clinvar.cancervariants/cache-db
    #'genegraph.sink.event-recorder/event-database))
 
 (defn eventify [input-map]
@@ -205,6 +206,11 @@
                               (json/generate-string)))
            (.write writer "\n")))))))
 
+(defn seq-progress
+  "Whenever an item in the seq s is realized, it also has metadata {:index <N>}
+   where N is the count of how many items have been realized prior, plus one"
+  [s])
+
 (defn process-topic-file [input-filename]
   (let [messages (map #(json/parse-string % true) (line-seq (io/reader input-filename)))]
     (with-open [statement-writer (io/writer (str input-filename "-output-statements"))
@@ -256,14 +262,18 @@
       ;; Just want each iri for latest release_date for each is-version-of
         (tx
          (let [unversioned-resources
-               (q/select (str "select distinct ?vof where { "
-                              "?i a ?type . "
-                              "?i :vrs/record-metadata ?rmd . "
-                              "?rmd :dc/is-version-of ?vof . } ")
+               (q/select (str/join " " ["select distinct ?vof where { "
+                                        "?i a ?type . "
+                                        "?i :vrs/record-metadata ?rmd . "
+                                        "?rmd :dc/is-version-of ?vof . "
+                                        #_"?i :vrs/extensions ?ext . "
+                                        #_"?ext :vrs/name \"local_key\" . "
+                                        " } "])
                          {:type type-kw})
-               _ (log/info :fn :snapshot-latest-statements
-                           :msg (str "unversioned-resources count: "
-                                     (count unversioned-resources)))
+               #_#__ (log/debug :fn :snapshot-latest-statements
+                                :msg (str "unversioned-resources count: "
+                                          (count unversioned-resources))
+                                :resources (map str unversioned-resources))
                latest-versioned-resources
                (map (fn [vof]
                       (let [rs (q/select (str "select ?i where { "
@@ -280,13 +290,13 @@
                                      :vof vof :rs rs)
                           (first rs))))
                     (->> unversioned-resources
-                         #_(take 100)))]
+                         #_(take 10)))]
            (doseq [[i statement-resource] (->> latest-versioned-resources
                                                (map-indexed vector))]
              (log/info :latest-statement-resource statement-resource)
              (try
                (let [statement-output (ca/clinical-assertion-resource-for-output statement-resource)
-                     _ (log/info :msg "Post processing output...")
+                     _ (log/debug :msg "Post processing output...")
                      post-processed-output (-> statement-output
                                                map-rdf-resource-values-to-str
                                                common/map-remove-nil-values
@@ -318,42 +328,37 @@
                               "?i :vrs/record-metadata ?rmd . "
                               "?rmd :dc/is-version-of ?vof . } ")
                          {:type type-kw})
-               _ (log/info :fn :snapshot-latest-statements
-                           :msg (str "unversioned-resources count: "
-                                     (count unversioned-resources)))
                latest-versioned-resources
-               (map (fn [vof]
-                      (let [rs (q/select (str "select ?i where { "
-                                              "?i a ?type . "
-                                              "?i :vrs/record-metadata ?rmd . "
-                                              "?rmd :dc/is-version-of ?vof . "
-                                              "?rmd :owl/version-info ?release_date . } "
-                                              "order by desc(?release_date) "
-                                              "limit 1")
-                                         {:type type-kw
-                                          :vof vof})]
-                        (if (< 1 (count rs))
-                          (log/error :msg "More than 1 statement returned"
-                                     :vof vof :rs rs)
-                          (first rs))))
-                    (->> unversioned-resources
-                         #_(take 100)))]
-
-
-
-           (doseq [[i post-processed-output] (->> latest-versioned-resources
-                                                  (pmap #(-> (ca/clinical-assertion-resource-for-output %)
-                                                             map-rdf-resource-values-to-str
-                                                             common/map-remove-nil-values
-                                                             (map-unnamespace-values (set [:type]))
-                                                             (map-compact-namespaced-values)))
-                                                  (map-indexed vector))]
+               (pmap (fn [vof]
+                       (let [rs (q/select (str "select ?i where { "
+                                               "?i a ?type . "
+                                               "?i :vrs/record-metadata ?rmd . "
+                                               "?rmd :dc/is-version-of ?vof . "
+                                               "?rmd :owl/version-info ?release_date . } "
+                                               "order by desc(?release_date) "
+                                               "limit 1")
+                                          {:type type-kw
+                                           :vof vof})]
+                         (if (< 1 (count rs))
+                           (log/error :msg "More than 1 statement returned"
+                                      :vof vof :rs rs)
+                           (first rs))))
+                     (->> unversioned-resources #_(take 100)))]
+           (doseq [[i post-processed-output]
+                   (->> latest-versioned-resources
+                        (pmap #(-> (ca/clinical-assertion-resource-for-output %)
+                                   map-rdf-resource-values-to-str
+                                   common/map-remove-nil-values
+                                   (map-unnamespace-values (set [:type]))
+                                   (map-compact-namespaced-values)))
+                        (map-indexed vector))]
              (try
-               (let [_ (log/info :msg "Post processing output...")]
-                 (log/info :progress (format "%d/%d" (inc i) (count latest-versioned-resources))
-                           :post-processed-output post-processed-output)
-                 (.write writer (json/generate-string post-processed-output))
-                 (.write writer "\n"))
+               (log/info :progress (format "Writing processed output %d/%d"
+                                           (inc i)
+                                           (count latest-versioned-resources))
+                         :post-processed-output post-processed-output)
+               (.write writer (json/generate-string post-processed-output))
+               (.write writer "\n")
                (catch Exception e
                  (print-stack-trace e)
                  (log/error :msg "Failed to output statement"
@@ -363,8 +368,8 @@
 
 (defn snapshot-latest-statements []
   (let [stmt-types [:vrs/VariationGermlinePathogenicityStatement
-                    #_:vrs/ClinVarDrugResponseStatement
-                    #_:vrs/ClinVarOtherStatement]]
+                    :vrs/ClinVarDrugResponseStatement
+                    :vrs/ClinVarOtherStatement]]
     (doseq [t stmt-types]
       (snapshot-latest-statements-of-type t))))
 
@@ -426,8 +431,14 @@
 (comment
   (start-states!)
   (process-topic-file "cg-vcep-2019-07-01/variation.txt")
-  (process-topic-file "cg-vcep-inputs/variation.txt")
-  (process-topic-file "variation-inputs-556853.txt")
+  (process-topic-file "cg-vcep-2019-07-01/trait.txt")
+  (process-topic-file "cg-vcep-2019-07-01/trait_set.txt")
+
+  (process-topic-file "cg-vcep-2019-07-01/clinical_assertion-10.txt")
+  #_(process-topic-file "one-scv.txt")
+
+  #_(process-topic-file "cg-vcep-inputs/variation.txt")
+  #_(process-topic-file "variation-inputs-556853.txt")
   (snapshot-latest-variations))
 
 
