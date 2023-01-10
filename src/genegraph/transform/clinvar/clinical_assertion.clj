@@ -604,12 +604,11 @@
          {:id id
           :type stmt-type
           :label (:title assertion)
-          ;; TODO
           ;; https://github.com/clingen-data-model/genegraph/issues/697
           :extensions (let [local-key (get assertion :local_key)]
-                        (log/info :fn :add-data-for-clinical-assertion
-                                  :local-key local-key
-                                  :assertion assertion)
+                        (log/debug :fn :add-data-for-clinical-assertion
+                                   :local-key local-key
+                                   :assertion assertion)
                         (common/fields-to-extension-maps
                          (select-keys assertion [:local_key])))
           :description (description event)

@@ -1,10 +1,11 @@
 (ns genegraph.transform.clinvar.cancervariants
   (:require [cheshire.core :as json]
+            [clj-http.client :as http-client]
             [genegraph.database.names :as names :refer [prefix-ns-map]]
             [genegraph.rocksdb :as rocksdb]
             [genegraph.source.registry.redis :as redis]
+            [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.common :refer [with-retries]]
-            [clj-http.client :as http-client]
             [io.pedestal.log :as log]
             [mount.core :as mount])
   (:import (clojure.lang Keyword)))
@@ -113,24 +114,41 @@
 (defn redis-configured? []
   (System/getenv "CACHE_REDIS_URI"))
 
+(def rocksdb-http-uri (System/getenv "ROCKSDB_HTTP_URI"))
+
+(defn rocks-http-configured? [] ((comp not nil?) rocksdb-http-uri))
+
+(defn rocks-http-connectable? []
+  (try (let [response (http-client/get (str rocksdb-http-uri "/live")
+                                       {:throw-exceptions false})]
+         (= 200 (:status response)))
+       (catch Exception _)))
+
 (mount/defstate cache-db
   "Has a :db and :type. :db is either a redis conn spec, or an open RocksDB handle object"
   :start (letfn [(use-redis [] {:type :redis
                                 :db redis-opts})
                  (use-rocks [] {:type :rocksdb
-                                :db (rocksdb/open vicc-expr-db-name)})]
-           (if (redis-configured?)
-             (if (redis/connectable? redis-opts)
-               (use-redis)
-               (do (log/error :msg (str "Redis is configured but not connectable."
+                                :db (rocksdb/open vicc-expr-db-name)})
+                 (use-rocks-http [] {:type :rocksdb-http
+                                     :db {:uri rocksdb-http-uri}})]
+           (or (when (rocks-http-configured?)
+                 (if (rocks-http-connectable?)
+                   (use-rocks-http)
+                   (log/error :msg (str "RocksDB HTTP is configured but not connectable")
+                              :uri rocksdb-http-uri)))
+               (when (redis-configured?)
+                 (if (redis/connectable? redis-opts)
+                   (use-redis)
+                   (log/error :msg (str "Redis is configured but not connectable."
                                         " Falling back to rocksdb")
                               :redis-opts redis-opts
-                              :rocks-path vicc-expr-db-name)
-                   (use-rocks)))
-             (use-rocks)))
+                              :rocks-path vicc-expr-db-name)))
+               (use-rocks)))
   :stop (case (:type cache-db)
           :redis (log/info :msg "No close implemented for redis client")
           :rocksdb (rocksdb/close (:db cache-db))
+          :rocksdb-http (log/info :msg "No close implemented for rocksdb http")
           (throw (ex-info (str "Unknown cache-db type: " (:type cache-db))
                           {:cache-db cache-db}))))
 
@@ -184,7 +202,12 @@
                                  (expression-key-serializer
                                   variation-expression
                                   expression-type)
-                                 value)))
+                                 value)
+    :rocksdb-http (with-retries 12 5000
+                    #(rocks-registry/set-key-remote (-> cache-db :db :uri)
+                                                    [variation-expression
+                                                     expression-type]
+                                                    value))))
 
 (defn get-from-cache
   "Returns nil if no cache entry matches the arguments"
@@ -199,6 +222,10 @@
                                      variation-expression
                                      expression-type))
                  (#(when (not= :genegraph.rocksdb/miss %) %)))
+    :rocksdb-http (with-retries 12 5000
+                    #(rocks-registry/get-key-remote (-> cache-db :db :uri)
+                                                    [variation-expression
+                                                     expression-type]))
     (throw (ex-info (str "Unknown cache-db type: " (:type cache-db))
                     {:cache-db cache-db}))))
 

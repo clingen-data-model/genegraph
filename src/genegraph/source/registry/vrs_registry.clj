@@ -7,6 +7,7 @@
             [genegraph.sink.event :as ev]
             [genegraph.sink.stream :as stream]
             [genegraph.source.registry.redis :as redis]
+            [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.transform.clinvar.common :refer [with-retries]]
             [genegraph.transform.types :as xform-types]
@@ -111,16 +112,21 @@
   ;; those calls will fail.
   ;; Starting genegraph.transform.clinvar.cancervariants/redis-db
   ;; will throw an exception if Redis is not configured or is not connectable.
-  (assert (vicc/redis-configured?)
-          "Redis must be configured with CACHE_REDIS_URI")
+  #_(assert (vicc/redis-configured?)
+            "Redis must be configured with CACHE_REDIS_URI")
   (mount/start #'genegraph.server/server)
-  (wait-for-redis-connectability vicc/redis-opts (* 30 1000))
+  #_(wait-for-redis-connectability vicc/redis-opts (* 30 1000))
+  (assert (vicc/rocks-http-configured?)
+          "RocksDB http must be configured with ROCKSDB_HTTP_URI")
+  (mount/start #'rocks-registry/db #'rocks-registry/server)
+  (assert (vicc/rocks-http-connectable?)
+          (str "RocksDB http was not connectable: " vicc/rocksdb-http-uri))
   (migration/populate-data-vol-if-needed)
   (mount/start #'genegraph.database.instance/db
                #'genegraph.database.property-store/property-store
                #'genegraph.transform.clinvar.cancervariants/cache-db
                #'genegraph.source.registry.vrs-registry/thread-pool)
-  (assert (= :redis (:type genegraph.transform.clinvar.cancervariants/cache-db)))
+  (assert (= :rocksdb-http (:type genegraph.transform.clinvar.cancervariants/cache-db)))
   (log/info :fn ::-main :running-states (mount/running-states))
   (let [batch-limit Long/MAX_VALUE
         batch-counter (atom 0)
