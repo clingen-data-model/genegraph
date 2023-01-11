@@ -148,7 +148,7 @@
    Setting :keep-running? in the state atom to false signals to this
    watcher that the next time the thread dies, to not restart it.
    :keep-running? false does not mean the watcher should kill the thread.
-   Exceptions in child thread are printed to stderr by default."
+   Exceptions in child thread are caught and logged."
   [thread-fn state-atom]
   (swap! state-atom assoc
          :watcher (Thread/currentThread)
