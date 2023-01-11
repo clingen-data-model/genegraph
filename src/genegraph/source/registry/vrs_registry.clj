@@ -12,7 +12,8 @@
             [genegraph.transform.clinvar.common :refer [with-retries]]
             [genegraph.transform.types :as xform-types]
             [io.pedestal.log :as log]
-            [mount.core :as mount])
+            [mount.core :as mount]
+            [ring.util.request])
   (:import (java.time Duration Instant)
            (org.apache.kafka.common TopicPartition)))
 
@@ -71,10 +72,11 @@
                   event-seq)))
 
 
-(def running-atom (atom true))
+(defonce running-atom (atom true))
 
 (mount/defstate thread-pool
-  :start (cp/threadpool 20)
+  :start (cp/threadpool (or (some-> (System/getenv "GENEGRAPH_VRS_CACHE_POOL_SIZE") parse-long)
+                            20))
   :stop (cp/shutdown thread-pool))
 
 (defn reset-consumer-position
@@ -107,25 +109,30 @@
             :msg "Connected"
             :redis-opts redis-opts))
 
+(defn start-states! []
+  #_(assert (vicc/redis-configured?)
+            "Redis must be configured with CACHE_REDIS_URI")
+  #_(wait-for-redis-connectability vicc/redis-opts (* 30 1000))
+  (mount/start #'genegraph.server/server)
+  (assert (rocks-registry/rocks-http-configured?)
+          "RocksDB http must be configured with ROCKSDB_HTTP_URI")
+  (rocks-registry/add-routes rocks-registry/routes)
+  (mount/start #'rocks-registry/db)
+  (mount/start #'rocks-registry/server)
+  (assert (rocks-registry/rocks-http-connectable?)
+          (str "RocksDB http was not connectable: " rocks-registry/rocksdb-http-uri))
+  (migration/populate-data-vol-if-needed)
+  (mount/start #'genegraph.database.instance/db
+               #'genegraph.database.property-store/property-store
+               #'genegraph.transform.clinvar.cancervariants/cache-db
+               #'genegraph.source.registry.vrs-registry/thread-pool))
+
 (defn -main [& args]
   ;; Don't start the cancervariants rocksdb states. If redis is not configured,
   ;; those calls will fail.
   ;; Starting genegraph.transform.clinvar.cancervariants/redis-db
   ;; will throw an exception if Redis is not configured or is not connectable.
-  #_(assert (vicc/redis-configured?)
-            "Redis must be configured with CACHE_REDIS_URI")
-  (mount/start #'genegraph.server/server)
-  #_(wait-for-redis-connectability vicc/redis-opts (* 30 1000))
-  (assert (vicc/rocks-http-configured?)
-          "RocksDB http must be configured with ROCKSDB_HTTP_URI")
-  (mount/start #'rocks-registry/db #'rocks-registry/server)
-  (assert (vicc/rocks-http-connectable?)
-          (str "RocksDB http was not connectable: " vicc/rocksdb-http-uri))
-  (migration/populate-data-vol-if-needed)
-  (mount/start #'genegraph.database.instance/db
-               #'genegraph.database.property-store/property-store
-               #'genegraph.transform.clinvar.cancervariants/cache-db
-               #'genegraph.source.registry.vrs-registry/thread-pool)
+  (start-states!)
   (assert (= :rocksdb-http (:type genegraph.transform.clinvar.cancervariants/cache-db)))
   (log/info :fn ::-main :running-states (mount/running-states))
   (let [batch-limit Long/MAX_VALUE

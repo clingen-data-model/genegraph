@@ -1,4 +1,5 @@
 (ns genegraph.transform.clinvar.cancervariants
+  "Things for interacting with the cancervariants.org normalization service."
   (:require [cheshire.core :as json]
             [clj-http.client :as http-client]
             [genegraph.database.names :as names :refer [prefix-ns-map]]
@@ -33,7 +34,7 @@
    "_id" {"@id" "@id"},
    "type" {"@id" "@type"
            "@type" "@id"}
-   "@vocab" (get prefix-ns-map "vrs") ;"https://vrs.ga4gh.org/"
+   "@vocab" (get prefix-ns-map "vrs")
    "normalize.variation" {"@id" "https://github.com/cancervariants/variation-normalization/"
                           "@prefix" true}})
 
@@ -114,15 +115,7 @@
 (defn redis-configured? []
   (System/getenv "CACHE_REDIS_URI"))
 
-(def rocksdb-http-uri (System/getenv "ROCKSDB_HTTP_URI"))
 
-(defn rocks-http-configured? [] ((comp not nil?) rocksdb-http-uri))
-
-(defn rocks-http-connectable? []
-  (try (let [response (http-client/get (str rocksdb-http-uri "/live")
-                                       {:throw-exceptions false})]
-         (= 200 (:status response)))
-       (catch Exception _)))
 
 (mount/defstate cache-db
   "Has a :db and :type. :db is either a redis conn spec, or an open RocksDB handle object"
@@ -131,12 +124,12 @@
                  (use-rocks [] {:type :rocksdb
                                 :db (rocksdb/open vicc-expr-db-name)})
                  (use-rocks-http [] {:type :rocksdb-http
-                                     :db {:uri rocksdb-http-uri}})]
-           (or (when (rocks-http-configured?)
-                 (if (rocks-http-connectable?)
+                                     :db {:uri rocks-registry/rocksdb-http-uri}})]
+           (or (when (rocks-registry/rocks-http-configured?)
+                 (if (rocks-registry/rocks-http-connectable?)
                    (use-rocks-http)
                    (log/error :msg (str "RocksDB HTTP is configured but not connectable")
-                              :uri rocksdb-http-uri)))
+                              :uri rocks-registry/rocksdb-http-uri)))
                (when (redis-configured?)
                  (if (redis/connectable? redis-opts)
                    (use-redis)
