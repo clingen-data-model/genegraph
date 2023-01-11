@@ -72,7 +72,7 @@
                   event-seq)))
 
 
-(defonce running-atom (atom true))
+(defonce keep-running (atom true))
 
 (mount/defstate thread-pool
   :start (cp/threadpool (or (some-> (System/getenv "GENEGRAPH_VRS_CACHE_POOL_SIZE") parse-long)
@@ -89,6 +89,15 @@
     (.seek consumer topic-partition offset)
     (.seekToBeginning consumer [topic-partition]))
   consumer)
+
+(defn poll-with-retries
+  "Tries to poll consumer. If an exception occurs, retries."
+  [consumer retry-count retry-interval]
+  (with-retries retry-count retry-interval ; 60 1min retries
+    #(let [batch (stream/poll-catch-exception consumer)]
+       (if (= :error batch)
+         (throw (ex-info "Exception in polling" {:assignment (.assignment consumer)}))
+         batch))))
 
 (defn wait-for-redis-connectability
   "Will wait up to max-ms milliseconds for the redis server specified by
@@ -127,11 +136,58 @@
                #'genegraph.transform.clinvar.cancervariants/cache-db
                #'genegraph.source.registry.vrs-registry/thread-pool))
 
-(defn -main [& args]
-  ;; Don't start the cancervariants rocksdb states. If redis is not configured,
-  ;; those calls will fail.
-  ;; Starting genegraph.transform.clinvar.cancervariants/redis-db
-  ;; will throw an exception if Redis is not configured or is not connectable.
+(defonce consumer-state (atom {:thread nil
+                               :watcher nil
+                               :keep-running? true
+                               :restart-count 0}))
+
+(defn thread-watcher
+  "Starts thread-fn in a child thread. Restarts it if it dies.
+   Updates state-atom with info that might be useful to caller.
+   Setting :keep-running? in the state atom to false signals to this
+   watcher that the next time the thread dies, to not restart it.
+   :keep-running? false does not mean the watcher should kill the thread."
+  [thread-fn state-atom]
+  (swap! state-atom assoc
+         :watcher (Thread/currentThread)
+         :restart-count 0)
+  (while (:keep-running? @state-atom)
+    (let [thread (Thread. thread-fn)]
+      (swap! state-atom assoc :thread thread)
+      (.start thread)
+      (while (.isAlive thread)
+        (.join thread (* 1 1000)))
+      (when (:keep-running? @state-atom)
+        (swap! state-atom update :restart-count inc)
+        (log/error :fn :thread-watcher
+                   :msg "Thread terminated, restarting"
+                   :state @state-atom))))
+  (log/info :fn :thread-watcher
+            :msg "Thread terminated gracefully"
+            :state-atom @state-atom)
+  (swap! state-atom assoc :stopped-at (Instant/now)))
+
+(comment
+  "Example of using thread-watcher to watch a thread"
+  (def state (atom {:keep-running? true}))
+  (def t (Thread. (fn [] (thread-watcher (fn [] (Thread/sleep (* 10 1000)))
+                                         state))))
+  (.start t)
+  (swap! state assoc :keep-running? false))
+
+(defn shutdown-threads!
+  "Gracefully shuts down the threads managed by vrs-registry/-main"
+  []
+  (swap! consumer-state assoc :keep-running? false)
+  (reset! keep-running false))
+
+(defn -main
+  "Starts consumption and processing of messages in a separate thread.
+   To stop the thread watcher, (swap! consumer-state assoc :keep-running? false)
+   To stop the consumer thread, (reset! keep-running false).
+   (these are in (shutdown-threads!))
+   If the consumer thread is stopped before the thread watcher, it will keep being restarted"
+  [& args]
   (start-states!)
   (assert (= :rocksdb-http (:type genegraph.transform.clinvar.cancervariants/cache-db)))
   (log/info :fn ::-main :running-states (mount/running-states))
@@ -140,36 +196,35 @@
         topic-kw :clinvar-raw
         topic-name (-> stream/config :topics topic-kw :name)]
     (stream/initialize-current-offsets!) ; Reads partition_offsets.edn
-    (with-retries 60 (* 60 1000) ; 60 1min retries
-      (fn []
-        (when @running-atom ; Returning nil will short-circuit with-retries
-          (log/info :fn ::-main :msg "Opening consumer")
-          (with-open [consumer (stream/assigned-consumer-for-topic topic-kw)]
-            (doseq [tp (.assignment consumer)]
-              (reset-consumer-position consumer tp))
-            (while (and @running-atom (<= (swap! batch-counter inc) batch-limit))
-              (when-let [batch (with-retries 60 (* 60 1000) ; 60 1min retries
-                                 #(let [pb (stream/poll-catch-exception consumer)]
-                                    (if (= :error pb)
-                                      (throw (ex-info "Exception in polling" {:assignment (.assignment consumer)}))
-                                      pb)))]
-                (when (not-empty batch)
-                  (let [time-start (Instant/now)]
-                    (dorun
-                     (->> batch
-                          (map #(stream/consumer-record-to-event % topic-kw))
-                          (event-processing-fn-batched thread-pool)
-                          (filter #(:exception %))
-                          (map #(log/error :fn ::-main :event-with-exception %))))
-                    (let [batch-duration (Duration/between time-start (Instant/now))]
-                      (log/info :fn ::-main
-                                :batch-start (some-> batch first .offset)
-                                :batch-end (some-> batch last .offset)
-                                :batch-size (.count batch)
-                                :batch-duration (.toString batch-duration)
-                                :time-per-event (.toString (.dividedBy batch-duration (long (.count batch))))))))
-                (stream/update-consumer-offsets! consumer [(TopicPartition. topic-name 0)])))))))))
-
+    (letfn [(initialize-consumer []
+              #_"Returns an open and assigned consumer"
+              (let [consumer (stream/assigned-consumer-for-topic topic-kw)]
+                (doseq [tp (.assignment consumer)]
+                  (reset-consumer-position consumer tp))
+                consumer))
+            (thread-fn []
+              #_"Assumes consumer is read to start polling as-is. If running-atom
+               is set to false, finishes the current poll batch and  dies."
+              (with-open [consumer (initialize-consumer)]
+                (while (and @keep-running (<= (swap! batch-counter inc) batch-limit))
+                  (when-let [batch (poll-with-retries consumer 60 (* 60 1000))]
+                    (when (not-empty batch)
+                      (let [time-start (Instant/now)]
+                        (dorun (->> batch
+                                    (map #(stream/consumer-record-to-event % topic-kw))
+                                    (event-processing-fn-batched thread-pool)
+                                    (filter #(:exception %))
+                                    (map #(log/error :fn ::-main :event-with-exception %))))
+                        (let [batch-duration (Duration/between time-start (Instant/now))]
+                          (log/info :fn ::-main
+                                    :batch-start (some-> batch first .offset)
+                                    :batch-end (some-> batch last .offset)
+                                    :batch-size (.count batch)
+                                    :batch-duration (.toString batch-duration)
+                                    :time-per-event (.toString (.dividedBy batch-duration (long (.count batch))))))))
+                    (stream/update-consumer-offsets! consumer [(TopicPartition. topic-name 0)])))))]
+      (reset! consumer-state {:keep-running? true})
+      (.start (Thread. (partial thread-watcher thread-fn consumer-state))))))
 
 (defn count-variant-types
   "Gets keys and values from the redis instance and counts them by the :type field in the value"
