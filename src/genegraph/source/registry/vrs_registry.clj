@@ -13,7 +13,8 @@
             [genegraph.transform.types :as xform-types]
             [io.pedestal.log :as log]
             [mount.core :as mount]
-            [ring.util.request])
+            [ring.util.request]
+            [genegraph.source.html.elements :as e])
   (:import (java.time Duration Instant)
            (org.apache.kafka.common TopicPartition)))
 
@@ -146,19 +147,29 @@
    Updates state-atom with info that might be useful to caller.
    Setting :keep-running? in the state atom to false signals to this
    watcher that the next time the thread dies, to not restart it.
-   :keep-running? false does not mean the watcher should kill the thread."
+   :keep-running? false does not mean the watcher should kill the thread.
+   Exceptions in child thread are printed to stderr by default."
   [thread-fn state-atom]
   (swap! state-atom assoc
          :watcher (Thread/currentThread)
          :restart-count 0)
   (while (:keep-running? @state-atom)
-    (let [thread (Thread. thread-fn)]
+    (let [child-exception (atom nil)
+          exception-wrapper #(try (thread-fn)
+                                  (catch Exception e
+                                    (reset! child-exception e)))
+          thread (Thread. exception-wrapper)]
       (swap! state-atom assoc :thread thread)
       (.start thread)
       (while (.isAlive thread)
         (.join thread (* 1 1000)))
       (when (:keep-running? @state-atom)
         (swap! state-atom update :restart-count inc)
+        (when (not (nil? @child-exception))
+          (log/error :fn :thread-watcher
+                     :msg "Exception caught in child thread"
+                     :ex @child-exception)
+          (reset! child-exception nil))
         (log/error :fn :thread-watcher
                    :msg "Thread terminated, restarting"
                    :state @state-atom))))
@@ -170,7 +181,9 @@
 (comment
   "Example of using thread-watcher to watch a thread"
   (def state (atom {:keep-running? true}))
-  (def t (Thread. (fn [] (thread-watcher (fn [] (Thread/sleep (* 10 1000)))
+  (def t (Thread. (fn [] (thread-watcher (fn []
+                                           (Thread/sleep (* 10 1000))
+                                           (throw (RuntimeException. "child thread exception!")))
                                          state))))
   (.start t)
   (swap! state assoc :keep-running? false))
