@@ -78,9 +78,15 @@
   (.delete db (multipart-key-digest ks)))
 
 (defn rocks-destroy!
-  "Delete the named instance. Database must be closed prior to this call"
+  "Delete the named instance. Database must be closed prior to this call.
+   If db-name is a RocksDB object, this closes it, destroys it, re-opens it"
   [db-name]
-  (RocksDB/destroyDB (create-db-path db-name) (Options.)))
+  (cond
+    (instance? org.rocksdb.RocksDB db-name) (let [name-str (.getName db-name)]
+                                              (.close db-name)
+                                              (rocks-destroy! name-str)
+                                              (open name-str))
+    :else (RocksDB/destroyDB (create-db-path db-name) (Options.))))
 
 (defn rocks-get
   "Get and nippy/fast-thaw element with key k. Key may be any arbitrary Clojure datatype"
