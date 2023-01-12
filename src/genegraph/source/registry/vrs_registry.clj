@@ -14,7 +14,7 @@
             [io.pedestal.log :as log]
             [mount.core :as mount]
             [ring.util.request]
-            [genegraph.source.html.elements :as e])
+            [io.pedestal.http :as http])
   (:import (java.time Duration Instant)
            (org.apache.kafka.common TopicPartition)))
 
@@ -128,9 +128,15 @@
           "RocksDB http must be configured with ROCKSDB_HTTP_URI")
   (rocks-registry/add-routes rocks-registry/routes)
   (mount/start #'rocks-registry/db)
+
+
+  (reset! rocks-registry/service-map (-> @rocks-registry/service-map
+                                         http/default-interceptors
+                                         (rocks-registry/remove-interceptor ::http/log-request)))
   (mount/start #'rocks-registry/server)
   (assert (rocks-registry/rocks-http-connectable?)
           (str "RocksDB http was not connectable: " rocks-registry/rocksdb-http-uri))
+
   (migration/populate-data-vol-if-needed)
   (mount/start #'genegraph.database.instance/db
                #'genegraph.database.property-store/property-store
@@ -198,7 +204,7 @@
   "Starts consumption and processing of messages in a separate thread.
    To stop the thread watcher, (swap! consumer-state assoc :keep-running? false)
    To stop the consumer thread, (reset! keep-running false).
-   (these are in (shutdown-threads!))
+   (note: use (shutdown-threads!))
    If the consumer thread is stopped before the thread watcher, it will keep being restarted"
   [& args]
   (start-states!)
@@ -237,7 +243,13 @@
                                     :time-per-event (.toString (.dividedBy batch-duration (long (.count batch))))))))
                     (stream/update-consumer-offsets! consumer [(TopicPartition. topic-name 0)])))))]
       (reset! consumer-state {:keep-running? true})
-      (.start (Thread. (partial thread-watcher thread-fn consumer-state))))))
+      (thread-watcher thread-fn consumer-state))))
+
+(defn -main-background
+  "Runs -main in a background thread. Useful for running in a REPL.
+   Can use (shutdown-threads!) to gracefully terminate that thread"
+  [& args]
+  (.start (Thread. (partial apply (partial -main) args))))
 
 (defn count-variant-types
   "Gets keys and values from the redis instance and counts them by the :type field in the value"

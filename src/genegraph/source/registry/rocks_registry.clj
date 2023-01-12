@@ -97,14 +97,30 @@
      :get (fn [_] {:status 200 :body (str env/environment)})
      :route-name ::env]})
 
+(defn remove-interceptor [service-map interceptor-name]
+  (update service-map
+          ::http/interceptors
+          (fn [interceptors]
+            (->> interceptors
+                 (filter #(not= interceptor-name (:name %)))
+                 (into [])))))
+
 (defonce service-map
   (atom
-   {::http/routes status-routes
-    ::http/type :jetty
-    ::http/port (or (some-> (System/getenv "ROCKSDB_HTTP_PORT") parse-long)
-                    6381)
-    ::http/join? false ;; run in background thread
-    }))
+   (-> {::http/routes status-routes
+        ::http/type :jetty
+        ::http/port (or (some-> (System/getenv "ROCKSDB_HTTP_PORT") parse-long)
+                        6381)
+        ;; false to run in background thread
+        ::http/join? false}
+
+       ;; Logging all requests is too noisy. Individual handlers can log themselves.
+       #_(http/default-interceptors)
+       #_(remove-interceptor ::http/log-request))))
+
+(comment
+  (-> @service-map http/default-interceptors http/create-server http/start (->> (def testserver)))
+  ())
 
 (defn state-restart-if-started [state-var]
   (when (state-is-running? state-var)
