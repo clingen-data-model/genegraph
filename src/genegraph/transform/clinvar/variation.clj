@@ -349,11 +349,15 @@
     (catch Exception e
       (log/error :fn :normalize-canonical-expression
                  :message "Exception normalizing canonical variation"
+                 :candidate-expressions (::canonical-candidate-expressions event)
+                 :prioritized-expression (::prioritized-expression event)
                  :ex-data (ex-data e)
                  :ex-message (ex-message e)
                  :ex-stacktrace (with-out-str (clojure.stacktrace/print-stack-trace e)))
       (update event :exception conj {:fn :normalize-canonical-expression
                                      :message "Exception normalizing canonical variation"
+                                     :candidate-expressions (::canonical-candidate-expressions event)
+                                     :prioritized-expression (::prioritized-expression event)
                                      :exception e}))))
 
 (defn add-data-for-variation
