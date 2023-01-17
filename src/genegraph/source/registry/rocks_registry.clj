@@ -109,6 +109,7 @@
   (atom
    (-> {::http/routes status-routes
         ::http/type :jetty
+        ::http/host "0.0.0.0"
         ::http/port (or (some-> (System/getenv "ROCKSDB_HTTP_PORT") parse-long)
                         6381)
         ;; false to run in background thread
