@@ -126,18 +126,27 @@
                  (use-rocks-http [] {:type :rocksdb-http
                                      :db {:uri rocks-registry/rocksdb-http-uri}})]
            (or (when (rocks-registry/rocks-http-configured?)
-                 (if (rocks-registry/rocks-http-connectable?)
-                   (use-rocks-http)
-                   (log/error :msg (str "RocksDB HTTP is configured but not connectable")
-                              :uri rocks-registry/rocksdb-http-uri)))
+                 (loop [left (* 5 60)]
+                   (if (rocks-registry/rocks-http-connectable?)
+                     (use-rocks-http)
+                     (do (log/error :msg (str "RocksDB HTTP is configured but not connectable")
+                                    :uri rocks-registry/rocksdb-http-uri)
+                         (when (< 0 left)
+                           (log/info :msg "Waiting for RocksDB HTTP to become available" :retries-left left)
+                           (Thread/sleep 1000)
+                           (recur (dec left)))))))
                (when (redis-configured?)
-                 (if (redis/connectable? redis-opts)
-                   (use-redis)
-                   (log/error :msg (str "Redis is configured but not connectable."
-                                        " Falling back to rocksdb")
-                              :redis-opts redis-opts
-                              :rocks-path vicc-expr-db-name)))
-               (use-rocks)))
+                 (loop [left (* 5 60)]
+                   (if (redis/connectable? redis-opts)
+                     (use-redis)
+                     (do (log/error :msg "Redis is configured but not connectable."
+                                    :redis-opts redis-opts)
+                         (when (< 0 left)
+                           (log/info :msg "Waiting for Redis to become available" :retries-left left)
+                           (Thread/sleep 1000)
+                           (recur (dec left)))))))
+               (do (log/info :msg "Using RocksDB" :rocks-path vicc-expr-db-name)
+                   (use-rocks))))
   :stop (case (:type cache-db)
           :redis (log/info :msg "No close implemented for redis client")
           :rocksdb (rocksdb/close (:db cache-db))
