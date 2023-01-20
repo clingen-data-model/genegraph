@@ -5,7 +5,9 @@
 (def defaults
   "The defaults to configure a build."
   {:class-dir  "target/classes"
-   :java-opts  ["-Dclojure.main.report=stderr"]
+   :java-opts  ["-Dclojure.main.report=stderr"
+                "--add-modules" "jdk.incubator.foreign"
+                "--enable-native-access=ALL-UNNAMED"]
    :main       'genegraph.main
    :path       "target"
    :project    "deps.edn"

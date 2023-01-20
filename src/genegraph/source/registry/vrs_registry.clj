@@ -1,5 +1,6 @@
 (ns genegraph.source.registry.vrs-registry
-  (:require [clojure.core.async :as async]
+  (:require [clj-http.client :as http-client]
+            [clojure.core.async :as async]
             [com.climate.claypoole :as cp]
             [genegraph.annotate :as ann]
             [genegraph.migration :as migration]
@@ -11,10 +12,13 @@
             [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.transform.clinvar.common :refer [with-retries]]
             [genegraph.transform.types :as xform-types]
+            [io.pedestal.http :as http]
             [io.pedestal.log :as log]
             [mount.core :as mount]
             [ring.util.request]
-            [io.pedestal.http :as http])
+            [libpython-clj2.require :refer [require-python]]
+            [libpython-clj2.python :refer [py. py.. py.-] :as py]
+            [cheshire.core :as json])
   (:import (java.time Duration Instant)
            (org.apache.kafka.common TopicPartition)))
 
@@ -263,3 +267,79 @@
                           (map #(redis/get-keys-pipelined redis-opts %))
                           flatten1)]
       (reduce count-fn {} cache-vals))))
+
+;; curl -X 'PUT' \
+;;   'http://localhost:5050/allele' \
+;;   -H 'accept: application/json' \
+;;   -H 'Content-Type: application/json' \
+;;   -d '{
+;;   "definition": "NC_000010.11:g.87894077C>T",
+;;   "format": "hgvs",
+;;   "normalize": "right"
+;; }'
+
+(defn anyvar-testing []
+
+  (cp/with-shutdown! [pool (cp/threadpool 50)]
+    (let [base-url "http://localhost:5050"
+          inp (json/generate-string
+               {"definition" "NC_000010.11:g.87894077C>T",
+                "format" "hgvs",
+                "normalize" "right"})
+          headers {"Content-Type" "application/json"
+                   "Accept" "application/json"}
+          n 1000]
+      (let [start (Instant/now)]
+        (dorun
+         (cp/pmap
+          pool
+          (fn [i]
+            (let [resp (http-client/put (str base-url "/allele")
+                                        {:throw-exceptions false
+                                         :headers headers
+                                         :body inp})]
+              (assert (= 200 (:status resp)) {:status (:status resp)
+                                              :msg "Request failed"
+                                              :resp resp})))
+          (range n)))
+        (let [duration (Duration/between start (Instant/now))
+              avg (.dividedBy duration n)]
+          (println (prn-str {:avg (str avg)
+                             :total (str duration)})))))))
+
+
+(defn anyvar-libpython []
+  (cp/with-shutdown! [pool (cp/threadpool 20)]
+    (libpython-clj2.python/initialize!)
+    (require-python '[anyvar.restapi.globals])
+    (require-python '[anyvar.anyvar])
+    (let [base-url "http://localhost:5050"
+          inp (json/generate-string
+               {"definition" "NC_000010.11:g.87894077C>T",
+                "format" "hgvs",
+                "normalize" "right"})
+          av (anyvar.anyvar/make_anyvar)
+          translator (py/py.- av translator)
+          n 1000]
+      (let [start (Instant/now)]
+        (dorun
+         (cp/pmap
+          pool
+          (fn [i]
+            (let [resp (py/->jvm (py/py. translator
+                                         translate_from
+                                         "NC_000010.11:g.87894077C>T"
+                                         :fmt "hgvs"))]))
+          (range n)))
+        (let [duration (Duration/between start (Instant/now))
+              avg (.dividedBy duration n)]
+          (println (prn-str {:avg (str avg)
+                             :total (str duration)})))))))
+
+(libpython-clj2.python/initialize!)
+(require-python '[anyvar.restapi.globals])
+(require-python '[anyvar.anyvar])
+(def av (anyvar.anyvar/make_anyvar))
+
+
+#_(time (dotimes [n 100] (py/->jvm (py/py. (py/py.- av translator) translate_from "NM_000551.3:c.1A>T" :fmt "hgvs"))))
