@@ -19,8 +19,7 @@
   "Frame map for VCV"
   {;"@context" {"@vocab" iri/cgterms}
    ;"@type" (ns-cg "ClinVarVCVStatement")
-   "@type" "http://dataexchange.clinicalgenome.org/terms/ClinVarVCVStatement"
-   })
+   "@type" "http://dataexchange.clinicalgenome.org/terms/ClinVarVCVStatement"})
 
 ; TODO
 ; make VariationRuleDescriptor
@@ -40,19 +39,19 @@
         proposition-iri (q/resource (str vcv-statement-unversioned-iri "_proposition." (:release_date msg)))
         variation-rule-descriptor-iri (q/resource (str vcv-statement-unversioned-iri "_variation_rule_descriptor." (:release_date msg)))]
     (concat
-      [; SEPIO Statement (ClinVarVCVStatement)
+     [; SEPIO Statement (ClinVarVCVStatement)
        ; statement: <proposition> <has confidence + direction> <strength>
-       [vcv-statement-iri :rdf/type :sepio/Statement]
-       [vcv-statement-iri :rdf/type (q/resource (ns-cg "ClinVarVCVStatement"))]
-       [vcv-statement-iri :rdf/type (q/resource (ns-cg "ClinVarObject"))] ; For tracking clinvar objects
-       [vcv-statement-iri :dc/has-version (:version msg)]
-       [vcv-statement-iri :dc/is-version-of (q/resource (str iri/variation-archive (:id msg)))]
-       [vcv-statement-iri :cg/release-date (:release_date msg)]
+      [vcv-statement-iri :rdf/type :sepio/Statement]
+      [vcv-statement-iri :rdf/type (q/resource (ns-cg "ClinVarVCVStatement"))]
+      [vcv-statement-iri :rdf/type (q/resource (ns-cg "ClinVarObject"))] ; For tracking clinvar objects
+      [vcv-statement-iri :dc/has-version (:version msg)]
+      [vcv-statement-iri :dc/is-version-of (q/resource (str iri/variation-archive (:id msg)))]
+      [vcv-statement-iri :cg/release-date (:release_date msg)]
 
-       [vcv-statement-iri :sepio/has-predicate (q/resource (ns-cg "has_evidence_level"))]
+      [vcv-statement-iri :sepio/has-predicate (q/resource (ns-cg "has_evidence_level"))]
        ; TODO change to boolean literal. Requires adding impl to AsResource
-       [vcv-statement-iri :cg/negated "FALSE"]
-       [vcv-statement-iri :sepio/has-object (:review_status msg)] ; ex: "criteria provided, conflicting interpretations"
+      [vcv-statement-iri :cg/negated "FALSE"]
+      [vcv-statement-iri :sepio/has-object (:review_status msg)] ; ex: "criteria provided, conflicting interpretations"
 
 
        ; VCV Statement subject (unversioned Variation/Allele. Basic info, not making a whole variation doc here)
@@ -62,23 +61,23 @@
 
        ; SEPIO Proposition (for VCV statement, ClinVarVCVProposition)
        ; proposition: <variation> <has classification> <vcv interpretation>
-       [vcv-statement-iri :sepio/has-subject proposition-iri]
-       [proposition-iri :rdf/type :sepio/Proposition]
-       [proposition-iri :rdf/type (q/resource (ns-cg "ClinVarVCVProposition"))]
-       [proposition-iri :sepio/has-subject variation-rule-descriptor-iri]
-       [proposition-iri :sepio/has-predicate (q/resource (ns-cg "has_clinvar_variant_aggregate_classification"))]
-       [proposition-iri :sepio/has-object (:interp_description msg)] ; ex: "Conflicting interpretations of pathogenicity"
+      [vcv-statement-iri :sepio/has-subject proposition-iri]
+      [proposition-iri :rdf/type :sepio/Proposition]
+      [proposition-iri :rdf/type (q/resource (ns-cg "ClinVarVCVProposition"))]
+      [proposition-iri :sepio/has-subject variation-rule-descriptor-iri]
+      [proposition-iri :sepio/has-predicate (q/resource (ns-cg "has_clinvar_variant_aggregate_classification"))]
+      [proposition-iri :sepio/has-object (:interp_description msg)] ; ex: "Conflicting interpretations of pathogenicity"
 
 
        ; Variation Rule Descriptor
-       [variation-rule-descriptor-iri :rdf/type (q/resource (ns-cg "VariationRuleDescriptor"))]
-       [variation-rule-descriptor-iri :vrs/xref clinvar-variation-iri]]
+      [variation-rule-descriptor-iri :rdf/type (q/resource (ns-cg "VariationRuleDescriptor"))]
+      [variation-rule-descriptor-iri :vrs/xref clinvar-variation-iri]]
       ; TODO Label (variant name?) should be added to this same VariationRuleDescriptor when received from variation record
 
       ; Extensions
-      (common/fields-to-extensions
-        vcv-statement-iri
-        (dissoc msg :id :release_date :version :review_status :interp_description)))))
+     (common/fields-to-extensions
+      vcv-statement-iri
+      (dissoc msg :id :release_date :version :review_status :interp_description)))))
 
 (defn resource-to-out-triples
   "Uses steppable interface of RDFResource to obtain all the out properties and load
@@ -88,8 +87,8 @@
   ; [k v] -> [r k v]
   (map #(cons resource %) (into {} resource)))
 
-(defmethod common/clinvar-to-model :variation_archive [event]
-  (log/debug :fn ::clinvar-to-model :event event)
+(defmethod common/clinvar-add-model :variation_archive [event]
+  (log/debug :fn :clinvar-add-model :event event)
   (let [model (-> event
                   :genegraph.transform.clinvar.core/parsed-value
                   variation-archive-v1-triples
@@ -97,8 +96,8 @@
                   l/statements-to-model
                   (#(do (log/info :model %) %))
                   (#(common/mark-prior-replaced % (q/resource (ns-cg "ClinVarVCVStatement")))))]
-    (log/debug :fn ::clinvar-to-model :model model)
-    model))
+    (log/debug :fn ::clinvar-add-model :model model)
+    (assoc event ::q/model model)))
 
 (defmethod common/clinvar-model-to-jsonld :variation_archive [event]
   (let [model (::q/model event)]

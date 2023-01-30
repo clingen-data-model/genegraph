@@ -8,11 +8,8 @@
             [genegraph.database.util :refer [property tx write-tx]]
             [io.pedestal.log :as log]
             [mount.core :as mount :refer [defstate]])
-  (:import [org.apache.jena.ontology OntResource]
-           [org.apache.jena.query TxnType Dataset]
-           [org.apache.jena.rdf.model Model ModelFactory Literal Resource
-            ResourceFactory Statement]
-           [org.apache.jena.tdb2 TDB2Factory]))
+  (:import [org.apache.jena.rdf.model
+            Model ModelFactory ResourceFactory Statement]))
 
 (def jena-rdf-format
   {:rdf-xml "RDF/XML"
@@ -22,7 +19,8 @@
 (defn blank-node []
   (ResourceFactory/createResource))
 
-(defn read-rdf
+(defn ^Model read-rdf
+  "Accepts an InputStream, Reader, or String (resource path) to read into a Model"
   ([src] (read-rdf src {}))
   ([src opts] (-> (ModelFactory/createDefaultModel)
                   (.read src nil (jena-rdf-format (:format opts :rdf-xml))))))
@@ -49,11 +47,11 @@
                      (string? s) (ResourceFactory/createResource s)
                      (q/resource? s) (q/as-jena-resource s)
                      :else s)
-           predicate (if (keyword? p)
-                       (local-property-names p)
-                       (ResourceFactory/createProperty p))
+           predicate (cond (instance? org.apache.jena.rdf.model.Property p) p
+                           (keyword? p) (local-property-names p)
+                           :else (ResourceFactory/createProperty p))
            object (cond
-                    (keyword? o) (local-class-names o)
+                    (keyword? o) (or (local-class-names o) (local-property-names o))
                     (= :Resource (:object (meta stmt))) (ResourceFactory/createResource o)
                     (or (string? o)
                         (int? o)

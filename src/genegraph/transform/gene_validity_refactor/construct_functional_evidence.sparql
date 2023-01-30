@@ -4,6 +4,7 @@ construct {
   ?evidenceLine  a ?evidenceLineType ;
   :dc/description ?scoreDescription ;
   :sepio/has-evidence ?evidenceItem ;
+  :sepio/score-status ?scoreStatus ;
   :sepio/calculated-score ?calculatedScore ;
   :sepio/evidence-line-strength-score ?score .
 
@@ -13,8 +14,11 @@ construct {
   :rdfs/label ?evidenceLabel .
 }
 where {
+
   ?evidenceLine a gci:evidenceScore ;
-  gci:calculatedScore ?calculatedScore .
+  gci:calculatedScore ?calculatedScore ;
+  gci:scoreStatus ?scoreStatus ;
+  gci:affiliation ?affiliation .
 
   OPTIONAL {
     ?evidenceLine gci:scoreExplanation ?scoreDescription .
@@ -25,14 +29,27 @@ where {
   }
 
   BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
-  
+
   ?evidenceItem gci:scores ?evidenceLine ;
   gci:label ?evidenceLabel ;
   gci:evidenceType ?gciType .
 
-  OPTIONAL {
-    ?evidenceItem gci:biochemicalFunction / gci:evidenceForFunction ?biochemicalFunctionDescription .
+ OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction / gci:geneFunctionConsistentWithPhenotype / gci:explanation ?biochemicalFuncConsistentWithPheno .
   }
+
+  OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction / gci:geneWithSameFunctionSameDisease / gci:evidenceForOtherGenesWithSameFunction ?biochemicalEvidenceForOtherGenes .
+  }
+
+  OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction / gci:explanation ?biochemicalExplanation .
+  }
+
+  OPTIONAL {
+    ?evidenceItem gci:biochemicalFunction / gci:evidenceForFunction ?biochemicalEvidenceForFunction .
+  }
+  BIND(COALESCE(?biochemicalFuncConsistentWithPheno, ?biochemicalEvidenceForOtherGenes, ?biochemicalExplanation, ?biochemicalEvidenceForFunction) AS ?biochemicalFunctionDescription) .
 
   OPTIONAL {
     ?evidenceItem gci:proteinInteractions / gci:relationshipOfOtherGenesToDisese ?proteinInteractionDescription .
@@ -45,30 +62,28 @@ where {
   BIND(COALESCE(?expressionDescription, ?proteinInteractionDescription, ?biochemicalFunctionDescription) AS ?evidenceDescription) .
 
   OPTIONAL {
-    ?evidenceItem gci:biochemicalFunction ?biochemicalFunction .
-     OPTIONAL {
-       ?biochemicalFunction gci:geneWithSameFunctionSameDisease ?geneWithSameFuncAndDisease .
-     }
+    FILTER( ?gciType = gcixform:ProteinInteraction )
+    ?evidenceItem gci:proteinInteractions / gci:interactionType ?proteinSubType .
+    BIND(?proteinSubType AS ?gciSubType) .
   }
 
   OPTIONAL {
+    FILTER( ?gciType = gcixform:Expression )
     ?evidenceItem gci:expression ?expression .
     OPTIONAL {
-      ?expression gci:normalExpression ?normalExpression .
+       ?expression gci:normalExpression ?normalExpression .
     }
+    BIND(IF(BOUND(?normalExpression), gcixform:A, gcixform:B) AS ?gciSubType) .
   }
 
   OPTIONAL {
-    ?evidenceItem gci:proteinInteractions ?proteinInteractions .
-    ?proteinInteractions gci:interactionType ?proteinSubType .
+    FILTER( ?gciType = gcixform:BiochemicalFunction )
+    ?evidenceItem gci:biochemicalFunction ?bioChemFunction .
+    OPTIONAL {
+      ?bioChemFunction gci:geneWithSameFunctionSameDisease ?geneWithSameFuncAndDisease .
+    }
+    BIND(IF(BOUND(?geneWithSameFuncAndDisease), gcixform:A, gcixform:B) AS ?gciSubType) .
   }
-
-  BIND(COALESCE(
-      IF(BOUND(?proteinSubType), ?proteinSubType,
-        IF(BOUND(?expression) && BOUND(?normalExpression), gcixform:A,
-          IF(BOUND(?biochemicalFunction) && BOUND(?geneWithSameFuncAndDisease), gcixform:A,
-            IF(BOUND(?expression), gcixform:B,
-              IF(BOUND(?biochemicalFunction), gcixform:B, 1/0)))))) AS ?gciSubType) .
 
   ?evidenceLineType gcixform:hasGCIType ?gciType ;
   gcixform:hasGCISubType ?gciSubType ;

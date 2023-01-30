@@ -23,12 +23,11 @@ construct {
   :sepio/ethnicity ?familyEthnicity .
 }
 where {
-  
   ?family a gci:family ;
   gci:segregation ?segregation ;
   gci:label ?evidenceLabel .
 
-  BIND(IRI(CONCAT(STR(?family), "_segregation")) AS ?segregationID) .
+  BIND(IRI(CONCAT(STR(?family), "_proband_segregation")) AS ?segregationID) .
 
   # Limit to scored segregations -- need to consider how to incorporate this
   OPTIONAL {
@@ -61,8 +60,7 @@ where {
   }
 
   optional {
-    ?family gci:hpoIdInDiagnosis ?phenotypeString .
-    BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", SUBSTR(?phenotypeString, STRLEN(?phenotypeString) - 7 , 7))) AS ?phenotypes) .
+    ?family gci:hpoIdInDiagnosis ?phenotypes .
   }
 
   OPTIONAL {
@@ -82,9 +80,13 @@ where {
     ?segregation gci:moiDisplayedForFamily ?familyMoi .
   }
 
-  OPTIONAL {
-    ?family gci:individualIncluded ?proband .
-    ?proband gci:proband true .
-  }
-  
+  ?family gci:individualIncluded ?proband .
+  ?proband gci:proband true .
+  { ?proband gci:variantScores ?scores }
+  UNION
+  { FILTER NOT EXISTS { [] gci:variantScores [] }
+    ?proband gci:scores ?scores }
+  FILTER NOT EXISTS { ?scores gci:scoreStatus <http://purl.obolibrary.org/obo/SEPIO_0004585> }
+  ?scores gci:affiliation ?affiliation .
+  ?scores gci:scoreStatus ?scoreStatus .
 }

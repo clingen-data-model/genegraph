@@ -4,6 +4,7 @@ construct {
   ?evidenceLine  a ?evidenceLineType ;
   :dc/description ?scoreDescription ;
   :sepio/has-evidence ?evidenceItem ;
+  :sepio/score-status ?scoreStatus ;
   :sepio/calculated-score ?calculatedScore ;
   :sepio/evidence-line-strength-score ?score .
 
@@ -13,8 +14,11 @@ construct {
   :rdfs/label ?evidenceLabel .
 }
 where {
+
   ?evidenceLine a gci:evidenceScore ;
-  gci:calculatedScore ?calculatedScore .
+  gci:calculatedScore ?calculatedScore ;
+  gci:scoreStatus ?scoreStatus ;
+  gci:affiliation ?affiliation .
 
   OPTIONAL {
     ?evidenceLine gci:scoreExplanation ?scoreDescription .
@@ -30,8 +34,10 @@ where {
   gci:rescue ?gciRescue  ;
   gci:label ?evidenceLabel .
 
-  ?gciRescue gci:explanation ?evidenceDescription ;
-  gci:rescueType ?gciType .
+  OPTIONAL {
+    ?gciRescue gci:explanation ?evidenceDescription .
+  }
+  ?gciRescue gci:rescueType ?gciType .
 
   ?evidenceLineType gcixform:hasGCIType ?gciType ;
   gcixform:hasEvidenceItemType ?evidenceItemType ;

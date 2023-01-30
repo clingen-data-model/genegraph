@@ -1,16 +1,16 @@
 (ns genegraph.transform.gene-validity-refactor
   (:require [genegraph.database.load :as l]
+            [genegraph.util :refer [str->bytestream]]
             [genegraph.database.query :as q :refer [select construct ld-> ld1-> declare-query]]
             [genegraph.transform.types :refer [transform-doc src-path add-model]]
             [cheshire.core :as json]
             [clojure.walk :refer [postwalk]]
             [clojure.string :as s]
-            [clojure.java.io :as io :refer [resource]])
-  (:import java.io.ByteArrayInputStream ))
+            [clojure.java.io :as io :refer [resource]]))
 
 (def base "http://dataexchange.clinicalgenome.org/gci/")
-
 (def legacy-report-base "http://dataexchange.clinicalgenome.org/gci/legacy-report_")
+(def affbase "http://dataexchange.clinicalgenome.org/agent/")
 
 (def gdm-sepio-relationships (l/read-rdf (str (resource "genegraph/transform/gene_validity_refactor/gdm_sepio_relationships.ttl")) {:format :turtle}))
 
@@ -41,7 +41,8 @@
                construct-functional-evidence
                construct-rescue-evidence
                construct-case-control-evidence
-               construct-segregation-evidence
+               construct-proband-segregation-evidence
+               construct-family-segregation-evidence
                construct-evidence-connections
                construct-alleles
                construct-articles
@@ -50,8 +51,9 @@
                construct-variant-score
                construct-ar-variant-score
                construct-unscoreable-evidence
-               unlink-variant-scores-when-proband-scores-exist)
-
+               unlink-variant-scores-when-proband-scores-exist
+               unlink-segregations-when-no-proband-and-lod-scores
+               add-legacy-website-id)
 
 
 ;; Trim trailing }, intended to be appended to gci json
@@ -78,16 +80,19 @@
             "SEPIO" "http://purl.obolibrary.org/obo/SEPIO_"
             "GENO" "http://purl.obolibrary.org/obo/GENO_"
             "NCIT" "http://purl.obolibrary.org/obo/NCIT_"
-            
+            "HP" {"@id" "http://purl.obolibrary.org/obo/HP_"
+                  "@prefix" true}
             ;; ;; declare attributes with @id, @vocab types
             "hgncId" {"@type" "@id"}
 
             "autoClassification" {"@type" "@vocab"}
             "alteredClassification" {"@type" "@vocab"}
+            "hpoIdInDiagnosis" {"@type" "@id"}
             "diseaseId" {"@type" "@id"}
             "caseInfoType" {"@type" "@id"}
             "variantType" {"@type" "@id"}
-            "caseControl" {"@type" "@id"}                           
+            "caseControl" {"@type" "@id"}
+            "affiliation" {"@type" "@id"}
             ;; "experimental_scored" {"@type" "@id"}
             ;; "caseControl_scored" {"@type" "@id"}
             ;; "variants" {"@type" "@id"}
@@ -107,7 +112,8 @@
             "ageUnit" {"@type" "@vocab"}
             "scoreStatus" {"@type" "@vocab"}
             "interactionType" {"@type" "@vocab"}
-            ;; "testingMethods" {"@type" "@vocab"}
+            "probandIs" {"@type" "@vocab"}
+            "genotypingMethods" {"@container" "@list"}
 
             ;; ;; Category names
             "Model Systems" "gcixform:ModelSystems"
@@ -229,12 +235,83 @@
             "physical association" "gcixform:PhysicalAssociation"
             "positive genetic interaction" "gcixform:PositiveGeneticInteraction"
 
+            ;; probandIs
+            "Biallelic compound heterozygous" "http://purl.obolibrary.org/obo/GENO_0000402"
+            "Biallelic homozygous" "http://purl.obolibrary.org/obo/GENO_0000136"
+            "Monoallelic heterozygous"  "http://purl.obolibrary.org/obo/GENO_0000135"
+            
             }}))))
 
-(defn clear-associated-snapshots [gdm-json]
-  (->> (json/parse-string gdm-json)
-       (postwalk #(if (map? %) (dissoc % "associatedClassificationSnapshots") %))
+(defn expand-affiliation-to-iri
+  "Expand affiliation when a simple string field, to be an iri"
+  [m]
+  (if (and (map? m) (get m "affiliation"))
+    (update m "affiliation" (fn [affiliation]
+                              (if (coll? affiliation)
+                                affiliation
+                                (str affbase affiliation))))
+          m))
+
+(defn fix-hpo-ids [m]
+  (if (and (map? m) (get m "hpoIdInDiagnosis"))
+    (update m "hpoIdInDiagnosis" (fn [phenotypes]
+                                   (mapv #(re-find #"HP:\d{7}" %)
+                                         phenotypes)))
+    m))
+
+(comment
+  (fix-hpo-ids {"hpoIdInDiagnosis"
+                ["Infantile muscular hypotonia (HP:0008947)"
+                 "Proximal muscle weakness in upper limbs (HP:0008997)"
+                 "Foot dorsiflexor weakness (HP:0009027)"
+                 "Muscular hypotonia of the trunk (HP:0008936)"
+                 "Delayed gross motor development (HP:0002194)"
+                 "Distal amyotrophy (HP:0003693)"
+                 "Decreased sensory nerve conduction velocity (HP:0003448)"
+                 "Peripheral demyelination (HP:0011096)"
+                 "Onion bulb formation (HP:0003383)"
+                 "Decreased compound muscle action potential amplitude (HP:0033383)"
+                 "Distal muscle weakness (HP:0002460)"
+                 "Abnormal macrophage count (HP:0030326)"]})
+
+  (fix-hpo-ids {"hpoidindiagnosis"
+                ["HP:0001252"
+                 "HP:0002118"
+                 "HP:0004325"
+                 "HP:0009128"
+                 "HP:0002107"]}))
+
+(defn clear-associated-snapshots [m]
+  (if (map? m) (dissoc m "associatedClassificationSnapshots") m))
+
+(defn remove-keys-when-empty
+  "When element is a map, removes any keys with key names from 'keys' vector that
+  has an empty value." 
+  [element keys]
+  (postwalk (fn [x] (if (map? x)
+                      (->> (select-keys x keys)
+                           (reduce (fn [coll [k v]]
+                                     (if (empty? v) (conj coll k) coll))
+                                   [])
+                           (apply dissoc x))
+                      x))
+            element))
+
+(defn preprocess-json
+  "Walk GCI JSON prior to parsing as JSON-LD to clean up data."
+  [gci-json]
+  (->> (json/parse-string gci-json)
+       (postwalk #(-> %
+                      clear-associated-snapshots
+                      fix-hpo-ids
+                      expand-affiliation-to-iri
+                      (remove-keys-when-empty ["geneWithSameFunctionSameDisease"
+                                               "normalExpression"
+                                               "scores"
+                                               "carId"
+                                               "clinvarVariantId"])))
        json/generate-string))
+
 
 (defn fix-gdm-identifiers [gdm-json]
   (-> gdm-json
@@ -251,12 +328,9 @@
 (defn append-context [gdm-json]
   (str context "," (subs gdm-json 1)))
 
-(defn str->bytestream [s]
-  (-> s .getBytes ByteArrayInputStream.))
-
 (defn parse-gdm [gdm-json]
   (-> gdm-json
-      clear-associated-snapshots
+      preprocess-json
       fix-gdm-identifiers
       append-context
       str->bytestream
@@ -278,10 +352,7 @@
   to feed a new cap in, should that change."
   [model]
   (let [proband-evidence-lines
-        (q/select "select ?x where 
-{ ?prop :sepio/has-qualifier :hpo/AutosomalRecessiveInheritance ;
- ^( :sepio/has-subject ) / ( :sepio/has-evidence )+ ?x .
- ?x a :sepio/ProbandEvidenceLine . }" {} model)]
+        (q/select "select ?x where { ?x a :sepio/ProbandScoreCapEvidenceLine }" {} model)]
     (q/union
      model
      (l/statements-to-model
@@ -296,17 +367,62 @@
                         :sepio/evidence-line-strength-score]))))
        proband-evidence-lines)))))
 
+(defn legacy-website-id
+  "The website uses a version of the assertion ID that incorporates
+  the approval date. Annotate the curation with this ID to retain
+  backward compatibility with the legacy schema."
+  [model]
+  (let [approval-date (some-> (q/select
+                               "select ?activity where { ?activity :bfo/realizes  :sepio/ApproverRole }"
+                               {}
+                               model)
+                              first
+                              (q/ld1-> [:sepio/activity-date])
+                              (s/replace #":" ""))
+        
+        [_
+         assertion-base
+         assertion-id]
+        (some->> (q/select
+                                 "select ?assertion where { ?assertion a :sepio/GeneValidityEvidenceLevelAssertion }"
+                           {}
+                           model)                                
+                                first
+                                str
+                                (re-find #"^(.*/)([a-z0-9-]*)$"))]
+    (q/resource (str assertion-base "assertion_" assertion-id "-" approval-date))))
+
+
+(def has-affiliation-query
+  "Query that returns a curations full affiliation IRI as a Resource.
+  Expects affiliations to have been preprocessed to IRIs from string form."
+  (q/create-query "prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
+                   select ?affiliationIRI where {
+                     ?proposition a gci:gdm .
+                     OPTIONAL {
+                      ?proposition gci:affiliation ?gdmAffiliationIRI .
+                     }
+                     OPTIONAL {
+                      ?classification a gci:provisionalClassification .
+                      ?classification gci:affiliation ?classificationAffiliationIRI .
+                      ?classification gci:last_modified ?date .
+                     }
+                     BIND(COALESCE(?classificationAffiliationIRI, ?gdmAffiliationIRI) AS ?affiliationIRI) }
+                     ORDER BY DESC(?date) LIMIT 1"))
+
 (defn transform-gdm [gdm]
   (.setNsPrefixes gdm ns-prefixes)
   (let [gdm-is-about-gene (first (gdm-is-about-gene-query {::q/model gdm}))
         entrez-gene (first (hgnc-has-equiv-entrez-gene-query {:hgnc_gene gdm-is-about-gene}))
+        affiliation (first (has-affiliation-query {::q/model gdm}))
         params {::q/model (q/union gdm gdm-sepio-relationships)
                 :gcibase base
                 :legacy_report_base legacy-report-base
+                :affiliation affiliation
                 :arbase "http://reg.genome.network/allele/"
                 :cvbase "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
                 :pmbase "https://pubmed.ncbi.nlm.nih.gov/"
-                :affbase "http://dataexchange.clinicalgenome.org/agent/"
+                :affbase affbase
                 :entrez_gene entrez-gene}
         unlinked-model (q/union 
                         (construct-proposition params)
@@ -322,7 +438,8 @@
                         (construct-functional-alteration-evidence params)
                         (construct-rescue-evidence params)
                         (construct-case-control-evidence params)
-                        (construct-segregation-evidence params)
+                        (construct-proband-segregation-evidence params)
+                        (construct-family-segregation-evidence params)
                         (construct-alleles params)
                         (construct-articles params)
                         (construct-earliest-articles params)
@@ -331,11 +448,17 @@
                         (construct-ar-variant-score params)
                         (construct-unscoreable-evidence params)
                         )
-        linked-model (q/union unlinked-model
+        unlinked-modified (unlink-segregations-when-no-proband-and-lod-scores
+                             {::q/model unlinked-model})
+        linked-model (q/union unlinked-modified
                               (construct-evidence-connections 
                                {::q/model
-                                (q/union unlinked-model
-                                         gdm-sepio-relationships)}))]
+                                (q/union unlinked-modified
+                                         gdm-sepio-relationships)})
+                              (add-legacy-website-id
+                               {::q/model unlinked-modified
+                                :legacy_id (legacy-website-id unlinked-modified)}
+                               ))]
     (unlink-variant-scores-when-proband-scores-exist
      {::q/model (add-proband-scores linked-model)})))
 

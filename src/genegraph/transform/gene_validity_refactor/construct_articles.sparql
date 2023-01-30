@@ -22,8 +22,10 @@ where
   gci:authors ?authors .
 
   ?authors rdf:first ?firstAuthor .
-  ?authors rdf:rest ?otherAuthors .
-  ?otherAuthors rdf:first ?nextAuthor .
+  OPTIONAL {
+    ?authors rdf:rest ?otherAuthors .
+    ?otherAuthors rdf:first ?nextAuthor .
+  }
   BIND(IF(BOUND(?nextAuthor) && STRLEN(?nextAuthor)>0, true, false) AS ?multipleAuthors) .
 
   OPTIONAL {

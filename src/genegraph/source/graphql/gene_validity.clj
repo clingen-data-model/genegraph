@@ -27,7 +27,8 @@
   (let [requested-assertion (q/resource (:iri args))]
     (if (q/is-rdf-type? requested-assertion :sepio/GeneValidityEvidenceLevelAssertion)
       requested-assertion
-      (or (find-newest-gci-curation (:iri args))
+      (or (q/ld1-> requested-assertion [[:cg/website-legacy-id :<]])
+          (find-newest-gci-curation (:iri args))
           (find-gciex-curation (:iri args))))))
 
 (defresolver ^:expire-by-value report-date [args value]

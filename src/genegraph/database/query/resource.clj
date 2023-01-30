@@ -29,7 +29,7 @@
 
 (declare navize)
 
-(def query-sort-order 
+(def query-sort-order
   {:ASC Query/ORDER_ASCENDING
    :asc Query/ORDER_ASCENDING
    :DESC Query/ORDER_DESCENDING
@@ -86,11 +86,13 @@
 (defn- construct-query-solution-map [params]
   (let [qs-map (QuerySolutionMap.)]
     (doseq [[k v] params]
+      (when (or (nil? k) (nil? v)) (log/error :fn :construct-query-solution-map
+                                              :msg :nil-value :k k :v v :params params))
       (.add qs-map (name k) (types/to-rdf-node v)))
     qs-map))
 
 (extend-protocol SelectQuery
-  
+
   ;; TODO--consider removing this method into a function, do not want to expose
   ;; interfaces against Jena types
   ;;
@@ -123,19 +125,19 @@
                   model (if (instance? org.apache.jena.query.Dataset db-or-model)
                           (.getUnionModel db-or-model)
                           db-or-model)]
-              (mapv #(types/create-resource (.getResource % result-var) model) result-seq))))))))
-  
+              (map #(types/create-resource (.getResource % result-var) model) result-seq))))))))
+
   java.lang.String
-  (select 
+  (select
     ([query-def] (select query-def {}))
     ([query-def params] (select query-def params (or (:genegraph.database.query/model params) db)))
     ([query-def params db-or-model]
      (select (QueryFactory/create (expand-query-str query-def)) params db-or-model))))
 
 (extend-protocol AsResource
-  
+
   java.lang.String
-  (resource 
+  (resource
     ([r] (let [[_ curie-prefix rest] (re-find #"^([a-zA-Z]+)[:_](.*)$" r)
                iri (if-let [iri-prefix (-> curie-prefix s/lower-case prefix-ns-map)]
                      (str iri-prefix rest)
@@ -143,12 +145,12 @@
            (types/create-resource (ResourceFactory/createResource iri))))
     ([ns-prefix r] (when-let [prefix (prefix-ns-map ns-prefix)]
                      (types/create-resource (ResourceFactory/createResource (str prefix r))))))
-  
+
   clojure.lang.Keyword
   (resource [r] (when-let [res (local-names r)]
                   (types/create-resource res))))
 
-(defn construct 
+(defn construct
   ([query-string] (construct query-string {}))
   ([query-string params] (construct query-string {} (get-all-graphs)))
   ([query-string params model]
@@ -189,12 +191,12 @@
                        (get-all-graphs)
                        model)]
       (if (< 1 (count result-vars))
-        (mapv #(types/create-resource
+        (map #(types/create-resource
                 (.getResource % result-var)
                 node-model
                 (local-bindings-for-select result-vars % node-model))
               result-seq)
-        (mapv #(types/create-resource (.getResource % result-var) node-model) result-seq)))))
+        (map #(types/create-resource (.getResource % result-var) node-model) result-seq)))))
 
 (defn- exec [query-def params]
   (let [qs-map (construct-query-solution-map (medley/filter-keys #(nil? (namespace %)) params))
@@ -203,7 +205,7 @@
         query (construct-query-with-params query-def params)]
     (tx
      (with-open [qexec (QueryExecutionFactory/create query model qs-map)]
-       (cond 
+       (cond
          (.isConstructType query) (.execConstruct qexec)
          (.isSelectType query) (if (= :count (get-in params [:genegraph.database.query/params :type]))
                                  (-> qexec .execSelect iterator-seq count)
@@ -214,21 +216,21 @@
   clojure.lang.IFn
   (invoke [this] (this {}))
   (invoke [this params] (exec query params))
-  
+
   Object
   (toString [_] (str query)))
 
-(defn create-query 
+(defn create-query
   "Return parsed query object. If query is not a string, assume object that can
 use io/slurp"
   ([query-source] (create-query query-source {}))
   ([query-source params]
    (let [query (if  (coll? query-source)
-                  (OpAsQuery/asQuery (algebra/op query-source))
-                  (QueryFactory/create (expand-query-str
-                                        (if (string? query-source)
-                                          query-source
-                                          (slurp query-source)))))]
+                 (OpAsQuery/asQuery (algebra/op query-source))
+                 (QueryFactory/create (expand-query-str
+                                       (if (string? query-source)
+                                         query-source
+                                         (slurp query-source)))))]
      (case (:genegraph.database.query/type params)
        :ask (.setQueryAskType query)
        (if  (:genegraph.database.query/distinct params true)

@@ -1,17 +1,20 @@
 # Handles SOP5, SOP6 and SOP7.v1
 prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+prefix sepio: <http://purl.obolibrary.org/obo/SEPIO_>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
 construct {
-  ?probandScoreEvidenceLine a ?evidenceLineType ;
+  ?probandScoreEvidenceLine a ?lineType ;
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence ?individual ; # evidence about proband
-  :sepio/calculatedScore ?calculatedScore ;
+  :sepio/calculated-score ?calculatedScore ;
   :sepio/score-status ?scoreStatus ;
   :dc/description ?evidenceLineDescription .
 
 # Variant evidence Item
-  ?evidenceItem a ?evidenceItemType ;
-  :sepio/is-about-allele ?variant ; 
+  ?evidenceItem a ?itemType ;
+  :sepio/is-about-allele ?variant ;
   :dc/source ?article ;
   :geno/allele-origin ?alleleOrigin .
 
@@ -25,12 +28,15 @@ construct {
   :rdfs/label ?individualLabel ;
   :sepio/previous-testing ?prevTesting ;
   :sepio/previous-testing-description ?prevTestingDescription ;
-  :sepio/testing-methods ?methods ;
+  :sepio/first-testing-method ?firstTestingMethod ;
+  :sepio/second-testing-method ?secondTestingMethod ;  
   :sepio/detection-method ?methodsOfDetection ;
   :sepio/has-textual-part ?phenotypeFreeText ;
   :sepio/is-about-condition ?phenotypes ;
   :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed ;
   :dc/source ?article ;
+  :geno/has-zygosity ?probandZygosity ;
+  :sepio/is-about-allele ?variant ;
   :sepio/has-variant ?evidenceItem .
 
   ?family a :pco/Family ;
@@ -40,40 +46,56 @@ construct {
 where {
   # Ensure this pattern does not exist for >= SOPV8 curations
   FILTER NOT EXISTS { ?otherScore a gci:variantScore } .
-  
+
   ?evidenceLine a gci:evidenceScore ;
-  gci:caseInfoType ?gciCaseType ;
   gci:scoreStatus ?scoreStatus ;
   gci:date_created ?dateCreated ;
-  gci:calculatedScore ?calculatedScore .
+  gci:affiliation ?affiliation .
+
+  # maschinations due to contradicts score_status do not have gci:caseInfoType
+  OPTIONAL {
+    ?evidenceLine gci:caseInfoType ?gciCaseType .
+    ?gciCaseType gcixform:hasEvidenceLineType ?evidenceLineType ;
+    gcixform:hasEvidenceItemType ?evidenceItemType .
+  }
+  # ProbandEvidenceLine
+  BIND(IF(BOUND(?gciCaseType), ?evidenceLineType, sepio:0004097) AS ?lineType) .
+  # ProbandWithVariantEvidenceItem
+  BIND(IF(BOUND(?gciCaseType), ?evidenceItemType, sepio:0004081) AS ?itemType) .
+
+  OPTIONAL {
+    ?evidenceLine gci:calculatedScore ?calculatedScore .
+  }
 
   BIND (IRI(CONCAT(str(?evidenceLine), "_proband_score_evidence_line")) AS ?probandScoreEvidenceLine) 
 
   OPTIONAL {
     ?evidenceLine gci:scoreExplanation ?evidenceLineDescription .
   }
-  
-  ?gciCaseType gcixform:hasEvidenceLineType ?evidenceLineType ;
-  gcixform:hasEvidenceItemType ?evidenceItemType .
 
   OPTIONAL  {
     ?evidenceLine gci:score ?adjustedScore .
   }
-  
   BIND(COALESCE(?adjustedScore, ?calculatedScore) AS ?score) .
 
   ?individual gci:scores ?evidenceLine ;
   gci:variants ?variant ;
   gci:label ?individualLabel ;
+  gci:proband true .
 
-  gci:proband true ;
-  gci:sex ?sex .
+  OPTIONAL {
+    ?individual gci:sex ?sex .
+  }
 
   OPTIONAL {
       ?individual gci:denovo ?deNovo .
   }
 
   BIND(IF(?deNovo = "Yes", :geno/DeNovoAlleleOrigin , IF(?deNovo = "No", :geno/GermlineAlleleOrigin , :geno/AlleleOrigin ) ) AS ?alleleOrigin) .
+
+  OPTIONAL {
+     ?individual gci:probandIs ?probandZygosity .
+  }
 
   OPTIONAL {
       ?individual gci:maternityPaternityConfirmed ?paternityMaternityConfirmed .
@@ -85,8 +107,14 @@ where {
 
   OPTIONAL {
      ?individual gci:ageType ?ageType .
+  }
+
+  OPTIONAL {
      ?individual gci:ageValue ?ageValue .
-     ?individual gci:ageUnit ?ageUnit .  
+  }
+
+  OPTIONAL {
+      ?individual gci:ageUnit ?ageUnit .
   }
 
   OPTIONAL {
@@ -96,21 +124,24 @@ where {
   ?individual gci:method ?method .
 
   OPTIONAL {
-    ?method gci:genotypingMethods ?methods .
+    ?method gci:genotypingMethods/rdf:rest{0}/rdf:first ?firstTestingMethod .
   }
 
+  OPTIONAL {
+    ?method gci:genotypingMethods/rdf:rest{1}/rdf:first ?secondTestingMethod .
+  }
+  
   OPTIONAL {
      ?method gci:previousTestingDescription ?prevTestingDescription .
      BIND(IF( bound(?prevTestingDescription) && STRLEN(?prevTestingDescription) > 0, true, false) AS ?prevTesting) .
   }
 
   OPTIONAL {
-     ?individual gci:specificMutationsGenotypedMethod ?methodsOfDetection .
+     ?method gci:specificMutationsGenotypedMethod ?methodsOfDetection .
   }
 
   OPTIONAL {
-     ?individual gci:hpoIdInDiagnosis ?phenotypeString .
-        BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", SUBSTR(?phenotypeString, STRLEN(?phenotypeString) - 7 , 7))) AS ?phenotypes) .
+     ?individual gci:hpoIdInDiagnosis ?phenotypes .
   }
 
   ?annotation  gci:individuals|gci:individualIncluded ?individual ;
@@ -123,18 +154,8 @@ where {
   }
 
   BIND(IRI(CONCAT(STR(?evidenceLine), "_variant_evidence_item")) AS ?evidenceItem) .
-  
+
   ?publication gci:pmid ?pmid .
   BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
 
-  # OPTIONAL {
-  #   ?variant gci:carId ?caId .
-  #   BIND(IRI(CONCAT(?arbase, ?caID)) AS ?allele) .
-  # }
-
-  # OPTIONAL {
-  #   ?variant gci:clinvarVariantId ?cvId .
-  #   BIND(IRI(CONCAT(?cvbase, ?cvId)) AS ?allele) .
-  # }
-  
 }

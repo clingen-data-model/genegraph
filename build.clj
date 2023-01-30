@@ -1,21 +1,37 @@
 (ns build
+  "Build this thing."
   (:require [clojure.tools.build.api :as b]))
 
-(def class-dir "target/classes")
-(def basis (b/create-basis {:project "deps.edn"}))
-(def uber-file "target/genegraph.jar")
+(def defaults
+  "The defaults to configure a build."
+  {:class-dir  "target/classes"
+   :java-opts  ["-Dclojure.main.report=stderr"]
+   :main       'genegraph.main
+   :path       "target"
+   :project    "deps.edn"
+   :target-dir "target/classes"
+   :uber-file  "target/genegraph.jar"})
 
-(defn clean [_]
-  (b/delete {:path "target"}))
+(defn uber
+  "Throw or make an uberjar from source."
+  [_]
+  (let [{:keys [paths] :as basis} (b/create-basis defaults)
+        project                   (assoc defaults :basis basis)]
+    (b/delete      project)
+    (b/copy-dir    (assoc project :src-dirs paths))
+    (b/compile-clj (assoc project
+                          :src-dirs ["src"]
+                          :ns-compile ['genegraph.main]))
+    (b/uber        project)))
 
-(defn uber [_]
-  (clean _)
-  (b/copy-dir {:src-dirs ["src" "resources" "config"]
-               :target-dir class-dir})
-  (b/compile-clj {:basis basis
-                  :src-dirs ["src"]
-                  :class-dir class-dir})
-  (b/uber {:class-dir class-dir
-           :uber-file uber-file
-           :basis basis
-           :main 'genegraph.server}))
+(defn uber-repl [_]
+  ;; https://clojure.github.io/tools.build/clojure.tools.build.api.html#var-compile-clj
+  (let [{:keys [paths] :as basis} (b/create-basis (assoc defaults :aliases [:with-nrepl-deps]))
+        project                   (assoc defaults
+                                         :basis basis
+                                         :ns-compile ['genegraph.main-repl]
+                                         :main 'genegraph.main-repl)]
+    (b/delete      project)
+    (b/copy-dir    (assoc project :src-dirs paths))   ;; include all resource dirs in target/
+    (b/compile-clj (assoc project :src-dirs ["src"])) ;; but only compile src/
+    (b/uber        project)))

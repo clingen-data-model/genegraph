@@ -1,8 +1,11 @@
 # Handles SOP7.v2 and SOP8
 prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
 prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+prefix sepio: <http://purl.obolibrary.org/obo/SEPIO_>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
 construct {
-  ?evidenceLine a ?evidenceLineType ;
+  ?evidenceLine a ?lineType ;
   :sepio/evidence-line-strength-score ?score ;
   :sepio/has-evidence ?evidenceItem , ?functionEvidenceItem ; # evidence about variant
   :sepio/calculated-score ?resultCalculatedScore ;
@@ -11,7 +14,7 @@ construct {
   :dc/description ?evidenceLineDescription .
 
 # Variant evidence item
-  ?evidenceItem a ?evidenceItemType ;
+  ?evidenceItem a ?itemType ;
   :sepio/is-about-allele ?variant ;
   :dc/source ?article ;
   :geno/allele-origin ?alleleOrigin ;
@@ -19,6 +22,7 @@ construct {
   
 # Proband with variant evidence item
   ?individual a :sepio/ProbandWithVariantEvidenceItem ;
+  :sepio/is-about-allele ?variant ;
   :sepio/has-sex ?sex ;
   :sepio/age-unit ?ageUnit ;
   :sepio/age-type ?ageType ;
@@ -27,11 +31,13 @@ construct {
   :rdfs/label ?individualLabel ;
   :sepio/previous-testing ?prevTesting ;
   :sepio/previous-testing-description ?prevTestingDescription ;
-  :sepio/testing-methods ?methods ;
+  :sepio/first-testing-method ?firstTestingMethod ;
+  :sepio/second-testing-method ?secondTestingMethod ;  
   :sepio/detection-method ?methodsOfDetection ;
   :sepio/has-textual-part ?phenotypeFreeText ;
   :sepio/is-about-condition ?phenotypes ;
   :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed ;
+  :geno/has-zygosity ?probandZygosity ;
   :sepio/has-variant ?evidenceItem .
 
   ?family a :pco/Family ;
@@ -45,12 +51,26 @@ construct {
 where {
 
   ?evidenceLine a gci:variantScore ;
-  gci:variantType ?variantType ;
   gci:variantScored ?variant ;
   gci:deNovo ?deNovo ;
   gci:scoreStatus ?scoreStatus ;
-  gci:calculatedScore ?calculatedScore ;
-  gci:date_created ?date_created .
+  gci:date_created ?date_created ;
+  gci:affiliation ?affiliation .
+  
+  # maschinations due to contradicts score_status do not have gci:caseInfoType
+  OPTIONAL {
+    ?evidenceLine gci:variantType ?variantType .
+    ?variantType gcixform:hasEvidenceLineType ?evidenceLineType ;
+    gcixform:hasEvidenceItemType ?evidenceItemType .
+  }
+  # NonNullVariantEvidenceLine
+  BIND(IF(BOUND(?variantType), ?evidenceLineType, sepio:0004097) AS ?lineType) .
+  # VariantEvidenceItem
+  BIND(IF(BOUND(?variantType), ?evidenceItemType, sepio:0004116) AS ?itemType) .
+
+  OPTIONAL {
+    ?evidenceLine gci:calculatedScore ?calculatedScore .
+  }
 
   # This is not actually a proband score, but rather a variant score
   # Should name it as such =tristan
@@ -77,9 +97,6 @@ where {
     ?evidenceLine gci:scoreExplanation ?evidenceLineDescription .
   }
   
-  ?variantType gcixform:hasEvidenceLineType ?evidenceLineType ;
-  gcixform:hasEvidenceItemType ?evidenceItemType .
-
   OPTIONAL  {
     ?evidenceLine gci:score ?adjustedScore .
   }
@@ -88,19 +105,30 @@ where {
 
   ?individual gci:variantScores ?evidenceLine ;
   gci:label ?individualLabel ;
-
-  gci:sex ?sex ;
   gci:proband true .
 
   OPTIONAL {
+    ?individual gci:sex ?sex .
+  }
+
+  OPTIONAL {
     ?individual gci:ageType ?ageType .
+  }
+
+  OPTIONAL {
     ?individual gci:ageValue ?ageValue .
+  }
+
+  OPTIONAL {
     ?individual gci:ageUnit ?ageUnit .
   }
 
   OPTIONAL {
-    ?individual gci:hpoIdInDiagnosis ?phenotypeString .
-    BIND(IRI(CONCAT("http://purl.obolibrary.org/obo/HP_", SUBSTR(?phenotypeString, STRLEN(?phenotypeString) - 7 , 7))) AS ?phenotypes) .
+    ?individual gci:hpoIdInDiagnosis ?phenotypes .
+  }
+
+  OPTIONAL {
+     ?individual gci:probandIs ?probandZygosity .
   }
 
   OPTIONAL {
@@ -109,10 +137,14 @@ where {
 
   ?individual gci:method ?method .
 
-   OPTIONAL {
-    ?method gci:genotypingMethods ?methods .
+  OPTIONAL {
+    ?method gci:genotypingMethods/rdf:rest{0}/rdf:first ?firstTestingMethod .
   }
-  
+
+  OPTIONAL {
+    ?method gci:genotypingMethods/rdf:rest{1}/rdf:first ?secondTestingMethod .
+  }
+
   OPTIONAL {
     ?method gci:previousTesting ?prevTesting .
   }
@@ -129,14 +161,30 @@ where {
      ?individual gci:termsInDiagnosis ?phenotypeFreeText .
   }
 
+  # Below is a score fix based dependent on mode of inheritance, based on the
+  # conversation with Gloria Cheung from Slack:
+  
+  # https://clingen.slack.com/archives/C03TR9RA4DP/p1665181171371129
+
+#   Hi 
+# @Tristan Nelson, here is my findings.
+# Looks like most of the recessiveZygosity=“Homozygous” are left over data from previous SOPv7.For SOPv8, the recessiveZygosity value for Semidominant curation is evaluated as below in GCI. If probandIs is “Monoallelic heterozygous” or “Hemizygous” then treat as AUTOSOMAL_DOMINANT. And if “Hemizygous” is checked then recessiveZygosity=“Hemizyous”
+# So in these cases, recessiveZygosity=“Homozygous” should not be evaluated (is not valid). In SOPv8, if “Hemizygous” is unchecked, recessiveZygosity attribute is removed.
+# If probandIs is “Biallelic homozygous” or “Biallelic compound heterozygous” then treat as AUTOSOMAL_RECESSIVE. And recessiveZygosity=“TwoTrans” if “Check here if there are 2 variants AND they are both located in trans with respect to one another” option is checked. And recessiveZygosity=“Homozygous” if “Homozygous” option is checked. So in these cases, recessiveZygosity=“Homozygous” is used to consider how the point is counted. If “Biallelic homozygous” is selected, recessiveZygosity is forced to be “Homozygous”, or if “Biallelic compound heterozygous” is selected and “Homozygous” is checked then in these cases only one variant score can be added and score will be double counted.
+# For example, user HOU336_904 and LU_II:7, both have “probandIs”=“Biallelic homozygous” and recessiveZygosity=“Homozygous” and have one variantScore which score is double counted.
+
   OPTIONAL {
-    ?individual gci:recessiveZygosity ?zygosity .
+    ?individual gci:recessiveZygosity ?recessiveZygosity .
   }
 
-  BIND(IF( bound(?zygosity) && ?zygosity = :geno/Homozygous , ?baseScore * 2 , ?baseScore) AS ?score) .
+  OPTIONAL {
+    ?individual gci:probandIs ?semidominantZygosity .
+  }
 
-  BIND(IF( bound(?zygosity) && ?zygosity = :geno/Homozygous , ?calculatedScore * 2 , ?calculatedScore) AS ?resultCalculatedScore) .
-  
+  BIND(COALESCE(?semidominantZygosity, ?recessiveZygosity, :geno/Heterozygous ) AS ?zygosity) .
+  BIND(IF( ?zygosity = :geno/Homozygous , ?baseScore * 2 , ?baseScore) AS ?score) .
+  BIND(IF( ?zygosity = :geno/Homozygous , ?calculatedScore * 2 , ?calculatedScore) AS ?resultCalculatedScore) .
+
   ?annotation  gci:individuals|gci:individualIncluded ?individual ;
   ^gci:familyIncluded? / ^(gci:families|gci:groups)? / gci:article ?publication .
 

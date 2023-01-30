@@ -154,7 +154,7 @@ sepio:0004012 :hasEvidenceLineType sepio:0000247 .
 sepio:0004002 :hasEvidenceLineType sepio:0004127 .
 
 # :sepio/OverallGeneticEvidenceEvidenceLine
-sepio:0004005 :hasEvidenceLineType sepio:0004120, sepio:0004121 , sepio:0004097 .
+sepio:0004005 :hasEvidenceLineType sepio:0004120, sepio:0004121 , sepio:0004097 , sepio:0004174 .
 
 # :sepio/AutosomalDominantOtherVariantCriterionAssessment
 sepio:0004011 :hasEvidenceLineType sepio:0004080 .

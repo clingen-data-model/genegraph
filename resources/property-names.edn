@@ -215,6 +215,7 @@
  [:cg/diseases "http://dataexchange.clinicalgenome.org/terms/diseases"]
  [:cg/has-total-actionability-score "http://dataexchange.clinicalgenome.org/terms/has_total_actionability_score"]
  [:cg/has-total-actionability-outcome-intervention-pairs "http://dataexchange.clinicalgenome.org/terms/has_total_actionability_outcome_intervention_pairs"]
+ [:cg/website-legacy-id "http://dataexchange.clinicalgenome.org/terms/website_legacy_id"]
  [:cg/website-display-label "http://dataexchange.clinicalgenome.org/terms/website_display_label"]
  [:cg/review-status "http://dataexchange.clinicalgenome.org/terms/review_status"]
  [:cg/allele-origin "http://dataexchange.clinicalgenome.org/terms/allele_origin"]
@@ -225,6 +226,12 @@
  [:cg/hgnc_id "http://dataexchange.clinicalgenome.org/terms/hgnc_id"]
  [:cg/classification-context "http://dataexchange.clinicalgenome.org/terms/classification_context"]
  [:cg/negated "http://dataexchange.clinicalgenome.org/terms/negated"]
+ [:cg/clinvar-trait-id "http://dataexchange.clinicalgenome.org/terms/clinvar_trait_id"]
+ [:cg/clinvar-trait-set-id "http://dataexchange.clinicalgenome.org/terms/clinvar_trait_set_id"]
+ [:cg/medgen-id "http://dataexchange.clinicalgenome.org/terms/medgen_id"]
+ [:cg/variation-id "http://dataexchange.clinicalgenome.org/terms/variation_id"]
+ [:cg/deleted "http://dataexchange.clinicalgenome.org/terms/deleted"]
+ [:cg/total-copies "http://dataexchange.clinicalgenome.org/terms/total_copies"] ; CNV normalization param
  [:vrs/xrefs "https://vrs.ga4gh.org/terms/xrefs"]
  [:vrs/extensions "https://vrs.ga4gh.org/terms/extensions"]
  [:vrs/type "https://vrs.ga4gh.org/terms/type"]
@@ -232,6 +239,7 @@
  [:vrs/name "https://vrs.ga4gh.org/terms/name"]
  [:vrs/members "https://vrs.ga4gh.org/terms/members"]
  [:vrs/expressions "https://vrs.ga4gh.org/terms/expressions"]
+ [:vrs/expression "https://vrs.ga4gh.org/terms/expression"]
  [:vrs/variation "https://vrs.ga4gh.org/terms/variation"]
  [:vrs/variation_id "https://vrs.ga4gh.org/terms/variation_id"]
  [:vrs/complement "https://vrs.ga4gh.org/terms/complement"]
@@ -243,8 +251,37 @@
  [:vrs/interval "https://vrs.ga4gh.org/terms/interval"]
  [:vrs/start "https://vrs.ga4gh.org/terms/start"]
  [:vrs/end "https://vrs.ga4gh.org/terms/end"]
- [:vrs/sequence_id "https://vrs.ga4gh.org/terms/end"]
+ [:vrs/species-id "https://vrs.ga4gh.org/terms/species_id"]
+ [:vrs/chr "https://vrs.ga4gh.org/terms/chr"]
+ [:vrs/assembly "https://vrs.ga4gh.org/terms/assembly"]
+ [:vrs/sequence-id "https://vrs.ga4gh.org/terms/sequence_id"]
  [:vrs/definition "https://vrs.ga4gh.org/terms/definition"]
+ [:vrs/subject "https://vrs.ga4gh.org/terms/subject"]
+ [:vrs/predicate "https://vrs.ga4gh.org/terms/predicate"]
+ [:vrs/object "https://vrs.ga4gh.org/terms/object"]
+ [:vrs/copies "https://vrs.ga4gh.org/terms/copies"]
+ [:vrs/record-metadata "https://vrs.ga4gh.org/terms/record_metadata"]
+ [:vrs/role "https://vrs.ga4gh.org/terms/role"]
+ [:vrs/contributor "https://vrs.ga4gh.org/terms/contributor"]
+ [:vrs/activity "https://vrs.ga4gh.org/terms/activity"]
+ [:vrs/method "https://vrs.ga4gh.org/terms/method"]
+ [:vrs/contributions "https://vrs.ga4gh.org/terms/contributions"]
+ [:vrs/direction "https://vrs.ga4gh.org/terms/direction"]
+ [:vrs/description "https://vrs.ga4gh.org/terms/description"]
+ [:vrs/classification "https://vrs.ga4gh.org/terms/classification"]
+ [:vrs/proposition "https://vrs.ga4gh.org/terms/proposition"]
+ [:vrs/target-proposition "https://vrs.ga4gh.org/terms/target_proposition"]
+ [:vrs/subject-descriptor "https://vrs.ga4gh.org/terms/subject_descriptor"]
+ [:vrs/is_reported_in "https://vrs.ga4gh.org/terms/is_reported_in"]
+ [:vrs/canonical-context "https://vrs.ga4gh.org/terms/canonical_context"]
+ [:vrs/canonical-variation "https://vrs.ga4gh.org/terms/canonical_variation"]
+ [:vrs/seq-expr "https://vrs.ga4gh.org/terms/seq_expr"]
+ [:vrs/count "https://vrs.ga4gh.org/terms/count"]
+ [:vrs/min "https://vrs.ga4gh.org/terms/min"]
+ [:vrs/max "https://vrs.ga4gh.org/terms/max"]
+ [:vrs/comparator "https://vrs.ga4gh.org/terms/comparator"]
+ [:vrs/reverse_complement "https://vrs.ga4gh.org/terms/reverse_complement"]
+ [:vrs/relative-copy-class "https://vrs.ga4gh.org/terms/relative_copy_class"]
  [:cnt/chars "http://www.w3.org/2011/content#chars"]
  [:data/genome-build-identifier "http://edamontology.org/data_2340"]
  [:dc/abstract "http://purl.org/dc/terms/abstract"]
@@ -695,6 +732,7 @@
  [:pav/retrieved-from "http://purl.org/pav/retrievedFrom"]
  [:pav/version "http://purl.org/pav/version"]
  [:rdf/first "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"]
+ [:rdf/nil "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"]
  [:rdf/object "http://www.w3.org/1999/02/22-rdf-syntax-ns#object"]
  [:rdf/predicate
   "http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate"]
@@ -1199,7 +1237,7 @@
  [:sepio/has-inconclusive-evidence-line
   "http://purl.obolibrary.org/obo/SEPIO_0000009"]
  [:sepio/has-mode-of-inheritance
-  "http://purl.obolibrary.org/obo/SEPIO_0004171"]
+  "http://purl.obolibrary.org/obo/SEPIO_0004172"]
  [:sepio/has-object "http://purl.obolibrary.org/obo/SEPIO_0000390"]
  [:sepio/has-ordinal-position "http://purl.obolibrary.org/obo/SEPIO_0002506"]
  [:sepio/has-predicate "http://purl.obolibrary.org/obo/SEPIO_0000389"]
@@ -1267,7 +1305,7 @@
  [:sepio/lower-confidence-limit
   "http://purl.obolibrary.org/obo/SEPIO_0000306"]
  [:sepio/paternity-maternity-confirmed
-  "http://purl.obolibrary.org/obo/SEPIO_0004161"] 
+  "http://purl.obolibrary.org/obo/SEPIO_0004161"]
  [:sepio/measures-parameter
   "http://purl.obolibrary.org/obo/SEPIO_0000114"]
  [:sepio/meets-inclusion-criteria "http://purl.obolibrary.org/obo/SEPIO_0004126"]
@@ -1317,18 +1355,18 @@
  [:sepio/strongly-contradicts
   "http://purl.obolibrary.org/obo/SEPIO_0000100"]
  [:sepio/estimated-lod-score "http://purl.obolibrary.org/obo/SEPIO_0004125"]
+ [:sepio/first-testing-method "http://purl.obolibrary.org/obo/SEPIO_0004136"]
  [:sepio/published-lod-score "http://purl.obolibrary.org/obo/SEPIO_0004124"]
  [:sepio/score-status "http://purl.obolibrary.org/obo/SEPIO_0004130"]
+ [:sepio/second-testing-method "http://purl.obolibrary.org/obo/SEPIO_0004137"]
  [:sepio/statistical-significance
   "http://purl.obolibrary.org/obo/SEPIO_0004164"]
-  [:sepio/statistical-significance-type
+ [:sepio/statistical-significance-type
   "http://purl.obolibrary.org/obo/SEPIO_0004165"]
  [:sepio/statistical-significance-value-type
   "http://purl.obolibrary.org/obo/SEPIO_0004166"]
  [:sepio/statistical-significance-value
   "http://purl.obolibrary.org/obo/SEPIO_0004167"]
-
- [:sepio/testing-methods "http://purl.obolibrary.org/obo/SEPIO_0004136"]
  [:sepio/total-allele-count
   "http://purl.obolibrary.org/obo/SEPIO_0000298"]
  [:sepio/total-individual-count

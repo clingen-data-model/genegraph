@@ -1,0 +1,95 @@
+prefix gci: <http://dataexchange.clinicalgenome.org/gci/>
+prefix gcixform: <http://dataexchange.clinicalgenome.org/gcixform/>
+
+construct {
+  ?segregationID a :sepio/FamilyCosegregation ;
+  :sepio/is-about-family ?family ;
+  :dc/description ?scoreDescription ;
+  :sepio/sequencing-method ?sequencingMethod ;
+  :dc/source ?article ;
+  :sepio/estimated-lod-score ?estimatedLodScore ;
+  :sepio/published-lod-score ?publishedLodScore ;
+  :sepio/phenotype-positive-allele-positive ?affected ;
+  :sepio/phenotype-negative-allele-negative ?unaffected ;
+  :sepio/meets-inclusion-criteria ?meetsCriteria ;
+  :sepio/is-about-condition ?phenotypes ;
+  :sepio/has-textual-part ?phenotypeFreeText ;
+  :rdfs/label ?evidenceLabel .
+
+  ?family a :pco/Family ;
+  :rdfs/label ?evidenceLabel ;
+  :sepio/has-mode-of-inheritance ?familyMoi ;
+  :sepio/ethnicity ?familyEthnicity .
+}
+where {
+  
+  ?family a gci:family ;
+  gci:segregation ?segregation ;
+  gci:label ?evidenceLabel ;
+  gci:affiliation ?affiliation .
+
+  BIND(IRI(CONCAT(STR(?family), "_family_segregation")) AS ?segregationID) .
+
+  # Limit to scored segregations -- need to consider how to incorporate this
+  OPTIONAL {
+    ?segregation gci:includeLodScoreInAggregateCalculation ?meetsCriteria .
+  }
+  
+  OPTIONAL {
+    ?segregation gci:sequencingMethod ?sequencingMethod .
+  }
+
+  ?annotation gci:families | ( gci:groups / gci:familyIncluded ) ?family ;
+  gci:article ?publication .
+  ?publication gci:pmid ?pmid .
+  BIND(IRI(CONCAT(?pmbase, ?pmid)) AS ?article) .
+
+  optional {
+    ?segregation gci:publishedLodScore ?publishedLodScore .
+  }
+
+  optional {
+    ?segregation gci:estimatedLodScore ?estimatedLodScore .
+  }
+
+  optional {
+    ?segregation gci:reasonExplanation ?scoreDescription ;
+  }
+  
+  optional {
+    ?segregation gci:numberOfAffectedWithGenotype ?affected .
+  }
+
+  optional {
+    ?family gci:hpoIdInDiagnosis ?phenotypes .
+  }
+
+  OPTIONAL {
+     ?family gci:termsInDiagnosis ?phenotypeFreeText .
+  }
+
+  OPTIONAL {
+    ?family gci:ethnicity ?familyEthnicity .
+  }
+
+  # NB, this seems specific to AR curations, don't forget to check AD .
+  optional {
+    ?segregation gci:numberOfUnaffectedWithoutBiallelicGenotype ?unaffected .
+  }
+
+  OPTIONAL {
+    ?segregation gci:moiDisplayedForFamily ?familyMoi .
+  }
+
+  FILTER NOT EXISTS {
+    ?family gci:individualIncluded ?proband .
+    ?proband gci:proband true .
+    { ?proband gci:variantScores ?scores }
+    UNION
+    { FILTER NOT EXISTS { [] gci:variantScores [] }
+      ?proband gci:scores ?scores }
+    FILTER NOT EXISTS { ?scores gci:scoreStatus <http://purl.obolibrary.org/obo/SEPIO_0004585> }
+    ?scores gci:affiliation ?affiliation .
+    ?scores gci:scoreStatus ?scoreStatus .
+  }
+}

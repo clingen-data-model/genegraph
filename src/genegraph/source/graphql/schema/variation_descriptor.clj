@@ -34,6 +34,16 @@
             :state {:type :LiteralSequenceExpression
                     :path [:vrs/state]}}})
 
+(def vrs-absolute-copy-number
+  {:name :AbsoluteCopyNumber
+   :graphql-type :object
+   :description "GA4GH Absolute Copy Number Variation"
+   :implements [:Resource]
+   :fields {:subject {:type :SequenceLocation
+                      :path [:vrs/subject]}
+            :copies {:type :Number
+                     :path [:vrs/copies]}}})
+
 (def vrs-text
   {:name :Text
    :graphql-type :object
@@ -70,7 +80,7 @@
    :fields {:interval {:type :SequenceInterval
                        :path [:vrs/interval]}
             :sequence_id {:type 'String
-                          :path [:vrs/sequence_id]}}})
+                          :path [:vrs/sequence-id]}}})
 
 (def vrs-number
   {:name :Number
@@ -119,7 +129,8 @@
    :graphql-type :object
    :description "Descriptor for a categorical variation"
    :implements [:Resource]
-   :fields {:value {:type :CanonicalVariation
+   :fields {:value {:type :Resource
+                    :description "CanonicalVariation or AbsoluteCopyNumber variation"
                     :path [:rdf/value]}
             :xrefs {:type '(list String)
                     :path [:vrs/xrefs]}

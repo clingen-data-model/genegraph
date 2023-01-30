@@ -15,6 +15,8 @@
             [genegraph.source.graphql.schema.segregation :as model-segregation]
             [genegraph.source.graphql.schema.case-control-evidence :as model-case-control]
             [genegraph.source.graphql.schema.cohort :as model-cohort]
+            [genegraph.source.graphql.schema.case-cohort :as model-case-cohort]
+            [genegraph.source.graphql.schema.control-cohort :as model-control-cohort]
             [com.walmartlabs.lacinia :as lacinia]
             [genegraph.database.util :refer [tx]]
             [genegraph.source.graphql.common.schema :as schema-builder]
@@ -42,6 +44,7 @@
    model-variation/vrs-allele
    model-variation/vrs-text
    model-variation/vrs-canonical-variation
+   model-variation/vrs-absolute-copy-number
    model-variation/vrs-literal-sequence-expression
    model-variation/vrs-sequence-location
    model-variation/vrs-sequence-interval
@@ -57,6 +60,8 @@
    model-segregation/segregation
    model-case-control/case-control-evidence
    model-cohort/cohort
+   model-case-cohort/case-cohort
+   model-control-cohort/control-cohort
    model-bibliographic-resource/bibliographic-resource])
 
 

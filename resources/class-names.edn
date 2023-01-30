@@ -93,6 +93,8 @@
   "http://dataexchange.clinicalgenome.org/terms/VariantClinicalSignificanceAssertion"]
  [:cg/AggregateVariantClinicalSignificanceAssertion
   "http://dataexchange.clinicalgenome.org/terms/AggregateVariantClinicalSignificanceAssertion"]
+ [:cg/Approver "http://dataexchange.clinicalgenome.org/terms/Approver"]
+ [:cg/Submitter "http://dataexchange.clinicalgenome.org/terms/Submitter"]
  [:cgagent/genegraph-admin "http://dataexchange.clinicalgenome.org/agent/genegraph-admin"]
  [:cgagent/crc-curator "http://dataexchange.clinicalgenome.org/agent/crc-curator"]
  [:so/ProteinCodingGene "http://purl.obolibrary.org/obo/SO_0001217"]
@@ -103,7 +105,7 @@
  [:ga4gh/VariationDescriptor "https://terms.ga4gh.org/VariationDescriptor"]
  [:ga4gh/CanonicalReference "https://terms.ga4gh.org/CanonicalReference"]
  [:geno/SequenceInterval "http://purl.obolibrary.org/obo/GENO_0000965"]
- [:geno/SequenceFeatureLocation"http://purl.obolibrary.org/obo/GENO_0000815"]
+ [:geno/SequenceFeatureLocation "http://purl.obolibrary.org/obo/GENO_0000815"]
  [:geno/SequenceFeatureSet "http://purl.obolibrary.org/obo/GENO_0000659"]
  [:geno/PathogenicForCondition "http://purl.obolibrary.org/obo/GENO_0000840"]
  [:geno/BenignForCondition "http://purl.obolibrary.org/obo/GENO_0000843"]
@@ -153,7 +155,7 @@
  [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP7 "http://purl.obolibrary.org/obo/SEPIO_0004095"]
  [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP8 "http://purl.obolibrary.org/obo/SEPIO_0004096"]
  [:sepio/ClinGenGeneValidityEvaluationCriteriaSOP9 "http://purl.obolibrary.org/obo/SEPIO_0004171"]
-[:sepio/ClinGenProteinFunctionCriteria
+ [:sepio/ClinGenProteinFunctionCriteria
   "http://purl.obolibrary.org/obo/SEPIO_0004074"]
  [:sepio/NonHumanModelOrganismEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004046"]
@@ -303,6 +305,10 @@
   "http://purl.obolibrary.org/obo/SEPIO_0004019"]
  [:sepio/BiochemicalFunctionEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004041"]
+ [:sepio/BiochemicalFunctionTypeAEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004180"]
+ [:sepio/BiochemicalFunctionTypeBEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004181"]
  [:sepio/FunctionalEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004013"]
  [:sepio/CaseControlEvidenceCriterionAssessment
@@ -317,6 +323,10 @@
   "http://purl.obolibrary.org/obo/SEPIO_0004039"]
  [:sepio/CaseControlSingleStudyEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004020"]
+ [:sepio/ExpressionTypeAEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004188"]
+ [:sepio/ExpressionTypeBEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004189"]
  [:sepio/FunctionalAlterationCriterionAssessment
   "http://purl.obolibrary.org/obo/SEPIO_0004061"]
  [:sepio/ProbandWithDeNovoVariantEvidenceItem
@@ -332,6 +342,15 @@
  [:sepio/ProbandWithVariantEvidenceItem
   "http://purl.obolibrary.org/obo/SEPIO_0004081"]
  [:sepio/ProbandEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004097"]
+ [:sepio/ProbandScoreCapEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004174"]
+ [:sepio/ProteinInteractionGeneticInteractionEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004182"]
+ [:sepio/ProteinInteractionNegativeGeneticInteractionEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004183"]
+ [:sepio/ProteinInteractionPhysicalAssociationEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004184"]
+ [:sepio/ProteinInteractionPositiveGeneticInteractionEvidenceLine
+  "http://purl.obolibrary.org/obo/SEPIO_0004185"]
  ;;
  [:sepio/NullVariantEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004120"]
  [:sepio/NonNullVariantEvidenceLine "http://purl.obolibrary.org/obo/SEPIO_0004121"]
@@ -339,7 +358,7 @@
  [:sepio/NullVariantEvidenceItem "http://purl.obolibrary.org/obo/SEPIO_0004117"]
  [:sepio/NonNullVariantEvidenceItem "http://purl.obolibrary.org/obo/SEPIO_0004118"]
  [:sepio/VariantFunctionalImpactEvidenceItem "http://purl.obolibrary.org/obo/SEPIO_0004119"]
- 
+
  ;;
  [:sepio/GeneValidityEvidenceLine
   "http://purl.obolibrary.org/obo/SEPIO_0004082"]
@@ -388,20 +407,38 @@
  [:mondo/Disease "http://purl.obolibrary.org/obo/MONDO_0000001"]
  [:sepio/Assertion "http://purl.obolibrary.org/obo/SEPIO_0000001"]
  [:vrs/Extension "https://vrs.ga4gh.org/terms/Extension"]
+ [:vrs/Coding "https://vrs.ga4gh.org/terms/Coding"]
  [:vrs/Allele "https://vrs.ga4gh.org/terms/Allele"]
  [:vrs/Text "https://vrs.ga4gh.org/terms/Text"]
+ [:vrs/RelativeCopyNumber "https://vrs.ga4gh.org/terms/RelativeCopyNumber"]
  [:vrs/CanonicalVariation "https://vrs.ga4gh.org/terms/CanonicalVariation"]
+ [:vrs/AbsoluteCopyNumber "https://vrs.ga4gh.org/terms/AbsoluteCopyNumber"]
  [:vrs/TextUtilityVariation "https://vrs.ga4gh.org/terms/TextUtilityVariation"]
  [:vrs/VariationDescriptor "https://vrs.ga4gh.org/terms/VariationDescriptor"]
  [:vrs/CategoricalVariationDescriptor "https://vrs.ga4gh.org/terms/CategoricalVariationDescriptor"]
+ [:vrs/CanonicalVariationDescriptor "https://vrs.ga4gh.org/terms/CanonicalVariationDescriptor"]
  [:vrs/VariationMember "https://vrs.ga4gh.org/terms/VariationMember"]
  [:vrs/Expression "https://vrs.ga4gh.org/terms/Expression"]
  [:vrs/SequenceLocation "https://vrs.ga4gh.org/terms/SequenceLocation"]
  [:vrs/SequenceInterval "https://vrs.ga4gh.org/terms/SequenceInterval"]
+ [:vrs/ChromosomeLocation "https://vrs.ga4gh.org/terms/ChromosomeLocation"]
+ [:vrs/HumanCytoband "https://vrs.ga4gh.org/terms/HumanCytoband"]
  [:vrs/LiteralSequenceExpression "https://vrs.ga4gh.org/terms/LiteralSequenceExpression"]
+ [:vrs/RepeatedSequenceExpression "https://vrs.ga4gh.org/terms/RepeatedSequenceExpression"]
+ [:vrs/DerivedSequenceExpression "https://vrs.ga4gh.org/terms/DerivedSequenceExpression"]
+ [:vrs/ComposedSequenceExpression "https://vrs.ga4gh.org/terms/ComposedSequenceExpression"]
+ [:vrs/DefiniteRange "https://vrs.ga4gh.org/terms/DefiniteRange"]
+ [:vrs/IndefiniteRange "https://vrs.ga4gh.org/terms/IndefiniteRange"]
  [:vrs/Number "https://vrs.ga4gh.org/terms/Number"]
- [:vrs/SequenceLocation "https://vrs.ga4gh.org/terms/SequenceLocation"]
- [:vrs/SequenceInterval "https://vrs.ga4gh.org/terms/SequenceInterval"]
+ [:vrs/VariationGermlineConditionStatement "https://vrs.ga4gh.org/terms/VariationGermlineConditionStatement"]
+ [:vrs/Disease "https://vrs.ga4gh.org/terms/Disease"]
+ [:vrs/Phenotype "https://vrs.ga4gh.org/terms/Phenotype"]
+ [:vrs/Condition "https://vrs.ga4gh.org/terms/Condition"]
+ [:vrs/Contribution "https://vrs.ga4gh.org/terms/Contribution"]
+ [:vrs/Document "https://vrs.ga4gh.org/terms/Document"]
+ [:vrs/RecordMetadata "https://vrs.ga4gh.org/terms/RecordMetadata"]
+ [:vrs/VariationGermlinePathogenicityStatement "https://vrs.ga4gh.org/terms/VariationGermlinePathogenicityStatement"]
+ [:vrs/ClinVarDrugResponseStatement "https://vrs.ga4gh.org/terms/ClinVarDrugResponseStatement"]
+ [:vrs/ClinVarOtherStatement "https://vrs.ga4gh.org/terms/ClinVarOtherStatement"]
  [:chebi/Drug "http://purl.obolibrary.org/obo/CHEBI_23888"]
  [:stato/Cohort "http://purl.obolibrary.org/obo/STATO_0000203"]]
-

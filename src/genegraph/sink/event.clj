@@ -1,20 +1,15 @@
 (ns genegraph.sink.event
-  (:require [genegraph.env :as env]
-            [genegraph.database.query :as q]
+  (:require [genegraph.database.query :as q]
             [genegraph.database.load :refer [load-model remove-model]]
-            [genegraph.database.util :refer [begin-write-tx close-write-tx write-tx]]
+            [genegraph.database.util :refer [write-tx]]
             [genegraph.source.graphql.common.cache :as cache]
             [genegraph.response-cache :as response-cache]
             [genegraph.sink.event-recorder :as event-recorder]
             [genegraph.interceptor :as ggintercept :refer [interceptor-enter-def]]
-            [genegraph.annotate :as ann :refer [add-model-interceptor
-                                                add-iri-interceptor
-                                                add-metadata-interceptor
-                                                add-validation-interceptor
-                                                add-subjects-interceptor]]
+            [genegraph.annotate :as ann]
             [genegraph.annotate.serialization :as ser]
             [genegraph.sink.stream :as stream]
-            [genegraph.suggest.suggesters :as suggest :refer [update-suggesters-interceptor]]
+            [genegraph.suggest.suggesters :as suggest]
             [mount.core :as mount :refer [defstate]]
             [io.pedestal.interceptor :as intercept]
             [io.pedestal.interceptor.chain :as chain :refer [terminate]]
@@ -25,8 +20,8 @@
 (def context (atom {}))
 
 (defn add-to-db!
-  "Adds model data to the db. As validation is configurable, this is done 
-   for events that have been successfully validated, as well as those for 
+  "Adds model data to the db. As validation is configurable, this is done
+   for events that have been successfully validated, as well as those for
    which there is no validation configured (see shapes.edn). On successful
    update of the db, annotates the event with :genegraph.sink.event/added-to-db
   true or false"
@@ -69,8 +64,8 @@
 (def log-result-interceptor
   {:name ::log-result
    :leave (fn [e] (log/debug
-                    :fn :log-result-interceptor
-                    :event (select-keys e [::ann/iri ::ann/subjects ::ann/did-validate])) e)})
+                   :fn :log-result-interceptor
+                   :event (select-keys e [::ann/iri ::ann/subjects ::ann/did-validate])) e)})
 
 (def abort-on-dry-run-interceptor
   {:name ::abort-on-dry-run
@@ -98,6 +93,7 @@
 (def stream-producer-interceptor
   "Interceptor for producing message to an output stream"
   {:name ::stream-producer-interceptor
+   :side-effecting true
    :enter stream-producer})
 
 (def transformer-interceptor-chain [event-recorder/record-event-interceptor
@@ -137,10 +133,8 @@
                             cache/expire-resolver-cache-interceptor
                             response-cache/expire-response-cache-interceptor])
 
-(defn interceptor-chain []
-  (if (env/transformer-mode?)
-    transformer-interceptor-chain
-    web-interceptor-chain))
+(defn interceptor-chain [event]
+  (or (::interceptors event) web-interceptor-chain))
 
 (defn inject-trace-into-interceptor-chain
   "Modifies the interceptor chain so that For every interceptor in the chain,
@@ -151,16 +145,16 @@
             (conj vec
                   (helper/before (fn [e] (let [now-ms (inst-ms (java.util.Date.))]
                                            (assoc e :executed-interceptors
-                                                    (conj (get e :executed-interceptors [])
-                                                          (:name intercept))
-                                                    :interceptor-start-ms now-ms))))
+                                                  (conj (get e :executed-interceptors [])
+                                                        (:name intercept))
+                                                  :interceptor-start-ms now-ms))))
                   intercept
                   (helper/before (fn [e] (let [now-ms (inst-ms (java.util.Date.))
                                                start-ms (:interceptor-start-ms e)]
                                            (if start-ms
                                              (assoc e :executed-interceptors
-                                                      (conj (:executed-interceptors e)
-                                                            (keyword (str (- now-ms start-ms) "ms"))))
+                                                    (conj (:executed-interceptors e)
+                                                          (keyword (str (- now-ms start-ms) "ms"))))
                                              e))))))
           []
           interceptors))
@@ -169,7 +163,7 @@
   (log/debug :fn :process-event! :event event :msg :event-received)
   (-> event
       (chain/enqueue (map #(intercept/interceptor %)
-                          (inject-trace-into-interceptor-chain (interceptor-chain))))
+                          (inject-trace-into-interceptor-chain (interceptor-chain event))))
       chain/execute))
 
 (defn process-event-seq!
@@ -177,8 +171,8 @@
    (process-event-seq! event-seq {}))
   ([event-seq opts]
    (write-tx
-     (doseq [e event-seq]
-       (process-event! (merge e opts))))))
+    (doseq [e event-seq]
+      (process-event! (merge e opts))))))
 
 (defn event-options []
   {::event-recorder/record-event true})

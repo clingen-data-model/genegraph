@@ -129,11 +129,11 @@
 
        (with-meta
          (into [] (concat
-                   (mapv #(with-meta [[(-> % .getPredicate property-uri->keyword) :>]
+                   (map #(with-meta [[(-> % .getPredicate property-uri->keyword) :>]
                                       (-> % .getObject compose-object-for-datafy)]
                             {:genegraph.database.query/value  (.getObject %)})
                          out-attributes)
-                   (mapv #(with-meta [[(-> % .getPredicate property-uri->keyword) :<]
+                   (map #(with-meta [[(-> % .getPredicate property-uri->keyword) :<]
                                       (-> % .getSubject compose-object-for-datafy)]
                             {:genegraph.database.query/value (.getSubject %)})
                          in-attributes)))
@@ -271,7 +271,7 @@
                          :> out-fn
                          :< in-fn
                          :- both-fn)
-               result (mapv #(to-clj % model) (step-fn start))]
+               result (map #(to-clj % model) (step-fn start))]
            (case (count result)
              0 nil
              ;; 1 (first result)

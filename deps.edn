@@ -9,12 +9,13 @@
   {:url "https://dev-tools.cognitect.com/maven/releases/"}}
 
  :paths ["src" "resources" "config"]
+ :jvm-opts ["-Dclojure.main.report=stderr"]
 
  :aliases
 
  {:build                                ; clj -T:build uber
-  {:deps       {io.github.clojure/tools.build       {:tag "v0.8.1"
-                                                     :sha "7d40500"}}
+  {:deps       {io.github.clojure/tools.build       {:tag "v0.8.4"
+                                                     :sha "8c3cd69"}}
    :ns-default build}
 
   :eastwood                             ; clj -M:eastwood
@@ -44,6 +45,38 @@
                 org.openjfx/javafx-web              {:mvn/version "18"}}
    :main-opts  ["-e" "((requiring-resolve,'cognitect.rebl/ui))" "-m" "nrepl.cmdline"]}
 
+  :repl
+  {:extra-deps {reply/reply {:mvn/version "0.5.1"}}
+   :extra-paths ["test"]
+   :main-opts
+   ;; REPL-y is a more fully-featured REPL than the built-in clojure REPL and the nREPL default client.
+   ;; It provides tab completion and more interactive REPL-oriented ctrl+c SIGINT handling.
+   ;; Leiningen builds on REPL-y for its REPL.
+   ;; Genegraph starts multiple background threads, so sending ctrl+d to the REPL kills the main thread but the process
+   ;; hangs because the other threads are still active. (System/exit 0) will terminate the process.
+   [;; clj.main evaluates this, which compiles the src dependency tree.
+    "-e" "(require 'genegraph.main)"
+    "-m" "reply.main"
+    ;; REPL-y main function evalutes this.
+    "-e" "(in-ns 'genegraph.main)"]}
+
+  :with-nrepl-deps
+  {:extra-deps {nrepl/nrepl {:mvn/version "0.9.0"}}}
+
+  :genegraph-with-repl
+  {:extra-deps {nrepl/nrepl {:mvn/version "0.9.0"}}
+   :main-opts ["-m" "genegraph.main-repl"]}
+
+  ;; Starts an nREPL server on port 6000. Pre-compiles the genegraph.server ns.
+  ;; There's a problem with all output not being sent to client.
+  :repl-server
+  {:extra-deps {nrepl/nrepl {:mvn/version "0.9.0"}}
+   :main-opts
+   ["-e" "(require 'genegraph.server)"
+    "-m" "nrepl.cmdline"
+    "--host" "127.0.0.1"
+    "--port" "6000"]}
+
   :run                                  ; This doesn't work yet.
   {:extra-deps  {io.pedestal/pedestal.service-tools {:mvn/version "0.5.5"}}
    :main-opts   ["-m" "genegraph.server/run-dev"]}
@@ -57,6 +90,7 @@
  {org.clojure/clojure                               {:mvn/version "1.11.1"}
   org.clojure/core.async                            {:mvn/version "1.5.648"}
   org.clojure/data.csv                              {:mvn/version "1.0.1"}
+  org.clojure/test.check                            {:mvn/version "1.1.1"}
   camel-snake-kebab/camel-snake-kebab               {:mvn/version "0.4.2"}
   ch.qos.logback/logback-classic                    {:mvn/version "1.2.11"}
   ;; Why not just clojure.data.json? =tbl
@@ -82,6 +116,7 @@
   ;; alternative to REBL
   djblue/portal                                     {:mvn/version "0.23.0"}
   org.rocksdb/rocksdbjni                            {:mvn/version "7.1.2"}
+  com.taoensso/carmine                              {:mvn/version "3.1.0"}
   io.pedestal/pedestal.interceptor                  {:mvn/version "0.5.10"}
   io.pedestal/pedestal.jetty                        {:mvn/version "0.5.10"}
   io.pedestal/pedestal.service                      {:mvn/version "0.5.10"}
@@ -90,6 +125,7 @@
   ;; medley included for filter-keys and deep-merge. =tbl
   medley/medley                                     {:mvn/version "1.4.0"}
   mount/mount                                       {:mvn/version "0.1.16"}
+  org.clj-commons/claypoole                         {:mvn/version "1.2.2"}
   org.apache.jena/jena-arq                          {:mvn/version "4.5.0"}
   org.apache.jena/jena-core                         {:mvn/version "4.5.0"}
   org.apache.jena/jena-iri                          {:mvn/version "4.5.0"}
@@ -106,4 +142,5 @@
   org.glassfish/jakarta.json                        {:mvn/version "2.0.1"}
   org.slf4j/jcl-over-slf4j                          {:mvn/version "1.7.36"}
   org.slf4j/jul-to-slf4j                            {:mvn/version "1.7.36"}
-  org.slf4j/log4j-over-slf4j                        {:mvn/version "1.7.36"}}}
+  org.slf4j/log4j-over-slf4j                        {:mvn/version "1.7.36"}
+  luposlip/json-schema                              {:mvn/version "0.3.4"}}}

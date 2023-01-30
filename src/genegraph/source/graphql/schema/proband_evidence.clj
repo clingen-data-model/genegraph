@@ -1,6 +1,11 @@
 (ns genegraph.source.graphql.schema.proband-evidence
   (:require [genegraph.database.query :as q]))
 
+(defn testing-methods [_ args value]
+  "Produces a non-nil valued ordered vector of testing methods"
+  (filterv some? (vector (q/ld1-> value [:sepio/first-testing-method])
+                         (q/ld1-> value [:sepio/second-testing-method]))))
+
 (def proband-evidence
   {:name :ProbandEvidence
    :graphql-type :object
@@ -35,7 +40,7 @@
                                            :path [:sepio/previous-testing-description]}
             :testing_methods {:type '(list String) ;;'(list :Resource)
                               :description "Testing methods performed."
-                              :path [:sepio/testing-methods]}
+                              :resolve testing-methods}
             :phenotype_free_text {:type 'String
                                 :description "Free text regarding the phenotypes."
                                 :path [:sepio/has-textual-part]}
@@ -48,6 +53,9 @@
             :ethnicity {:type :Resource
                         :description "The ethnicity of the proband."
                         :path [:sepio/ethnicity]}
+            :zygosity {:type :Resource
+                        :description "The zygosity of the allele(s) on the proband."
+                        :path [:geno/has-zygosity]}
             :paternity_maternity_confirmed {:type 'String
                                             :description "Paternity/maternity confirmed."
                                             :path [:sepio/paternity-maternity-confirmed]}}})

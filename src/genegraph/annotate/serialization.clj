@@ -10,14 +10,14 @@
 
 (def add-graphql-serialization-interceptor
   "Interceptor that executes graphql serialization and stores it in key :genegraph.annotate.serialization/graphql-serialization.
-  Must be called "
+  Must be called only after add-graphql-params-interceptor adds :graphql-params "
   {:name ::add-graphql-serialization-interceptor
    :enter (fn [event]
             (let [gql-params (:graphql-params event)]
               (if (empty? gql-params)
                 event
                 (assoc event
-                  ::graphql-serialization
-                  (experimental-schema/query
-                    (:query gql-params)
-                    (:variables gql-params))))))})
+                       ::graphql-serialization
+                       (experimental-schema/query
+                        (:query gql-params)
+                        (:variables gql-params))))))})

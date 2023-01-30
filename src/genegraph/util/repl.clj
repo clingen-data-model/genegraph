@@ -36,7 +36,8 @@
             [genegraph.sink.event-recorder :as event-recorder]
             [genegraph.util.fs :as fs]
             [genegraph.event-analyzer :as event-analyzer]
-            [genegraph.database.property-store :as property-store])
+            [genegraph.database.property-store :as property-store]
+            [genegraph.sink.document-store :as document-store])
   (:import java.time.Instant
            java.time.temporal.ChronoUnit
            [org.apache.jena.rdf.model AnonId Model ModelFactory]
@@ -367,3 +368,140 @@
   (let [assertion (q/resource (str "CGGV:" guid))]
     {:gene (q/ld1-> assertion [:sepio/has-subject :sepio/has-subject :skos/preferred-label])
      :disease (q/ld1-> assertion [:sepio/has-subject :sepio/has-object :rdfs/label])}))
+
+(defn topic-data-to-disk 
+  "Read topic data to disk. Converts the topic record to a genegraph event and writes a
+  nippy compressed version of the entire genegraph event to disk."
+  [topic dest]
+  (stream/topic-data-to-output topic
+                        (fn [record] 
+                          (with-open [w (io/output-stream (str dest "/" (name topic) "-" (.offset record)))]
+                            (.write w (nippy/freeze (stream/consumer-record-to-event record topic)))))))
+
+(defn topic-json-to-disk 
+  "Read topic data, converts to genegraph event, writes the raw value (usually json) to disk."
+  [topic dest]
+  (stream/topic-data-to-output topic
+                        (fn [record]
+                          (->> (stream/consumer-record-to-event record topic)
+                               :genegraph.sink.event/value
+                               (spit (str dest "/" (name topic) "-" (.offset record) ".json"))))))
+
+
+;;types 
+
+  ;; 0. "clinical_assertion_variation"
+  ;; 1. "clinical_assertion_trait"
+  ;; 2. "gene_association"
+  ;; 3. "gene"
+  ;; 4. "clinical_assertion"
+  ;; 5. "trait_mapping"
+  ;; 6. "clinical_assertion_trait_set"
+  ;; 7. "rcv_accession"
+  ;; 8. "clinical_assertion_observation"
+  ;; 9. "submission"
+  ;; 10. "trait"
+  ;; 11. "submitter"
+  ;; 12. "variation"
+  ;; 13. "variation_archive"
+  ;; 14. "release_sentinel"
+  ;; 15. "trait_set"
+
+#_(defonce clinvar-raw (rocks-sink/open-for-topic! "clinvar-raw"))
+
+#_(pprint (json/parse-string (->> (rocks/entire-db-seq clinvar-raw)
+                               #_(map #(-> %
+                                           ::event/value
+                                           (json/parse-string true)))
+                               (filter #(= "clinical_assertion"
+                                           (get-in (json/parse-string (::event/value %) true) [:content :entity_type])))
+                               first
+                               ::event/value
+
+                               #_(map #(-> % ::event/value (json/parse-string true) (get-in [:content :interpretation_description]) s/lower-case))
+                               #_set)
+
+                          true))
+
+#_(->> (rocks/entire-db-seq clinvar-raw)
+     (filter #(= "clinical_assertion"
+                 (get-in (json/parse-string (::event/value %) true)
+                         [:content :entity_type])))
+     (map #(-> % ::event/value (json/parse-string true) :event_type))
+     set)
+
+#_(->> (rocks/entire-db-seq clinvar-raw)
+     #_(map #(assoc % ::data (json/parse-string (::event/value %) true)))
+     #_(filter #(= "trait"
+                 (get-in (::data %) [:content :entity_type])))
+     (map #(assoc %
+                  ::event/interceptors
+                  [document-store/add-data-interceptor
+                   document-store/add-id-interceptor
+                   document-store/add-is-storeable-interceptor
+                   document-store/store-document-interceptor]))
+     event/process-event-seq!)
+
+#_(->> (rocks/entire-db-seq document-store/db) count)
+
+#_(with-open [db (rocks/open "clinvar-raw-complete")]
+  (-> (rocks/entire-db-seq db)
+      count))
+
+#_(with-open [db (rocks/open "clinvar-raw-complete")]
+  (-> (rocks/rocks-get-raw-key db (.getBytes "gene_101927322"))))
+
+
+#_(re-find #"^(.*)_\d{4}-\d{2}-\d{2}$" "gene_101927322_2019-07-01")
+
+#_(stream/topic-data-to-rocksdb
+   :clinvar-raw-complete
+   "clinvar-raw-complete"
+   {:key-fn #(->> %
+                  ::event/key
+                  (re-find #"^(.*)_\d{4}-\d{2}-\d{2}$")
+                  second
+                  .getBytes)})
+
+
+(defonce clinvar-raw-complete (rocks/open "clinvar-raw-complete"))
+
+;; NM_004700.4(KCNQ4):c.853G>A (p.Gly285Ser)
+;; variation 6241
+
+["SCV000840524"
+ "SCV000198442"
+ "SCV000026802"
+ "SCV000041116"]
+
+
+#_(->> ["SCV000840524"
+      "SCV000198442"
+      "SCV000026802"
+      "SCV000041116"]
+     (mapv 
+      #(rocks/rocks-get-raw-key clinvar-raw-complete (.getBytes (str "clinical_assertion_" %))))
+     pprint)
+
+(def some-assertions (-> "test_events/clinvar.edn" io/resource slurp edn/read-string))
+
+
+(->> some-assertions
+     (map #(-> % ::event/value (json/parse-string true) :content))
+     (filter #(= "trait_set" (:entity_type %)))
+     (map :trait_ids)
+     flatten
+     set
+     (mapv #(rocks/rocks-get-raw-key
+             clinvar-raw-complete
+             (.getBytes (str "trait_" %))))
+     pprint
+     )
+
+(->> some-assertions
+     (map #(-> % ::event/value (json/parse-string true) :content))
+     (filter #(= "trait" (:entity_type %)))
+
+     pprint
+)
+

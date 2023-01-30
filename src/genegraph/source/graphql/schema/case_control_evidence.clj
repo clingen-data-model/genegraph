@@ -6,10 +6,10 @@
    :graphql-type :object
    :description "Case control study evidence with a case cohort and a control cohort."
    :implements [:Resource]
-   :fields {:case_cohort {:type :Cohort
+   :fields {:case_cohort {:type :CaseCohort
                           :description "Case cohort."
                           :path [:sepio/has-case-cohort]}
-            :control_cohort {:type :Cohort
+            :control_cohort {:type :ControlCohort
                              :description "Cohort allele frequncy."
                              :path [:sepio/has-control-cohort]}
             :confidence_interval_from {:type 'Float

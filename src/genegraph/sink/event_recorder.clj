@@ -44,8 +44,8 @@
   Returns event, in case further processing on stream is needed."
   [event]
   (if (::record-event event)
-    (try 
-      (rocksdb/rocks-put-raw-key! 
+    (try
+      (rocksdb/rocks-put-raw-key!
        event-database
        (event-key event)
        (-> event
@@ -54,7 +54,9 @@
       event
       (catch Exception e
         (log/error :fn ::record-event!
-                   :msg "Could not store event in recorder")
+                   :msg "Could not store event in recorder"
+                   :ex-message (ex-message e)
+                   :ex-data (ex-data e))
         (.printStackTrace e)
         (assoc event ::exception e)))
     event))
@@ -62,4 +64,3 @@
 (def record-event-interceptor
   {:name ::record-event
    :leave record-event!})
-

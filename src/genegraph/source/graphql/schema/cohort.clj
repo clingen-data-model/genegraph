@@ -3,9 +3,8 @@
 
 (def cohort
   {:name :Cohort
-   :graphql-type :object
+   :graphql-type :interface
    :description "A case or control cohort in a case control study."
-   :implements [:Resource]
    :fields {:allele_frequency {:type 'Float
                                :description "Cohort allele frequncy."
                                :path [:sepio/allele-frequency]}

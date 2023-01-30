@@ -27,13 +27,13 @@
     {:agent_list (query query-params)
      :count @result-count}))
 
-(defresolver ^:expire-by-value gene-validity-assertions [args value]
+(defresolver ^:expire-always gene-validity-assertions [args value]
   (curation/gene-validity-curations-for-resolver args {:affiliation value}))
 
-(defresolver ^:expire-by-value curated-genes [args value]
+(defresolver ^:expire-always curated-genes [args value]
   (curation/validity-curated-genes-for-resolver args {:affiliation value}))
 
-(defresolver ^:expire-by-value curated-diseases [args value]
+(defresolver ^:expire-always curated-diseases [args value]
   (curation/validity-curated-diseases-for-resolver args {:affiliation value}))
 
 (defresolver affiliation-query [args value]
