@@ -125,7 +125,7 @@
                   model (if (instance? org.apache.jena.query.Dataset db-or-model)
                           (.getUnionModel db-or-model)
                           db-or-model)]
-              (mapv #(types/create-resource (.getResource % result-var) model) result-seq))))))))
+              (map #(types/create-resource (.getResource % result-var) model) result-seq))))))))
 
   java.lang.String
   (select
@@ -191,12 +191,12 @@
                        (get-all-graphs)
                        model)]
       (if (< 1 (count result-vars))
-        (mapv #(types/create-resource
+        (map #(types/create-resource
                 (.getResource % result-var)
                 node-model
                 (local-bindings-for-select result-vars % node-model))
               result-seq)
-        (mapv #(types/create-resource (.getResource % result-var) node-model) result-seq)))))
+        (map #(types/create-resource (.getResource % result-var) node-model) result-seq)))))
 
 (defn- exec [query-def params]
   (let [qs-map (construct-query-solution-map (medley/filter-keys #(nil? (namespace %)) params))
