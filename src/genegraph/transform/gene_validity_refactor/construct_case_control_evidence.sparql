@@ -5,7 +5,8 @@ construct {
    :dc/description ?comments ;
    :sepio/has-evidence ?evidenceItem ;
    :dc/date-created ?dateCreated ;
-   :sepio/evidence-line-strength-score ?score .
+   :sepio/evidence-line-strength-score ?score ;
+   :sepio/score-status ?scoreStatus .
 
 # Case control evidence item
     ?evidenceItem  a ?evidenceItemType ;
@@ -17,6 +18,7 @@ construct {
     :sepio/statistical-significance-value ?statisticalSignificanceValue  ;
     :stato/lower-confidence-limit ?confidenceFrom ;
     :stato/upper-confidence-limit ?confidenceTo ;
+    :dc/description ?scoreExplanation ;
     :sepio/has-case-cohort ?caseCohort ;
     :sepio/has-control-cohort ?controlCohort .
 
@@ -42,8 +44,6 @@ where {
     gci:label ?label ;
     gci:studyType ?studyType ;
     gci:date_created ?dateCreated ;
-    gci:caseCohort ?caseCohort ;
-    gci:controlCohort ?controlCohort ;
     gci:statisticalValues ?statisticalValues ;
     gci:scores ?scores .
 
@@ -96,7 +96,7 @@ where {
     }
 
     ?statisticalValues gci:otherType ?statisticalSignificanceType .
-
+    
     OPTIONAL {
         ?statisticalValues gci:valueType ?statisticalSignificanceValueType .
     }
@@ -105,8 +105,18 @@ where {
         ?statisticalValues gci:value ?statisticalSignificanceValue .
     }
 
-    ?scores a gci:evidenceScore ;
-    gci:score ?score .
+    ?scores a gci:evidenceScore .
+    OPTIONAL {
+        ?scores gci:score ?score .
+    }
+
+    OPTIONAL {
+        ?scores gci:scoreStatus ?scoreStatus .
+    }
+
+    OPTIONAL {
+        ?scores gci:scoreExplanation ?scoreExplanation .
+    }
 
     ?annotation gci:caseControlStudies ?evidenceLine .
     ?annotation gci:article ?articleGroup .
