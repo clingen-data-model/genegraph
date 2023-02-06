@@ -55,7 +55,4 @@
                         :path [:sepio/ethnicity]}
             :zygosity {:type :Resource
                         :description "The zygosity of the allele(s) on the proband."
-                        :path [:geno/has-zygosity]}
-            :paternity_maternity_confirmed {:type 'String
-                                            :description "Paternity/maternity confirmed."
-                                            :path [:sepio/paternity-maternity-confirmed]}}})
+                        :path [:geno/has-zygosity]}}})

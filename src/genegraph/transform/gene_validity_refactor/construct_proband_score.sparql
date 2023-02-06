@@ -16,7 +16,8 @@ construct {
   ?evidenceItem a ?itemType ;
   :sepio/is-about-allele ?variant ;
   :dc/source ?article ;
-  :geno/allele-origin ?alleleOrigin .
+  :geno/allele-origin ?alleleOrigin ;
+  :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed .
 
 # Proband with variant evidence item
   ?individual a :sepio/ProbandWithVariantEvidenceItem ;
@@ -33,7 +34,6 @@ construct {
   :sepio/detection-method ?methodsOfDetection ;
   :sepio/has-textual-part ?phenotypeFreeText ;
   :sepio/is-about-condition ?phenotypes ;
-  :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed ;
   :dc/source ?article ;
   :geno/has-zygosity ?probandZygosity ;
   :sepio/is-about-allele ?variant ;

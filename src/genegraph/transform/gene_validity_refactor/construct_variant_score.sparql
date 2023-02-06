@@ -18,6 +18,7 @@ construct {
   :sepio/is-about-allele ?variant ;
   :dc/source ?article ;
   :geno/allele-origin ?alleleOrigin ;
+  :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed ;
   :geno/has-zygosity ?zygosity .
   
 # Proband with variant evidence item
@@ -36,7 +37,6 @@ construct {
   :sepio/detection-method ?methodsOfDetection ;
   :sepio/has-textual-part ?phenotypeFreeText ;
   :sepio/is-about-condition ?phenotypes ;
-  :sepio/paternity-maternity-confirmed ?paternityMaternityConfirmed ;
   :geno/has-zygosity ?probandZygosity ;
   :sepio/has-variant ?evidenceItem .
 
