@@ -11,12 +11,12 @@
             [genegraph.database.util :refer [tx write-tx]]
             [genegraph.server]
             [genegraph.sink.event :as event]
+            [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.clinical-assertion :as ca]
             [genegraph.transform.clinvar.common
              :as common
              :refer [map-compact-namespaced-values
-                     map-rdf-resource-values-to-str
-                     map-unnamespace-values]]
+                     map-rdf-resource-values-to-str map-unnamespace-values]]
             [genegraph.transform.clinvar.core :refer [add-parsed-value]]
             [genegraph.transform.clinvar.iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :as util]
@@ -34,7 +34,10 @@
    #'genegraph.database.instance/db
    #'genegraph.database.property-store/property-store
    #'genegraph.transform.clinvar.cancervariants/cache-db
-   #'genegraph.sink.event-recorder/event-database))
+   #'genegraph.sink.event-recorder/event-database
+
+   #'rocks-registry/db
+   #'rocks-registry/server))
 
 (defn eventify [input-map]
   ;; Mostly replicating
