@@ -16,8 +16,11 @@
                            :description "The variant type of this variant"
                            :path [:rdf/type]}
             :allele_origin {:type 'String
-                     :description "Variant allele origin."
-                     :path [:geno/allele-origin]}
+                            :description "Variant allele origin."
+                            :path [:geno/allele-origin]}
+            :paternity_maternity_confirmed {:type 'String
+                                            :description "Paternity/maternity confirmed."
+                                            :path [:sepio/paternity-maternity-confirmed]}
             :proband {:type :ProbandEvidence
                       :description "Proband in which this variant is present"
                       :path [[:sepio/has-variant :<]]}}})
