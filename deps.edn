@@ -9,9 +9,7 @@
   {:url "https://dev-tools.cognitect.com/maven/releases/"}}
 
  :paths ["src" "resources" "config"]
- :jvm-opts ["--add-modules" "jdk.incubator.foreign"
-            "--enable-native-access=ALL-UNNAMED"
-            "-Dclojure.main.report=stderr"]
+ :jvm-opts ["-Dclojure.main.report=stderr"]
 
  :aliases
 
@@ -19,6 +17,12 @@
   {:deps       {io.github.clojure/tools.build       {:tag "v0.8.4"
                                                      :sha "8c3cd69"}}
    :ns-default build}
+
+
+  :main-dev
+  {:main-opts ["-e" "(require 'genegraph.main)"
+               "-m" "nrepl.cmdline"
+               "--middleware" "[cider.nrepl/cider-middleware]"]}
 
   :with-foreign
   {:jvm-opts ["--add-modules" "jdk.incubator.foreign"
@@ -150,5 +154,4 @@
   org.slf4j/jcl-over-slf4j                          {:mvn/version "1.7.36"}
   org.slf4j/jul-to-slf4j                            {:mvn/version "1.7.36"}
   org.slf4j/log4j-over-slf4j                        {:mvn/version "1.7.36"}
-  luposlip/json-schema                              {:mvn/version "0.3.4"}
-  clj-python/libpython-clj                          {:mvn/version "2.023"}}}
+  luposlip/json-schema                              {:mvn/version "0.3.4"}}}
