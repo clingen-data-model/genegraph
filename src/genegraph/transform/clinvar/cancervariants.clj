@@ -11,23 +11,20 @@
             [mount.core :as mount])
   (:import (clojure.lang Keyword)))
 
-(def variation-base-url-prod
-  "https://normalize.cancervariants.org/variation/")
-
-(def variation-base-url-dev
-  #_"http://variation-normalization-dev.us-east-2.elasticbeanstalk.com/variation/"
-  "http://variation-normalization-dev-eb.us-east-2.elasticbeanstalk.com/variation")
-
-(def variation-base-url variation-base-url-dev)
+(def variation-normalizer-base-url
+  (let [url (System/getenv "VARIATION_NORM_URL")]
+    (when (empty? url)
+      (log/error :msg "VARIATION_NORM_URL not defined"))
+    url))
 
 (def url-to-canonical
   "URL for cancervariants.org VRS normalization.
   Returns a JSON document containing a CanonicalVariation under the canonical_variation field, along with other metadata."
-  (str variation-base-url "/to_canonical_variation"))
+  (str variation-normalizer-base-url "/to_canonical_variation"))
 
 (def url-absolute-cnv
   "URL for cancervariants.org Absolute Copy Number normalization."
-  (str variation-base-url "/parsed_to_abs_cnv"))
+  (str variation-normalizer-base-url "/parsed_to_abs_cnv"))
 
 (def vicc-context
   {"id" {"@id" "@id"},
