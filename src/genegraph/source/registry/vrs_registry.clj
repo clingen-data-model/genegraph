@@ -51,16 +51,15 @@
    in order to increase the amount of work each thread task does."
   [pool event-seq]
   (flatten-one-level
-   (doall
+   (identity
     (cp/pmap pool
              (fn [batch]
-               (doall
-                (mapv (fn [event]
-                        (-> event
-                            (assoc ::ev/interceptors interceptor-chain)
-                            (ev/process-event!)))
-                      batch)))
-             (partition-all 20 event-seq)))))
+               (mapv (fn [event]
+                       (-> event
+                           (assoc ::ev/interceptors interceptor-chain)
+                           (ev/process-event!)))
+                     batch))
+             (partition-all 10 event-seq)))))
 
 (defn event-processing-fn
   "Used as an arg to genegraph.sink.stream/assign-topic-consumer.
@@ -122,20 +121,14 @@
             :redis-opts redis-opts))
 
 (defn start-states! []
-  #_(assert (vicc/redis-configured?)
-            "Redis must be configured with CACHE_REDIS_URI")
-  #_(wait-for-redis-connectability vicc/redis-opts (* 30 1000))
   (mount/start #'genegraph.server/server)
   (assert (rocks-registry/rocks-http-configured?)
           "RocksDB http must be configured with ROCKSDB_HTTP_URI")
-  (rocks-registry/add-routes rocks-registry/routes)
-  (mount/start #'rocks-registry/db)
 
+  (when (seq (System/getenv "ROCKSDB_HTTP_START"))
+    (mount/start #'rocks-registry/db)
+    (mount/start #'rocks-registry/server))
 
-  (reset! rocks-registry/service-map (-> @rocks-registry/service-map
-                                         http/default-interceptors
-                                         (rocks-registry/remove-interceptor ::http/log-request)))
-  (mount/start #'rocks-registry/server)
   (assert (rocks-registry/rocks-http-connectable?)
           (str "RocksDB http was not connectable: " rocks-registry/rocksdb-http-uri))
 

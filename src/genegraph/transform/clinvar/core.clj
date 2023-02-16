@@ -27,7 +27,6 @@
    "variation" #(variation/add-data-for-variation %)})
 
 (defmethod xform-types/add-data :clinvar-raw [event]
-  (log/debug :fn :add-data)
   (try
     (let [event-with-json (add-parsed-value event)
           _ (log/debug :fn :genegraph.transform.clinvar.core/add-data

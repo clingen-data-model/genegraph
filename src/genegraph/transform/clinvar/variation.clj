@@ -1,6 +1,7 @@
 (ns genegraph.transform.clinvar.variation
   (:require [cheshire.core :as json]
             [clojure.stacktrace :as stacktrace]
+            [clojure.walk :as walk]
             [genegraph.annotate.cnv :as cnv]
             [genegraph.database.names :as names :refer [local-class-names
                                                         local-property-names
@@ -11,8 +12,7 @@
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.jsonld.common :as jsonld]
-            [io.pedestal.log :as log]
-            [genegraph.transform.clinvar.hgvs :as hgvs]))
+            [io.pedestal.log :as log]))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
 (def variation-frame
@@ -274,9 +274,7 @@
                                (recursive-replace-keys
                                 (fn [k] (= "_id" k))
                                 (fn [k] "id"))
-                                ;; Keywordize keys by round-tripping json
-                               (json/generate-string)
-                               (json/parse-string true))
+                               (walk/keywordize-keys))
             vrs-id (:id vrs-obj-pretty)]
         (log/debug :fn :add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj-pretty)
         {:iri vrs-id :variation vrs-obj-pretty}))))
@@ -332,20 +330,33 @@
             _ (log/info :candidate-expressions candidate-expressions)
           ;; each vrs-ret[:variation] is the structure in the 'variation', 'canonical_variaton' (or equivalent)
           ;; field in the normalization service response body
-            vrs-rets (unchunk
-                      (for [ce candidate-expressions]
-                        {:normalized (get (get-vrs-variation-map
-                                           {:expression (-> ce :expr)
-                                            :expression-type (-> ce :type)})
-                                          :variation)
-                         :expression ce
-                         :label (-> ce :label)}))
+            #_#_vrs-rets (unchunk
+                          (for [ce candidate-expressions]
+                            {:normalized (get (get-vrs-variation-map
+                                               {:expression (-> ce :expr)
+                                                :expression-type (-> ce :type)})
+                                              :variation)
+                             :expression ce
+                             :label (-> ce :label)}))
             ;; Try to get one that doesn't yield Text. If none, just use the first.
-            selected (or (first (filter #(not= "Text" (get-in % [:normalized :canonical_context :type]))
-                                        vrs-rets))
-                         (first vrs-rets))]
-        (log/debug :selected selected)
-        selected))
+            #_#_selected (or (first (filter #(not= "Text" (get-in % [:normalized :canonical_context :type]))
+                                            vrs-rets))
+                             (first vrs-rets))]
+        (loop [unnormalized-exprs candidate-expressions
+               normalized-exprs []]
+          (if (empty? unnormalized-exprs)
+            (first normalized-exprs)
+            (let [ce (first unnormalized-exprs)
+                  normed {:normalized (get (get-vrs-variation-map
+                                            {:expression (-> ce :expr)
+                                             :expression-type (-> ce :type)})
+                                           :variation)
+                          :expression ce
+                          :label (-> ce :label)}]
+              (if (not= "Text" (get-in normed [:normalized :canonical_context :type]))
+                normed
+                (recur (rest unnormalized-exprs)
+                       (concat normalized-exprs [normed]))))))))
     (catch Exception e
       (log/error :fn :normalize-canonical-expression
                  :message "Exception normalizing canonical variation"

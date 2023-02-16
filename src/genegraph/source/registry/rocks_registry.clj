@@ -1,4 +1,8 @@
 (ns genegraph.source.registry.rocks-registry
+  "Wraps a rocksdb database with a GET /key and POST /key which
+   accept a `key` parameter of a edn-encoded thing.
+   POST /key accepts an edn-encoded value in the request body.
+   GET /key returns the edn-encoded value in the response body."
   (:require [clj-http.client :as http-client]
             [clojure.edn :as edn]
             [genegraph.env :as env]
@@ -40,7 +44,7 @@
                                                  :uri uri :k k :v v
                                                  :response response})))))
 
-(def rocksdb-name "vrs_registry.db")
+(def rocksdb-name "rocks_registry.db")
 
 (defstate db
   :start (rocksdb/open rocksdb-name)
@@ -63,10 +67,12 @@
 
    ["/key"
     :post (fn [request]
-            (let [value (-> request ring.util.request/body-string edn/read-string)
+            (let [;; Read value from POST body
+                  value (-> request ring.util.request/body-string edn/read-string)
+                  ;; Read value from query params
+                  #_#_value (edn/read-string (:value query-params))
                   query-params (:query-params request)
-                  key (edn/read-string (:key query-params))
-                  #_#_value (edn/read-string (:value query-params))]
+                  key (edn/read-string (:key query-params))]
               (log/debug :fn :key-post
                          :query-params query-params
                          :key key
@@ -77,7 +83,7 @@
 
 (def rocksdb-http-uri (System/getenv "ROCKSDB_HTTP_URI"))
 
-(defn rocks-http-configured? [] ((comp not nil?) rocksdb-http-uri))
+(defn rocks-http-configured? [] (not (nil? rocksdb-http-uri)))
 
 (defn rocks-http-connectable? []
   (try (let [response (http-client/get (str rocksdb-http-uri "/live")
@@ -107,7 +113,7 @@
 
 (defonce service-map
   (atom
-   (-> {::http/routes status-routes
+   (-> {::http/routes (set (concat status-routes routes))
         ::http/type :jetty
         ::http/host "0.0.0.0"
         ::http/port (or (some-> (System/getenv "ROCKSDB_HTTP_PORT") parse-long)
@@ -115,13 +121,22 @@
         ;; false to run in background thread
         ::http/join? false}
 
+       #_(rocks-registry/add-routes rocks-registry/routes)
+       #_(reset! rocks-registry/service-map
+                 (-> @rocks-registry/service-map
+                     http/default-interceptors
+                     (rocks-registry/remove-interceptor ::http/log-request)))
+
        ;; Logging all requests is too noisy. Individual handlers can log themselves.
-       #_(http/default-interceptors)
-       #_(remove-interceptor ::http/log-request))))
+       (http/default-interceptors)
+       (remove-interceptor ::http/log-request))))
 
 (comment
-  (-> @service-map http/default-interceptors http/create-server http/start (->> (def testserver)))
-  ())
+  (-> @service-map
+      http/default-interceptors
+      http/create-server
+      http/start
+      (->> (def testserver))))
 
 (defn state-restart-if-started [state-var]
   (when (state-is-running? state-var)

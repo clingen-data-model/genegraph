@@ -629,10 +629,7 @@
           :target_proposition (proposition event)}
          :genegraph.annotate/iri
          (str (ns-cg "clinical_assertion_") (:id assertion) "." (:release_date message)))
-        add-contextualized
-        (#(do (log/info :fn :clinical-assertion-contextualized-data
-                        :data (:genegraph.annotate/data-contextualized %))
-              %)))))
+        add-contextualized)))
 
 
 (def statement-context
