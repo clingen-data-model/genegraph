@@ -1,7 +1,5 @@
 {:mvn/repos
- {"bintray"
-  {:url "http://jcenter.bintray.com"}
-  "central"
+ {"central"
   {:url "https://repo1.maven.org/maven2/"}
   "clojars"
   {:url "https://repo.clojars.org/"}
