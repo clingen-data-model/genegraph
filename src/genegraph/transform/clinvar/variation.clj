@@ -7,12 +7,15 @@
                                                         local-property-names
                                                         prefix-ns-map]]
             [genegraph.database.query :as q]
+            [genegraph.rocksdb :as rocksdb]
             [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.transform.clinvar.common :as common]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.jsonld.common :as jsonld]
-            [io.pedestal.log :as log]))
+            [io.pedestal.log :as log]
+            [mount.core :as mount]
+            [taoensso.nippy :as nippy]))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
 (def variation-frame
@@ -193,6 +196,8 @@
                                :msg "Variation was marked as copy number, but could not parse cnv parameters"
                                :variation-name (-> value :content :name)
                                :event-value value)
+
+
                     ;; Set copy-number to false to make further processing no longer see it as CNV
                     (-> %
                         (dissoc ::copy-number?)
@@ -371,6 +376,19 @@
                                      :prioritized-expression (::prioritized-expression event)
                                      :exception e}))))
 
+(mount/defstate variation-data-db
+  :start (rocksdb/open "variation-snapshot.db")
+  :stop (rocksdb/close variation-data-db))
+
+(defn store-data [event]
+  (when (contains? (mount/running-states) (str #'variation-data-db))
+    (let [k (:genegraph.annotate/data-id event)
+          v (select-keys event [:genegraph.annotate/data
+                                :genegraph.annotate/data-annotations])]
+      (when k
+        (rocksdb/rocks-put-raw-key! variation-data-db (nippy/fast-freeze k) v))
+      event)))
+
 (defn add-data-for-variation
   "Returns msg with :genegraph.annotate/data and :genegraph.annotate/data-contextualized added.
 
@@ -431,7 +449,17 @@
                                                  :label (:label %)})
                                          (::canonical-candidate-expressions event))}
                                    {:expand-seqs? false}))))
-        (assoc :genegraph.annotate/iri vd-iri)
+        (assoc :genegraph.annotate/iri vd-iri
+               :genegraph.annotate/data-id vrd-unversioned
+               :genegraph.annotate/data-annotations {:release_date (:release_date message)})
+        ((fn [event]
+           (let [data (:genegraph.annotate/data event)]
+             (assoc event :genegraph.annotate/data
+                    (walk/postwalk
+                     (fn [node]
+                       (dissoc node (keyword "@context")))
+                     data)))))
+        store-data
         add-contextualized)))
 
 (defn record-metadata-resource-for-output

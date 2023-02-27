@@ -1,9 +1,13 @@
 (ns genegraph.source.registry.vrs-registry
-  (:require [clj-http.client :as http-client]
+  (:require [cheshire.core :as json]
+            [clj-http.client :as http-client]
             [clojure.core.async :as async]
+            [clojure.java.io :as io]
+            [clojure.string :as str]
             [com.climate.claypoole :as cp]
             [genegraph.annotate :as ann]
             [genegraph.migration :as migration]
+            [genegraph.rocksdb :as rocksdb]
             [genegraph.server :as server]
             [genegraph.sink.event :as ev]
             [genegraph.sink.stream :as stream]
@@ -12,11 +16,9 @@
             [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.transform.clinvar.common :refer [with-retries]]
             [genegraph.transform.types :as xform-types]
-            [io.pedestal.http :as http]
             [io.pedestal.log :as log]
             [mount.core :as mount]
-            [ring.util.request]
-            [cheshire.core :as json])
+            [ring.util.request])
   (:import (java.time Duration Instant)
            (org.apache.kafka.common TopicPartition)))
 
@@ -136,6 +138,7 @@
   (mount/start #'genegraph.database.instance/db
                #'genegraph.database.property-store/property-store
                #'genegraph.transform.clinvar.cancervariants/cache-db
+               #'genegraph.transform.clinvar.variation/variation-data-db
                #'genegraph.source.registry.vrs-registry/thread-pool))
 
 (defonce consumer-state (atom {:thread nil
@@ -297,3 +300,62 @@
               avg (.dividedBy duration n)]
           (println (prn-str {:avg (str avg)
                              :total (str duration)})))))))
+
+
+(comment
+  (def test-db (rocksdb/open "rocks_registry-container.db"))
+  (reduce (fn [agg val]
+            (+ 1 agg))
+          0
+          (rocksdb/entire-db-seq test-db))
+  (doseq [])
+  ())
+
+
+(comment
+  (def test-db (rocksdb/open "variation-snapshot-fromcontainer.db"))
+  ;; 1668487
+  (reduce (fn [agg val]
+            (+ 1 agg))
+          0
+          (rocksdb/entire-db-seq test-db))
+
+  (->> (rocksdb/entire-db-seq test-db)
+       (take 1))
+
+  {:CanonicalVariationDescriptor 1000}
+  ;; {:counters {"Allele" 1578992, "Text" 31604, nil 57891}, :line 339}
+  ;; {"Allele" 1578992, "Text" 31604, nil 6185, "AbsoluteCopyNumber" 51706}
+  (def counters (atom {}))
+  (letfn [(count-canonical-variations [counters canonical-variation]
+            (let [{core-variation :canonical_context} canonical-variation
+                  {core-variation-type :type} core-variation]
+              (swap! counters (fn [current-counters]
+                                (update current-counters
+                                        core-variation-type
+                                        #(+ 1 (or % 0)))))))
+          (count-abs-cnv [counters abs-cnv-variation]
+            (let [{variation-type :type} abs-cnv-variation]
+              (swap! counters (fn [current-counters]
+                                (update current-counters
+                                        variation-type
+                                        #(+ 1 (or % 0)))))))]
+    (doseq [{descriptor :genegraph.annotate/data}
+            (->> (rocksdb/entire-db-seq test-db)
+                 #_(take 10000))]
+      (with-open [variation-writer (io/writer "variation.txt" :append true)
+                  error-writer (io/writer "variation-errors.txt" :append true)]
+        (let [{canonical-variation :canonical_variation} descriptor]
+          (case (:type canonical-variation)
+            "CanonicalVariation" (count-canonical-variations counters canonical-variation)
+            "AbsoluteCopyNumber" (count-abs-cnv counters canonical-variation)
+            (do (log/error :msg "nil variation type"
+                           :descriptor descriptor)
+                (.write error-writer (str/trim (prn-str descriptor)))
+                (.write error-writer "\n")
+                (swap! counters (fn [counters] (update counters nil #(+ 1 (or % 0)))))))
+          (.write variation-writer (str/trim (prn-str descriptor)))
+          (.write variation-writer "\n"))))
+    (log/info :counters @counters))
+
+  ())
