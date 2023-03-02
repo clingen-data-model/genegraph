@@ -8,7 +8,8 @@
             [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.common :refer [with-retries]]
             [io.pedestal.log :as log]
-            [mount.core :as mount])
+            [mount.core :as mount]
+            [genegraph.transform.clinvar.hgvs :as hgvs])
   (:import (clojure.lang Keyword)))
 
 (def variation-normalizer-base-url
@@ -25,6 +26,10 @@
 (def url-absolute-cnv
   "URL for cancervariants.org Absolute Copy Number normalization."
   (str variation-normalizer-base-url "/parsed_to_abs_cnv"))
+
+(def url-relative-cnv
+  "URL for cancervariants.org Relative Copy Number normalization."
+  (str variation-normalizer-base-url "/hgvs_to_relative_copy_number"))
 
 (def vicc-context
   {"id" {"@id" "@id"},
@@ -99,6 +104,45 @@
                        :status status
                        :response response
                        :input-map input-map})))))
+
+(defn clinvar-copy-class-to-EFO
+  "Returns an EFO CURIE for a copy class str"
+  [copy-class-str]
+  ({"Deletion" "EFO:0030067"
+    "Duplication" "EFO:0030070"}
+   copy-class-str))
+
+(defn normalize-relative-copy-number
+  [input-map]
+  (log/info :fn :normalize-relative-copy-number :input-map input-map)
+  (let [{hgvs :hgvs} input-map
+        {expr :expr
+         type :type
+         label :label
+         location :location
+         copy-class :copy-class} hgvs
+        efo-copy-class (clinvar-copy-class-to-EFO copy-class)
+        {start :start
+         stop :stop
+         variant-length :variant-length} location]
+    (log/info :fn :normalize-relative-copy-number :expr expr :copy-class copy-class)
+    (let [response (http-client/get url-relative-cnv
+                                    {:throw-exceptions false
+                                     :query-params
+                                     {"hgvs_expr" expr
+                                      "relative_copy_class" efo-copy-class
+                                      "untranslatable_returns_text" true}})
+          status (:status response)]
+      (case status
+        200 (let [body (-> response :body json/parse-string)]
+              (log/debug :fn :normalize-relative-copy-number :body body)
+              (assert not-empty (-> body (get "relative_copy_number")))
+              (-> body (get "relative_copy_number") add-vicc-context))
+        (throw (ex-info "Error in VRS normalization request"
+                        {:fn :normalize-relative-copy-number
+                         :status status
+                         :response response
+                         :input-map input-map}))))))
 
 (def redis-opts
   "Pool opts:
@@ -235,7 +279,7 @@
   ([variation-expression]
    (vrs-variation-for-expression variation-expression nil))
   ([variation-expression ^Keyword expression-type]
-   (log/debug :fn :vrs-allele-for-variation :variation-expression variation-expression :expr-type expression-type)
+   (log/info :fn :vrs-allele-for-variation :variation-expression variation-expression :expr-type expression-type)
    (let [cached-value (get-from-cache variation-expression expression-type)]
      (when ((comp not not) cached-value)
        (log/debug :fn :vrs-variation-for-expression
@@ -247,7 +291,12 @@
      (if cached-value
        cached-value
        (doto (case expression-type
-               :cnv (normalize-absolute-copy-number variation-expression)
+               :cnv (case (:copy-number-type variation-expression)
+                      :absolute (normalize-absolute-copy-number variation-expression)
+                      :relative (normalize-relative-copy-number variation-expression)
+                      (throw (ex-info (format "Invalid :copy-number-type %s"
+                                              (:copy-number-type variation-expression))
+                                      {:variation-expression variation-expression})))
                :spdi (normalize-canonical variation-expression :spdi)
                :hgvs (normalize-canonical variation-expression :hgvs)
                (normalize-canonical variation-expression :hgvs))

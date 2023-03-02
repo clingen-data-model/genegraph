@@ -34,6 +34,7 @@
    #'genegraph.database.instance/db
    #'genegraph.database.property-store/property-store
    #'genegraph.transform.clinvar.cancervariants/cache-db
+   #'genegraph.transform.clinvar.variation/variation-data-db
    #'genegraph.sink.event-recorder/event-database
 
    #'rocks-registry/db
@@ -115,15 +116,16 @@
       ann/add-metadata
       ; needed for add-to-db! to work
       ann/add-action
-      ((fn [e] (try
-                 (xform-types/add-data e)
-                 (catch Exception ex
-                   (log/error :fn :message-process!
-                              :msg "Exception adding data to event"
-                              :event e
-                              :exception ex)
-                   e))))
-      ((fn [e] (if (:genegraph.annotate/data e) (xform-types/add-model e) e)))
+      #_((fn [e] (try
+                   (xform-types/add-data e)
+                   (catch Exception ex
+                     (log/error :fn :message-process!
+                                :msg "Exception adding data to event"
+                                :event e
+                                :exception ex)
+                     e))))
+      #_((fn [e] (if (:genegraph.annotate/data e) (xform-types/add-model e) e)))
+      ((fn [e] (xform-types/add-model e)))
       ((fn [e] (if (:genegraph.database.query/model e) (event/add-to-db! e) e)))))
 
 (defn message-proccess-no-db!
@@ -433,6 +435,9 @@
 
 (comment
   (start-states!)
+
+  (process-topic-file "cvraw-kinda-long-dup1.txt")
+
   (process-topic-file "cg-vcep-2019-07-01/variation.txt")
   (process-topic-file "cg-vcep-2019-07-01/trait.txt")
   (process-topic-file "cg-vcep-2019-07-01/trait_set.txt")

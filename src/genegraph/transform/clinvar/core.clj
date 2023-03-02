@@ -12,7 +12,10 @@
             [genegraph.util :refer [str->bytestream]]
             [io.pedestal.log :as log]))
 
-(defn add-parsed-value [event]
+(defn add-parsed-value
+  "Adds ::parsed-value containing the keywordized edn-map of :genegraph.sink.event/value.
+   Also parses the json-encoded string under []::parse-value :content :content], but does not keywordize this"
+  [event]
   (assoc event
          ::parsed-value
          (-> event

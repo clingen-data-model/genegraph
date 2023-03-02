@@ -30,6 +30,16 @@
            :genegraph.annotate/data-contextualized
            (merge data variation-context))))
 
+(defn get-spdi-sequence-accession
+  "Returns the sequence identifier for a SPDI expression.
+   Example: NC_000012.12:120999688:CCCC:CCCCC -> NC_000012.12"
+  [spdi]
+  (-> (re-find #"^([a-zA-Z]+_[a-zA-Z0-9]+\.[a-zA-Z0-9]+):" spdi)
+      (nth 1)))
+
+(defn get-hgvs-sequence-accession
+  [hgvs]
+  (get-spdi-sequence-accession hgvs))
 
 (defn prioritized-variation-expressions-all
   "Attempts to return a 'canonical' expression of the variation in ClinVar.
@@ -53,7 +63,11 @@
                             :filtered-list filtered))
                 (-> filtered first (get "NucleotideExpression") (get "Expression") (get "$"))))
             (get-spdi [nested-content]
-              (-> nested-content (get "CanonicalSPDI") (get "$")))]
+              (-> nested-content (get "CanonicalSPDI") (get "$")))
+            (get-sequence-location [nested-content sequence-accession]
+              (->> (get-in nested-content ["Location" "SequenceLocation"])
+                   (filter #(= sequence-accession (get % "@Accession")))
+                   first))]
       (let [exprs (for [val-opt [{:fn #(get-spdi nested-content)
                                   :type :spdi
                                   :label "SPDI"}
@@ -70,7 +84,18 @@
                     (let [expr ((get val-opt :fn))]
                       (when expr {:expr expr
                                   :type (:type val-opt)
-                                  :label (:label val-opt)})))]
+                                  :label (:label val-opt)
+                                  :location (let [seq-accession (case (:type val-opt)
+                                                                  :spdi (get-spdi-sequence-accession expr)
+                                                                  :hgvs (get-hgvs-sequence-accession expr)
+                                                                  nil)]
+                                              (when seq-accession
+                                                (let [sequence-location (get-sequence-location nested-content
+                                                                                               seq-accession)]
+                                                  {:start (get sequence-location "@start")
+                                                   :stop (get sequence-location "@stop")
+                                                   :variant-length (some-> (get sequence-location "@variantLength")
+                                                                           parse-long)})))})))]
         ;; Evaluate all and return non-nil
         (into [] (filter #(not (nil? %)) exprs))))))
 
@@ -181,44 +206,103 @@
   "Performs some annotations to the variation event in order to enable downstream transformation.
 
    Parses expressions and determines their types (spdi, hgvs, clinvar copy number).
-   Adds locally namespaced keywords to the message."
+   Adds locally namespaced keywords to the message.
+
+   If a variation event is annotated with ::copy-number?, add information about what it is.
+
+   For CNV with explicit observed counts, parse these absolute copy parameters.
+
+   For CNV without these counts,
+   - if the region duplicaton/deletion spans at least 50 base pairs, treat as
+     a relative gain/loss
+   - if the region duplication/deletion is less than 50 bp, treat as non-CNV
+
+   For CNV:
+   - adds ::cnv {:copy-number-type <:absolute or :relative>
+                 ... if relative :hgvs <deldup-expression-string>}
+   - adds ::prioritized-expression {:type :cnv
+                                    :expr <same contents as ::cnv>
+                                    :label \"CNV\"}
+   - downstream fns should just use ::prioritized-expression
+
+   For non-CNV:
+   - adds ::prioritized-expression {:type <:spdi or :hgvs or :text>
+                                    :expr <string>}
+   - adds ::canonical-candidate-expressions
+            [<same structure as prioritized-expression> ...]
+   "
   [event]
-  (let [value (:genegraph.transform.clinvar.core/parsed-value event)]
-    (-> event
-        (assoc ::copy-number? (.startsWith (-> value
-                                               :content
-                                               :variation_type)
-                                           "copy number"))
-        (#(if (::copy-number? %)
-            (let [parsed-cnv (cnv/parse (-> value :content :name))]
-              (if (empty? parsed-cnv)
-                (do (log/error :fn :variation-preprocess
-                               :msg "Variation was marked as copy number, but could not parse cnv parameters"
-                               :variation-name (-> value :content :name)
-                               :event-value value)
+  (let [value (:genegraph.transform.clinvar.core/parsed-value event)
+        prioritized-expressions (prioritized-variation-expressions-all value)
+        variation-type (-> value :content :variation_type)
+        deldup-cnv-threshold 20]
+    (letfn [(-try-absolute-copy-number
+              [event]
+              "Adds ::cnv if it looks like an absolute copy number variant"
+              (if (and (not (::cnv event))
+                       (.startsWith variation-type "copy number"))
+                (-> (assoc event ::copy-number? true)
+                    (#(if-let [absolute-cnv (cnv/parse (-> value :content :name))]
+                        (assoc % ::cnv (assoc absolute-cnv :copy-number-type :absolute))
+                        %)))
+                event))
+            (-try-relative-copy-number
+              [event]
+              "Adds ::cnv if it looks like a relative copy number variant.
+               Must be called *after* try-absolute-copy-number"
+              (let [hgvs-exprs (->> prioritized-expressions
+                                    (filter #(= :hgvs (:type %))))]
+                (if (and (not-empty hgvs-exprs)
+                         (or (and (.startsWith variation-type "copy number")
+                                  (not (::cnv event)))
+                             (and (#{"Duplication" "Deletion"} variation-type)
+                                  (->> hgvs-exprs
+                                       (map #(get-in % [:location :variant-length] 0))
+                                       (filter #(<= deldup-cnv-threshold %))
+                                       not-empty))))
+                ;; looks like a relative cnv
+                  (let [hgvs-expr-obj (first hgvs-exprs)
+                        hgvs-str (:expr hgvs-expr-obj)
+                        copy-class (cond
+                                     (#{"Duplication" "Deletion"} variation-type) variation-type
+                                     (.contains hgvs-str "dup") "Duplication"
+                                     (.contains hgvs-str "del") "Deletion"
+                                     :else (do (log/error :msg "Unknown hgvs copy class"
+                                                          :hgvs-expr-obj hgvs-expr-obj
+                                                          :variation value)
+                                               nil))]
+                    (assoc event ::cnv {:copy-number-type :relative
+                                        :hgvs (assoc hgvs-expr-obj :copy-class copy-class)}))
+                  event)))
 
+            (try-copy-number
+              [event]
+              (-> event
+                  (-try-absolute-copy-number)
+                  (-try-relative-copy-number)))]
+      (comment
+        "- Absolute Copy Number
+         - Relative Copy Number based on being 'variation_type~=copy number' and being a del/dup of least 50bp
+         Have to call these in order. First try absolute, then relative, then all other")
+      (-> event
+          (try-copy-number)
 
-                    ;; Set copy-number to false to make further processing no longer see it as CNV
-                    (-> %
-                        (dissoc ::copy-number?)
-                        (assoc ::unparseable-cnv (-> value :content :name))))
-                (assoc % ::cnv parsed-cnv)))
-            %))
+          (#(if (::cnv %)
+              (assoc %
+                     ::copy-number? true
+                     ::prioritized-expression {:expr (::cnv %)
+                                               :type :cnv})
+              %))
 
-        ;; Add the list of canonical-candidate expressions for non-cnv
-        (#(if (not (::copy-number? %))
-            (assoc % ::canonical-candidate-expressions
-                   (prioritized-variation-expressions-all value))
-            %))
-        (#(assoc % ::prioritized-expression
-                 ;; TODO prioritized-expression is only used for copy-number now
-                 ;; for non-copy-number, it checks canonical-candidate-expressions
-                 (cond (::copy-number? %) {:type :cnv
-                                           :expr (::cnv %)
-                                           :label "CNV"}
+          (#(if-not (::cnv %)
+              (assoc %
+                     ::canonical-candidate-expressions prioritized-expressions
+                     ::prioritized-expression (first prioritized-expressions))
+              %))
 
-                       :else (first (::canonical-candidate-expressions value)))))
-        (assoc ::other-expressions (get-all-expressions value)))))
+          ;; Add all the other expressions
+          ;; (GRCh38 SPDI, HGVS top-level GRCh38, HGVS top-level GRCh37, fallback clinvar:id)
+          (assoc ::other-expressions (get-all-expressions value))))))
 
 (defn make-index-replacer
   "Returns a function which when called with a value,
@@ -266,7 +350,8 @@
 
    Returns a map containing :iri (String) and :variation (map)"
   [{expression :expression
-    expression-type :expression-type}]
+    expression-type :expression-type :as inp}]
+  (log/debug :fn :get-vrs-variation-map :inp inp)
   (let [vrs-obj (vicc/vrs-variation-for-expression
                  (-> expression)
                  (-> expression-type keyword))]
@@ -307,6 +392,7 @@
                         :variation)
        :label (-> event ::prioritized-expression :expr)}
       (let [candidate-expressions (::canonical-candidate-expressions event)
+            _ (log/debug :prefiltered-candidate-expressions candidate-expressions)
 
             ;; Temporary fix for timing out dup exprs
             ;; https://github.com/clingen-data-model/genegraph/issues/698
@@ -324,13 +410,13 @@
             ;; https://github.com/clingen-data-model/genegraph/issues/698
             ;; Remove del/dup hgvs expressions which are on a variation labeled
             ;; as being a copy number variation in ClinVar
-            non-iscn-deldup? (fn [{:keys [expr type]}]
-                               (and (string? expr)
+            non-cnv-deldup? (fn [{:keys [expr type]}]
+                              (and (string? expr)
                                     ; above two imply not spdi or cnv, so dup/del hgvs
-                                    (or (.contains expr "dup")
-                                        (.contains expr "del"))
-                                    (not= :cnv type)))
-            candidate-expressions (filter (comp not non-iscn-deldup?) candidate-expressions)
+                                   (or (.contains expr "dup")
+                                       (.contains expr "del"))
+                                   (not= :cnv type)))
+            candidate-expressions (filter (comp not non-cnv-deldup?) candidate-expressions)
 
             _ (log/info :candidate-expressions candidate-expressions)
           ;; each vrs-ret[:variation] is the structure in the 'variation', 'canonical_variaton' (or equivalent)
@@ -396,6 +482,10 @@
    variation expressions are not already cached locally."
   [event]
   (let [event (variation-preprocess event)
+        _ (log/debug :post-processed (select-keys event [::cnv
+                                                         ::copy-number?
+                                                         ::prioritized-expression
+                                                         ::canonical-candidate-expressions]))
         message (-> event
                     :genegraph.transform.clinvar.core/parsed-value)
         variation (:content message)
@@ -457,7 +547,8 @@
              (assoc event :genegraph.annotate/data
                     (walk/postwalk
                      (fn [node]
-                       (dissoc node (keyword "@context")))
+                       (cond (map? node) (dissoc node (keyword "@context"))
+                             :else node))
                      data)))))
         store-data
         add-contextualized)))
