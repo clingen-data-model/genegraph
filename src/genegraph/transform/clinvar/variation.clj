@@ -235,7 +235,7 @@
   (let [value (:genegraph.transform.clinvar.core/parsed-value event)
         prioritized-expressions (prioritized-variation-expressions-all value)
         variation-type (-> value :content :variation_type)
-        deldup-cnv-threshold 20]
+        deldup-cnv-threshold 50]
     (letfn [(-try-absolute-copy-number
               [event]
               "Adds ::cnv if it looks like an absolute copy number variant"
