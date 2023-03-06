@@ -284,16 +284,18 @@
 (defn clear-associated-snapshots [m]
   (if (map? m) (dissoc m "associatedClassificationSnapshots") m))
 
-
-(defn remove-key-when-empty
-  [m key]
-  (postwalk (fn [x] (if (and (map? x)
-                             (some-> (get x key)
-                                     empty?))
-                      (dissoc x key)
+(defn remove-keys-when-empty
+  "When element is a map, removes any keys with key names from 'keys' vector that
+  has an empty value." 
+  [element keys]
+  (postwalk (fn [x] (if (map? x)
+                      (->> (select-keys x keys)
+                           (reduce (fn [coll [k v]]
+                                     (if (empty? v) (conj coll k) coll))
+                                   [])
+                           (apply dissoc x))
                       x))
-            m))
-
+            element))
 
 (defn preprocess-json
   "Walk GCI JSON prior to parsing as JSON-LD to clean up data."
@@ -303,9 +305,11 @@
                       clear-associated-snapshots
                       fix-hpo-ids
                       expand-affiliation-to-iri
-                      (remove-key-when-empty "geneWithSameFunctionSameDisease")
-                      (remove-key-when-empty "normalExpression")
-                      (remove-key-when-empty "scores")))
+                      (remove-keys-when-empty ["geneWithSameFunctionSameDisease"
+                                               "normalExpression"
+                                               "scores"
+                                               "carId"
+                                               "clinvarVariantId"])))
        json/generate-string))
 
 
