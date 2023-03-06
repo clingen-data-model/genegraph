@@ -25,7 +25,8 @@
             [genegraph.transform.types :as xform-types]
             [genegraph.util.fs :refer [gzip-file-reader]]
             [io.pedestal.log :as log]
-            [mount.core :as mount]))
+            [mount.core :as mount]
+            [genegraph.rocksdb :as rocksdb]))
 
 (def stop-removing-unused [#'write-tx #'tx #'pprint #'util/parse-nested-content])
 
@@ -433,10 +434,20 @@
       (print-stack-trace e))))
 
 
+(defn snapshot-variation-db []
+  (let [db genegraph.transform.clinvar.variation/variation-data-db
+        out-fname "variation-data-db-snapshot.ndjson"]
+    (with-open [writer (io/writer (io/file out-fname))]
+      (doseq [[entry-k entry-v] (rocksdb/entire-db-entry-seq db)]
+
+        (let [data (:genegraph.annotate/data entry-v)]
+          (.write writer (json/generate-string data))
+          (.write writer "\n"))))))
+
 (comment
   (start-states!)
 
-  (process-topic-file "cvraw-kinda-long-dup1.txt")
+  (process-topic-file "test-inputs/relative-cnv/cvraw-kinda-long-dup1.txt")
 
   (process-topic-file "cg-vcep-2019-07-01/variation.txt")
   (process-topic-file "cg-vcep-2019-07-01/trait.txt")
@@ -447,7 +458,11 @@
 
   #_(process-topic-file "cg-vcep-inputs/variation.txt")
   #_(process-topic-file "variation-inputs-556853.txt")
-  (snapshot-latest-variations))
+  ;; snapshot with Jena
+  (snapshot-latest-variations)
+
+  ;; snapshot with the variation add-data snapshot rocksdb
+  (snapshot-variation-db))
 
 
 (comment
