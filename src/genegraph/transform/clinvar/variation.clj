@@ -15,7 +15,8 @@
             [genegraph.transform.jsonld.common :as jsonld]
             [io.pedestal.log :as log]
             [mount.core :as mount]
-            [taoensso.nippy :as nippy]))
+            [taoensso.nippy :as nippy]
+            [clojure.set :as set]))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
 (def variation-frame
@@ -92,10 +93,11 @@
                                               (when seq-accession
                                                 (let [sequence-location (get-sequence-location nested-content
                                                                                                seq-accession)]
-                                                  {:start (get sequence-location "@start")
-                                                   :stop (get sequence-location "@stop")
-                                                   :variant-length (some-> (get sequence-location "@variantLength")
-                                                                           parse-long)})))})))]
+                                                  (merge {:start (get sequence-location "@start")
+                                                          :stop (get sequence-location "@stop")}
+                                                         (when-let [l (some-> (get sequence-location "@variantLength")
+                                                                              parse-long)]
+                                                           {:variant-length l})))))})))]
         ;; Evaluate all and return non-nil
         (into [] (filter #(not (nil? %)) exprs))))))
 
@@ -257,7 +259,7 @@
                                   (not (::cnv event)))
                              (and (#{"Duplication" "Deletion"} variation-type)
                                   (->> hgvs-exprs
-                                       (map #(get-in % [:location :variant-length] 0))
+                                       (map #(or (get % [:location :variant-length]) 0))
                                        (filter #(<= deldup-cnv-threshold %))
                                        not-empty))))
                 ;; looks like a relative cnv
@@ -391,8 +393,8 @@
                           :expression-type (-> event ::prioritized-expression :type)})
                         :variation)
        :label (-> event ::prioritized-expression :expr)}
-      (let [candidate-expressions (::canonical-candidate-expressions event)
-            _ (log/debug :prefiltered-candidate-expressions candidate-expressions)
+      (let [prefiltered-candidate-expressions (::canonical-candidate-expressions event)
+            _ (log/debug :prefiltered-candidate-expressions prefiltered-candidate-expressions)
 
             ;; Temporary fix for timing out dup exprs
             ;; https://github.com/clingen-data-model/genegraph/issues/698
@@ -416,9 +418,13 @@
                                    (or (.contains expr "dup")
                                        (.contains expr "del"))
                                    (not= :cnv type)))
-            candidate-expressions (filter (comp not non-cnv-deldup?) candidate-expressions)
-
-            _ (log/info :candidate-expressions candidate-expressions)]
+            candidate-expressions (filter (comp not non-cnv-deldup?) prefiltered-candidate-expressions)]
+        (when (not= candidate-expressions prefiltered-candidate-expressions)
+          (log/warn :fn :normalize-canonical-expression
+                    :msg "Removed some deldup candidate expressions"
+                    :removed (set/difference (set candidate-expressions)
+                                             (set prefiltered-candidate-expressions))))
+        (log/debug :candidate-expressions candidate-expressions)
         ;; each vrs-ret[:variation] is the structure in the 'variation', 'canonical_variaton' (or equivalent)
         ;; field in the normalization service response body
         ;; Try to get one that doesn't yield Text. If none, just use the first.

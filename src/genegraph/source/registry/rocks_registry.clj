@@ -39,7 +39,7 @@
                                     :query-params {:key (prn-str k)}
                                     :body (prn-str v)})]
     (case (:status response)
-      201 (log/info :fn :set-key-remote :status 201 :key k)
+      201 (log/debug :fn :set-key-remote :status 201 :key k)
       (throw (ex-info "Error in set-key-remote" {:fn ::set-key-remote
                                                  :uri uri :k k :v v
                                                  :response response})))))
