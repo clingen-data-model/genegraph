@@ -418,21 +418,10 @@
                                    (not= :cnv type)))
             candidate-expressions (filter (comp not non-cnv-deldup?) candidate-expressions)
 
-            _ (log/info :candidate-expressions candidate-expressions)
-          ;; each vrs-ret[:variation] is the structure in the 'variation', 'canonical_variaton' (or equivalent)
-          ;; field in the normalization service response body
-            #_#_vrs-rets (unchunk
-                          (for [ce candidate-expressions]
-                            {:normalized (get (get-vrs-variation-map
-                                               {:expression (-> ce :expr)
-                                                :expression-type (-> ce :type)})
-                                              :variation)
-                             :expression ce
-                             :label (-> ce :label)}))
-            ;; Try to get one that doesn't yield Text. If none, just use the first.
-            #_#_selected (or (first (filter #(not= "Text" (get-in % [:normalized :canonical_context :type]))
-                                            vrs-rets))
-                             (first vrs-rets))]
+            _ (log/info :candidate-expressions candidate-expressions)]
+        ;; each vrs-ret[:variation] is the structure in the 'variation', 'canonical_variaton' (or equivalent)
+        ;; field in the normalization service response body
+        ;; Try to get one that doesn't yield Text. If none, just use the first.
         (loop [unnormalized-exprs candidate-expressions
                normalized-exprs []]
           (if (empty? unnormalized-exprs)
