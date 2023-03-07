@@ -1,17 +1,24 @@
 (ns genegraph.source.registry.vrs-registry
-  (:require [clojure.core.async :as async]
+  (:require [cheshire.core :as json]
+            [clj-http.client :as http-client]
+            [clojure.core.async :as async]
+            [clojure.java.io :as io]
+            [clojure.string :as str]
             [com.climate.claypoole :as cp]
             [genegraph.annotate :as ann]
             [genegraph.migration :as migration]
+            [genegraph.rocksdb :as rocksdb]
             [genegraph.server :as server]
             [genegraph.sink.event :as ev]
             [genegraph.sink.stream :as stream]
             [genegraph.source.registry.redis :as redis]
+            [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.transform.clinvar.common :refer [with-retries]]
             [genegraph.transform.types :as xform-types]
             [io.pedestal.log :as log]
-            [mount.core :as mount])
+            [mount.core :as mount]
+            [ring.util.request])
   (:import (java.time Duration Instant)
            (org.apache.kafka.common TopicPartition)))
 
@@ -46,16 +53,15 @@
    in order to increase the amount of work each thread task does."
   [pool event-seq]
   (flatten-one-level
-   (doall
+   (identity
     (cp/pmap pool
              (fn [batch]
-               (doall
-                (mapv (fn [event]
-                        (-> event
-                            (assoc ::ev/interceptors interceptor-chain)
-                            (ev/process-event!)))
-                      batch)))
-             (partition-all 20 event-seq)))))
+               (mapv (fn [event]
+                       (-> event
+                           (assoc ::ev/interceptors interceptor-chain)
+                           (ev/process-event!)))
+                     batch))
+             (partition-all 10 event-seq)))))
 
 (defn event-processing-fn
   "Used as an arg to genegraph.sink.stream/assign-topic-consumer.
@@ -70,10 +76,11 @@
                   event-seq)))
 
 
-(def running-atom (atom true))
+(defonce keep-running (atom true))
 
 (mount/defstate thread-pool
-  :start (cp/threadpool 20)
+  :start (cp/threadpool (or (some-> (System/getenv "GENEGRAPH_VRS_CACHE_POOL_SIZE") parse-long)
+                            20))
   :stop (cp/shutdown thread-pool))
 
 (defn reset-consumer-position
@@ -86,6 +93,15 @@
     (.seek consumer topic-partition offset)
     (.seekToBeginning consumer [topic-partition]))
   consumer)
+
+(defn poll-with-retries
+  "Tries to poll consumer. If an exception occurs, retries."
+  [consumer retry-count retry-interval]
+  (with-retries retry-count retry-interval ; 60 1min retries
+    #(let [batch (stream/poll-catch-exception consumer)]
+       (if (= :error batch)
+         (throw (ex-info "Exception in polling" {:assignment (.assignment consumer)}))
+         batch))))
 
 (defn wait-for-redis-connectability
   "Will wait up to max-ms milliseconds for the redis server specified by
@@ -106,57 +122,132 @@
             :msg "Connected"
             :redis-opts redis-opts))
 
-(defn -main [& args]
-  ;; Don't start the cancervariants rocksdb states. If redis is not configured,
-  ;; those calls will fail.
-  ;; Starting genegraph.transform.clinvar.cancervariants/redis-db
-  ;; will throw an exception if Redis is not configured or is not connectable.
-  (assert (vicc/redis-configured?)
-          "Redis must be configured with CACHE_REDIS_URI")
+(defn start-states! []
   (mount/start #'genegraph.server/server)
-  (wait-for-redis-connectability vicc/redis-opts (* 30 1000))
+  (assert (rocks-registry/rocks-http-configured?)
+          "RocksDB http must be configured with ROCKSDB_HTTP_URI")
+
+  (when (seq (System/getenv "ROCKSDB_HTTP_START"))
+    (mount/start #'rocks-registry/db)
+    (mount/start #'rocks-registry/server))
+
+  (assert (rocks-registry/rocks-http-connectable?)
+          (str "RocksDB http was not connectable: " rocks-registry/rocksdb-http-uri))
+
   (migration/populate-data-vol-if-needed)
   (mount/start #'genegraph.database.instance/db
                #'genegraph.database.property-store/property-store
                #'genegraph.transform.clinvar.cancervariants/cache-db
-               #'genegraph.source.registry.vrs-registry/thread-pool)
-  (assert (= :redis (:type genegraph.transform.clinvar.cancervariants/cache-db)))
+               #'genegraph.transform.clinvar.variation/variation-data-db
+               #'genegraph.source.registry.vrs-registry/thread-pool))
+
+(defonce consumer-state (atom {:thread nil
+                               :watcher nil
+                               :keep-running? true
+                               :restart-count 0}))
+
+(defn thread-watcher
+  "Starts thread-fn in a child thread. Restarts it if it dies.
+   Updates state-atom with info that might be useful to caller.
+   Setting :keep-running? in the state atom to false signals to this
+   watcher that the next time the thread dies, to not restart it.
+   :keep-running? false does not mean the watcher should kill the thread.
+   Exceptions in child thread are caught and logged."
+  [thread-fn state-atom]
+  (swap! state-atom assoc
+         :watcher (Thread/currentThread)
+         :restart-count 0)
+  (while (:keep-running? @state-atom)
+    (let [child-exception (atom nil)
+          exception-wrapper #(try (thread-fn)
+                                  (catch Exception e
+                                    (reset! child-exception e)))
+          thread (Thread. exception-wrapper)]
+      (swap! state-atom assoc :thread thread)
+      (.start thread)
+      (while (.isAlive thread)
+        (.join thread (* 1 1000)))
+      (when (:keep-running? @state-atom)
+        (swap! state-atom update :restart-count inc)
+        (when (not (nil? @child-exception))
+          (log/error :fn :thread-watcher
+                     :msg "Exception caught in child thread"
+                     :ex @child-exception)
+          (reset! child-exception nil))
+        (log/error :fn :thread-watcher
+                   :msg "Thread terminated, restarting"
+                   :state @state-atom))))
+  (log/info :fn :thread-watcher
+            :msg "Thread terminated gracefully"
+            :state-atom @state-atom)
+  (swap! state-atom assoc :stopped-at (Instant/now)))
+
+(comment
+  "Example of using thread-watcher to watch a thread"
+  (def state (atom {:keep-running? true}))
+  (def t (Thread. (fn [] (thread-watcher (fn []
+                                           (Thread/sleep (* 10 1000))
+                                           (throw (RuntimeException. "child thread exception!")))
+                                         state))))
+  (.start t)
+  (swap! state assoc :keep-running? false))
+
+(defn shutdown-threads!
+  "Gracefully shuts down the threads managed by vrs-registry/-main"
+  []
+  (swap! consumer-state assoc :keep-running? false)
+  (reset! keep-running false))
+
+(defn -main
+  "Starts consumption and processing of messages in a separate thread.
+   To stop the thread watcher, (swap! consumer-state assoc :keep-running? false)
+   To stop the consumer thread, (reset! keep-running false).
+   (note: use (shutdown-threads!))
+   If the consumer thread is stopped before the thread watcher, it will keep being restarted"
+  [& args]
+  (start-states!)
+  (assert (= :rocksdb-http (:type genegraph.transform.clinvar.cancervariants/cache-db)))
   (log/info :fn ::-main :running-states (mount/running-states))
   (let [batch-limit Long/MAX_VALUE
         batch-counter (atom 0)
         topic-kw :clinvar-raw
         topic-name (-> stream/config :topics topic-kw :name)]
     (stream/initialize-current-offsets!) ; Reads partition_offsets.edn
-    (with-retries 60 (* 60 1000) ; 60 1min retries
-      (fn []
-        (when @running-atom ; Returning nil will short-circuit with-retries
-          (log/info :fn ::-main :msg "Opening consumer")
-          (with-open [consumer (stream/assigned-consumer-for-topic topic-kw)]
-            (doseq [tp (.assignment consumer)]
-              (reset-consumer-position consumer tp))
-            (while (and @running-atom (<= (swap! batch-counter inc) batch-limit))
-              (when-let [batch (with-retries 60 (* 60 1000) ; 60 1min retries
-                                 #(let [pb (stream/poll-catch-exception consumer)]
-                                    (if (= :error pb)
-                                      (throw (ex-info "Exception in polling" {:assignment (.assignment consumer)}))
-                                      pb)))]
-                (when (not-empty batch)
-                  (let [time-start (Instant/now)]
-                    (dorun
-                     (->> batch
-                          (map #(stream/consumer-record-to-event % topic-kw))
-                          (event-processing-fn-batched thread-pool)
-                          (filter #(:exception %))
-                          (map #(log/error :fn ::-main :event-with-exception %))))
-                    (let [batch-duration (Duration/between time-start (Instant/now))]
-                      (log/info :fn ::-main
-                                :batch-start (some-> batch first .offset)
-                                :batch-end (some-> batch last .offset)
-                                :batch-size (.count batch)
-                                :batch-duration (.toString batch-duration)
-                                :time-per-event (.toString (.dividedBy batch-duration (long (.count batch))))))))
-                (stream/update-consumer-offsets! consumer [(TopicPartition. topic-name 0)])))))))))
+    (letfn [(initialize-consumer []
+              #_"Returns an open and assigned consumer"
+              (let [consumer (stream/assigned-consumer-for-topic topic-kw)]
+                (doseq [tp (.assignment consumer)]
+                  (reset-consumer-position consumer tp))
+                consumer))
+            (thread-fn []
+              #_"Assumes consumer is read to start polling as-is. If running-atom
+               is set to false, finishes the current poll batch and  dies."
+              (with-open [consumer (initialize-consumer)]
+                (while (and @keep-running (<= (swap! batch-counter inc) batch-limit))
+                  (when-let [batch (poll-with-retries consumer 60 (* 60 1000))]
+                    (when (not-empty batch)
+                      (let [time-start (Instant/now)]
+                        (dorun (->> batch
+                                    (map #(stream/consumer-record-to-event % topic-kw))
+                                    (event-processing-fn-batched thread-pool)
+                                    (filter #(:exception %))
+                                    (map #(log/error :fn ::-main :event-with-exception %))))
+                        (let [batch-duration (Duration/between time-start (Instant/now))]
+                          (log/info :fn ::-main
+                                    :batch-start (some-> batch first .offset)
+                                    :batch-end (some-> batch last .offset)
+                                    :batch-size (.count batch)
+                                    :batch-duration (.toString batch-duration)
+                                    :time-per-event (.toString (.dividedBy batch-duration (long (.count batch))))))))
+                    (stream/update-consumer-offsets! consumer [(TopicPartition. topic-name 0)])))))]
+      (reset! consumer-state {:keep-running? true})
+      (thread-watcher thread-fn consumer-state))))
 
+(defn -main-background
+  "Runs -main in a background thread. Useful for running in a REPL.
+   Can use (shutdown-threads!) to gracefully terminate that thread"
+  [& args]
+  (.start (Thread. (partial apply (partial -main) args))))
 
 (defn count-variant-types
   "Gets keys and values from the redis instance and counts them by the :type field in the value"
@@ -170,3 +261,101 @@
                           (map #(redis/get-keys-pipelined redis-opts %))
                           flatten1)]
       (reduce count-fn {} cache-vals))))
+
+;; curl -X 'PUT' \
+;;   'http://localhost:5050/allele' \
+;;   -H 'accept: application/json' \
+;;   -H 'Content-Type: application/json' \
+;;   -d '{
+;;   "definition": "NC_000010.11:g.87894077C>T",
+;;   "format": "hgvs",
+;;   "normalize": "right"
+;; }'
+
+(defn anyvar-testing []
+
+  (cp/with-shutdown! [pool (cp/threadpool 50)]
+    (let [base-url "http://localhost:5050"
+          inp (json/generate-string
+               {"definition" "NC_000010.11:g.87894077C>T",
+                "format" "hgvs",
+                "normalize" "right"})
+          headers {"Content-Type" "application/json"
+                   "Accept" "application/json"}
+          n 1000]
+      (let [start (Instant/now)]
+        (dorun
+         (cp/pmap
+          pool
+          (fn [i]
+            (let [resp (http-client/put (str base-url "/allele")
+                                        {:throw-exceptions false
+                                         :headers headers
+                                         :body inp})]
+              (assert (= 200 (:status resp)) {:status (:status resp)
+                                              :msg "Request failed"
+                                              :resp resp})))
+          (range n)))
+        (let [duration (Duration/between start (Instant/now))
+              avg (.dividedBy duration n)]
+          (println (prn-str {:avg (str avg)
+                             :total (str duration)})))))))
+
+
+(comment
+  (def test-db (rocksdb/open "rocks_registry-container.db"))
+  (reduce (fn [agg val]
+            (+ 1 agg))
+          0
+          (rocksdb/entire-db-seq test-db))
+  (doseq [])
+  ())
+
+
+(comment
+  (def test-db (rocksdb/open "variation-snapshot-fromcontainer.db"))
+  ;; 1668487
+  (reduce (fn [agg val]
+            (+ 1 agg))
+          0
+          (rocksdb/entire-db-seq test-db))
+
+  (->> (rocksdb/entire-db-seq test-db)
+       (take 1))
+
+  {:CanonicalVariationDescriptor 1000}
+  ;; {:counters {"Allele" 1578992, "Text" 31604, nil 57891}, :line 339}
+  ;; {"Allele" 1578992, "Text" 31604, nil 6185, "AbsoluteCopyNumber" 51706}
+  (def counters (atom {}))
+  (letfn [(count-canonical-variations [counters canonical-variation]
+            (let [{core-variation :canonical_context} canonical-variation
+                  {core-variation-type :type} core-variation]
+              (swap! counters (fn [current-counters]
+                                (update current-counters
+                                        core-variation-type
+                                        #(+ 1 (or % 0)))))))
+          (count-abs-cnv [counters abs-cnv-variation]
+            (let [{variation-type :type} abs-cnv-variation]
+              (swap! counters (fn [current-counters]
+                                (update current-counters
+                                        variation-type
+                                        #(+ 1 (or % 0)))))))]
+    (doseq [{descriptor :genegraph.annotate/data}
+            (->> (rocksdb/entire-db-seq test-db)
+                 #_(take 10000))]
+      (with-open [variation-writer (io/writer "variation.txt" :append true)
+                  error-writer (io/writer "variation-errors.txt" :append true)]
+        (let [{canonical-variation :canonical_variation} descriptor]
+          (case (:type canonical-variation)
+            "CanonicalVariation" (count-canonical-variations counters canonical-variation)
+            "AbsoluteCopyNumber" (count-abs-cnv counters canonical-variation)
+            (do (log/error :msg "nil variation type"
+                           :descriptor descriptor)
+                (.write error-writer (str/trim (prn-str descriptor)))
+                (.write error-writer "\n")
+                (swap! counters (fn [counters] (update counters nil #(+ 1 (or % 0)))))))
+          (.write variation-writer (str/trim (prn-str descriptor)))
+          (.write variation-writer "\n"))))
+    (log/info :counters @counters))
+
+  ())

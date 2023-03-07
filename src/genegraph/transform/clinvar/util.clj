@@ -75,7 +75,9 @@
     (json/parse-string val)
     val))
 
-(defn parse-nested-content [val]
+(defn parse-nested-content
+  "Replaces [:content :content] in val with its value parsed as JSON"
+  [val]
   (if (get-in val [:content :content])
     (let [nested-content (-> val :content :content parse-json-if-not-parsed simplify-dollar-map-recur)]
       (assoc-in val
@@ -91,7 +93,9 @@
                 [:content :content]
                 (json/generate-string content)))))
 
-(defn into-sequential-if-not [val]
+(defn into-sequential-if-not
+  "If val is not a sequential collection, wrap it in one"
+  [val]
   (if (not (sequential? val)) [val] val))
 
 ;(defmacro log-and-throw- [& args]

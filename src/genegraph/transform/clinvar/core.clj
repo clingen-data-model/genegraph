@@ -12,7 +12,10 @@
             [genegraph.util :refer [str->bytestream]]
             [io.pedestal.log :as log]))
 
-(defn add-parsed-value [event]
+(defn add-parsed-value
+  "Adds ::parsed-value containing the keywordized edn-map of :genegraph.sink.event/value.
+   Also parses the json-encoded string under []::parse-value :content :content], but does not keywordize this"
+  [event]
   (assoc event
          ::parsed-value
          (-> event
@@ -27,7 +30,6 @@
    "variation" #(variation/add-data-for-variation %)})
 
 (defmethod xform-types/add-data :clinvar-raw [event]
-  (log/debug :fn :add-data)
   (try
     (let [event-with-json (add-parsed-value event)
           _ (log/debug :fn :genegraph.transform.clinvar.core/add-data

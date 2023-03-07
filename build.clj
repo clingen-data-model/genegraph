@@ -2,6 +2,12 @@
   "Build this thing."
   (:require [clojure.tools.build.api :as b]))
 
+(def native-jvm-opts
+  "Needed when using jvm natively linked libraries like
+  https://github.com/clj-python/libpython-clj"
+  ["--add-modules" "jdk.incubator.foreign"
+   "--enable-native-access=ALL-UNNAMED"])
+
 (def defaults
   "The defaults to configure a build."
   {:class-dir  "target/classes"

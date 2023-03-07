@@ -1,38 +1,42 @@
 (ns genegraph.transform.clinvar.cancervariants
+  "Things for interacting with the cancervariants.org normalization service."
   (:require [cheshire.core :as json]
+            [clj-http.client :as http-client]
             [genegraph.database.names :as names :refer [prefix-ns-map]]
             [genegraph.rocksdb :as rocksdb]
             [genegraph.source.registry.redis :as redis]
+            [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.common :refer [with-retries]]
-            [clj-http.client :as http-client]
             [io.pedestal.log :as log]
-            [mount.core :as mount])
+            [mount.core :as mount]
+            [genegraph.transform.clinvar.hgvs :as hgvs])
   (:import (clojure.lang Keyword)))
 
-(def variation-base-url-prod
-  "https://normalize.cancervariants.org/variation/")
-
-(def variation-base-url-dev
-  #_"http://variation-normalization-dev.us-east-2.elasticbeanstalk.com/variation/"
-  "http://variation-normalization-dev-eb.us-east-2.elasticbeanstalk.com/variation")
-
-(def variation-base-url variation-base-url-dev)
+(def variation-normalizer-base-url
+  (let [url (System/getenv "VARIATION_NORM_URL")]
+    (when (empty? url)
+      (log/error :msg "VARIATION_NORM_URL not defined"))
+    url))
 
 (def url-to-canonical
   "URL for cancervariants.org VRS normalization.
   Returns a JSON document containing a CanonicalVariation under the canonical_variation field, along with other metadata."
-  (str variation-base-url "/to_canonical_variation"))
+  (str variation-normalizer-base-url "/to_canonical_variation"))
 
 (def url-absolute-cnv
   "URL for cancervariants.org Absolute Copy Number normalization."
-  (str variation-base-url "/parsed_to_abs_cnv"))
+  (str variation-normalizer-base-url "/parsed_to_abs_cnv"))
+
+(def url-relative-cnv
+  "URL for cancervariants.org Relative Copy Number normalization."
+  (str variation-normalizer-base-url "/hgvs_to_relative_copy_number"))
 
 (def vicc-context
   {"id" {"@id" "@id"},
    "_id" {"@id" "@id"},
    "type" {"@id" "@type"
            "@type" "@id"}
-   "@vocab" (get prefix-ns-map "vrs") ;"https://vrs.ga4gh.org/"
+   "@vocab" (get prefix-ns-map "vrs")
    "normalize.variation" {"@id" "https://github.com/cancervariants/variation-normalization/"
                           "@prefix" true}})
 
@@ -101,6 +105,45 @@
                        :response response
                        :input-map input-map})))))
 
+(defn clinvar-copy-class-to-EFO
+  "Returns an EFO CURIE for a copy class str"
+  [copy-class-str]
+  ({"Deletion" "EFO:0030067"
+    "Duplication" "EFO:0030070"}
+   copy-class-str))
+
+(defn normalize-relative-copy-number
+  [input-map]
+  (log/info :fn :normalize-relative-copy-number :input-map input-map)
+  (let [{hgvs :hgvs} input-map
+        {expr :expr
+         type :type
+         label :label
+         location :location
+         copy-class :copy-class} hgvs
+        efo-copy-class (clinvar-copy-class-to-EFO copy-class)
+        {start :start
+         stop :stop
+         variant-length :variant-length} location]
+    (log/info :fn :normalize-relative-copy-number :expr expr :copy-class copy-class)
+    (let [response (http-client/get url-relative-cnv
+                                    {:throw-exceptions false
+                                     :query-params
+                                     {"hgvs_expr" expr
+                                      "relative_copy_class" efo-copy-class
+                                      "untranslatable_returns_text" true}})
+          status (:status response)]
+      (case status
+        200 (let [body (-> response :body json/parse-string)]
+              (log/debug :fn :normalize-relative-copy-number :body body)
+              (assert not-empty (-> body (get "relative_copy_number")))
+              (-> body (get "relative_copy_number") add-vicc-context))
+        (throw (ex-info "Error in VRS normalization request"
+                        {:fn :normalize-relative-copy-number
+                         :status status
+                         :response response
+                         :input-map input-map}))))))
+
 (def redis-opts
   "Pool opts:
    https://github.com/ptaoussanis/carmine/blob/e4835506829ef7fe0af68af39caef637e2008806/src/taoensso/carmine/connections.clj#L146
@@ -113,24 +156,42 @@
 (defn redis-configured? []
   (System/getenv "CACHE_REDIS_URI"))
 
+
+
 (mount/defstate cache-db
   "Has a :db and :type. :db is either a redis conn spec, or an open RocksDB handle object"
   :start (letfn [(use-redis [] {:type :redis
                                 :db redis-opts})
                  (use-rocks [] {:type :rocksdb
-                                :db (rocksdb/open vicc-expr-db-name)})]
-           (if (redis-configured?)
-             (if (redis/connectable? redis-opts)
-               (use-redis)
-               (do (log/error :msg (str "Redis is configured but not connectable."
-                                        " Falling back to rocksdb")
-                              :redis-opts redis-opts
-                              :rocks-path vicc-expr-db-name)
-                   (use-rocks)))
-             (use-rocks)))
+                                :db (rocksdb/open vicc-expr-db-name)})
+                 (use-rocks-http [] {:type :rocksdb-http
+                                     :db {:uri rocks-registry/rocksdb-http-uri}})]
+           (or (when (rocks-registry/rocks-http-configured?)
+                 (loop [left (* 5 60)]
+                   (if (rocks-registry/rocks-http-connectable?)
+                     (use-rocks-http)
+                     (do (log/error :msg (str "RocksDB HTTP is configured but not connectable")
+                                    :uri rocks-registry/rocksdb-http-uri)
+                         (when (< 0 left)
+                           (log/info :msg "Waiting for RocksDB HTTP to become available" :retries-left left)
+                           (Thread/sleep 1000)
+                           (recur (dec left)))))))
+               (when (redis-configured?)
+                 (loop [left (* 5 60)]
+                   (if (redis/connectable? redis-opts)
+                     (use-redis)
+                     (do (log/error :msg "Redis is configured but not connectable."
+                                    :redis-opts redis-opts)
+                         (when (< 0 left)
+                           (log/info :msg "Waiting for Redis to become available" :retries-left left)
+                           (Thread/sleep 1000)
+                           (recur (dec left)))))))
+               (do (log/info :msg "Using RocksDB" :rocks-path vicc-expr-db-name)
+                   (use-rocks))))
   :stop (case (:type cache-db)
           :redis (log/info :msg "No close implemented for redis client")
           :rocksdb (rocksdb/close (:db cache-db))
+          :rocksdb-http (log/info :msg "No close implemented for rocksdb http")
           (throw (ex-info (str "Unknown cache-db type: " (:type cache-db))
                           {:cache-db cache-db}))))
 
@@ -184,7 +245,12 @@
                                  (expression-key-serializer
                                   variation-expression
                                   expression-type)
-                                 value)))
+                                 value)
+    :rocksdb-http (with-retries 12 5000
+                    #(rocks-registry/set-key-remote (-> cache-db :db :uri)
+                                                    [variation-expression
+                                                     expression-type]
+                                                    value))))
 
 (defn get-from-cache
   "Returns nil if no cache entry matches the arguments"
@@ -199,6 +265,10 @@
                                      variation-expression
                                      expression-type))
                  (#(when (not= :genegraph.rocksdb/miss %) %)))
+    :rocksdb-http (with-retries 12 5000
+                    #(rocks-registry/get-key-remote (-> cache-db :db :uri)
+                                                    [variation-expression
+                                                     expression-type]))
     (throw (ex-info (str "Unknown cache-db type: " (:type cache-db))
                     {:cache-db cache-db}))))
 
@@ -209,7 +279,7 @@
   ([variation-expression]
    (vrs-variation-for-expression variation-expression nil))
   ([variation-expression ^Keyword expression-type]
-   (log/debug :fn :vrs-allele-for-variation :variation-expression variation-expression :expr-type expression-type)
+   (log/info :fn :vrs-allele-for-variation :variation-expression variation-expression :expr-type expression-type)
    (let [cached-value (get-from-cache variation-expression expression-type)]
      (when ((comp not not) cached-value)
        (log/debug :fn :vrs-variation-for-expression
@@ -221,7 +291,12 @@
      (if cached-value
        cached-value
        (doto (case expression-type
-               :cnv (normalize-absolute-copy-number variation-expression)
+               :cnv (case (:copy-number-type variation-expression)
+                      :absolute (normalize-absolute-copy-number variation-expression)
+                      :relative (normalize-relative-copy-number variation-expression)
+                      (throw (ex-info (format "Invalid :copy-number-type %s"
+                                              (:copy-number-type variation-expression))
+                                      {:variation-expression variation-expression})))
                :spdi (normalize-canonical variation-expression :spdi)
                :hgvs (normalize-canonical variation-expression :hgvs)
                (normalize-canonical variation-expression :hgvs))

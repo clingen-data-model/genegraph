@@ -11,12 +11,12 @@
             [genegraph.database.util :refer [tx write-tx]]
             [genegraph.server]
             [genegraph.sink.event :as event]
+            [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.clinical-assertion :as ca]
             [genegraph.transform.clinvar.common
              :as common
              :refer [map-compact-namespaced-values
-                     map-rdf-resource-values-to-str
-                     map-unnamespace-values]]
+                     map-rdf-resource-values-to-str map-unnamespace-values]]
             [genegraph.transform.clinvar.core :refer [add-parsed-value]]
             [genegraph.transform.clinvar.iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :as util]
@@ -25,7 +25,8 @@
             [genegraph.transform.types :as xform-types]
             [genegraph.util.fs :refer [gzip-file-reader]]
             [io.pedestal.log :as log]
-            [mount.core :as mount]))
+            [mount.core :as mount]
+            [genegraph.rocksdb :as rocksdb]))
 
 (def stop-removing-unused [#'write-tx #'tx #'pprint #'util/parse-nested-content])
 
@@ -34,7 +35,11 @@
    #'genegraph.database.instance/db
    #'genegraph.database.property-store/property-store
    #'genegraph.transform.clinvar.cancervariants/cache-db
-   #'genegraph.sink.event-recorder/event-database))
+   #'genegraph.transform.clinvar.variation/variation-data-db
+   #'genegraph.sink.event-recorder/event-database
+
+   #'rocks-registry/db
+   #'rocks-registry/server))
 
 (defn eventify [input-map]
   ;; Mostly replicating
@@ -112,15 +117,16 @@
       ann/add-metadata
       ; needed for add-to-db! to work
       ann/add-action
-      ((fn [e] (try
-                 (xform-types/add-data e)
-                 (catch Exception ex
-                   (log/error :fn :message-process!
-                              :msg "Exception adding data to event"
-                              :event e
-                              :exception ex)
-                   e))))
-      ((fn [e] (if (:genegraph.annotate/data e) (xform-types/add-model e) e)))
+      #_((fn [e] (try
+                   (xform-types/add-data e)
+                   (catch Exception ex
+                     (log/error :fn :message-process!
+                                :msg "Exception adding data to event"
+                                :event e
+                                :exception ex)
+                     e))))
+      #_((fn [e] (if (:genegraph.annotate/data e) (xform-types/add-model e) e)))
+      ((fn [e] (xform-types/add-model e)))
       ((fn [e] (if (:genegraph.database.query/model e) (event/add-to-db! e) e)))))
 
 (defn message-proccess-no-db!
@@ -428,8 +434,21 @@
       (print-stack-trace e))))
 
 
+(defn snapshot-variation-db []
+  (let [db genegraph.transform.clinvar.variation/variation-data-db
+        out-fname "variation-data-db-snapshot.ndjson"]
+    (with-open [writer (io/writer (io/file out-fname))]
+      (doseq [[entry-k entry-v] (rocksdb/entire-db-entry-seq db)]
+
+        (let [data (:genegraph.annotate/data entry-v)]
+          (.write writer (json/generate-string data))
+          (.write writer "\n"))))))
+
 (comment
   (start-states!)
+
+  (process-topic-file "test-inputs/relative-cnv/cvraw-kinda-long-dup1.txt")
+
   (process-topic-file "cg-vcep-2019-07-01/variation.txt")
   (process-topic-file "cg-vcep-2019-07-01/trait.txt")
   (process-topic-file "cg-vcep-2019-07-01/trait_set.txt")
@@ -439,7 +458,11 @@
 
   #_(process-topic-file "cg-vcep-inputs/variation.txt")
   #_(process-topic-file "variation-inputs-556853.txt")
-  (snapshot-latest-variations))
+  ;; snapshot with Jena
+  (snapshot-latest-variations)
+
+  ;; snapshot with the variation add-data snapshot rocksdb
+  (snapshot-variation-db))
 
 
 (comment

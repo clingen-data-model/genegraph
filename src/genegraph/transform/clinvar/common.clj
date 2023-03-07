@@ -525,7 +525,8 @@ LIMIT 1")
                    (throw e))
                  (log/info :fn :with-retries
                            :msg (format "body-fn failed, trying again in %s ms"
-                                        retry-interval-ms))
+                                        retry-interval-ms)
+                           :e e)
                  (Thread/sleep retry-interval-ms)))]
       (if ran?
         ret

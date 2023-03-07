@@ -16,6 +16,17 @@
                                                      :sha "8c3cd69"}}
    :ns-default build}
 
+
+  :main-dev
+  {:main-opts ["-e" "(require 'genegraph.main)"
+               "-m" "nrepl.cmdline"
+               "--middleware" "[cider.nrepl/cider-middleware]"]}
+
+  :with-foreign
+  {:jvm-opts ["--add-modules" "jdk.incubator.foreign"
+              "--enable-native-access=ALL-UNNAMED"
+              "-Dclojure.main.report=stderr"]}
+
   :eastwood                             ; clj -M:eastwood
   {:extra-deps {jonase/eastwood                     {:mvn/version "1.2.3"}}
    :extra-paths ["test"]
