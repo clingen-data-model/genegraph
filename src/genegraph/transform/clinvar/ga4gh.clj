@@ -26,7 +26,8 @@
             [genegraph.util.fs :refer [gzip-file-reader]]
             [io.pedestal.log :as log]
             [mount.core :as mount]
-            [genegraph.rocksdb :as rocksdb]))
+            [genegraph.rocksdb :as rocksdb]
+            [genegraph.source.graphql.clinvar.aggregate_assertion :as cv-aggregate-assertion]))
 
 (def stop-removing-unused [#'write-tx #'tx #'pprint #'util/parse-nested-content])
 
@@ -444,10 +445,18 @@
           (.write writer (json/generate-string data))
           (.write writer "\n"))))))
 
+(defn slashjoin [& args]
+  (reduce (fn [agg val]
+            (str agg "/" val))
+          args))
+
+(defn cv-transform-test-fname [& relative-path-segs]
+  (str "test/genegraph/transform/clinvar/test-inputs/" (apply slashjoin relative-path-segs)))
+
 (comment
   (start-states!)
 
-  (process-topic-file "test-inputs/relative-cnv/cvraw-kinda-long-dup1.txt")
+  (process-topic-file (cv-transform-test-fname "relative-cnv/cvraw-kinda-long-dup1.txt"))
 
   (process-topic-file "cg-vcep-2019-07-01/variation.txt")
   (process-topic-file "cg-vcep-2019-07-01/trait.txt")
@@ -464,6 +473,16 @@
   ;; snapshot with the variation add-data snapshot rocksdb
   (snapshot-variation-db))
 
+
+(comment
+  "Testing delete operation"
+  (start-states!)
+  (rocksdb/rocks-destroy-state! #'genegraph.transform.clinvar.variation/variation-data-db)
+  (process-topic-file (cv-transform-test-fname "one-variation-create-update-delete"
+                                               "clinvar-raw-variation-36823-deleted.txt"))
+  ;; last event in that file is a delete of the same id in prior events, so no data should remain
+  (let [db genegraph.transform.clinvar.variation/variation-data-db]
+    (assert (= 0 (count (take 100 (rocksdb/entire-db-entry-seq db)))))))
 
 (comment
   (-> "statements.txt"

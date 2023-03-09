@@ -2,6 +2,7 @@
   (:require [cheshire.core :as json]
             [clj-http.client :as http-client]
             [clojure.core.async :as async]
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [com.climate.claypoole :as cp]
@@ -313,7 +314,9 @@
 
 
 (comment
-  (def test-db (rocksdb/open "variation-snapshot-fromcontainer.db"))
+  #_(def test-db (rocksdb/open "variation-snapshot-fromcontainer.db"))
+  (def test-db (rocksdb/open "variation-snapshot-fromcontainer-relcnv.db"))
+
   ;; 1668487
   (reduce (fn [agg val]
             (+ 1 agg))
@@ -334,28 +337,48 @@
                                 (update current-counters
                                         core-variation-type
                                         #(+ 1 (or % 0)))))))
-          (count-abs-cnv [counters abs-cnv-variation]
-            (let [{variation-type :type} abs-cnv-variation]
+          (count-non-canonical [counters variation]
+            (let [{variation-type :type} variation]
               (swap! counters (fn [current-counters]
                                 (update current-counters
                                         variation-type
                                         #(+ 1 (or % 0)))))))]
-    (doseq [{descriptor :genegraph.annotate/data}
-            (->> (rocksdb/entire-db-seq test-db)
-                 #_(take 10000))]
-      (with-open [variation-writer (io/writer "variation.txt" :append true)
-                  error-writer (io/writer "variation-errors.txt" :append true)]
+    (with-open [variation-writer (io/writer "variation.txt")
+                error-writer (io/writer "variation-errors.txt")]
+      (doseq [[idx {descriptor :genegraph.annotate/data}]
+              (map-indexed vector
+                           (->> (rocksdb/entire-db-seq test-db)
+                                #_(take 10000)))]
         (let [{canonical-variation :canonical_variation} descriptor]
           (case (:type canonical-variation)
             "CanonicalVariation" (count-canonical-variations counters canonical-variation)
-            "AbsoluteCopyNumber" (count-abs-cnv counters canonical-variation)
-            (do (log/error :msg "nil variation type"
-                           :descriptor descriptor)
-                (.write error-writer (str/trim (prn-str descriptor)))
-                (.write error-writer "\n")
-                (swap! counters (fn [counters] (update counters nil #(+ 1 (or % 0)))))))
+            nil (do (log/error :msg "nil variation type"
+                               :descriptor descriptor)
+                    (.write error-writer (str/trim (prn-str descriptor)))
+                    (.write error-writer "\n")
+                    (count-non-canonical counters {:type nil})
+                    #_(swap! counters (fn [counters] (update counters nil #(+ 1 (or % 0))))))
+            (count-non-canonical counters canonical-variation))
           (.write variation-writer (str/trim (prn-str descriptor)))
-          (.write variation-writer "\n"))))
+          (.write variation-writer "\n"))
+        (when (= 0 (rem idx 1000))
+          (log/info :counters @counters))))
     (log/info :counters @counters))
-
   ())
+
+(comment
+  "Grab the clinvar variation ids from a file of newline-delimited edn"
+  (with-open [input-rdr (io/reader (io/file "text.txt"))
+              id-writer (io/writer (io/file "text-ids.txt"))]
+    (doseq [line (line-seq input-rdr)]
+      (let [descriptor (edn/read-string line)
+            canvar (:canonical_variation descriptor)
+            cancontext (:canonical_context canvar)
+            vrs-variation-id (:id cancontext)
+            clinvar-variation-iri (->> (:extensions descriptor)
+                                       (filter (fn [ext] (= "clinvar_variation" (:name ext))))
+                                       first
+                                       :value)]
+        (.write id-writer (str clinvar-variation-iri " " vrs-variation-id))
+        (.write id-writer "\n")))
+    (println "done")))
