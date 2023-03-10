@@ -7,6 +7,7 @@
                                                         local-property-names
                                                         prefix-ns-map]]
             [genegraph.database.query :as q]
+            [genegraph.sink.document-store :as docstore]
             [genegraph.rocksdb :as rocksdb]
             [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.transform.clinvar.common :as common]
@@ -15,8 +16,9 @@
             [genegraph.transform.jsonld.common :as jsonld]
             [genegraph.util :refer [coll-subtract]]
             [io.pedestal.log :as log]
-            [mount.core :as mount]
-            [taoensso.nippy :as nippy]))
+            [mount.core :as mount :refer [defstate]]
+            [taoensso.nippy :as nippy]
+            [clojure.set :as set]))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
 (def variation-frame
@@ -469,6 +471,15 @@
   :start (rocksdb/open "variation-snapshot.db")
   :stop (rocksdb/close variation-data-db))
 
+(defn get-vrs-variation
+  "For a variation of the form \"40347\", return the variation from RocksDB"
+  [variation-id release-date]
+  (let [vrd-unversioned (str (ns-cg "VariationDescriptor_") variation-id)
+        vd-iri (str vrd-unversioned "." release-date)
+        variation-event (docstore/get-document variation-data-db vd-iri)
+        variation-doc (:genegraph.annotate/data variation-event)]
+    (get-in variation-doc [:canonical_variation :id])))
+
 (defn store-data [event]
   (when (contains? (mount/running-states) (str #'variation-data-db))
     (let [k (:genegraph.annotate/data-id event)
@@ -551,8 +562,9 @@
                                                  :label (:label %)})
                                          (::canonical-candidate-expressions event))}
                                    {:expand-seqs? false}))))
-        (assoc :genegraph.annotate/iri vd-iri
-               :genegraph.annotate/data-id vrd-unversioned
+        (assoc :genegraph.annotate/data-db variation-data-db
+               :genegraph.annotate/iri vd-iri
+               :genegraph.annotate/data-id vd-iri
                :genegraph.annotate/data-annotations {:release_date (:release_date message)})
         ((fn [event]
            (let [data (:genegraph.annotate/data event)]
@@ -773,8 +785,8 @@
   (when variation-resource
     {:id (str variation-resource)
      :type (q/ld1-> variation-resource [:rdf/type])
-     :canonical_context (-> (q/ld1-> variation-resource [:vrs/canonical-context])
-                            canonical-context-resource-for-output)}))
+     :canonical_context (some-> (q/ld1-> variation-resource [:vrs/canonical-context])
+                                canonical-context-resource-for-output)}))
 
 (defn variation-resource-for-output
   [variation-resource]

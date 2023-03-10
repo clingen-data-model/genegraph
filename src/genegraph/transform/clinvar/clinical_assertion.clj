@@ -6,10 +6,14 @@
                                               local-property-names
                                               prefix-ns-map]]
             [genegraph.database.query :as q]
+            [genegraph.sink.document-store :as docstore]
+            [genegraph.rocksdb :as rocks]
             [genegraph.transform.clinvar.common :as common]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :refer [in?]]
-            [io.pedestal.log :as log])
+            [genegraph.transform.clinvar.variation :as variation]
+            [io.pedestal.log :as log]
+            [mount.core :as mount :refer [defstate]])
   (:import (genegraph.database.query.types RDFResource)))
 
 (declare statement-context)
@@ -106,6 +110,10 @@
            :genegraph.annotate/data-contextualized
            (merge data statement-context))))
 
+(defstate trait-data-db
+  :start (rocks/open "trait-snapshot.db")
+  :stop (rocks/close trait-data-db))
+
 (defn add-data-for-trait [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         trait (:content message)
@@ -113,18 +121,20 @@
         tid (str (ns-cg "trait") "_" (:id trait) "." (:release_date message))]
     (-> event
         (assoc
-         :genegraph.annotate/data
-         {:id tid
-          :type (case (:type trait)
-                  "Disease" "Disease"
-                  "Phenotype")
-          :medgen_id (:medgen_id trait)
-          :clinvar_trait_id (:id trait)
-          :release_date (:release_date message)
-          :record_metadata {:type "RecordMetadata"
-                            :version (:release_date message)
-                            :is_version_of unversioned}})
-        (assoc :genegraph.annotate/iri tid)
+          :genegraph.annotate/data-db trait-data-db
+          :genegraph.annotate/data-id tid
+          :genegraph.annotate/data
+          {:id tid
+           :type (case (:type trait)
+                   "Disease" "Disease"
+                   "Phenotype")
+           :medgen_id (:medgen_id trait)
+           :clinvar_trait_id (:id trait)
+           :release_date (:release_date message)
+           :record_metadata {:type "RecordMetadata"
+                             :version (:release_date message)
+                             :is_version_of unversioned}}
+          :genegraph.annotate/iri tid)
         add-contextualized)))
 
 (defn trait-id-to-medgen-id
@@ -156,6 +166,10 @@
         (merge (select-keys condition [:clinvar_trait_set_id])))
     condition))
 
+(defstate trait-set-data-db
+  :start (rocks/open "trait-set-snapshot.db")
+  :stop (rocks/close trait-set-data-db))
+
 (defn add-data-for-trait-set [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         trait-set (:content message)
@@ -176,6 +190,8 @@
                                trait-ids))})]
     (-> (assoc
          event
+         :genegraph.annotate/data-db trait-set-data-db
+         :genegraph.annotate/data-id (:id data)
          :genegraph.annotate/data
          data
          :genegraph.annotate/iri
@@ -442,7 +458,9 @@
         :date (:interpretation_date_last_evaluated assertion)
         :activity {:type "Coding"
                    :id (ns-cg "Approver")
-                   :label "Approver"}})
+                   ;; commenting label as part rocks db based snapshots
+                   ;;:label "Approver"
+                   }})
       (:date_last_updated assertion)
       (conj
        ;; Submitter
@@ -451,7 +469,9 @@
         :date (:date_last_updated assertion)
         :activity {:type "Coding"
                    :id (ns-cg "Submitter")
-                   :label "Submitter"}}))))
+                   ;; commenting label as part rocks db based snapshots
+                   ;;:label "Submitter"
+                   }}))))
 
 
 (defn contribution-resource-for-output
@@ -592,6 +612,10 @@
      :extensions (->> (q/ld-> assertion-resource [:vrs/extensions])
                       (map extension-resource-for-output))}))
 
+(defstate clinical-assertion-data-db
+  :start (rocks/open "clinical-assertion-snapshot.db")
+  :stop (rocks/close clinical-assertion-data-db))
+
 (defn add-data-for-clinical-assertion [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
@@ -628,9 +652,70 @@
           :classification (classification assertion)
           :target_proposition (proposition event)}
          :genegraph.annotate/iri
-         (str (ns-cg "clinical_assertion_") (:id assertion) "." (:release_date message)))
+         (str (ns-cg "clinical_assertion_") (:id assertion) "." (:release_date message))
+         :genegraph.annotate/data-db clinical-assertion-data-db
+         :genegraph.annotate/data-id id)
         add-contextualized)))
 
+(defn traits-for-output
+  [traits release-date]
+  (reduce (fn [vec unversioned-trait-iri]
+            (let [versioned-trait-iri (str unversioned-trait-iri "." release-date)
+                  trait-event (docstore/get-document trait-data-db versioned-trait-iri)
+                  trait (:genegraph.annotate/data trait-event)]
+              (conj vec {:id (str "medgen:" (:medgen_id trait))
+                         :type (:type trait)})))
+          []
+          traits))
+
+(defn trait-set-for-output [unversioned-trait-set-iri release-date]
+  (let [versioned-trait-set-iri (str unversioned-trait-set-iri "." release-date)
+        trait-set-event (docstore/get-document trait-set-data-db versioned-trait-set-iri)
+        trait-set (:genegraph.annotate/data trait-set-event)]
+    {;; :id (:id trait-set)
+     :type (:type trait-set)
+     :members (traits-for-output (:members trait-set) release-date)}))
+
+(defn clinical-assertion-for-output [event]
+  (let [message (:genegraph.transform.clinvar.core/parsed-value event)
+        assertion (:content message)
+        vof (str (ns-cg "SCV_Statement_") (:id assertion))
+        release-date (:release_date message)
+        id (str vof "." release-date)
+        stmt-type (statement-type (:interpretation_description assertion))]
+    (assoc
+     event
+     :genegraph.annotate/data
+     {:id id
+      :type stmt-type
+      ;; :label (:title assertion)
+      :description (description event)
+      :specified_by (method event)
+      :contributions (contributions event)
+      :record_metadata {:type "RecordMetadata"
+                        :is_version_of vof
+                        :version (:release_date message)}
+      :direction (-> (:interpretation_description assertion)
+                     normalize-clinsig-term
+                     clinsig->direction)
+      :subject_descriptor (get assertion :variation_id)
+      :extensions (let [local-key (get assertion :local_key)]
+                    (log/debug :fn :add-data-for-clinical-assertion
+                               :local-key local-key
+                               :assertion assertion)
+                    (common/fields-to-extension-maps
+                     (select-keys assertion [:local_key])))
+      :classification (classification assertion)
+      :target_proposition (let [proposition (proposition event)
+                                subject (:subject proposition)
+                                vrs-id (variation/get-vrs-variation subject release-date)
+                                object (:object proposition)
+                                trait-set (trait-set-for-output object release-date)]
+                            (assoc proposition
+                                   :subject vrs-id
+                                   :object trait-set))}
+     :genegraph.annotate/iri (str (ns-cg "clinical_assertion_") (:id assertion) "." (:release_date message))
+     )))
 
 (def statement-context
   {"@context"
@@ -756,3 +841,47 @@
     "cgterms" {"@id" (get prefix-ns-map "cgterms")
                "@prefix" true}
     "@vocab" (get prefix-ns-map "cgterms")}})
+
+(comment
+ (require '[genegraph.transform.clinvar.ga4gh :as ga4gh])
+ (require '[genegraph.transform.clinvar.core :as core])
+ (require '[genegraph.transform.clinvar.variation :as variation])
+ (require '[genegraph.transform.types :as xform-types])
+ (ga4gh/start-states!)
+ (def assertion "{
+    \"release_date\": \"2019-07-01\",
+    \"event_type\": \"create\",
+    \"content\": {
+                \"variation_id\": \"40347\",
+                \"entity_type\": \"clinical_assertion\",
+                \"variation_archive_id\": \"VCV000040347\",
+                \"submitter_id\": \"26957\",
+                \"date_last_updated\": \"2019-05-09\",
+                \"interpretation_comments\": [\"{\\\"text\\\":\\\"The L245F variant has been published previously in association with Noonan spectrum disorders, including as an apparently de novo occurrence (Koudova et al., 2009; Sarkozy et al., 2009). It has also been confirmed to occur de novo in an individual sent to GeneDx for testing. The variant is not observed in large population cohorts (Lek et al., 2016). In-silico analyses, including protein predictors and evolutionary conservation, support a deleterious effect. A different nucleotide change leading to the same missense variant (c.735 A>T) as well as missense variants in nearby residues (T241P/R/M, T244P, A246P) have been reported in the Human Gene Mutation Database in association with cardio-facio-cutaneous syndrome (Stenson et al., 2014), supporting the functional importance of this region of the protein. In summary, we consider the variant to be pathogenic.\\\",\\\"type\\\":\\\"public\\\"}\"],
+                \"interpretation_description\": \"Pathogenic\",
+                \"trait_set_id\": \"9460\",
+                \"internal_id\": \"95781\",
+                \"content\": \"{\\\"AttributeSet\\\":{\\\"Attribute\\\":{\\\"$\\\":\\\"GeneDx Variant Classification (06012015)\\\",\\\"@Type\\\":\\\"AssertionMethod\\\"},\\\"Citation\\\":{\\\"URL\\\":{\\\"$\\\":\\\"https://submit.ncbi.nlm.nih.gov/ft/byid/7oynscmk/mdi-5616_26957_genedx_interprules_final_061215.pdf\\\"}}}}\",
+                \"clingen_version\": 0,
+                \"submitted_assembly\": \"GRCh37\",
+                \"submission_id\": \"26957.2019-01-29\",
+                \"local_key\": \"GDX:6934|Not Provided\",
+                \"clinical_assertion_observation_ids\": [\"SCV000057188.0\"],
+                \"assertion_type\": \"variation to disease\",
+                \"rcv_accession_id\": \"RCV000033283\",
+                \"clinical_assertion_trait_set_id\": \"SCV000057188\",
+                \"id\": \"SCV000057188\",
+                \"submission_names\": [\"SUB5098196\"],
+                \"record_status\": \"current\",
+                \"date_created\": \"2013-03-18\",
+                \"review_status\": \"criteria provided, single submitter\",
+                \"interpretation_date_last_evaluated\": \"2018-07-03\",
+                \"version\": \"16\"
+                }
+    }")
+ (def event (-> assertion
+                (json/parse-string true)
+                ga4gh/eventify
+                core/add-parsed-value
+                )))
+

@@ -11,6 +11,7 @@
             [genegraph.database.util :refer [tx write-tx]]
             [genegraph.server]
             [genegraph.sink.event :as event]
+            [genegraph.sink.document-store :as docstore]
             [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.clinical-assertion :as ca]
             [genegraph.transform.clinvar.common
@@ -37,7 +38,11 @@
    #'genegraph.transform.clinvar.cancervariants/cache-db
    #'genegraph.transform.clinvar.variation/variation-data-db
    #'genegraph.sink.event-recorder/event-database
-
+   #'genegraph.sink.document-store/db
+   #'genegraph.transform.clinvar.variation/variation-data-db
+   #'genegraph.transform.clinvar.clinical-assertion/trait-data-db
+   #'genegraph.transform.clinvar.clinical-assertion/trait-set-data-db
+   #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db
    #'rocks-registry/db
    #'rocks-registry/server))
 
@@ -109,6 +114,13 @@
                                (json/generate-string)))
             (.write writer "\n"))))))
 
+(defn add-to-db! [event]
+  (if (:genegraph.database.query/model event)
+    (do
+      (event/add-to-db! event)
+      (docstore/store-event event))
+    event))
+
 (defn message-proccess!
   "Takes a message value map. The :value of a KafkaRecord, parsed as json"
   [message]
@@ -127,8 +139,7 @@
                      e))))
       #_((fn [e] (if (:genegraph.annotate/data e) (xform-types/add-model e) e)))
       ((fn [e] (xform-types/add-model e)))
-      ((fn [e] (log/info :data (:genegraph.annotate/data e)) e))
-      ((fn [e] (if (:genegraph.database.query/model e) (event/add-to-db! e) e)))))
+      ((fn [e] (if (:genegraph.database.query/model e) (add-to-db! e) e)))))
 
 (defn message-proccess-no-db!
   "Takes a message value map. The :value of a KafkaRecord, parsed as json"
@@ -151,7 +162,9 @@
 (defn message-process-add-to-db!
   [event]
   (-> event
-      ((fn [e] (if (:genegraph.database.query/model e) (event/add-to-db! e) e)))))
+      ((fn [e] (if (:genegraph.database.query/model e)
+                 (add-to-db! e)
+                 e)))))
 
 (defn clinvar-add-iri [event]
   ;; TODO doesn't work for types without ids
@@ -177,11 +190,6 @@
 (defn add-model [event]
   (if (:genegraph.annotate/data event)
     (xform-types/add-model event)
-    event))
-
-(defn add-to-db! [event]
-  (if (:genegraph.database.query/model event)
-    (event/add-to-db! event)
     event))
 
 (defn add-jsonld [event]
@@ -320,14 +328,67 @@
     (catch Exception e
       (print-stack-trace e))))
 
+
+(defn snapshot-latest-rocks-statements-of-type
+  [type-kw]
+  (try
+    ;; TODO look at group by for this.
+    ;; Just want each iri for latest release_date for each is-version-of
+    (tx
+     (let [unversioned-resources
+           (q/select (str/join " " ["select distinct ?vof where { "
+                                    "?i a ?type . "
+                                    "?i :vrs/record-metadata ?rmd . "
+                                    "?rmd :dc/is-version-of ?vof . "
+                                    #_"?i :vrs/extensions ?ext . "
+                                    #_"?ext :vrs/name \"local_key\" . "
+                                    " } "])
+                     {:type type-kw})
+           latest-versioned-resources
+           (map (fn [vof]
+                  (let [rs (q/select (str "select ?i where { "
+                                          "?i a ?type . "
+                                          "?i :vrs/record-metadata ?rmd . "
+                                          "?rmd :dc/is-version-of ?vof . "
+                                          "?rmd :owl/version-info ?release_date . } "
+                                          "order by desc(?release_date) "
+                                          "limit 1")
+                                     {:type type-kw
+                                      :vof vof})]
+                    (if (< 1 (count rs))
+                      (log/error :msg "More than 1 statement returned"
+                                 :vof vof :rs rs)
+                      (first rs))))
+                unversioned-resources)]
+       latest-versioned-resources))
+    (catch Exception e
+      (print-stack-trace e))))
+
+
+(defn write-latest-statement-snapshots [type-kw]
+  (let [type-name (name type-kw)
+        output-filename (format "statements-%s.txt" type-name)]
+    (try
+      (with-open [writer (io/writer output-filename)]
+        (doall
+         (map (fn [statement-resource]
+                (let [statement-iri (str statement-resource)
+                      event (docstore/get-document ca/clinical-assertion-data-db statement-iri)
+                      output (ca/clinical-assertion-for-output event)]
+                  (.write writer (json/generate-string (:genegraph.annotate/data output)))
+                  (.write writer "\n")))
+              (snapshot-latest-rocks-statements-of-type type-kw))))
+      (catch Exception e
+        (print-stack-trace e)))))
+
 (defn snapshot-latest-statements-of-type-parallel
   [type-kw]
   (try
     (let [type-name (name type-kw)
           output-filename (format "statements-%s.txt" type-name)]
       (with-open [writer (io/writer output-filename)]
-      ;; TODO look at group by for this.
-      ;; Just want each iri for latest release_date for each is-version-of
+        ;; TODO look at group by for this.
+        ;; Just want each iri for latest release_date for each is-version-of
         (tx
          (let [unversioned-resources
                (q/select (str "select distinct ?vof where { "
@@ -488,8 +549,12 @@
   (process-topic-file "cg-vcep-2019-07-01/trait.txt")
   (process-topic-file "cg-vcep-2019-07-01/trait_set.txt")
 
-  (process-topic-file "cg-vcep-2019-07-01/clinical_assertion-10.txt")
-  #_(process-topic-file "one-scv.txt")
+  (process-topic-file "data/cg-vcep-2019-07-01/one_variant.txt")
+  (process-topic-file "data/cg-vcep-2019-07-01/variation.txt")
+  (process-topic-file "data/cg-vcep-2019-07-01/trait.txt")
+  (process-topic-file "data/cg-vcep-2019-07-01/trait_set.txt")
+  (process-topic-file "data/cg-vcep-2019-07-01/clinical_assertion.txt")
+  (process-topic-file "data/cg-vcep-2019-07-01/one-scv.txt")
 
   #_(process-topic-file "cg-vcep-inputs/variation.txt")
   #_(process-topic-file "variation-inputs-556853.txt")
@@ -497,7 +562,12 @@
   (snapshot-latest-variations)
 
   ;; snapshot with the variation add-data snapshot rocksdb
-  (snapshot-variation-db))
+  (snapshot-variation-db)
+  (snapshot-latest-variations)
+  (snapshot-latest-statements)
+
+  (snapshot-latest-rocks-statements-of-type :vrs/VariationGermlinePathogenicityStatement)
+  (write-latest-statement-snapshots :vrs/VariationGermlinePathogenicityStatement))
 
 
 (comment

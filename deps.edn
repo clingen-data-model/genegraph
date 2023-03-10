@@ -51,8 +51,8 @@
                 org.openjfx/javafx-controls         {:mvn/version "18"}
                 org.openjfx/javafx-fxml             {:mvn/version "18"}
                 org.openjfx/javafx-swing            {:mvn/version "18"}
-                org.openjfx/javafx-web              {:mvn/version "18"}}
-   :main-opts  ["-e" "((requiring-resolve,'cognitect.rebl/ui))" "-m" "nrepl.cmdline"]}
+                org.openjfx/javafx-web              {:mvn/version "18"}}}
+   ;; :main-opts  ["-e" "((requiring-resolve,'cognitect.rebl/ui))" "-m" "nrepl.cmdline"]}
 
   :repl
   {:extra-deps {reply/reply {:mvn/version "0.5.1"}}
