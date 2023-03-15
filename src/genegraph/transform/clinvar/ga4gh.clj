@@ -373,7 +373,9 @@
                 (let [statement-iri (str statement-resource)
                       event (docstore/get-document ca/clinical-assertion-data-db statement-iri)
                       output (ca/clinical-assertion-for-output event)]
-                  (.write writer (json/generate-string (:genegraph.annotate/output output)))
+                  (.write writer (json/generate-string (-> output
+                                                           :genegraph.annotate/output
+                                                           common/map-remove-nil-values)))
                   (.write writer "\n")))
               (snapshot-latest-rocks-data-of-type type-kw))))
       (catch Exception e
@@ -389,7 +391,9 @@
               (let [variation-iri (str variation-resource)
                     event (docstore/get-document variation/variation-data-db variation-iri)
                     output (variation/variation-descriptor-for-output event)]
-                (.write writer (json/generate-string (:genegraph.annotate/output output)))
+                (.write writer (json/generate-string (->  output
+                                                          :genegraph.annotate/output
+                                                          common/map-remove-nil-values)))
                 (.write writer "\n")))
             (snapshot-latest-rocks-data-of-type :vrs/CanonicalVariationDescriptor))))))
 
