@@ -834,6 +834,9 @@
     ;; "_id" {"@id" "@id"
     ;;        "@type" "@id"}
 
+    ;; custom properties
+    "deleted" {"@id" (str (get prefix-ns-map "cgterms") "deleted")}
+
     ;; eliminate vrs prefixes on vrs variation terms
     ;; VRS properties
     "variation" {"@id" (str (get prefix-ns-map "vrs") "variation")}
@@ -862,6 +865,7 @@
     "species_id" {"@id" (str (get prefix-ns-map "vrs") "species_id")}
     "chr" {"@id" (str (get prefix-ns-map "vrs") "chr")}
     "relative_copy_class" {"@id" (str (get prefix-ns-map "vrs") "relative_copy_class")}
+
 
 
     ;; map plurals to known guaranteed array types
