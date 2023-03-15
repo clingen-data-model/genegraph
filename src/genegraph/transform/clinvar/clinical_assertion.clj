@@ -458,8 +458,7 @@
         :date (:interpretation_date_last_evaluated assertion)
         :activity {:type "Coding"
                    :id (ns-cg "Approver")
-                   ;; commenting label as part rocks db based snapshots
-                   ;;:label "Approver"
+                   :label "Approver"
                    }})
       (:date_last_updated assertion)
       (conj
@@ -469,9 +468,8 @@
         :date (:date_last_updated assertion)
         :activity {:type "Coding"
                    :id (ns-cg "Submitter")
-                   ;; commenting label as part rocks db based snapshots
-                   ;;:label "Submitter"
-                   }}))))
+                   :label "Submitter"
+                   }} ))))
 
 
 (defn contribution-resource-for-output
@@ -620,7 +618,8 @@
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
         vof (str (ns-cg "SCV_Statement_") (:id assertion))
-        id (str vof "." (:release_date message))
+        release-date (:release_date message)
+        id (str vof "." release-date)
         stmt-type (statement-type (:interpretation_description assertion))]
     (-> (assoc
          event
@@ -637,6 +636,7 @@
                          (select-keys assertion [:local_key])))
           :description (description event)
           :method (method event)
+          :specified_by (method event)
           :contributions (contributions event)
           :record_metadata {:type "RecordMetadata"
                             :is_version_of vof
@@ -650,9 +650,16 @@
                                         (get message :release_date)))
           ;;:object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
           :classification (classification assertion)
-          :target_proposition (proposition event)}
+          :target_proposition (let [proposition (proposition event)
+                                    subject (:subject proposition)
+                                    vrs-id (variation/get-vrs-variation subject release-date)
+                                    object (:object proposition)
+                                    trait-set (trait-set-for-output object release-date)]
+                                (assoc proposition
+                                       :subject vrs-id
+                                       :object trait-set))}
          :genegraph.annotate/iri
-         (str (ns-cg "clinical_assertion_") (:id assertion) "." (:release_date message))
+         (str (ns-cg "clinical_assertion_") (:id assertion) "." release-date)
          :genegraph.annotate/data-db clinical-assertion-data-db
          :genegraph.annotate/data-id id)
         add-contextualized)))
@@ -672,50 +679,27 @@
   (let [versioned-trait-set-iri (str unversioned-trait-set-iri "." release-date)
         trait-set-event (docstore/get-document trait-set-data-db versioned-trait-set-iri)
         trait-set (:genegraph.annotate/data trait-set-event)]
-    {;; :id (:id trait-set)
+    {:id (:id trait-set)
      :type (:type trait-set)
      :members (traits-for-output (:members trait-set) release-date)}))
 
 (defn clinical-assertion-for-output [event]
-  (let [message (:genegraph.transform.clinvar.core/parsed-value event)
-        assertion (:content message)
-        vof (str (ns-cg "SCV_Statement_") (:id assertion))
-        release-date (:release_date message)
-        id (str vof "." release-date)
-        stmt-type (statement-type (:interpretation_description assertion))]
-    (assoc
-     event
-     :genegraph.annotate/data
-     {:id id
-      :type stmt-type
-      ;; :label (:title assertion)
-      :description (description event)
-      :specified_by (method event)
-      :contributions (contributions event)
-      :record_metadata {:type "RecordMetadata"
-                        :is_version_of vof
-                        :version (:release_date message)}
-      :direction (-> (:interpretation_description assertion)
-                     normalize-clinsig-term
-                     clinsig->direction)
-      :subject_descriptor (get assertion :variation_id)
-      :extensions (let [local-key (get assertion :local_key)]
-                    (log/debug :fn :add-data-for-clinical-assertion
-                               :local-key local-key
-                               :assertion assertion)
-                    (common/fields-to-extension-maps
-                     (select-keys assertion [:local_key])))
-      :classification (classification assertion)
-      :target_proposition (let [proposition (proposition event)
-                                subject (:subject proposition)
-                                vrs-id (variation/get-vrs-variation subject release-date)
-                                object (:object proposition)
-                                trait-set (trait-set-for-output object release-date)]
-                            (assoc proposition
-                                   :subject vrs-id
-                                   :object trait-set))}
-     :genegraph.annotate/iri (str (ns-cg "clinical_assertion_") (:id assertion) "." (:release_date message))
-     )))
+  "Annotate event with data with data previously stored in rocksdb for outputting clinical assertions.
+   Event is the full event stored in rocks."
+  (let [data (:genegraph.annotate/data event)]
+    (assoc event :genegraph.annotate/output
+     {:id (:id data)
+      :type (:type data)
+      :label (:label data)
+      :description (:description data)
+      :specified_by (:specified_by data)
+      :contributions (:contributions data)
+      :record_metadata (:record_metadata data)
+      :direction (:direction data)
+      :subject_descriptor (:subject_descriptor data)
+      :extensions (:extensions data)
+      :classification (:classification data)
+      :target_proposition (:target_proposition data)})))
 
 (def statement-context
   {"@context"

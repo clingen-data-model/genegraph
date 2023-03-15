@@ -328,8 +328,7 @@
     (catch Exception e
       (print-stack-trace e))))
 
-
-(defn snapshot-latest-rocks-statements-of-type
+(defn snapshot-latest-rocks-data-of-type
   [type-kw]
   (try
     ;; TODO look at group by for this.
@@ -364,7 +363,6 @@
     (catch Exception e
       (print-stack-trace e))))
 
-
 (defn write-latest-statement-snapshots [type-kw]
   (let [type-name (name type-kw)
         output-filename (format "statements-%s.txt" type-name)]
@@ -375,11 +373,25 @@
                 (let [statement-iri (str statement-resource)
                       event (docstore/get-document ca/clinical-assertion-data-db statement-iri)
                       output (ca/clinical-assertion-for-output event)]
-                  (.write writer (json/generate-string (:genegraph.annotate/data output)))
+                  (.write writer (json/generate-string (:genegraph.annotate/output output)))
                   (.write writer "\n")))
-              (snapshot-latest-rocks-statements-of-type type-kw))))
+              (snapshot-latest-rocks-data-of-type type-kw))))
       (catch Exception e
         (print-stack-trace e)))))
+
+(defn write-latest-variation-snapshots
+  "Write variation descriptors from rocks db"
+  []
+  (try
+    (with-open [writer (io/writer "x-variation-descriptors.txt")]
+      (doall
+       (map (fn [variation-resource]
+              (let [variation-iri (str variation-resource)
+                    event (docstore/get-document variation/variation-data-db variation-iri)
+                    output (variation/variation-descriptor-for-output event)]
+                (.write writer (json/generate-string (:genegraph.annotate/output output)))
+                (.write writer "\n")))
+            (snapshot-latest-rocks-data-of-type :vrs/CanonicalVariationDescriptor))))))
 
 (defn snapshot-latest-statements-of-type-parallel
   [type-kw]
@@ -565,10 +577,12 @@
   (snapshot-variation-db)
   (snapshot-latest-variations)
   (snapshot-latest-statements)
-
   (snapshot-latest-rocks-statements-of-type :vrs/VariationGermlinePathogenicityStatement)
-  (write-latest-statement-snapshots :vrs/VariationGermlinePathogenicityStatement))
 
+  (write-latest-statement-snapshots :vrs/VariationGermlinePathogenicityStatement)
+  (write-latest-statement-snapshots :vrs/ClinVarDrugResponseStatement)
+  (write-latest-statement-snapshots :vrs/ClinVarOtherStatement)
+  (write-latest-variation-snapshots))
 
 (comment
   "Testing delete operation"

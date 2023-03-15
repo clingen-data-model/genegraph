@@ -472,7 +472,7 @@
   :stop (rocksdb/close variation-data-db))
 
 (defn get-vrs-variation
-  "For a variation of the form \"40347\", return the variation from RocksDB"
+  "For a variation of the form'40347', return the variation from RocksDB"
   [variation-id release-date]
   (let [vrd-unversioned (str (ns-cg "VariationDescriptor_") variation-id)
         vd-iri (str vrd-unversioned "." release-date)
@@ -822,6 +822,22 @@
    #_#_:record_metadata (-> (q/ld1-> descriptor-resource [:vrs/record-metadata])
                             record-metadata-resource-for-output)})
 
+(defn variation-descriptor-for-output
+  "Annotates event with data previously stored in rocksdb for outputting variation descriptors.
+  Event is the full event stored in rocks."
+  [event]
+  (let [data (:genegraph.annotate/data event)]
+    (assoc event :genegraph.annotate/output
+           {:id (:id data)
+            :type (:type data)
+            :label (:label data)
+            :extensions (:extensions data)
+            :description (:description data)
+            :xrefs (:xrefs data)
+            :alternate_labels nil
+            :members (:members data)
+            :subject_variation_descriptor nil
+            :canonical_variation (:canonical_variation data)})))
 
 (def variation-context
   {"@context"
