@@ -13,10 +13,10 @@
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.jsonld.common :as jsonld]
+            [genegraph.util :refer [coll-subtract]]
             [io.pedestal.log :as log]
             [mount.core :as mount]
-            [taoensso.nippy :as nippy]
-            [clojure.set :as set]))
+            [taoensso.nippy :as nippy]))
 
 (def clinvar-variation-type (ns-cg "ClinVarVariation"))
 (def variation-frame
@@ -371,10 +371,6 @@
         (log/debug :fn :add-vrs-model :vrs-id vrs-id :vrs-obj vrs-obj-pretty)
         {:iri vrs-id :variation vrs-obj-pretty}))))
 
-(defn unchunk
-  "Return a lazy seq over s that is not chunked."
-  [s]
-  (lazy-cat [(first s)] (unchunk (rest s))))
 
 (defn normalize-canonical-expression
   "Selects the canonical expression and returns it and the normalized form
@@ -398,6 +394,29 @@
 
             ;; Temporary fix for timing out dup exprs
             ;; https://github.com/clingen-data-model/genegraph/issues/698
+
+            ;; Remove variations that are deldup, not a CNV (previously set as a CNV if variant-length is at least 50bp),
+            ;; and don't have a variant length defined. Since variant-length is not defined we can't safely asume it
+            ;; is less than 50bp, we just don't know that it is more than 50bp (which would make it a CNV)
+
+            ;; Return falsy if the expr is hgvs and the variant-length is not present
+            ;; or is >= 50. Warn on >=50 because those should have been treated as CNV
+            is-disallowed-hgvs-deldup
+            (fn [{:keys [expr type location] :as expr-object}]
+              (and (= :hgvs type)
+                   (or (.contains expr "dup")
+                       (.contains expr "del"))
+                   (let [length (:variant-length location)]
+                     (or (nil? length)
+                         (when (<= 50 length)
+                           (log/warn :fn normalize-canonical-expression
+                                     :msg "HGVS expr >=50bp labeled as hgvs, not cnv"
+                                     :expr-object expr-object
+                                     :event-message (:genegraph.sink.event/value event))
+                           true)))))
+
+            ;; TODO: For deldup HGVS expressions that don't have a variant-length specified, we can try parsing
+            ;; the HGVS expression ourselves to determine the minimum span in the reference sequence
             ;; non-iscn-cnv-too-long? (fn [{:keys [expr type]}]
             ;;                          (and (string? expr)
             ;;                               (-> expr
@@ -405,25 +424,14 @@
             ;;                                   (#(do (log/info :parsed-hgvs %) %))
             ;;                                   hgvs/parsed-expression-span
             ;;                                   (#(> % 50)))))
-            ;; candidate-expressions (filter (comp not non-iscn-cnv-too-long?) candidate-expressions)
 
-
-            ;; Temporary fix for timing out dup exprs
-            ;; https://github.com/clingen-data-model/genegraph/issues/698
-            ;; Remove del/dup hgvs expressions which are on a variation labeled
-            ;; as being a copy number variation in ClinVar
-            non-cnv-deldup? (fn [{:keys [expr type]}]
-                              (and (string? expr)
-                                    ; above two imply not spdi or cnv, so dup/del hgvs
-                                   (or (.contains expr "dup")
-                                       (.contains expr "del"))
-                                   (not= :cnv type)))
-            candidate-expressions (filter (comp not non-cnv-deldup?) prefiltered-candidate-expressions)]
+            candidate-expressions (filterv #(not (is-disallowed-hgvs-deldup %))
+                                           prefiltered-candidate-expressions)]
         (when (not= candidate-expressions prefiltered-candidate-expressions)
           (log/warn :fn :normalize-canonical-expression
                     :msg "Removed some deldup candidate expressions"
-                    :removed (set/difference (set candidate-expressions)
-                                             (set prefiltered-candidate-expressions))))
+                    :removed (coll-subtract (set prefiltered-candidate-expressions)
+                                            (set candidate-expressions))))
         (log/debug :candidate-expressions candidate-expressions)
         ;; each vrs-ret[:variation] is the structure in the 'variation', 'canonical_variaton' (or equivalent)
         ;; field in the normalization service response body
@@ -465,9 +473,15 @@
   (when (contains? (mount/running-states) (str #'variation-data-db))
     (let [k (:genegraph.annotate/data-id event)
           v (select-keys event [:genegraph.annotate/data
-                                :genegraph.annotate/data-annotations])]
+                                :genegraph.annotate/data-annotations])
+          event-type (:genegraph.annotate/event-type event)]
       (when k
-        (rocksdb/rocks-put-raw-key! variation-data-db (nippy/fast-freeze k) v))
+        (cond
+          (#{:create :update} event-type) (rocksdb/rocks-put-raw-key! variation-data-db (nippy/fast-freeze k) v)
+          (#{:delete} event-type) (rocksdb/rocks-delete-raw-key! variation-data-db (nippy/fast-freeze k))
+          (nil? event-type) (do (log/warn :msg "Empty event-type, treating as create" :key k)
+                                (store-data (assoc event :genegraph.annotate/event-type :create)))
+          :else (log/warn :msg "Unknown event-type" :event-type event-type :key k)))
       event)))
 
 (defn add-data-for-variation
@@ -488,7 +502,8 @@
         vd-iri (str vrd-unversioned "." (:release_date message))
         clinvar-variation-iri (str iri/clinvar-variation (:id variation))
         ;; normalize-canonical-expression must be called after variation-preprocess
-        nce (normalize-canonical-expression event)]
+        nce (normalize-canonical-expression event)
+        deleted? (= "delete" (:event_type message))]
     #_(log/debug :fn :add-data-for-variation :nce nce)
     (when (empty? nce)
       (log/error :fn :add-data-for-variation
@@ -517,9 +532,11 @@
           :subject_variation_descriptor ()
           ;;  :value_id ()
           :canonical_variation (:normalized nce)
-          :record_metadata {:type "RecordMetadata"
-                            :is_version_of vrd-unversioned
-                            :version (:release_date message)}})
+          :record_metadata (merge {:type "RecordMetadata"
+                                   :is_version_of vrd-unversioned
+                                   :version (:release_date message)}
+                                  (when deleted?
+                                    {:deleted true}))})
         ;; Add some info about how the canonical variation expression was selected
         (update-in
          [:genegraph.annotate/data :extensions]
@@ -539,12 +556,17 @@
                :genegraph.annotate/data-annotations {:release_date (:release_date message)})
         ((fn [event]
            (let [data (:genegraph.annotate/data event)]
-             (assoc event :genegraph.annotate/data
-                    (walk/postwalk
-                     (fn [node]
-                       (cond (map? node) (dissoc node (keyword "@context"))
-                             :else node))
-                     data)))))
+             (-> event
+                 (assoc :genegraph.annotate/data
+                        (walk/postwalk (fn [node]
+                                         (cond (map? node) (dissoc node (keyword "@context"))
+                                               :else node))
+                                       data))
+                 (assoc :genegraph.annotate/event-type
+                        (cond (= "delete" (:event_type message)) :delete
+                              (= "create" (:event_type message)) :create
+                              (= "update" (:event_type message)) :create
+                              :else nil))))))
         store-data
         add-contextualized)))
 
@@ -812,6 +834,9 @@
     ;; "_id" {"@id" "@id"
     ;;        "@type" "@id"}
 
+    ;; custom properties
+    "deleted" {"@id" (str (get prefix-ns-map "cgterms") "deleted")}
+
     ;; eliminate vrs prefixes on vrs variation terms
     ;; VRS properties
     "variation" {"@id" (str (get prefix-ns-map "vrs") "variation")}
@@ -840,6 +865,7 @@
     "species_id" {"@id" (str (get prefix-ns-map "vrs") "species_id")}
     "chr" {"@id" (str (get prefix-ns-map "vrs") "chr")}
     "relative_copy_class" {"@id" (str (get prefix-ns-map "vrs") "relative_copy_class")}
+
 
 
     ;; map plurals to known guaranteed array types

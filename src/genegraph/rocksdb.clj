@@ -1,10 +1,16 @@
 (ns genegraph.rocksdb
-  (:require [genegraph.env :as env]
-            [taoensso.nippy :as nippy]
-            [clojure.java.io :as io]
-            [digest])
-  (:import (org.rocksdb Options ReadOptions RocksDB Slice)
-           java.util.Arrays))
+  (:require [clojure.java.io :as io]
+            [digest]
+            [genegraph.env :as env]
+            [io.pedestal.log :as log]
+            [mount.core :as mount]
+            [taoensso.nippy :as nippy])
+  (:import java.util.Arrays
+           (org.rocksdb
+            Options
+            ReadOptions
+            RocksDB
+            Slice)))
 
 (defn create-db-path [db-name]
   (str env/data-vol "/" db-name))
@@ -82,11 +88,23 @@
    If db-name is a RocksDB object, this closes it, destroys it, re-opens it"
   [db-name]
   (cond
-    (instance? org.rocksdb.RocksDB db-name) (let [name-str (.getName db-name)]
-                                              (.close db-name)
-                                              (rocks-destroy! name-str)
-                                              (open name-str))
-    :else (RocksDB/destroyDB (create-db-path db-name) (Options.))))
+    (string? db-name) (RocksDB/destroyDB (cond (.startsWith db-name "/") db-name
+                                               :else (create-db-path db-name))
+                                         (Options.))
+    :else (log/error :msg "db-name must be a string")))
+
+(defn rocks-destroy-state!
+  "Calls rocks-destroy! on a RocksDB mount/defstate var. If not started, starts it in order to get the
+   db path. If it was started when this fn was called, also starts it again before returning."
+  [rocksdb-state-var]
+  (let [was-running? ((mount/running-states) (str rocksdb-state-var))]
+    (when (not was-running?)
+      (mount/start rocksdb-state-var))
+    (let [db-name (.getName (var-get rocksdb-state-var))]
+      (mount/stop rocksdb-state-var)
+      (rocks-destroy! db-name))
+    (when was-running?
+      (mount/start rocksdb-state-var))))
 
 (defn rocks-get
   "Get and nippy/fast-thaw element with key k. Key may be any arbitrary Clojure datatype"

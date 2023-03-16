@@ -127,6 +127,7 @@
                      e))))
       #_((fn [e] (if (:genegraph.annotate/data e) (xform-types/add-model e) e)))
       ((fn [e] (xform-types/add-model e)))
+      ((fn [e] (log/info :data (:genegraph.annotate/data e)) e))
       ((fn [e] (if (:genegraph.database.query/model e) (event/add-to-db! e) e)))))
 
 (defn message-proccess-no-db!
@@ -379,6 +380,23 @@
     (doseq [t stmt-types]
       (snapshot-latest-statements-of-type t))))
 
+(defn parse-vd-iri
+  "http://dataexchange.clinicalgenome.org/terms/VariationDescriptor_436617.2019-07-01
+   -> {:id 436617 :version 2019-07-01}"
+  [iri]
+  (let [iri (str iri)
+        type-prefix "http://dataexchange.clinicalgenome.org/terms/VariationDescriptor_"]
+    (assert (.startsWith iri type-prefix)
+            {:msg "Failed assertion"
+             :iri iri})
+    (let [id-plus-version (subs iri (count type-prefix))]
+      (if (.contains id-plus-version ".")
+        (let [id (subs id-plus-version 0 (.indexOf id-plus-version "."))
+              version (subs id-plus-version (+ 1 (.indexOf id-plus-version ".")))]
+          {:id id
+           :version version})
+        {:id id-plus-version}))))
+
 (defn snapshot-latest-variations []
   (try
     (let [output-filename "variation-descriptors.txt"]
@@ -396,22 +414,31 @@
                            :msg (str "unversioned-resources count: "
                                      (count unversioned-resources)))
                latest-versioned-resources
-               (map (fn [vof]
-                      (let [rs (q/select (str "select ?i where { "
-                                              "?i a :vrs/CanonicalVariationDescriptor . "
-                                              "?i :vrs/record-metadata ?rmd . "
-                                              "?rmd :dc/is-version-of ?vof . "
-                                              "?rmd :owl/version-info ?release_date . "
-                                              "} "
-                                              "order by desc(?release_date) "
-                                              "limit 1")
-                                         {:vof vof})]
-                        (if (< 1 (count rs))
-                          (log/error :msg "More than 1 statement returned"
-                                     :vof vof :rs rs)
-                          (first rs))))
-                    (->> unversioned-resources
-                         #_(take 1)))]
+               (->> unversioned-resources
+                    #_(take 1)
+                    (map (fn [vof]
+                           (log/info :vof vof)
+                           (let [rs (q/select (->> ["select ?i where" "{"
+                                                    ["{" ["select ?i ?rmd where" "{"
+                                                          "?i a :vrs/CanonicalVariationDescriptor ."
+                                                          "?i :vrs/record-metadata ?rmd ."
+                                                          "?rmd :dc/is-version-of ?vof ."
+                                                          "?rmd :owl/version-info ?release_date ."
+                                                          "}"]
+                                                     "order by desc(?release_date)"
+                                                     "limit 1"
+                                                     "}"]
+                                                    ["filter not exists" "{" "?rmd :cg/deleted true" "}"]
+                                                    "}"
+                                                    "order by asc(?i)"]
+                                                   flatten
+                                                   (str/join " "))
+                                              {:vof vof})]
+                             (if (< 1 (count rs))
+                               (log/error :msg "More than 1 statement returned"
+                                          :vof vof :rs rs)
+                               (first rs)))))
+                    (filter (comp not nil?)))]
            (doseq [descriptor-resource (->> latest-versioned-resources)]
              (try
                (let [descriptor-output (variation/variation-descriptor-resource-for-output descriptor-resource)
@@ -444,10 +471,18 @@
           (.write writer (json/generate-string data))
           (.write writer "\n"))))))
 
+(defn slashjoin [& args]
+  (reduce (fn [agg val]
+            (str agg "/" val))
+          args))
+
+(defn cv-transform-test-fname [& relative-path-segs]
+  (str "test/genegraph/transform/clinvar/test-inputs/" (apply slashjoin relative-path-segs)))
+
 (comment
   (start-states!)
 
-  (process-topic-file "test-inputs/relative-cnv/cvraw-kinda-long-dup1.txt")
+  (process-topic-file (cv-transform-test-fname "relative-cnv/cvraw-kinda-long-dup1.txt"))
 
   (process-topic-file "cg-vcep-2019-07-01/variation.txt")
   (process-topic-file "cg-vcep-2019-07-01/trait.txt")
@@ -464,6 +499,16 @@
   ;; snapshot with the variation add-data snapshot rocksdb
   (snapshot-variation-db))
 
+
+(comment
+  "Testing delete operation"
+  (start-states!)
+  (rocksdb/rocks-destroy-state! #'genegraph.transform.clinvar.variation/variation-data-db)
+  (process-topic-file (cv-transform-test-fname "one-variation-create-update-delete"
+                                               "clinvar-raw-variation-36823-deleted.txt"))
+  ;; last event in that file is a delete of the same id in prior events, so no data should remain
+  (let [db genegraph.transform.clinvar.variation/variation-data-db]
+    (assert (= 0 (count (take 100 (rocksdb/entire-db-entry-seq db)))))))
 
 (comment
   (-> "statements.txt"
