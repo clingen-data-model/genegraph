@@ -206,6 +206,7 @@
                   :syntax "spdi"}))]))]
       expressions)))
 
+;; TODO if variantLength is not defined, treat as if it was greater than 50
 (defn variation-preprocess
   "Performs some annotations to the variation event in order to enable downstream transformation.
 
@@ -432,8 +433,15 @@
         (when (not= candidate-expressions prefiltered-candidate-expressions)
           (log/warn :fn :normalize-canonical-expression
                     :msg "Removed some deldup candidate expressions"
-                    :removed (coll-subtract (set prefiltered-candidate-expressions)
-                                            (set candidate-expressions))))
+
+                    #_#_:removed (set/difference (set candidate-expressions)
+                                                 (set prefiltered-candidate-expressions))
+
+                    ;; TODO why not set/difference?
+                    ;; (set/difference (set candidate-expressions) (set prefiltered-candidate-expressions))
+                    :removed (set/difference (set prefiltered-candidate-expressions)
+                                             (set candidate-expressions))))
+
         (log/debug :candidate-expressions candidate-expressions)
         ;; each vrs-ret[:variation] is the structure in the 'variation', 'canonical_variaton' (or equivalent)
         ;; field in the normalization service response body
@@ -472,7 +480,7 @@
   :stop (rocksdb/close variation-data-db))
 
 (defn get-vrs-variation
-  "For a variation of the form'40347', return the variation from RocksDB"
+  "For a variation of the form \"40347\", return the variation from RocksDB"
   [variation-id release-date]
   (let [vrd-unversioned (str (ns-cg "VariationDescriptor_") variation-id)
         vd-iri (str vrd-unversioned "." release-date)
