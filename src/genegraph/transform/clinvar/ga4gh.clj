@@ -388,14 +388,16 @@
     (with-open [writer (io/writer "x-variation-descriptors.txt")]
       (doall
        (map (fn [variation-resource]
+              (log/info :fn :write-latest-variation-snapshots :variation-resource variation-resource)
               (let [variation-iri (str variation-resource)
                     event (docstore/get-document variation/variation-data-db variation-iri)
+                    _ (log/info :fn :write-latest-variation-snapshots :event event)
                     output (variation/variation-descriptor-for-output event)]
                 (.write writer (json/generate-string (->  output
                                                           :genegraph.annotate/output
                                                           common/map-remove-nil-values)))
                 (.write writer "\n")))
-            (snapshot-latest-rocks-data-of-type :vrs/CanonicalVariationDescriptor))))))
+            (take 5 (snapshot-latest-rocks-data-of-type :vrs/CanonicalVariationDescriptor)))))))
 
 (defn snapshot-latest-statements-of-type-parallel
   [type-kw]
@@ -561,7 +563,7 @@
 
   (process-topic-file (cv-transform-test-fname "relative-cnv/cvraw-kinda-long-dup1.txt"))
 
-  (process-topic-file "cg-vcep-2019-07-01/variation.txt")
+
   (process-topic-file "cg-vcep-2019-07-01/trait.txt")
   (process-topic-file "cg-vcep-2019-07-01/trait_set.txt")
 
@@ -581,11 +583,17 @@
   (snapshot-variation-db)
   (snapshot-latest-variations)
   (snapshot-latest-statements)
-  (snapshot-latest-rocks-statements-of-type :vrs/VariationGermlinePathogenicityStatement)
+  #_(snapshot-latest-rocks-statements-of-type :vrs/VariationGermlinePathogenicityStatement)
 
   (write-latest-statement-snapshots :vrs/VariationGermlinePathogenicityStatement)
   (write-latest-statement-snapshots :vrs/ClinVarDrugResponseStatement)
   (write-latest-statement-snapshots :vrs/ClinVarOtherStatement)
+  (write-latest-variation-snapshots)
+
+
+  ;; Kyle testing
+  (process-topic-file "cg-vcep-2019-07-01/variation.txt")
+  (process-topic-file "cg-vcep-2019-07-01/variation-556853.txt")
   (write-latest-variation-snapshots))
 
 (comment

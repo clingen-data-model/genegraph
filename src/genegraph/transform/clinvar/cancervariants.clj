@@ -285,6 +285,7 @@
        (log/debug :fn :vrs-variation-for-expression
                   :cache-hit? true
                   :cached-value cached-value
+                  :cache-type (:type cache-db)
                   :variation-expression variation-expression
                   :expr-type expression-type))
      ;; By default, tell the service to try hgvs. Will return as Text variation if unable to parse

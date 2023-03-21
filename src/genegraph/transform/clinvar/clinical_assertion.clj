@@ -121,20 +121,20 @@
         tid (str (ns-cg "trait") "_" (:id trait) "." (:release_date message))]
     (-> event
         (assoc
-          :genegraph.annotate/data-db trait-data-db
-          :genegraph.annotate/data-id tid
-          :genegraph.annotate/data
-          {:id tid
-           :type (case (:type trait)
-                   "Disease" "Disease"
-                   "Phenotype")
-           :medgen_id (:medgen_id trait)
-           :clinvar_trait_id (:id trait)
-           :release_date (:release_date message)
-           :record_metadata {:type "RecordMetadata"
-                             :version (:release_date message)
-                             :is_version_of unversioned}}
-          :genegraph.annotate/iri tid)
+         :genegraph.annotate/data-db trait-data-db
+         :genegraph.annotate/data-id tid
+         :genegraph.annotate/data
+         {:id tid
+          :type (case (:type trait)
+                  "Disease" "Disease"
+                  "Phenotype")
+          :medgen_id (:medgen_id trait)
+          :clinvar_trait_id (:id trait)
+          :release_date (:release_date message)
+          :record_metadata {:type "RecordMetadata"
+                            :version (:release_date message)
+                            :is_version_of unversioned}}
+         :genegraph.annotate/iri tid)
         add-contextualized)))
 
 (defn trait-id-to-medgen-id
@@ -458,8 +458,7 @@
         :date (:interpretation_date_last_evaluated assertion)
         :activity {:type "Coding"
                    :id (ns-cg "Approver")
-                   :label "Approver"
-                   }})
+                   :label "Approver"}})
       (:date_last_updated assertion)
       (conj
        ;; Submitter
@@ -468,8 +467,7 @@
         :date (:date_last_updated assertion)
         :activity {:type "Coding"
                    :id (ns-cg "Submitter")
-                   :label "Submitter"
-                   }} ))))
+                   :label "Submitter"}}))))
 
 
 (defn contribution-resource-for-output
@@ -565,6 +563,44 @@
       :name (q/ld1-> extension-resource [:vrs/name])
       :value (map #(-> % common/rdf-select-tree common/map-unnamespace-property-kw-keys)
                   (q/ld-> extension-resource [:rdf/value]))})))
+
+(defn traits-for-output
+  [traits release-date]
+  (reduce (fn [vec unversioned-trait-iri]
+            (let [versioned-trait-iri (str unversioned-trait-iri "." release-date)
+                  trait-event (docstore/get-document trait-data-db versioned-trait-iri)
+                  trait (:genegraph.annotate/data trait-event)]
+              (conj vec {:id (str "medgen:" (:medgen_id trait))
+                         :type (:type trait)})))
+          []
+          traits))
+
+(defn trait-set-for-output [unversioned-trait-set-iri release-date]
+  (let [versioned-trait-set-iri (str unversioned-trait-set-iri "." release-date)
+        trait-set-event (docstore/get-document trait-set-data-db versioned-trait-set-iri)
+        trait-set (:genegraph.annotate/data trait-set-event)]
+    {:id (:id trait-set)
+     :type (:type trait-set)
+     :members (traits-for-output (:members trait-set) release-date)}))
+
+(defn clinical-assertion-for-output
+  "Annotate event with data with data previously stored in rocksdb for outputting clinical assertions.
+   Event is the full event stored in rocks."
+  [event]
+  (let [data (:genegraph.annotate/data event)]
+    (assoc event :genegraph.annotate/output
+           {:id (:id data)
+            :type (:type data)
+            :label (:label data)
+            :description (:description data)
+            :specified_by (:specified_by data)
+            :contributions (:contributions data)
+            :record_metadata (:record_metadata data)
+            :direction (:direction data)
+            :subject_descriptor (:subject_descriptor data)
+            :extensions (:extensions data)
+            :classification (:classification data)
+            :target_proposition (:target_proposition data)})))
 
 (defn clinical-assertion-resource-for-output
   ;; TODO remove keys with nil values
@@ -664,42 +700,7 @@
          :genegraph.annotate/data-id id)
         add-contextualized)))
 
-(defn traits-for-output
-  [traits release-date]
-  (reduce (fn [vec unversioned-trait-iri]
-            (let [versioned-trait-iri (str unversioned-trait-iri "." release-date)
-                  trait-event (docstore/get-document trait-data-db versioned-trait-iri)
-                  trait (:genegraph.annotate/data trait-event)]
-              (conj vec {:id (str "medgen:" (:medgen_id trait))
-                         :type (:type trait)})))
-          []
-          traits))
 
-(defn trait-set-for-output [unversioned-trait-set-iri release-date]
-  (let [versioned-trait-set-iri (str unversioned-trait-set-iri "." release-date)
-        trait-set-event (docstore/get-document trait-set-data-db versioned-trait-set-iri)
-        trait-set (:genegraph.annotate/data trait-set-event)]
-    {:id (:id trait-set)
-     :type (:type trait-set)
-     :members (traits-for-output (:members trait-set) release-date)}))
-
-(defn clinical-assertion-for-output [event]
-  "Annotate event with data with data previously stored in rocksdb for outputting clinical assertions.
-   Event is the full event stored in rocks."
-  (let [data (:genegraph.annotate/data event)]
-    (assoc event :genegraph.annotate/output
-     {:id (:id data)
-      :type (:type data)
-      :label (:label data)
-      :description (:description data)
-      :specified_by (:specified_by data)
-      :contributions (:contributions data)
-      :record_metadata (:record_metadata data)
-      :direction (:direction data)
-      :subject_descriptor (:subject_descriptor data)
-      :extensions (:extensions data)
-      :classification (:classification data)
-      :target_proposition (:target_proposition data)})))
 
 (def statement-context
   {"@context"
@@ -827,12 +828,12 @@
     "@vocab" (get prefix-ns-map "cgterms")}})
 
 (comment
- (require '[genegraph.transform.clinvar.ga4gh :as ga4gh])
- (require '[genegraph.transform.clinvar.core :as core])
- (require '[genegraph.transform.clinvar.variation :as variation])
- (require '[genegraph.transform.types :as xform-types])
- (ga4gh/start-states!)
- (def assertion "{
+  (require '[genegraph.transform.clinvar.ga4gh :as ga4gh])
+  (require '[genegraph.transform.clinvar.core :as core])
+  (require '[genegraph.transform.clinvar.variation :as variation])
+  (require '[genegraph.transform.types :as xform-types])
+  (ga4gh/start-states!)
+  (def assertion "{
     \"release_date\": \"2019-07-01\",
     \"event_type\": \"create\",
     \"content\": {
@@ -863,9 +864,7 @@
                 \"version\": \"16\"
                 }
     }")
- (def event (-> assertion
-                (json/parse-string true)
-                ga4gh/eventify
-                core/add-parsed-value
-                )))
-
+  (def event (-> assertion
+                 (json/parse-string true)
+                 ga4gh/eventify
+                 core/add-parsed-value)))
