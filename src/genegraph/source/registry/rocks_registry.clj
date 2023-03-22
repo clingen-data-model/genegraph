@@ -7,6 +7,7 @@
             [clojure.edn :as edn]
             [genegraph.env :as env]
             [genegraph.rocksdb :as rocksdb]
+            [hato.client :as hc]
             [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.log :as log]
@@ -22,10 +23,14 @@
 (defn set-key-local [db k v]
   (rocksdb/rocks-put! db k v))
 
+(defonce hato-client (hc/build-http-client {:version :http-2
+                                            :connect-timeout 10000}))
+
 (defn get-key-remote [uri k]
-  (let [response (http-client/get (str uri "/key")
-                                  {:throw-exceptions false
-                                   :query-params {"key" (prn-str k)}})]
+  (let [response (hc/get (str uri "/key")
+                         {:http-client hato-client
+                          :throw-exceptions false
+                          :query-params {"key" (prn-str k)}})]
     (case (:status response)
       200 (edn/read-string (:body response))
       404 nil
@@ -34,10 +39,11 @@
                                                  :response response})))))
 
 (defn set-key-remote [uri k v]
-  (let [response (http-client/post (str uri "/key")
-                                   {:throws-exceptions false
-                                    :query-params {:key (prn-str k)}
-                                    :body (prn-str v)})]
+  (let [response (hc/post (str uri "/key")
+                          {:http-client hato-client
+                           :throws-exceptions false
+                           :query-params {:key (prn-str k)}
+                           :body (prn-str v)})]
     (case (:status response)
       201 (log/debug :fn :set-key-remote :status 201 :key k)
       (throw (ex-info "Error in set-key-remote" {:fn ::set-key-remote
