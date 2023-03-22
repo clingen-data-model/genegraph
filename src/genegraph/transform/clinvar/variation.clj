@@ -574,20 +574,6 @@
                :genegraph.annotate/iri vd-iri
                :genegraph.annotate/data-id vd-iri
                :genegraph.annotate/data-annotations {:release_date (:release_date message)})
-        ((fn [event]
-           (let [data (:genegraph.annotate/data event)]
-             (-> event
-                 (assoc :genegraph.annotate/data
-                        (walk/postwalk (fn [node]
-                                         (cond (map? node) (dissoc node (keyword "@context"))
-                                               :else node))
-                                       data))
-                 (assoc :genegraph.annotate/event-type
-                        (cond (= "delete" (:event_type message)) :delete
-                              (= "create" (:event_type message)) :create
-                              (= "update" (:event_type message)) :create
-                              :else nil))))))
-        store-data
         add-contextualized)))
 
 (defn record-metadata-resource-for-output

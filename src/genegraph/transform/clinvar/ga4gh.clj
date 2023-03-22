@@ -27,7 +27,8 @@
             [genegraph.util.fs :refer [gzip-file-reader]]
             [io.pedestal.log :as log]
             [mount.core :as mount]
-            [genegraph.rocksdb :as rocksdb]))
+            [genegraph.rocksdb :as rocksdb]
+            [taoensso.nippy :as nippy]))
 
 (def stop-removing-unused [#'write-tx #'tx #'pprint #'util/parse-nested-content])
 
@@ -117,8 +118,7 @@
 (defn add-to-db! [event]
   (if (:genegraph.database.query/model event)
     (do
-      (event/add-to-db! event)
-      (docstore/store-event event))
+      (event/add-to-db! event))
     event))
 
 (defn message-proccess!
@@ -159,7 +159,7 @@
                    e))))
       ((fn [e] (if (:genegraph.annotate/data e) (xform-types/add-model e) e)))))
 
-(defn message-process-add-to-db!
+(defn message-process-add-to-jena!
   [event]
   (-> event
       ((fn [e] (if (:genegraph.database.query/model e)
@@ -187,44 +187,14 @@
                              {"@context" {"@vocab" (str (get prefix-ns-map "cgterms"))}}))))
       clinvar-add-iri))
 
-(defn add-model [event]
-  (if (:genegraph.annotate/data event)
-    (xform-types/add-model event)
-    event))
-
-(defn add-jsonld [event]
-  (assoc event
-         :genegraph.annotate/jsonld
-         (jsonld/model-to-jsonld (:genegraph.database.query/model event))))
-
-(defn process-topic-file-parallel [input-filename]
+(defn process-topic-file-parallel-no-output [input-filename]
   (let [messages (map #(json/parse-string % true) (line-seq (io/reader input-filename)))]
-    (with-open [statement-writer (io/writer (str input-filename "-output-statements"))
-                variation-descriptor-writer (io/writer (str input-filename "-output-variation-descriptors"))
-                other-writer (io/writer (str input-filename "-output-other"))]
-      (write-tx
-       (doseq [event (->> messages
-                          (pmap message-proccess-no-db!)
-                          (map message-process-add-to-db!)
-                          #_(take 10))]
-         (let [clinvar-type (:genegraph.transform.clinvar/format event)
-               ;;_ (log/info :clinvar-type clinvar-type)
-               ;;_ (log/info :event event)
-               writer (case clinvar-type
-                        :clinical_assertion statement-writer
-                        :variation variation-descriptor-writer
-                        other-writer)]
-           (.write writer (-> event
-                              :genegraph.annotate/data-contextualized
-                              (dissoc "@context")
-                              common/map-remove-nil-values
-                              (json/generate-string)))
-           (.write writer "\n")))))))
-
-(defn seq-progress
-  "Whenever an item in the seq s is realized, it also has metadata {:index <N>}
-   where N is the count of how many items have been realized prior, plus one"
-  [s])
+    (write-tx
+     (doseq [event (->> messages
+                        #_(take 10)
+                        (pmap message-proccess-no-db!)
+                        (map message-process-add-to-jena!))]
+       (let [clinvar-type (:genegraph.transform.clinvar/format event)])))))
 
 (defn process-topic-file [input-filename]
   (let [messages (map #(json/parse-string % true) (line-seq (io/reader input-filename)))]
@@ -540,12 +510,12 @@
       (print-stack-trace e))))
 
 
+
 (defn snapshot-variation-db []
   (let [db genegraph.transform.clinvar.variation/variation-data-db
         out-fname "variation-data-db-snapshot.ndjson"]
     (with-open [writer (io/writer (io/file out-fname))]
       (doseq [[entry-k entry-v] (rocksdb/entire-db-entry-seq db)]
-
         (let [data (:genegraph.annotate/data entry-v)]
           (.write writer (json/generate-string data))
           (.write writer "\n"))))))
@@ -557,6 +527,29 @@
 
 (defn cv-transform-test-fname [& relative-path-segs]
   (str "test/genegraph/transform/clinvar/test-inputs/" (apply slashjoin relative-path-segs)))
+
+
+(defn snapshot-variation-db-rocksdb []
+  (let [db genegraph.transform.clinvar.variation/variation-data-db
+        variation-descriptor-iri-prefix (ns-cg "VariationDescriptor_")
+        out-fname "variation-data-db-snapshot-rocksdb.ndjson"]
+    (doseq [[entry-k entry-v] (take 5 (rocksdb/entire-db-entry-seq db))]
+      (let [thawed-k (nippy/fast-thaw entry-k)
+            {id :id version :version} (parse-vd-iri thawed-k)
+            data (:genegraph.annotate/data entry-v)
+            iri-prefix (str variation-descriptor-iri-prefix id)
+            prefix-seq (rocksdb/raw-prefix-seq db iri-prefix)]
+        (doseq [[pent-k pent-v] prefix-seq]
+          (let [thawed-pent-k (nippy/fast-thaw pent-k)]
+            (prn {:id id :pent thawed-pent-k})))))
+
+    #_(with-open [writer (io/writer (io/file out-fname))]
+        (doseq [[entry-k entry-v] (rocksdb/entire-db-entry-seq db)]
+
+          (let [data (:genegraph.annotate/data entry-v)]
+            (.write writer (json/generate-string data))
+            (.write writer "\n"))))))
+
 
 (comment
   (start-states!)
@@ -592,7 +585,9 @@
 
 
   ;; Kyle testing
+  (start-states!)
   (process-topic-file "cg-vcep-2019-07-01/variation.txt")
+  (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/variation.txt")
   (process-topic-file "cg-vcep-2019-07-01/variation-556853.txt")
   (write-latest-variation-snapshots))
 

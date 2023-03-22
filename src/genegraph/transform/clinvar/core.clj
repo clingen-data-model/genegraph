@@ -10,7 +10,8 @@
             [genegraph.transform.clinvar.variation :as variation]
             [genegraph.transform.types :as xform-types :refer [add-model]]
             [genegraph.util :refer [str->bytestream]]
-            [io.pedestal.log :as log]))
+            [io.pedestal.log :as log]
+            [genegraph.transform.clinvar.common :as common]))
 
 (defn add-parsed-value
   "Adds ::parsed-value containing the keywordized edn-map of :genegraph.sink.event/value.
@@ -29,20 +30,32 @@
    "clinical_assertion" #(clinical-assertion/add-data-for-clinical-assertion %)
    "variation" #(variation/add-data-for-variation %)})
 
+(defn add-event-type [event]
+  (let [message (::parsed-value event)
+        event-type (when (#{"create" "update" "delete"} (:event_type message))
+                     (keyword (:event_type message)))]
+    (assoc event :genegraph.annotate/event-type event-type)))
+
 (defmethod xform-types/add-data :clinvar-raw [event]
   (try
-    (let [event-with-json (add-parsed-value event)
-          _ (log/debug :fn :genegraph.transform.clinvar.core/add-data
-                       :offset (:genegraph.sink.stream/offset event)
-                       :entity_type (get-in event-with-json
-                                            [::parsed-value :content :entity_type])
-                       :id (get-in event-with-json [::parsed-value :content :id]
-                                   (get-in event-with-json [::parsed-value :content]))
-                       :release_date (get-in event-with-json [::parsed-value :release_date]))
-          event-with-data (let [entity-type (get-in event-with-json [::parsed-value :content :entity_type])
-                                add-data-fn (get data-fns-for-type entity-type identity)]
-                            (add-data-fn event-with-json))]
-      event-with-data)
+    (let [event (-> event
+                    add-parsed-value
+                    add-event-type)]
+      (log/debug :fn :genegraph.transform.clinvar.core/add-data
+                 :offset (:genegraph.sink.stream/offset event)
+                 :entity_type (get-in event [::parsed-value :content :entity_type])
+                 :id (get-in event [::parsed-value :content :id]
+                             (get-in event [::parsed-value :content]))
+                 :release_date (get-in event [::parsed-value :release_date]))
+      (let [entity-type (get-in event [::parsed-value :content :entity_type])
+            add-data-fn (get data-fns-for-type entity-type identity)
+            event-with-data (add-data-fn event)]
+        (if (:genegraph.annotate/data event-with-data)
+          (update event-with-data :genegraph.annotate/data
+                  (fn [data] (-> data
+                                 (common/remove-key-recur "@context")
+                                 (common/remove-key-recur (keyword "@context")))))
+          event-with-data)))
     (catch Exception e
       (log/error :fn ::add-data :msg "Exception caught in add-data for :clinvar-raw"
                  :event event
@@ -84,7 +97,11 @@
     (let [event (-> event
                     add-parsed-value
                     (#(assoc % :genegraph.transform.clinvar/format (get-clinvar-format (::parsed-value %))))
-                    xform-types/add-data
+                    ;; Add data interceptor should be called before add-model.
+                    ;; Leaving this in as a fallback if it is not.
+                    ((fn [e] (if (not (:genegraph.annotate/data e))
+                               (xform-types/add-data e)
+                               e)))
                     add-model-from-contextualized-data)]
       (log/trace :fn :add-model :event event)
       event)
