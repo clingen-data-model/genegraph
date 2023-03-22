@@ -412,7 +412,7 @@
                    (let [length (:variant-length location)]
                      (or (nil? length)
                          (when (<= 50 length)
-                           (log/warn :fn normalize-canonical-expression
+                           (log/warn :fn :normalize-canonical-expression
                                      :msg "HGVS expr >=50bp labeled as hgvs, not cnv"
                                      :expr-object expr-object
                                      :event-message (:genegraph.sink.event/value event))
@@ -488,21 +488,6 @@
         variation-doc (:genegraph.annotate/data variation-event)]
     (get-in variation-doc [:canonical_variation :id])))
 
-(defn store-data [event]
-  (when (contains? (mount/running-states) (str #'variation-data-db))
-    (let [k (:genegraph.annotate/data-id event)
-          v (select-keys event [:genegraph.annotate/data
-                                :genegraph.annotate/data-annotations])
-          event-type (:genegraph.annotate/event-type event)]
-      (when k
-        (cond
-          (#{:create :update} event-type) (rocksdb/rocks-put-raw-key! variation-data-db (nippy/fast-freeze k) v)
-          (#{:delete} event-type) (rocksdb/rocks-delete-raw-key! variation-data-db (nippy/fast-freeze k))
-          (nil? event-type) (do (log/warn :msg "Empty event-type, treating as create" :key k)
-                                (store-data (assoc event :genegraph.annotate/event-type :create)))
-          :else (log/warn :msg "Unknown event-type" :event-type event-type :key k)))
-      event)))
-
 (defn add-data-for-variation
   "Returns msg with :genegraph.annotate/data and :genegraph.annotate/data-contextualized added.
 
@@ -514,67 +499,61 @@
                                                          ::copy-number?
                                                          ::prioritized-expression
                                                          ::canonical-candidate-expressions]))
-        message (-> event
-                    :genegraph.transform.clinvar.core/parsed-value)
+        message (:genegraph.transform.clinvar.core/parsed-value event)
         variation (:content message)
         vrd-unversioned (str (ns-cg "VariationDescriptor_") (:id variation))
         vd-iri (str vrd-unversioned "." (:release_date message))
         clinvar-variation-iri (str iri/clinvar-variation (:id variation))
         ;; normalize-canonical-expression must be called after variation-preprocess
-        nce (normalize-canonical-expression event)
-        deleted? (= "delete" (:event_type message))]
+        nce (normalize-canonical-expression event)]
     #_(log/debug :fn :add-data-for-variation :nce nce)
     (when (empty? nce)
       (log/error :fn :add-data-for-variation
                  :msg "Could not normalize canonical variation expression"
                  :value message
                  :event event))
-    (-> event
-        (assoc
-         :genegraph.annotate/data
-         {:id vd-iri
-          :type "CanonicalVariationDescriptor"
-          :label (:name variation)
-          :extensions (common/fields-to-extension-maps
-                       (merge (dissoc variation :id :release_date :name :content)
-                              {:clinvar_variation clinvar-variation-iri}))
-          :description (:name variation)
-          :xrefs [(str (get prefix-ns-map "clinvar") (:id variation))
-                  (str clinvar-variation-iri)]
-          :alternate_labels []
-          :members (->> (for [expr (::other-expressions event)]
-                          (make-member-map vd-iri
-                                           (:expression expr)
-                                           (:syntax expr)
-                                           (:syntax-version expr)))
-                        (into []))
-          :subject_variation_descriptor ()
-          ;;  :value_id ()
-          :canonical_variation (:normalized nce)
-          :record_metadata (merge {:type "RecordMetadata"
-                                   :is_version_of vrd-unversioned
-                                   :version (:release_date message)}
-                                  (when deleted?
-                                    {:deleted true}))})
-        ;; Add some info about how the canonical variation expression was selected
-        (update-in
-         [:genegraph.annotate/data :extensions]
-         (fn [extensions] (concat extensions
-                                  (common/fields-to-extension-maps
-                                   {:canonical_expression
-                                    (:expr (:expression nce))
-                                    :candidate_expressions
-                                    (map #_#(:expr %)
-                                     #(identity {;;:type (:type %)
-                                                 :expression (:expr %)
-                                                 :label (:label %)})
-                                         (::canonical-candidate-expressions event))}
-                                   {:expand-seqs? false}))))
-        (assoc :genegraph.annotate/data-db variation-data-db
-               :genegraph.annotate/iri vd-iri
-               :genegraph.annotate/data-id vd-iri
-               :genegraph.annotate/data-annotations {:release_date (:release_date message)})
-        add-contextualized)))
+    (let [data {:id vd-iri
+                :type "CanonicalVariationDescriptor"
+                :label (:name variation)
+                :extensions (common/fields-to-extension-maps
+                             (merge (dissoc variation :id :release_date :name :content)
+                                    {:clinvar_variation clinvar-variation-iri}))
+                :description (:name variation)
+                :xrefs [(str (get prefix-ns-map "clinvar") (:id variation))
+                        (str clinvar-variation-iri)]
+                :alternate_labels []
+                :members (->> (for [expr (::other-expressions event)]
+                                (make-member-map vd-iri
+                                                 (:expression expr)
+                                                 (:syntax expr)
+                                                 (:syntax-version expr)))
+                              (into []))
+                :subject_variation_descriptor ()
+                :canonical_variation (:normalized nce)
+                :record_metadata (merge {:type "RecordMetadata"
+                                         :is_version_of vrd-unversioned
+                                         :version (:release_date message)}
+                                        (when (= "delete" (:event_type message))
+                                          {:deleted true}))}]
+      (-> event
+          (assoc :genegraph.annotate/data data)
+          ;; Add some info about how the canonical variation expression was selected
+          (update-in
+           [:genegraph.annotate/data :extensions]
+           (fn [extensions] (concat extensions
+                                    (common/fields-to-extension-maps
+                                     {:canonical_expression
+                                      (:expr (:expression nce))
+                                      :candidate_expressions
+                                      (map #(identity {;;:type (:type %)
+                                                       :expression (:expr %)
+                                                       :label (:label %)})
+                                           (::canonical-candidate-expressions event))}
+                                     {:expand-seqs? false}))))
+          (assoc :genegraph.annotate/data-db variation-data-db
+                 :genegraph.annotate/iri vd-iri
+                 :genegraph.annotate/data-id vd-iri)
+          add-contextualized))))
 
 (defn record-metadata-resource-for-output
   [record-metadata-resource]

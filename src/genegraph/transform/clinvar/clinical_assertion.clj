@@ -118,23 +118,24 @@
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         trait (:content message)
         unversioned (str (ns-cg "trait") "_" (:id trait))
-        tid (str (ns-cg "trait") "_" (:id trait) "." (:release_date message))]
+        tid (str (ns-cg "trait") "_" (:id trait) "." (:release_date message))
+        data {:id tid
+              :type (case (:type trait)
+                      "Disease" "Disease"
+                      "Phenotype")
+              :medgen_id (:medgen_id trait)
+              :clinvar_trait_id (:id trait)
+              :release_date (:release_date message)
+              :record_metadata (merge {:type "RecordMetadata"
+                                       :version (:release_date message)
+                                       :is_version_of unversioned}
+                                      (when (= "delete" (:event_type message))
+                                        {:deleted true}))}]
     (-> event
-        (assoc
-         :genegraph.annotate/data-db trait-data-db
-         :genegraph.annotate/data-id tid
-         :genegraph.annotate/data
-         {:id tid
-          :type (case (:type trait)
-                  "Disease" "Disease"
-                  "Phenotype")
-          :medgen_id (:medgen_id trait)
-          :clinvar_trait_id (:id trait)
-          :release_date (:release_date message)
-          :record_metadata {:type "RecordMetadata"
-                            :version (:release_date message)
-                            :is_version_of unversioned}}
-         :genegraph.annotate/iri tid)
+        (assoc :genegraph.annotate/data-db trait-data-db
+               :genegraph.annotate/data-id tid
+               :genegraph.annotate/data data
+               :genegraph.annotate/iri tid)
         add-contextualized)))
 
 (defn trait-id-to-medgen-id
@@ -173,29 +174,28 @@
 (defn add-data-for-trait-set [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         trait-set (:content message)
-        data (->
-              {:id (str (ns-cg "trait_set_") (:id trait-set)
-                        "." (:release_date message))
-               :type "Condition"
-               :clinvar_trait_set_id (:id trait-set)
-               :release_date (:release_date message)
-               :record_metadata {:type "RecordMetadata"
-                                 :is_version_of (str (ns-cg "trait_set_") (:id trait-set))
-                                 :version (:release_date message)}
-               :members (let [trait-ids (:trait_ids trait-set)]
-                          (log/debug :fn :add-data-for-trait-set
-                                     :trait-ids trait-ids)
+        iri-unversioned (str (ns-cg "trait_set_") (:id trait-set))
+        iri (str iri-unversioned "." (:release_date message))
+        data {:id iri
+              :type "Condition"
+              :clinvar_trait_set_id (:id trait-set)
+              :release_date (:release_date message)
+              :record_metadata (merge {:type "RecordMetadata"
+                                       :is_version_of (str (ns-cg "trait_set_") (:id trait-set))
+                                       :version (:release_date message)}
+                                      (when (= "delete" (:event_type message))
+                                        {:deleted true}))
+              :members (let [trait-ids (:trait_ids trait-set)]
+                         (log/debug :fn :add-data-for-trait-set
+                                    :trait-ids trait-ids)
                           ;; Unversioned identifiers for the traits
-                          (map #(str (ns-cg "trait") "_" %)
-                               trait-ids))})]
-    (-> (assoc
-         event
-         :genegraph.annotate/data-db trait-set-data-db
-         :genegraph.annotate/data-id (:id data)
-         :genegraph.annotate/data
-         data
-         :genegraph.annotate/iri
-         (str (ns-cg "trait_set_") (:id trait-set) "." (:release_date message)))
+                         (map #(str (ns-cg "trait") "_" %)
+                              trait-ids))}]
+    (-> event
+        (assoc :genegraph.annotate/data-db trait-set-data-db
+               :genegraph.annotate/data-id (:id data)
+               :genegraph.annotate/data data
+               :genegraph.annotate/iri (:id data))
         add-contextualized)))
 
 (defn get-trait-resource-by-version-of
@@ -656,48 +656,49 @@
         vof (str (ns-cg "SCV_Statement_") (:id assertion))
         release-date (:release_date message)
         id (str vof "." release-date)
-        stmt-type (statement-type (:interpretation_description assertion))]
-    (-> (assoc
-         event
-         :genegraph.annotate/data
-         {:id id
-          :type stmt-type
-          :label (:title assertion)
-          ;; https://github.com/clingen-data-model/genegraph/issues/697
-          :extensions (let [local-key (get assertion :local_key)]
-                        (log/debug :fn :add-data-for-clinical-assertion
-                                   :local-key local-key
-                                   :assertion assertion)
-                        (common/fields-to-extension-maps
-                         (select-keys assertion [:local_key])))
-          :description (description event)
-          :method (method event)
-          :specified_by (method event)
-          :contributions (contributions event)
-          :record_metadata {:type "RecordMetadata"
-                            :is_version_of vof
-                            :version (:release_date message)}
-          :direction (-> (:interpretation_description assertion)
-                         normalize-clinsig-term
-                         clinsig->direction)
-          :subject_descriptor (get assertion :variation_id)
-          #_#_:subject_descriptor (str (variation-descriptor-by-clinvar-id
-                                        (get assertion :variation_id)
-                                        (get message :release_date)))
-          ;;:object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
-          :classification (classification assertion)
-          :target_proposition (let [proposition (proposition event)
-                                    subject (:subject proposition)
-                                    vrs-id (variation/get-vrs-variation subject release-date)
-                                    object (:object proposition)
-                                    trait-set (trait-set-for-output object release-date)]
-                                (assoc proposition
-                                       :subject vrs-id
-                                       :object trait-set))}
-         :genegraph.annotate/iri
-         (str (ns-cg "clinical_assertion_") (:id assertion) "." release-date)
-         :genegraph.annotate/data-db clinical-assertion-data-db
-         :genegraph.annotate/data-id id)
+        stmt-type (statement-type (:interpretation_description assertion))
+        data {:id id
+              :type stmt-type
+              :label (:title assertion)
+              ;; https://github.com/clingen-data-model/genegraph/issues/697
+              :extensions (let [local-key (get assertion :local_key)]
+                            (log/debug :fn :add-data-for-clinical-assertion
+                                       :local-key local-key
+                                       :assertion assertion)
+                            (common/fields-to-extension-maps
+                             (select-keys assertion [:local_key])))
+              :description (description event)
+              :method (method event)
+              :specified_by (method event)
+              :contributions (contributions event)
+              :record_metadata (merge {:type "RecordMetadata"
+                                       :is_version_of vof
+                                       :version (:release_date message)}
+                                      (when (= "delete" (:event_type message))
+                                        {:deleted true}))
+              :direction (-> (:interpretation_description assertion)
+                             normalize-clinsig-term
+                             clinsig->direction)
+              :subject_descriptor (get assertion :variation_id)
+              #_#_:subject_descriptor (str (variation-descriptor-by-clinvar-id
+                                            (get assertion :variation_id)
+                                            (get message :release_date)))
+              ;;:object_descriptor nil ; do we need this ?
+              ;; list of disease names, per Larry (xrefs?)
+              :classification (classification assertion)
+              :target_proposition (let [proposition (proposition event)
+                                        subject (:subject proposition)
+                                        vrs-id (variation/get-vrs-variation subject release-date)
+                                        object (:object proposition)
+                                        trait-set (trait-set-for-output object release-date)]
+                                    (assoc proposition
+                                           :subject vrs-id
+                                           :object trait-set))}]
+    (-> event
+        (assoc :genegraph.annotate/data data
+               :genegraph.annotate/iri id
+               :genegraph.annotate/data-db clinical-assertion-data-db
+               :genegraph.annotate/data-id id)
         add-contextualized)))
 
 
