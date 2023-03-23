@@ -65,81 +65,40 @@
       line-seq
       (->> (map #(json/parse-string % true)))))
 
-#_(defn message-proccess-parallel!
-    "Takes a message value map. The :value of a KafkaRecord, parsed as json"
-    [messages]
-    (->> messages
-         (map #(-> %
-                   eventify
-                   ann/add-metadata
-                   ann/add-action))
-         ((fn [msgs]
-            (flatten
-             (map (fn [batch]
-                    (log/info :batch-size (count batch)
-                              :first (first batch)
-                              :last (last batch))
 
-                    (pmap (fn [e]
-                            (try
-                              (xform-types/add-data e)
-                              (catch Exception ex
-                                (log/error :fn :message-process!
-                                           :msg "Exception adding data to event"
-                                           :event e
-                                           :exception (prn-str ex))
-                                e)))
-                          batch))
-               ;; Batch the input seq into
-                  (partition-by #(vector [(get-in % [:release_date])
-                                          (get-in % [:content :entity_type])
-                                          (get-in % [:content :subclass_type])])
-                                msgs)))))
-         (map (fn [e] (if (:genegraph.annotate/data e) (xform-types/add-model e) e)))
-         (map (fn [e] (if (:genegraph.database.query/model e) (event/add-to-db! e) e)))))
+(defn add-data-catch-exceptions [event]
+  (try
+    (xform-types/add-data event)
+    (catch Exception ex
+      (log/error :fn :add-data-catch-exceptions
+                 :msg "Exception adding data to event"
+                 :event event
+                 :exception ex)
+      event)))
 
-#_(defn process-topic-file-parallel [input-filename]
-    (let [messages (map #(json/parse-string % true) (line-seq (io/reader input-filename)))]
-      (with-open [statement-writer (io/writer (str input-filename "-output-statements"))
-                  variation-descriptor-writer (io/writer (str input-filename "-output-variation-descriptors"))
-                  other-writer (io/writer (str input-filename "-output-other"))]
-        (doseq [event (message-proccess-parallel! messages)]
-          (let [clinvar-type (:genegraph.transform.clinvar/format event)
-                writer (case clinvar-type
-                         :clinical_assertion statement-writer
-                         :variation variation-descriptor-writer
-                         other-writer)]
-            (.write writer (-> event
-                               :genegraph.annotate/data-contextualized
-                               (dissoc "@context")
-                               (json/generate-string)))
-            (.write writer "\n"))))))
 
-(defn add-to-db! [event]
-  (if (:genegraph.database.query/model event)
-    (do
-      (event/add-to-db! event))
-    event))
-
-(defn message-proccess!
+(defn message-proccess-with-jena!
   "Takes a message value map. The :value of a KafkaRecord, parsed as json"
   [message]
   (-> message
       eventify
       ann/add-metadata
-      ; needed for add-to-db! to work
       ann/add-action
-      #_((fn [e] (try
-                   (xform-types/add-data e)
-                   (catch Exception ex
-                     (log/error :fn :message-process!
-                                :msg "Exception adding data to event"
-                                :event e
-                                :exception ex)
-                     e))))
-      #_((fn [e] (if (:genegraph.annotate/data e) (xform-types/add-model e) e)))
-      ((fn [e] (xform-types/add-model e)))
-      ((fn [e] (if (:genegraph.database.query/model e) (add-to-db! e) e)))))
+      add-data-catch-exceptions
+      xform-types/add-model
+      docstore/store-document
+      event/add-to-db!))
+
+(defn message-proccess-with-rocksdb!
+  "Takes a message value map. The :value of a KafkaRecord, parsed as json"
+  [message]
+  (-> message
+      eventify
+      ann/add-metadata
+      ann/add-action
+      add-data-catch-exceptions
+      docstore/store-document))
+
 
 (defn message-proccess-no-db!
   "Takes a message value map. The :value of a KafkaRecord, parsed as json"
@@ -149,22 +108,8 @@
       ann/add-metadata
       ; needed for add-to-db! to work
       ann/add-action
-      ((fn [e] (try
-                 (xform-types/add-data e)
-                 (catch Exception ex
-                   (log/error :fn :message-process!
-                              :msg "Exception adding data to event"
-                              :event e
-                              :exception ex)
-                   e))))
-      ((fn [e] (if (:genegraph.annotate/data e) (xform-types/add-model e) e)))))
+      add-data-catch-exceptions))
 
-(defn message-process-add-to-jena!
-  [event]
-  (-> event
-      ((fn [e] (if (:genegraph.database.query/model e)
-                 (add-to-db! e)
-                 e)))))
 
 (defn clinvar-add-iri [event]
   ;; TODO doesn't work for types without ids
@@ -175,25 +120,11 @@
                 "_" (:id content)
                 "." (:release_date message)))))
 
-(defn add-data-no-transform
-  [event]
-  (-> (add-parsed-value event)
-      ((fn [e] (assoc e :genegraph.annotate/data
-                      (-> (:genegraph.transform.clinvar.core/parsed-value e)
-                          (#(merge % (:content %)))
-                          (dissoc :content)))))
-      ((fn [e] (assoc e :genegraph.annotate/data-contextualized
-                      (merge (:genegraph.annotate/data e)
-                             {"@context" {"@vocab" (str (get prefix-ns-map "cgterms"))}}))))
-      clinvar-add-iri))
-
 (defn process-topic-file-parallel-no-output [input-filename]
   (let [messages (map #(json/parse-string % true) (line-seq (io/reader input-filename)))]
     (write-tx
      (doseq [event (->> messages
-                        #_(take 10)
-                        (pmap message-proccess-no-db!)
-                        (map message-process-add-to-jena!))]
+                        (pmap message-proccess-with-rocksdb!))]
        (let [clinvar-type (:genegraph.transform.clinvar/format event)])))))
 
 (defn process-topic-file [input-filename]
@@ -202,7 +133,7 @@
                 variation-descriptor-writer (io/writer (str input-filename "-output-variation-descriptors"))
                 other-writer (io/writer (str input-filename "-output-other"))]
       (write-tx
-       (doseq [event (->> (map message-proccess! messages)
+       (doseq [event (->> (map message-proccess-with-jena! messages)
                           #_(take 10))]
          (let [clinvar-type (:genegraph.transform.clinvar/format event)
                ;;_ (log/info :clinvar-type clinvar-type)
@@ -217,25 +148,6 @@
                               common/map-remove-nil-values
                               (json/generate-string)))
            (.write writer "\n")))))))
-
-
-(defn bmap [f coll]
-  (let [batches (partition-all 10 coll)]
-    (reduce concat
-            (pmap (fn [b]
-                    (map f b))
-                  batches))))
-
-(defn test-folds []
-  (time
-   (def a (r/fold 100
-                  r/foldcat
-                  (r/map (fn [i] (doseq [n (range (int 1e5))] (inc n)) i)
-                         (range 10000)))))
-  (time
-   (def b (reduce conj []
-                  (map (fn [i] (doseq [n (range (int 1e5))] (inc n)) i)
-                       (range 10000))))))
 
 (defn snapshot-latest-statements-of-type
   [type-kw]
@@ -586,9 +498,9 @@
 
   ;; Kyle testing
   (start-states!)
-  (process-topic-file "cg-vcep-2019-07-01/variation.txt")
+  ;; (process-topic-file "cg-vcep-2019-07-01/variation.txt")
   (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/variation.txt")
-  (process-topic-file "cg-vcep-2019-07-01/variation-556853.txt")
+  (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/variation-556853.txt")
   (write-latest-variation-snapshots))
 
 (comment
@@ -613,20 +525,7 @@
                   (.write writer (json/generate-string rec))
                   (.write writer "\n"))))))))
 
-
-(comment
-  (-> "trait-test-input.txt"
-      io/reader
-      line-seq
-      first
-      (json/parse-string true)
-      eventify
-      genegraph.transform.clinvar.core/add-parsed-value
-      ca/add-data-for-trait
-      (genegraph.transform.clinvar.core/add-model-from-contextualized-data)
-      :genegraph.database.query/model))
-
 (defn run-full-topic-file []
   (let [input-filename "clinvar-raw.gz"
         messages (map #(json/parse-string % true) (line-seq (gzip-file-reader input-filename)))]
-    (map message-proccess! messages)))
+    (map message-proccess-with-jena! messages)))
