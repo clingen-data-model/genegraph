@@ -1,34 +1,30 @@
 (ns genegraph.transform.clinvar.ga4gh
   (:require [cheshire.core :as json]
-            [clojure.core.reducers :as r]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
             [clojure.stacktrace :refer [print-stack-trace]]
             [clojure.string :as str]
             [genegraph.annotate :as ann]
-            [genegraph.database.names :as names :refer [prefix-ns-map]]
             [genegraph.database.query :as q]
             [genegraph.database.util :refer [tx write-tx]]
+            [genegraph.rocksdb :as rocksdb]
             [genegraph.server]
-            [genegraph.sink.event :as event]
             [genegraph.sink.document-store :as docstore]
+            [genegraph.sink.event :as event]
             [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.clinical-assertion :as ca]
             [genegraph.transform.clinvar.common
              :as common
              :refer [map-compact-namespaced-values
                      map-rdf-resource-values-to-str map-unnamespace-values]]
-            [genegraph.transform.clinvar.core :refer [add-parsed-value]]
-            [genegraph.transform.clinvar.iri :refer [ns-cg]]
+            [genegraph.transform.clinvar.iri :refer [ns-cg
+                                                     parse-clinvar-resource-iri]]
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.clinvar.variation :as variation]
-            [genegraph.transform.jsonld.common :as jsonld]
             [genegraph.transform.types :as xform-types]
             [genegraph.util.fs :refer [gzip-file-reader]]
             [io.pedestal.log :as log]
-            [mount.core :as mount]
-            [genegraph.rocksdb :as rocksdb]
-            [taoensso.nippy :as nippy]))
+            [mount.core :as mount]))
 
 (def stop-removing-unused [#'write-tx #'tx #'pprint #'util/parse-nested-content])
 
@@ -86,7 +82,7 @@
       ann/add-action
       add-data-catch-exceptions
       xform-types/add-model
-      docstore/store-document
+      docstore/store-document-raw-key
       event/add-to-db!))
 
 (defn message-proccess-with-rocksdb!
@@ -97,8 +93,8 @@
       ann/add-metadata
       ann/add-action
       add-data-catch-exceptions
-      docstore/store-document))
-
+      #_docstore/store-document
+      docstore/store-document-raw-key))
 
 (defn message-proccess-no-db!
   "Takes a message value map. The :value of a KafkaRecord, parsed as json"
@@ -341,22 +337,6 @@
     (doseq [t stmt-types]
       (snapshot-latest-statements-of-type t))))
 
-(defn parse-vd-iri
-  "http://dataexchange.clinicalgenome.org/terms/VariationDescriptor_436617.2019-07-01
-   -> {:id 436617 :version 2019-07-01}"
-  [iri]
-  (let [iri (str iri)
-        type-prefix "http://dataexchange.clinicalgenome.org/terms/VariationDescriptor_"]
-    (assert (.startsWith iri type-prefix)
-            {:msg "Failed assertion"
-             :iri iri})
-    (let [id-plus-version (subs iri (count type-prefix))]
-      (if (.contains id-plus-version ".")
-        (let [id (subs id-plus-version 0 (.indexOf id-plus-version "."))
-              version (subs id-plus-version (+ 1 (.indexOf id-plus-version ".")))]
-          {:id id
-           :version version})
-        {:id id-plus-version}))))
 
 (defn snapshot-latest-variations []
   (try
@@ -441,26 +421,45 @@
   (str "test/genegraph/transform/clinvar/test-inputs/" (apply slashjoin relative-path-segs)))
 
 
+(defn- latest-versions-seq
+  "For key-value entries where the key is formatted like <prefix><id>.<version>,
+   get the last entry for each <prefix><id>. Assumes versions are lexicographically sortable.
+   Relies on RocksDB itself being lexicographically sorted on the byte array keys."
+  ([db]
+   (latest-versions-seq db (rocksdb/entire-db-entry-seq db)))
+  ([db remaining]
+  ;; I'm getting the iri-prefix by parsing the key of the next entry in the db.
+  ;; If we are consistent on the use of RecordMetadata for top level objects that
+  ;; are used in the output, we could use the version_of value from there as well
+   (when (seq remaining)
+     (let [[entry-k entry-v] (first remaining)
+           thawed-k (String. entry-k)
+           {:keys [id version ns-prefix type-prefix] :as parsed}
+           (parse-clinvar-resource-iri thawed-k)
+           variation-descriptor-iri-prefix (str ns-prefix type-prefix)
+           iri-prefix (str variation-descriptor-iri-prefix id)
+           _ (log/debug :iri-prefix iri-prefix :parsed-iri parsed)
+           prefix-seq (rocksdb/raw-prefix-entry-seq db (.getBytes iri-prefix))
+           last-entry (last prefix-seq)]
+       (log/debug :skip-count (count prefix-seq))
+       (let [[last-k last-v] last-entry
+             deserialized-last-entry [(String. last-k) last-v]]
+         (lazy-cat [deserialized-last-entry]
+                   (latest-versions-seq db (drop (count prefix-seq) remaining))))))))
+
 (defn snapshot-variation-db-rocksdb []
   (let [db genegraph.transform.clinvar.variation/variation-data-db
         variation-descriptor-iri-prefix (ns-cg "VariationDescriptor_")
         out-fname "variation-data-db-snapshot-rocksdb.ndjson"]
-    (doseq [[entry-k entry-v] (take 5 (rocksdb/entire-db-entry-seq db))]
-      (let [thawed-k (nippy/fast-thaw entry-k)
-            {id :id version :version} (parse-vd-iri thawed-k)
-            data (:genegraph.annotate/data entry-v)
-            iri-prefix (str variation-descriptor-iri-prefix id)
-            prefix-seq (rocksdb/raw-prefix-seq db iri-prefix)]
-        (doseq [[pent-k pent-v] prefix-seq]
-          (let [thawed-pent-k (nippy/fast-thaw pent-k)]
-            (prn {:id id :pent thawed-pent-k})))))
-
-    #_(with-open [writer (io/writer (io/file out-fname))]
-        (doseq [[entry-k entry-v] (rocksdb/entire-db-entry-seq db)]
-
-          (let [data (:genegraph.annotate/data entry-v)]
-            (.write writer (json/generate-string data))
-            (.write writer "\n"))))))
+    (letfn [(not-deleted [[entry-k entry-v]]
+              (let [deleted? (get-in entry-v [:record_metadata :deleted])]
+                (when deleted? (log/info :entry-id (:id entry-v) :deleted deleted?))
+                (not deleted?)))]
+      (with-open [writer (io/writer out-fname)]
+        (doseq [[entry-k entry-v] (->> (latest-versions-seq db)
+                                       (filter not-deleted))]
+          (.write writer (json/generate-string entry-v))
+          (.write writer "\n"))))))
 
 
 (comment
@@ -499,9 +498,15 @@
   ;; Kyle testing
   (start-states!)
   ;; (process-topic-file "cg-vcep-2019-07-01/variation.txt")
-  (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/variation.txt")
   (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/variation-556853.txt")
-  (write-latest-variation-snapshots))
+  (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/variation.txt")
+
+
+  ;; testing get latest for a record with multiple versions
+  (process-topic-file-parallel-no-output
+   (cv-transform-test-fname "one-variation-create-update-delete"
+                            "clinvar-raw-variation-36823-deleted.txt"))
+  (snapshot-variation-db-rocksdb))
 
 (comment
   "Testing delete operation"
