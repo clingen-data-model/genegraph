@@ -35,6 +35,20 @@
      (:genegraph.annotate/data event)))
   event)
 
+(defn store-document-raw-key
+  "Store the document data in :genegraph.annotate/data
+   with the key :genegraph.annotate/data-id in the user opened
+   database in :genegraph.annotate/data-db or in the default db.
+
+   Assumes :genegraph.annotate/data-id is already a str or byte array"
+  [event]
+  (when (and (:genegraph.annotate/data event) (:genegraph.annotate/data-id event))
+    (rocks/rocks-put-raw-key!
+     (or (:genegraph.annotate/data-db event) db)
+     (let [k (:genegraph.annotate/data-id event)] (if (string? k) (.getBytes k) k))
+     (:genegraph.annotate/data event)))
+  event)
+
 (def store-document-interceptor
   {:name ::store-document
    :enter store-document})

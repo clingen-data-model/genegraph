@@ -188,6 +188,14 @@
   [db prefix]
   (-> db (raw-prefix-iter prefix) rocks-iterator-seq))
 
+(defn raw-prefix-entry-seq
+  "Return a lazy-seq over all records in DB beginning with PREFIX,
+  where prefix is a byte array. Intended when record ordering
+  is significant.
+   Returns key-value pairs [key value]."
+  [db prefix]
+  (-> db (raw-prefix-iter prefix) rocks-entry-iterator-seq))
+
 (defn sample-prefix
   "Take first n records from db given prefix"
   [db prefix n]
