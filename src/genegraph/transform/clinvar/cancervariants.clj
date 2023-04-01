@@ -1,15 +1,15 @@
 (ns genegraph.transform.clinvar.cancervariants
   "Things for interacting with the cancervariants.org normalization service."
   (:require [cheshire.core :as json]
-            [clj-http.client :as http-client]
+            [clj-http.client :as http]
             [genegraph.database.names :as names :refer [prefix-ns-map]]
             [genegraph.rocksdb :as rocksdb]
             [genegraph.source.registry.redis :as redis]
             [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.common :refer [with-retries]]
+            [hato.client :as hc]
             [io.pedestal.log :as log]
-            [mount.core :as mount]
-            [genegraph.transform.clinvar.hgvs :as hgvs])
+            [mount.core :as mount])
   (:import (clojure.lang Keyword)))
 
 (def variation-normalizer-base-url
@@ -45,6 +45,9 @@
 (defn add-vicc-context [val]
   (assoc val "@context" vicc-context))
 
+(defonce hato-client (hc/build-http-client {:version :http-2
+                                            :connect-timeout 10000}))
+
 ;; vicc-db-name is to store the http cache, which caches the full url, params, etc,
 ;; and most of the response object.
 ;; but really all we need is the expression -> variation object cached.
@@ -60,11 +63,12 @@
   (log/debug :fn :normalize-canonical
              :variation-expression variation-expression
              :expression-type expression-type)
-  (let [response (http-client/get url-to-canonical
-                                  {:throw-exceptions false
-                                   :query-params {"q" variation-expression
-                                                  "fmt" (name expression-type)
-                                                  "untranslatable_returns_text" true}})
+  (let [response (hc/get url-to-canonical
+                         {:http-client hato-client
+                          :throw-exceptions false
+                          :query-params {"q" variation-expression
+                                         "fmt" (name expression-type)
+                                         "untranslatable_returns_text" true}})
         status (:status response)]
     (case status
       200 (let [body (-> response :body json/parse-string)]
@@ -82,16 +86,17 @@
    Throws exception on error."
   [input-map]
   (log/debug :fn :normalize-absolute-copy-number :input-map input-map)
-  (let [response (http-client/get url-absolute-cnv
-                                  {:throw-exceptions false
-                                   :query-params
-                                   (into {"untranslatable_returns_text" true}
-                                         (map #(vector (-> % first name) (-> % second))
-                                              (select-keys input-map [:assembly
-                                                                      :chr
-                                                                      :start
-                                                                      :end
-                                                                      :total_copies])))})
+  (let [response (hc/get url-absolute-cnv
+                         {:http-client hato-client
+                          :throw-exceptions false
+                          :query-params
+                          (into {"untranslatable_returns_text" true}
+                                (map #(vector (-> % first name) (-> % second))
+                                     (select-keys input-map [:assembly
+                                                             :chr
+                                                             :start
+                                                             :end
+                                                             :total_copies])))})
         status (:status response)]
     (case status
       200 (let [body (-> response :body json/parse-string)]
@@ -126,12 +131,13 @@
          stop :stop
          variant-length :variant-length} location]
     (log/info :fn :normalize-relative-copy-number :expr expr :copy-class copy-class)
-    (let [response (http-client/get url-relative-cnv
-                                    {:throw-exceptions false
-                                     :query-params
-                                     {"hgvs_expr" expr
-                                      "relative_copy_class" efo-copy-class
-                                      "untranslatable_returns_text" true}})
+    (let [response (hc/get url-relative-cnv
+                           {:http-client hato-client
+                            :throw-exceptions false
+                            :query-params
+                            {"hgvs_expr" expr
+                             "relative_copy_class" efo-copy-class
+                             "untranslatable_returns_text" true}})
           status (:status response)]
       (case status
         200 (let [body (-> response :body json/parse-string)]
@@ -155,7 +161,6 @@
 
 (defn redis-configured? []
   (System/getenv "CACHE_REDIS_URI"))
-
 
 
 (mount/defstate cache-db
@@ -279,7 +284,7 @@
   ([variation-expression]
    (vrs-variation-for-expression variation-expression nil))
   ([variation-expression ^Keyword expression-type]
-   (log/info :fn :vrs-allele-for-variation :variation-expression variation-expression :expr-type expression-type)
+   (log/debug :fn :vrs-allele-for-variation :variation-expression variation-expression :expr-type expression-type)
    (let [cached-value (get-from-cache variation-expression expression-type)]
      (when ((comp not not) cached-value)
        (log/debug :fn :vrs-variation-for-expression
