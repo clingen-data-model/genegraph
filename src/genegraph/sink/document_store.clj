@@ -53,6 +53,10 @@
   {:name ::store-document
    :enter store-document})
 
+(def store-document-raw-key-interceptor
+  {:name ::store-document-raw-key
+   :enter store-document-raw-key})
+
 (defn get-document
   ([id] (get-document db id))
   ([db id] (rocks/rocks-get-raw-key db (nippy/fast-freeze id))))

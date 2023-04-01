@@ -73,10 +73,11 @@
 
 (defn normalize-clinsig-term
   "Returns the mapped normalized term for the raw input term.
-   If the term is not known, return the mapping for 'other'"
+   If the term is not known, return the mapping for 'other'.
+   TODO add error messages to return"
   [term]
-  (get common/normalize-clinsig-map (str/lower-case term)
-       (get common/normalize-clinsig-map "other")))
+  (or (some-> term str/lower-case (#(get common/normalize-clinsig-map %)))
+      (get common/normalize-clinsig-map "other")))
 
 (defn normalize-clinsig-code
   "Returns the mapped normalized code for the raw input term.

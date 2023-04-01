@@ -16,17 +16,11 @@
             [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.transform.clinvar.common :refer [with-retries]]
-            [genegraph.transform.types :as xform-types]
             [io.pedestal.log :as log]
             [mount.core :as mount]
             [ring.util.request])
   (:import (java.time Duration Instant)
            (org.apache.kafka.common TopicPartition)))
-
-(def add-data-interceptor
-  {:name ::add-data-interceptor
-   :enter (fn [event] (xform-types/add-data event))
-   :leave (fn [event] event)})
 
 (def interceptor-chain
   [ann/add-metadata-interceptor
@@ -262,56 +256,6 @@
                           (map #(redis/get-keys-pipelined redis-opts %))
                           flatten1)]
       (reduce count-fn {} cache-vals))))
-
-;; curl -X 'PUT' \
-;;   'http://localhost:5050/allele' \
-;;   -H 'accept: application/json' \
-;;   -H 'Content-Type: application/json' \
-;;   -d '{
-;;   "definition": "NC_000010.11:g.87894077C>T",
-;;   "format": "hgvs",
-;;   "normalize": "right"
-;; }'
-
-(defn anyvar-testing []
-
-  (cp/with-shutdown! [pool (cp/threadpool 50)]
-    (let [base-url "http://localhost:5050"
-          inp (json/generate-string
-               {"definition" "NC_000010.11:g.87894077C>T",
-                "format" "hgvs",
-                "normalize" "right"})
-          headers {"Content-Type" "application/json"
-                   "Accept" "application/json"}
-          n 1000]
-      (let [start (Instant/now)]
-        (dorun
-         (cp/pmap
-          pool
-          (fn [i]
-            (let [resp (http-client/put (str base-url "/allele")
-                                        {:throw-exceptions false
-                                         :headers headers
-                                         :body inp})]
-              (assert (= 200 (:status resp)) {:status (:status resp)
-                                              :msg "Request failed"
-                                              :resp resp})))
-          (range n)))
-        (let [duration (Duration/between start (Instant/now))
-              avg (.dividedBy duration n)]
-          (println (prn-str {:avg (str avg)
-                             :total (str duration)})))))))
-
-
-(comment
-  (def test-db (rocksdb/open "rocks_registry-container.db"))
-  (reduce (fn [agg val]
-            (+ 1 agg))
-          0
-          (rocksdb/entire-db-seq test-db))
-  (doseq [])
-  ())
-
 
 (comment
   #_(def test-db (rocksdb/open "variation-snapshot-fromcontainer.db"))

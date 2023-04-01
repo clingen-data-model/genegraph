@@ -81,7 +81,7 @@
       (.put props (p 0) (p 1)))
     props))
 
-(defn- topic-partitions
+(defn topic-partitions
   [consumer topic]
   (let [topic-name (-> config :topics topic :name)
         partition-infos (.partitionsFor consumer topic-name)]
@@ -103,7 +103,7 @@
                  :partitions (.assignment consumer))
       :error)))
 
-(defn- poll-once
+(defn poll-once
   "Attempts to poll consumer one time and return polled messages. Upon exception, retries
   polling over an increasing series of sleep times. Throws an exception if poll attempts are
   unsuccessful."
@@ -132,7 +132,7 @@
         cluster-key
         client-configuration)))
 
-(defn- consumer-for-topic
+(defn consumer-for-topic
   "Return consumer for topic"
   [topic]
   (let [cluster-config (topic-cluster-config topic)
