@@ -85,7 +85,7 @@
    #_event/stream-producer-interceptor])
 
 (mount/defstate thread-pool
-  :start (cp/threadpool 4)
+  :start (cp/threadpool 20)
   :stop (cp/shutdown thread-pool))
 
 (defn start-states! []
@@ -100,6 +100,7 @@
    #'genegraph.transform.clinvar.clinical-assertion/trait-data-db
    #'genegraph.transform.clinvar.clinical-assertion/trait-set-data-db
    #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db
+   #'genegraph.server/server
    #'rocks-registry/db
    #'rocks-registry/server
    #'genegraph.source.snapshot.core/thread-pool))
@@ -144,8 +145,8 @@
                               (let [end (Instant/now)
                                     dur (Duration/between start end)]
                                 ;; when dur is greater than 50 milliseconds
-                                (when (< 0 (.compareTo dur (Duration/ofMillis 50))) ;;asdf
-                                  (log/warn :msg "process-event took longer than 50 milliseconds"
+                                (when (< 0 (.compareTo dur (Duration/ofMillis 100)))
+                                  (log/warn :msg "process-event took longer than 100 milliseconds"
                                             :duration (str dur)
                                             :event-data (:genegraph.annotate/data event))))))))
                       records))
@@ -165,12 +166,14 @@
 (defonce snapshot-keep-running-atom (atom true))
 
 (defn -main2 [& args]
+  (migration/populate-data-vol-if-needed)
   (start-states!)
   (let [m (apply hash-map args)]
     (reset! snapshot-keep-running-atom true)
     (run-snapshots2 snapshot-keep-running-atom)))
 
 (comment
+  #_(migration/populate-data-vol-if-needed)
   (def snapshot-thread (doto (Thread. -main2)
                          .start))
 

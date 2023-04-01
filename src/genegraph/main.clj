@@ -82,6 +82,6 @@
       (run-server-transformer nil)
       (run-server-genegraph nil))
     (cond
-      (= "snapshot" (first args)) (apply snapshot/-main (rest args))
+      (= "snapshot" (first args)) (apply snapshot/-main2 (rest args))
       (= "vrs-cache" (first args)) (apply vrs-registry/-main (rest args))
       :else (run-migration))))
