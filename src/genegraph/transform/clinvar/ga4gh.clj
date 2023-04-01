@@ -449,7 +449,6 @@
 
 (defn snapshot-variation-db-rocksdb []
   (let [db genegraph.transform.clinvar.variation/variation-data-db
-        variation-descriptor-iri-prefix (ns-cg "VariationDescriptor_")
         out-fname "variation-data-db-snapshot-rocksdb.ndjson"]
     (letfn [(not-deleted [[entry-k entry-v]]
               (let [deleted? (get-in entry-v [:record_metadata :deleted])]
@@ -506,6 +505,7 @@
   (process-topic-file-parallel-no-output
    (cv-transform-test-fname "one-variation-create-update-delete"
                             "clinvar-raw-variation-36823-deleted.txt"))
+  ;; the snapshot should not contain variation 36823
   (snapshot-variation-db-rocksdb))
 
 (comment
