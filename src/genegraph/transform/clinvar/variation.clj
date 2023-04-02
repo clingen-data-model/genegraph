@@ -484,8 +484,7 @@
   [variation-id release-date]
   (let [vrd-unversioned (str (ns-cg "VariationDescriptor_") variation-id)
         vd-iri (str vrd-unversioned "." release-date)
-        variation-event (docstore/get-document variation-data-db vd-iri)
-        variation-doc (:genegraph.annotate/data variation-event)]
+        variation-doc (docstore/get-document-raw-key variation-data-db vd-iri)]
     (get-in variation-doc [:canonical_variation :id])))
 
 (defn add-data-for-variation

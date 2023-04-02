@@ -1,7 +1,5 @@
 (ns genegraph.sink.document-store
   (:require [genegraph.rocksdb :as rocks]
-            [clojure.string :as s]
-            [cheshire.core :as json]
             [mount.core :as mount :refer [defstate]]
             [taoensso.nippy :as nippy]))
 
@@ -60,6 +58,10 @@
 (defn get-document
   ([id] (get-document db id))
   ([db id] (rocks/rocks-get-raw-key db (nippy/fast-freeze id))))
+
+(defn get-document-raw-key
+  ([id] (get-document-raw-key db id))
+  ([db id] (rocks/rocks-get-raw-key db (if (string? id) (.getBytes id) id))))
 
 (defn get-documents-by-prefix [event]
   (let [db (or (:genegraph.annotate/data-db event) db)]
