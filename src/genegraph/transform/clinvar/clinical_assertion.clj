@@ -576,8 +576,7 @@
   [traits release-date]
   (reduce (fn [vec unversioned-trait-iri]
             (let [versioned-trait-iri (str unversioned-trait-iri "." release-date)
-                  trait-event (docstore/get-document trait-data-db versioned-trait-iri)
-                  trait (:genegraph.annotate/data trait-event)]
+                  trait (docstore/get-document-raw-key trait-data-db versioned-trait-iri)]
               (conj vec {:id (str "medgen:" (:medgen_id trait))
                          :type (:type trait)})))
           []
