@@ -585,8 +585,7 @@
 
 (defn trait-set-for-output [unversioned-trait-set-iri release-date]
   (let [versioned-trait-set-iri (str unversioned-trait-set-iri "." release-date)
-        trait-set-event (docstore/get-document trait-set-data-db versioned-trait-set-iri)
-        trait-set (:genegraph.annotate/data trait-set-event)]
+        trait-set (docstore/get-document-raw-key trait-set-data-db versioned-trait-set-iri)]
     {:id (:id trait-set)
      :type (:type trait-set)
      :members (traits-for-output (:members trait-set) release-date)}))
@@ -696,7 +695,10 @@
               :classification (classification assertion)
               :target_proposition (let [proposition (proposition event)
                                         subject (:subject proposition)
-                                        vrs-id (variation/get-vrs-variation subject release-date)
+                                        vrs-id (-> (variation/get-variation-descriptor-by-clinvar-id
+                                                    subject
+                                                    release-date)
+                                                   (get-in [:canonical_variation :id]))
                                         object (:object proposition)
                                         trait-set (trait-set-for-output object release-date)]
                                     (assoc proposition

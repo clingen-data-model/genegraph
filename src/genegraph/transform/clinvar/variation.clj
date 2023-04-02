@@ -479,13 +479,13 @@
   :start (rocksdb/open "variation-snapshot.db")
   :stop (rocksdb/close variation-data-db))
 
-(defn get-vrs-variation
+(defn get-variation-descriptor-by-clinvar-id
   "For a variation of the form \"40347\", return the variation from RocksDB"
   [variation-id release-date]
   (let [vrd-unversioned (str (ns-cg "VariationDescriptor_") variation-id)
         vd-iri (str vrd-unversioned "." release-date)
-        variation-doc (docstore/get-document-raw-key variation-data-db vd-iri)]
-    (get-in variation-doc [:canonical_variation :id])))
+        variation-descriptor (docstore/get-document-raw-key variation-data-db vd-iri)]
+    variation-descriptor))
 
 (defn add-data-for-variation
   "Returns msg with :genegraph.annotate/data and :genegraph.annotate/data-contextualized added.
