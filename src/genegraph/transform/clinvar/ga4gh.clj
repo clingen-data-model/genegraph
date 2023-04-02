@@ -24,7 +24,8 @@
             [genegraph.transform.types :as xform-types]
             [genegraph.util.fs :refer [gzip-file-reader]]
             [io.pedestal.log :as log]
-            [mount.core :as mount]))
+            [mount.core :as mount]
+            [genegraph.transform.clinvar.core :as clinvar]))
 
 (def stop-removing-unused [#'write-tx #'tx #'pprint #'util/parse-nested-content])
 
@@ -401,8 +402,6 @@
     (catch Exception e
       (print-stack-trace e))))
 
-
-
 (defn snapshot-variation-db []
   (let [db genegraph.transform.clinvar.variation/variation-data-db
         out-fname "variation-data-db-snapshot.ndjson"]
@@ -447,28 +446,38 @@
          (lazy-cat [deserialized-last-entry]
                    (latest-versions-seq db (drop (count prefix-seq) remaining))))))))
 
+(defn not-deleted?
+  "Returns true if .record_metadata.deleted is not truthy"
+  [[entry-k entry-v]]
+  (let [deleted? (get-in entry-v [:record_metadata :deleted])]
+    (when deleted? (log/info :entry-id (:id entry-v) :deleted deleted?))
+    (not deleted?)))
+
 (defn snapshot-variation-db-rocksdb []
   (let [db genegraph.transform.clinvar.variation/variation-data-db
         out-fname "variation-data-db-snapshot-rocksdb.ndjson"]
-    (letfn [(not-deleted [[entry-k entry-v]]
-              (let [deleted? (get-in entry-v [:record_metadata :deleted])]
-                (when deleted? (log/info :entry-id (:id entry-v) :deleted deleted?))
-                (not deleted?)))]
-      (with-open [writer (io/writer out-fname)]
-        (doseq [[entry-k entry-v] (->> (latest-versions-seq db)
-                                       (filter not-deleted))]
-          (.write writer (json/generate-string entry-v))
-          (.write writer "\n"))))))
+    (with-open [writer (io/writer out-fname)]
+      (doseq [[entry-k entry-v] (->> (latest-versions-seq db)
+                                     (filter not-deleted?))]
+        (.write writer (json/generate-string entry-v))
+        (.write writer "\n")))))
 
+(defn snapshot-statements-db-rocksdb []
+  (let [db ca/clinical-assertion-data-db
+        out-fname "statements-data-db-snapshot.ndjson"]
+    (with-open [writer (io/writer (io/file out-fname))]
+      (doseq [[entry-k entry-v] (->> (rocksdb/entire-db-entry-seq db)
+                                     #_(filter not-deleted?)
+                                     #_(filter #(not (nil? (:specified_by %))))
+                                     (take 5))]
+        (prn {:entry-v entry-v})
+        #_(.write writer (json/generate-string entry-v))
+        #_(.write writer "\n")))))
 
 (comment
   (start-states!)
 
   (process-topic-file (cv-transform-test-fname "relative-cnv/cvraw-kinda-long-dup1.txt"))
-
-
-  (process-topic-file "cg-vcep-2019-07-01/trait.txt")
-  (process-topic-file "cg-vcep-2019-07-01/trait_set.txt")
 
   (process-topic-file "data/cg-vcep-2019-07-01/one_variant.txt")
   (process-topic-file "data/cg-vcep-2019-07-01/variation.txt")
@@ -482,12 +491,6 @@
   ;; snapshot with Jena
   (snapshot-latest-variations)
 
-  ;; snapshot with the variation add-data snapshot rocksdb
-  (snapshot-variation-db)
-  (snapshot-latest-variations)
-  (snapshot-latest-statements)
-  #_(snapshot-latest-rocks-statements-of-type :vrs/VariationGermlinePathogenicityStatement)
-
   (write-latest-statement-snapshots :vrs/VariationGermlinePathogenicityStatement)
   (write-latest-statement-snapshots :vrs/ClinVarDrugResponseStatement)
   (write-latest-statement-snapshots :vrs/ClinVarOtherStatement)
@@ -496,17 +499,22 @@
 
   ;; Kyle testing
   (start-states!)
-  ;; (process-topic-file "cg-vcep-2019-07-01/variation.txt")
   (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/variation-556853.txt")
-  (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/variation.txt")
+  (do (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/variation.txt")
+      (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/trait.txt")
+      (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/trait_set.txt")
+      (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/clinical_assertion.txt")))
 
-
-  ;; testing get latest for a record with multiple versions
-  (process-topic-file-parallel-no-output
-   (cv-transform-test-fname "one-variation-create-update-delete"
-                            "clinvar-raw-variation-36823-deleted.txt"))
-  ;; the snapshot should not contain variation 36823
-  (snapshot-variation-db-rocksdb))
+(comment
+  (def assertions
+    (-> "cg-vcep-2019-07-01/clinical_assertion.txt"
+        io/reader
+        line-seq
+        (->>
+         (map #(json/parse-string % true))
+         (filter #(= "SCV000852165" (get-in % [:content :id])))
+         (map message-proccess-with-rocksdb!)
+         (map :genegraph.annotate/data)))))
 
 (comment
   "Testing delete operation"
