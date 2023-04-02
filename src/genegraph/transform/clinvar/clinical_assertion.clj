@@ -2,15 +2,18 @@
   (:require [cheshire.core :as json]
             [clojure.string :as str]
             [genegraph.database.load :as l]
-            [genegraph.database.names :refer [local-class-names
-                                              local-property-names
-                                              prefix-ns-map]]
+            [genegraph.database.names
+             :refer [local-class-names
+                     local-property-names
+                     prefix-ns-map]]
             [genegraph.database.query :as q]
-            [genegraph.sink.document-store :as docstore]
             [genegraph.rocksdb :as rocks]
+            [genegraph.sink.document-store :as docstore]
             [genegraph.transform.clinvar.common :as common]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
-            [genegraph.transform.clinvar.util :refer [in?]]
+            [genegraph.transform.clinvar.util
+             :refer [in?
+                     into-sequential-if-not]]
             [genegraph.transform.clinvar.variation :as variation]
             [io.pedestal.log :as log]
             [mount.core :as mount :refer [defstate]])
@@ -403,14 +406,18 @@
   [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
-        has-method? (= "AssertionMethod"
-                       (get-in assertion [:content "AttributeSet" "Attribute" "@Type"]))
-        method-label (get-in assertion [:content "AttributeSet" "Attribute" "$"])
-        method-url (get-in assertion [:content "AttributeSet" "Citation" "URL" "$"])
-        method-pubmed (let [citation (get-in assertion [:content "AttributeSet" "Citation"])]
+        assertion-method-obj (-> assertion
+                                 (get-in [:content "AttributeSet"])
+                                 (into-sequential-if-not)
+                                 (->> (filter #(= "AssertionMethod"
+                                                  (get-in % ["Attribute" "@Type"])))
+                                      first))
+        method-label (get-in assertion-method-obj ["Attribute" "$"])
+        method-url (get-in assertion-method-obj ["Citation" "URL" "$"])
+        method-pubmed (let [citation (get-in assertion-method-obj ["Citation"])]
                         (when (= "PubMed" (get-in citation ["ID" "@Source"]))
                           (str "PMID:" (get-in citation ["ID" "$"]))))]
-    (when has-method?
+    (when assertion-method-obj
       {;; If a deterministic id is needed:
        ;; (str iri/clinvar-assertion (:id assertion) "." (:release_date message) "_Method")
        :id (str "_:" (l/blank-node))
