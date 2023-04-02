@@ -619,7 +619,7 @@
                                                   :owl/version-info])
         ;; Assertion is stored with the subject-descriptor just being the variation id
         ;; TODO try to speed up the variation-descriptor-by-clinvar-id function call
-        subject-descriptor (variation-descriptor-by-clinvar-id
+        subject-descriptor (variation/get-variation-descriptor-by-clinvar-id
                             (q/ld1-> assertion-resource [:vrs/subject-descriptor])
                             release-date)]
     (when (nil? subject-descriptor)
@@ -663,6 +663,8 @@
         release-date (:release_date message)
         id (str vof "." release-date)
         stmt-type (statement-type (:interpretation_description assertion))
+        subject-descriptor (variation/get-variation-descriptor-by-clinvar-id
+                            (get assertion :variation_id) release-date)
         data {:id id
               :type stmt-type
               :label (:title assertion)
@@ -685,7 +687,7 @@
               :direction (-> (:interpretation_description assertion)
                              normalize-clinsig-term
                              clinsig->direction)
-              :subject_descriptor (get assertion :variation_id)
+              :subject_descriptor subject-descriptor
               #_#_:subject_descriptor (str (variation-descriptor-by-clinvar-id
                                             (get assertion :variation_id)
                                             (get message :release_date)))

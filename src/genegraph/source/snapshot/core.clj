@@ -152,7 +152,7 @@
                       records))
               (log/info :progress (str (.position c tp) "/" end)
                         :batch-size (count records)
-                        :batch-duration (.getSeconds (Duration/between start (Instant/now)))
+                        :batch-duration (str (Duration/between start (Instant/now)))
                         :average-duration (when (not= 0 (count records))
                                             (str (.dividedBy (Duration/between start (Instant/now))
                                                              (count records)))))
