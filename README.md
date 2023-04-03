@@ -1,7 +1,3 @@
-# ClinGen website data service
-
-Current iteration of ClinGen website data service. Based on Clojure, Apache Jena, and Pedestal.
-
 ## Documentation
 
 The Codox plugin is installed for this project. In order to build the documentation, type:
