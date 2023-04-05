@@ -2,13 +2,16 @@
   (:require [cheshire.core :as json]
             [genegraph.database.load :as l]
             [genegraph.database.query :as q]
+            [genegraph.rocksdb :as rocksdb]
             [genegraph.transform.clinvar.clinical-assertion :as clinical-assertion]
             [genegraph.transform.clinvar.common :as common]
+            [genegraph.transform.clinvar.iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.clinvar.variation :as variation]
             [genegraph.transform.types :as xform-types :refer [add-model]]
             [genegraph.util :refer [str->bytestream]]
-            [io.pedestal.log :as log]))
+            [io.pedestal.log :as log]
+            [mount.core :as mount]))
 
 (defn add-parsed-value
   "Adds ::parsed-value containing the keywordized edn-map of :genegraph.sink.event/value.
@@ -21,11 +24,26 @@
              (json/parse-string true)
              (util/parse-nested-content))))
 
+(mount/defstate release-sentinel-snapshot-db
+  :start (rocksdb/open "release-sentinel-snapshot.db"))
+
+(defn add-data-for-release-sentinel [event]
+  (let [message (:genegraph.transform.clinvar.core/parsed-value event)
+        id (str (ns-cg "clinvar.release_sentinel")
+                "_" (get-in message [:content :sentinel_type])
+                "." (:release_date message))]
+    (assoc event
+           :genegraph.annotate/data message
+           :genegraph.annotate/iri id
+           :genegraph.annotate/data-db release-sentinel-snapshot-db
+           :genegraph.annotate/data-id id)))
+
 (def data-fns-for-type
   {"trait" #(clinical-assertion/add-data-for-trait %)
    "trait_set" #(clinical-assertion/add-data-for-trait-set %)
    "clinical_assertion" #(clinical-assertion/add-data-for-clinical-assertion %)
-   "variation" #(variation/add-data-for-variation %)})
+   "variation" #(variation/add-data-for-variation %)
+   "release_sentinel" #(add-data-for-release-sentinel %)})
 
 (defn add-event-type [event]
   (let [message (::parsed-value event)
