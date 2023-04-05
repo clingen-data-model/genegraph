@@ -14,6 +14,7 @@
             genegraph.transform.clinvar.clinical-assertion
             [genegraph.transform.clinvar.ga4gh :as ga4gh]
             genegraph.transform.clinvar.variation
+            [genegraph.util.fs :refer [gzip-file-writer]]
             [genegraph.util.gcs :as gcs]
             [io.pedestal.log :as log]
             [me.raynes.fs :as fs]
@@ -110,23 +111,54 @@
    #'rocks-registry/server
    #'genegraph.source.snapshot.core/thread-pool))
 
-(defn write-snapshots []
-  (let [start (Instant/now)
-        datasets {"variation-descriptors.ndjson"
-                  genegraph.transform.clinvar.variation/variation-data-db
-                  "statements.ndjson"
-                  genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db}]
-    (doseq [[filename db] datasets]
-      (let [rel-dir (str "snapshots/" (str (Instant/now)))
-            rel-path (str rel-dir "/" filename)]
-        (log/info :fn :write-snapshots :timestamp (str start) :path rel-path)
-        (fs/mkdirs rel-dir)
-        (with-open [writer (io/writer rel-path)]
-          (doseq [[i [entry-k entry-v]] (map-indexed vector (ga4gh/latest-records db))]
-            (when (= 0 (rem i 1000))
-              (log/info :snapshot filename :progress i))
-            (.write writer (json/generate-string entry-v))
-            (.write writer "\n")))))))
+(defn write-snapshots
+  "DATASETS is a map of output filename to the rocksdb object it's content will be based on
+   {\"variation.ndjson\" myvariation-snapshot-db}"
+  ([datasets] (write-snapshots datasets {}))
+  ([datasets {:keys [gzip] :as options}]
+   (let [start (Instant/now)]
+     (loop [datasets datasets
+            outputs {}]
+       (if (empty? datasets)
+         outputs
+         (let [[filename db] (first datasets)
+               rel-dir (str "snapshots/" (str start))
+               rel-path (-> (str rel-dir "/" filename)
+                            (cond-> gzip (str ".gz")))]
+           (log/info :fn :write-snapshots :timestamp (str start) :path rel-path)
+           (fs/mkdirs rel-dir)
+           (with-open [writer (if gzip
+                                (gzip-file-writer rel-path)
+                                (io/writer rel-path))]
+             (doseq [[i [entry-k entry-v]] (map-indexed vector (ga4gh/latest-records db))]
+               (when (= 0 (rem i 1000))
+                 (log/info :snapshot filename :progress i))
+               (.write writer (json/generate-string entry-v))
+               (.write writer "\n")))
+           (recur (rest datasets)
+                  (assoc outputs filename rel-path))))))))
+
+(def snapshot-datasets
+  {"variation-descriptors.ndjson"
+   genegraph.transform.clinvar.variation/variation-data-db
+   "statements.ndjson"
+   genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db})
+
+(defn write-snapshot-outputs-to-bucket
+  "Takes a map in the form returned by write-snapshots, copies them to the configured bucket
+
+   Examples:
+
+   {basename relative-file-path}
+
+   {\"variation.ndjson\" \"snapshots/2023-04-05T12:01:05.0Z/variation.ndjson\"}"
+  [snapshot-file-map]
+  (doseq [[_ output-filename] snapshot-file-map]
+    (log/info :msg "Writing file to bucket"
+              :local-file output-filename
+              :bucket-file output-filename
+              :bucket env/genegraph-bucket)
+    (gcs/put-file-in-bucket! output-filename output-filename)))
 
 (defn run-snapshots2
   "Mostly lifted stream code from genegraph.sink.stream/store-stream
@@ -179,7 +211,14 @@
                 (recur (stream/poll-once c))))))))
     (if @keep-running-atom
       (do (log/info :msg "Done reading topic" :topic topic-kw)
-          (write-snapshots))
+          (let [output-file-map (write-snapshots snapshot-datasets {:gzip true})]
+            (log/info :msg "Finished writing snapshot files" :files (mapv second output-file-map))
+            (when env/snapshot-upload
+              (log/info :msg "Uploading snapshot outputs to bucket"
+                        :bucket env/genegraph-bucket
+                        :files (mapv second output-file-map))
+              (write-snapshot-outputs-to-bucket output-file-map))))
+
       (log/warn :msg "Ended snapshot due to caller signal"))))
 
 (defonce snapshot-keep-running-atom (atom true))
