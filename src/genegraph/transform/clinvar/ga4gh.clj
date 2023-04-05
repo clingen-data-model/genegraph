@@ -94,7 +94,6 @@
       ann/add-metadata
       ann/add-action
       add-data-catch-exceptions
-      #_docstore/store-document
       docstore/store-document-raw-key))
 
 (defn message-proccess-no-db!
@@ -420,7 +419,7 @@
   (str "test/genegraph/transform/clinvar/test-inputs/" (apply slashjoin relative-path-segs)))
 
 
-(defn- latest-versions-seq
+(defn latest-versions-seq
   "For key-value entries where the key is formatted like <prefix><id>.<version>,
    get the last entry for each <prefix><id>. Assumes versions are lexicographically sortable.
    Relies on RocksDB itself being lexicographically sorted on the byte array keys."
@@ -436,11 +435,12 @@
            {:keys [id version ns-prefix type-prefix] :as parsed}
            (parse-clinvar-resource-iri thawed-k)
            variation-descriptor-iri-prefix (str ns-prefix type-prefix)
-           iri-prefix (str variation-descriptor-iri-prefix id)
-           _ (log/debug :iri-prefix iri-prefix :parsed-iri parsed)
+           iri-prefix (str variation-descriptor-iri-prefix id ".")
            prefix-seq (rocksdb/raw-prefix-entry-seq db (.getBytes iri-prefix))
            last-entry (last prefix-seq)]
-       (log/debug :skip-count (count prefix-seq))
+       (log/debug :iri-prefix iri-prefix
+                  :parsed-iri parsed
+                  :skip-count (count prefix-seq))
        (let [[last-k last-v] last-entry
              deserialized-last-entry [(String. last-k) last-v]]
          (lazy-cat [deserialized-last-entry]
@@ -453,12 +453,21 @@
     (when deleted? (log/info :entry-id (:id entry-v) :deleted deleted?))
     (not deleted?)))
 
+(defn latest-records
+  "For a RocksDB instance with keys and values structured in ways we know how to iterate,
+   return the latest versions of non-deleted records.
+   Keys must be parseable by parse-clinvar-resource-iri. Records are filtered out when the latest
+   version contains .release_metadata{.deleted=true}."
+  [db]
+  (for [[entry-k entry-v] (->> (latest-versions-seq db)
+                               (filter not-deleted?))]
+    [entry-k entry-v]))
+
 (defn snapshot-variation-db-rocksdb []
   (let [db genegraph.transform.clinvar.variation/variation-data-db
         out-fname "variation-data-db-snapshot-rocksdb.ndjson"]
     (with-open [writer (io/writer out-fname)]
-      (doseq [[entry-k entry-v] (->> (latest-versions-seq db)
-                                     (filter not-deleted?))]
+      (doseq [[entry-k entry-v] (latest-records db)]
         (.write writer (json/generate-string entry-v))
         (.write writer "\n")))))
 
@@ -466,13 +475,9 @@
   (let [db ca/clinical-assertion-data-db
         out-fname "statements-data-db-snapshot.ndjson"]
     (with-open [writer (io/writer (io/file out-fname))]
-      (doseq [[entry-k entry-v] (->> (rocksdb/entire-db-entry-seq db)
-                                     #_(filter not-deleted?)
-                                     #_(filter #(not (nil? (:specified_by %))))
-                                     (take 5))]
-        (prn {:entry-v entry-v})
-        #_(.write writer (json/generate-string entry-v))
-        #_(.write writer "\n")))))
+      (doseq [[entry-k entry-v] (latest-records db)]
+        (.write writer (json/generate-string entry-v))
+        (.write writer "\n")))))
 
 (comment
   (start-states!)
@@ -503,7 +508,9 @@
   (do (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/variation.txt")
       (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/trait.txt")
       (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/trait_set.txt")
-      (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/clinical_assertion.txt")))
+      (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/clinical_assertion.txt"))
+
+  (snapshot-statements-db-rocksdb))
 
 (comment
   (def assertions
@@ -514,7 +521,9 @@
          (map #(json/parse-string % true))
          (filter #(= "SCV000852165" (get-in % [:content :id])))
          (map message-proccess-with-rocksdb!)
-         (map :genegraph.annotate/data)))))
+         (map docstore/store-document-raw-key)
+         (map #(docstore/get-document-raw-key ca/clinical-assertion-data-db (:genegraph.annotate/data-id %)))
+         #_(map :genegraph.annotate/data)))))
 
 (comment
   "Testing delete operation"

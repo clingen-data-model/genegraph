@@ -1,5 +1,6 @@
 (ns genegraph.source.snapshot.core
   (:require [cheshire.core :as json]
+            [clojure.java.io :as io]
             [clojure.string :as s]
             [com.climate.claypoole :as cp]
             [genegraph.annotate :as ann]
@@ -10,11 +11,14 @@
             [genegraph.sink.stream :as stream]
             [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.source.snapshot.variation-descriptor :as variation-descriptor]
+            genegraph.transform.clinvar.clinical-assertion
             [genegraph.transform.clinvar.ga4gh :as ga4gh]
+            genegraph.transform.clinvar.variation
             [genegraph.util.gcs :as gcs]
             [io.pedestal.log :as log]
+            [me.raynes.fs :as fs]
             [mount.core :as mount])
-  (:import (java.time Instant Duration)))
+  (:import (java.time Duration Instant)))
 
 (def snapshot-bucket env/genegraph-bucket)
 (def snapshot-path "snapshots")
@@ -91,31 +95,47 @@
 (defn start-states! []
   (mount/start
    #'genegraph.database.instance/db
+   #'genegraph.sink.event-recorder/event-database
+   #'genegraph.sink.document-store/db
    #'genegraph.database.property-store/property-store
    #'genegraph.transform.clinvar.cancervariants/cache-db
    #'genegraph.transform.clinvar.variation/variation-data-db
-   #'genegraph.sink.event-recorder/event-database
-   #'genegraph.sink.document-store/db
    #'genegraph.transform.clinvar.variation/variation-data-db
    #'genegraph.transform.clinvar.clinical-assertion/trait-data-db
    #'genegraph.transform.clinvar.clinical-assertion/trait-set-data-db
    #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db
+   #'genegraph.transform.clinvar.core/release-sentinel-snapshot-db
    #'genegraph.server/server
    #'rocks-registry/db
    #'rocks-registry/server
    #'genegraph.source.snapshot.core/thread-pool))
 
+(defn write-snapshots []
+  (let [start (Instant/now)
+        datasets {"variation-descriptors.ndjson"
+                  genegraph.transform.clinvar.variation/variation-data-db
+                  "statements.ndjson"
+                  genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db}]
+    (doseq [[filename db] datasets]
+      (let [rel-dir (str "snapshots/" (str (Instant/now)))
+            rel-path (str rel-dir "/" filename)]
+        (log/info :fn :write-snapshots :timestamp (str start) :path rel-path)
+        (fs/mkdirs rel-dir)
+        (with-open [writer (io/writer rel-path)]
+          (doseq [[i [entry-k entry-v]] (map-indexed vector (ga4gh/latest-records db))]
+            (when (= 0 (rem i 1000))
+              (log/info :snapshot filename :progress i))
+            (.write writer (json/generate-string entry-v))
+            (.write writer "\n")))))))
 
 (defn run-snapshots2
   "Mostly lifted stream code from genegraph.sink.stream/store-stream
 
    Note, this doesn't clear existing database state in jena or the various rocksdb directories"
   [keep-running-atom]
-  (log/info :msg "Populating data vol")
-  (migration/populate-data-vol-if-needed)
-  (log/info :msg "Loading stream data")
-  #_(migration/load-stream-data env/data-vol)
-  (let [topic-kw :clinvar-raw]
+  (let [topic-kw :clinvar-raw
+        start (Instant/now)]
+    (log/info :fn :run-snapshots2 :start-time (str start))
     (with-open [c (stream/consumer-for-topic topic-kw)]
       (let [tps (stream/topic-partitions c topic-kw)
             tp (first tps)
@@ -144,9 +164,8 @@
                                             (ev/process-event!))]
                               (let [end (Instant/now)
                                     dur (Duration/between start end)]
-                                ;; when dur is greater than 50 milliseconds
-                                (when (< 0 (.compareTo dur (Duration/ofMillis 100)))
-                                  (log/warn :msg "process-event took longer than 100 milliseconds"
+                                (when (< 0 (.compareTo dur (Duration/ofMillis 200)))
+                                  (log/warn :msg "process-event took longer than 200 milliseconds"
                                             :duration (str dur)
                                             :event-data (:genegraph.annotate/data event))))))))
                       records))
@@ -160,7 +179,7 @@
                 (recur (stream/poll-once c))))))))
     (if @keep-running-atom
       (do (log/info :msg "Done reading topic" :topic topic-kw)
-          (ga4gh/snapshot-variation-db-rocksdb))
+          (write-snapshots))
       (log/warn :msg "Ended snapshot due to caller signal"))))
 
 (defonce snapshot-keep-running-atom (atom true))
@@ -173,7 +192,6 @@
     (run-snapshots2 snapshot-keep-running-atom)))
 
 (comment
-  #_(migration/populate-data-vol-if-needed)
   (def snapshot-thread (doto (Thread. -main2)
                          .start))
 

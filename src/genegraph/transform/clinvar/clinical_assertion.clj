@@ -713,7 +713,6 @@
         add-contextualized)))
 
 
-
 (def statement-context
   {"@context"
    {; Properties
@@ -765,6 +764,7 @@
     "contributor" {"@id" (str (get prefix-ns-map "vrs") "contributor")}
     "activity" {"@id" (str (get prefix-ns-map "vrs") "activity")}
     "method" {"@id" (str (get prefix-ns-map "vrs") "method")}
+    "specified_by" {"@id" (str (get prefix-ns-map "vrs") "specified_by")}
     "contributions" {"@id" (str (get prefix-ns-map "vrs") "contributions")}
     "direction" {"@id" (str (get prefix-ns-map "vrs") "direction")}
     "description" {"@id" (str (get prefix-ns-map "vrs") "description")}
