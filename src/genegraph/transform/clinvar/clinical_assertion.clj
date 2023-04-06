@@ -86,8 +86,8 @@
   "Returns the mapped normalized code for the raw input term.
    If the term is not known, return the mapping for 'other'"
   [term]
-  (get common/normalize-clinsig-codes-map (str/lower-case term)
-       (get common/normalize-clinsig-codes-map "other")))
+  (or (some-> term str/lower-case (#(get common/normalize-clinsig-codes-map %)))
+      (get common/normalize-clinsig-codes-map "other")))
 
 (defn get-clinsig-class
   "Returns the class of a normalized clinsig term
