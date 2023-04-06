@@ -18,7 +18,8 @@
             [genegraph.util.gcs :as gcs]
             [io.pedestal.log :as log]
             [me.raynes.fs :as fs]
-            [mount.core :as mount])
+            [mount.core :as mount]
+            [io.pedestal.interceptor.helpers :as interceptor])
   (:import (java.time Duration Instant)))
 
 (def snapshot-bucket env/genegraph-bucket)
@@ -81,6 +82,9 @@
         params (zipmap (map keywordize (keys m)) (vals m))]
     (run-snapshots params)))
 
+(defn wrap-with-exception-catcher [interceptor]
+  (-> interceptor
+      (update-in [:enter] (fn [f] (when f ())))))
 
 (def interceptor-chain
   [ann/add-metadata-interceptor
@@ -160,6 +164,14 @@
               :bucket env/genegraph-bucket)
     (gcs/put-file-in-bucket! output-filename output-filename)))
 
+(defn process-event-catch-exceptions [event]
+  (try (ev/process-event! event)
+       (catch Exception e
+         (log/error :msg "Exception in process-event"
+                    :event event
+                    :e e)
+         (update event :exceptions (fn [es] (concat [] es e))))))
+
 (defn run-snapshots2
   "Mostly lifted stream code from genegraph.sink.stream/store-stream
 
@@ -193,7 +205,7 @@
                             (let [event (-> record
                                             (stream/consumer-record-to-event topic-kw)
                                             (assoc ::ev/interceptors interceptor-chain)
-                                            (ev/process-event!))]
+                                            (process-event-catch-exceptions))]
                               (let [end (Instant/now)
                                     dur (Duration/between start end)]
                                 (when (< 0 (.compareTo dur (Duration/ofMillis 200)))
