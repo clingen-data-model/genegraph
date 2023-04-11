@@ -22,10 +22,6 @@
             [mount.core :as mount])
   (:import (java.time Duration Instant)))
 
-(def snapshot-bucket env/genegraph-bucket)
-(def snapshot-path "snapshots")
-
-(defn write-json-seq-to-file [values file-handle])
 
 (defn- join-dedup-delimiters
   "Joins the values seq with delim between each, not adding a delim in a location if one will already be present."
@@ -45,42 +41,11 @@
       (.startsWith (first values) delim) (->> (str delim))
       (.endsWith (last values) delim) (str delim))))
 
-(defn run-snapshots
-  "Accepts a map of params
-  E.g. {:until \"2020-01-01\"}"
-  [params]
-  (log/info :fn :run-snapshots :params params)
-  (let [version-id (migration/get-version-id)
-        database-path (s/join "/" [env/base-dir version-id])]
-    ;(migration/build-database database-path)
-    (with-redefs [env/data-vol database-path]
-      (log/info :fn :run-snapshots :msg (str "Redefined data-vol as " env/data-vol))
-      (migration/populate-data-vol-if-needed)
-      (log/info :fn :run-snapshots :msg "Loading stream data...")
-      (migration/load-stream-data env/data-vol)
-      (let [descriptors-graphql (genegraph.source.snapshot.variation-descriptor/variation-descriptors-as-of-date {:until (:until params)})]
-        (let [descriptors-json (map json/generate-string descriptors-graphql)
-              output-string (s/join "\n" descriptors-json)]
-          (let [blob-path-in-bucket (s/join "/" ["snapshots" version-id "CategoricalVariationDescriptor" "00000000"])
-                write-channel-fn (gcs/get-bucket-write-channel blob-path-in-bucket)]
-            (log/info :fn :run-snapshots
-                      :msg (format "Writing json (%d bytes) to %s"
-                                   (count output-string)
-                                   blob-path-in-bucket))
-            (with-open [write-channel (write-channel-fn)]
-              (gcs/channel-write-string! write-channel output-string))
-            (log/info :fn :run-snapshots :msg "Done writing snapshot output")
-            descriptors-json))))))
-
 (defn keywordize
   "Return string S or keyword :k when string S starts with :."
   [s]
   (if (.startsWith s ":") (keyword (subs s 1)) s))
 
-(defn -main [& args]
-  (let [m (apply hash-map args)
-        params (zipmap (map keywordize (keys m)) (vals m))]
-    (run-snapshots params)))
 
 (defn wrap-with-exception-catcher [interceptor]
   (-> interceptor
@@ -89,7 +54,7 @@
 (def interceptor-chain
   [ann/add-metadata-interceptor
    ann/add-data-interceptor
-  ;;  ann/add-iri-interceptor
+   #_ann/add-iri-interceptor
    docstore/store-document-raw-key-interceptor
    #_event/stream-producer-interceptor])
 
@@ -115,7 +80,7 @@
    #'genegraph.source.snapshot.core/thread-pool))
 
 (defn write-snapshots
-  "DATASETS is a map of output filename to the rocksdb object it's content will be based on
+  "DATASETS is a map of output filename to the rocksdb object its content will be based on
    {\"variation.ndjson\" myvariation-snapshot-db}
 
    OPTIONS can be:
@@ -143,7 +108,7 @@
                    output-vol env/data-vol
                    output-prefix (str "snapshots/" (Instant/now))}
               :as options}]
-   (let [output-full-directory (ga4gh/slashjoin output-vol output-prefix)
+   (let [output-full-directory (str output-vol "/" output-prefix)
          start (Instant/now)]
      (fs/mkdirs output-full-directory)
      (loop [datasets datasets
@@ -186,8 +151,8 @@
   [{:keys [output-vol output-prefix files]
     :as snapshot-output-map}]
   (doseq [filename files]
-    (let [local-path (ga4gh/slashjoin output-vol output-prefix filename)
-          path-in-bucket (ga4gh/slashjoin output-prefix filename)]
+    (let [local-path (str output-vol "/" output-prefix "/" filename)
+          path-in-bucket (str output-prefix "/" filename)]
       (log/info :msg "Writing file to bucket"
                 :local-file local-path
                 :bucket-file path-in-bucket
@@ -198,30 +163,34 @@
   (try (ev/process-event! event)
        (catch Exception e
          (log/error :msg "Exception in process-event"
-                    :event event
-                    :e e)
+                    :event event :e e)
          (update event :exceptions (fn [es] (concat [] es e))))))
 
-(defn run-snapshots2
-  "Mostly lifted stream code from genegraph.sink.stream/store-stream
+(defn end-offsets
+  "Like KafkaConsumer.endOffsets, but returns in {[topic partition-num] offset, ... } format"
+  [consumer topic-partitions]
+  (->> (.endOffsets consumer topic-partitions)
+       (mapv #(vector [(.topic (key %)) (.partition (key %))]
+                      (val %)))
+       (into {})))
 
-   Note, this doesn't clear existing database state in jena or the various rocksdb directories"
-  [keep-running-atom]
+(defn snapshot-populate
+  "Lifted some stream-related code from genegraph.sink.stream/store-stream
+
+   This doesn't clear existing database state in jena or the various rocksdb directories"
+  [topic-kw keep-running-atom]
   (let [topic-kw :clinvar-raw
         start (Instant/now)]
     (log/info :fn :run-snapshots2 :start-time (str start))
     (with-open [c (stream/consumer-for-topic topic-kw)]
       (let [tps (stream/topic-partitions c topic-kw)
             tp (first tps)
-            end (-> (.endOffsets c [tp]) first val)]
+            end (-> (.endOffsets c [tp]) first val)
+            end (min 10 end)]
         (when (< 1 (count tps))
           (throw (ex-info "Not implemented for multi-partition topics!" {:tps tps})))
         (.assign c [tp])
         (.seekToBeginning c [tp])
-        (log/info :max_offsets (->> (.endOffsets c [tp])
-                                    (mapv #(vector [(.topic (key %)) (.partition (key %))]
-                                                   (val %)))
-                                    (into {})))
         (while (and (< (.position c tp) end)
                     @keep-running-atom)
           (let [records (stream/poll-once c)
@@ -247,41 +216,43 @@
                       :batch-duration (str (Duration/between start (Instant/now)))
                       :average-duration (when (not= 0 (count records))
                                           (str (.dividedBy (Duration/between start (Instant/now))
-                                                           (count records)))))))))
-    (if @keep-running-atom
-      (do (log/info :msg "Done reading topic" :topic topic-kw)
-          (let [{:keys [output-vol output-prefix output-files]
-                 :as output-file-map}
-                (write-snapshots snapshot-datasets {:gzip true})]
-            (log/info :msg "Finished writing snapshot files" :files output-files)
-            (when true ;;env/snapshot-upload
-              (log/info :msg "Uploading snapshot outputs to bucket"
-                        :bucket env/genegraph-bucket
-                        :files output-files)
-              (write-snapshot-outputs-to-bucket output-file-map)
-              (let [db-vars (map second snapshot-datasets)]
-                (doseq [db-var (map second snapshot-datasets)]
-                  (let [abs-path (-> db-var var-get (.getName))
-                        basename (-> abs-path (str/split #"/") last)
-                        archive-abs-path (-> abs-path (str ".gz"))
-                        bucket-archive-path (str (ga4gh/slashjoin output-prefix basename) ".gz")]
-                    (log/info :msg "Uploading rocksdb instance"
-                              :db-var db-var :basename basename
-                              :bucket-path bucket-archive-path)
-                    (log/info :msg "Temporarily stopping rocksdb state"
-                              :db-var db-var)
-                    (mount/stop db-var)
-                    (let [ret (migration/compress-database abs-path archive-abs-path)]
-                      (if (= false ret)
-                        (log/error :msg "failed to compress rocksdb database"
-                                   :db-var db-var :abs-path abs-path
-                                   :archive-abs-path archive-abs-path)
-                        (gcs/put-file-in-bucket! archive-abs-path bucket-archive-path)))
+                                                           (count records))))))))))
+  (when (not @keep-running-atom)
+    (log/warn :msg "Ended snapshot due to caller signal")))
 
-                    (log/info :msg "Restarting rocksdb state"
-                              :db-var db-var)
-                    (mount/start db-var)))))))
-      (log/warn :msg "Ended snapshot due to caller signal"))))
+(defn snapshot-write [topic-kw keep-running-atom]
+  (if (not @keep-running-atom)
+    (log/warn :msg "Ended snapshot due to caller signal")
+    (let [{:keys [output-vol output-prefix output-files]
+           :as output-file-map}
+          (write-snapshots snapshot-datasets {:gzip true})]
+      (log/info :msg "Finished writing snapshot files" :files output-files)
+      (when true ;; env/snapshot-upload
+        (log/info :msg "Uploading snapshot outputs to bucket"
+                  :bucket env/genegraph-bucket :files output-files)
+        (write-snapshot-outputs-to-bucket output-file-map)
+        (let [db-vars (map second snapshot-datasets)]
+          (doseq [db-var (map second snapshot-datasets)]
+            (let [abs-path (-> db-var var-get (.getName))
+                  basename (-> abs-path (str/split #"/") last)
+                  archive-abs-path (-> abs-path (str ".gz"))
+                  bucket-archive-path (str output-prefix "/" basename ".gz")]
+              (log/info :msg "Uploading rocksdb instance"
+                        :db-var db-var :basename basename
+                        :bucket-path bucket-archive-path)
+              (log/info :msg "Temporarily stopping rocksdb state"
+                        :db-var db-var)
+              (mount/stop db-var)
+              (let [ret (migration/compress-database abs-path archive-abs-path)]
+                (if (= false ret)
+                  (log/error :msg "failed to compress rocksdb database"
+                             :db-var db-var :abs-path abs-path
+                             :archive-abs-path archive-abs-path)
+                  (gcs/put-file-in-bucket! archive-abs-path bucket-archive-path)))
+
+              (log/info :msg "Restarting rocksdb state"
+                        :db-var db-var)
+              (mount/start db-var))))))))
 
 (defonce snapshot-keep-running-atom (atom true))
 
@@ -290,7 +261,8 @@
   (start-states!)
   (let [m (apply hash-map args)]
     (reset! snapshot-keep-running-atom true)
-    (run-snapshots2 snapshot-keep-running-atom)))
+    (snapshot-populate :clinvar-raw snapshot-keep-running-atom)
+    (snapshot-write :clinvar-raw snapshot-keep-running-atom)))
 
 (comment
   (def snapshot-thread (doto (Thread. -main2)
