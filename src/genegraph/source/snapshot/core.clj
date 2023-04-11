@@ -135,10 +135,16 @@
                   (update output :files conj filename))))))))
 
 (def snapshot-datasets
-  {"variation-descriptors.ndjson"
-   #'genegraph.transform.clinvar.variation/variation-data-db
-   "statements.ndjson"
-   #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db})
+  [{:output-basename "variation-descriptors.ndjson"
+    :db-var #'genegraph.transform.clinvar.variation/variation-data-db}
+   {:output-basename "statements.ndjson"
+    :db-var #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db}]
+
+
+  #_{"variation-descriptors.ndjson"
+     #'genegraph.transform.clinvar.variation/variation-data-db
+     "statements.ndjson"
+     #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db})
 
 (defn write-snapshot-outputs-to-bucket
   "Takes a map in the form returned by write-snapshots, copies them to the configured bucket
@@ -220,39 +226,94 @@
   (when (not @keep-running-atom)
     (log/warn :msg "Ended snapshot due to caller signal")))
 
-(defn snapshot-write [topic-kw keep-running-atom]
-  (if (not @keep-running-atom)
-    (log/warn :msg "Ended snapshot due to caller signal")
-    (let [{:keys [output-vol output-prefix output-files]
-           :as output-file-map}
-          (write-snapshots snapshot-datasets {:gzip true})]
-      (log/info :msg "Finished writing snapshot files" :files output-files)
-      (when true ;; env/snapshot-upload
-        (log/info :msg "Uploading snapshot outputs to bucket"
-                  :bucket env/genegraph-bucket :files output-files)
-        (write-snapshot-outputs-to-bucket output-file-map)
-        (let [db-vars (map second snapshot-datasets)]
-          (doseq [db-var (map second snapshot-datasets)]
-            (let [abs-path (-> db-var var-get (.getName))
-                  basename (-> abs-path (str/split #"/") last)
-                  archive-abs-path (-> abs-path (str ".gz"))
-                  bucket-archive-path (str output-prefix "/" basename ".gz")]
-              (log/info :msg "Uploading rocksdb instance"
-                        :db-var db-var :basename basename
-                        :bucket-path bucket-archive-path)
-              (log/info :msg "Temporarily stopping rocksdb state"
-                        :db-var db-var)
-              (mount/stop db-var)
-              (let [ret (migration/compress-database abs-path archive-abs-path)]
-                (if (= false ret)
-                  (log/error :msg "failed to compress rocksdb database"
-                             :db-var db-var :abs-path abs-path
-                             :archive-abs-path archive-abs-path)
-                  (gcs/put-file-in-bucket! archive-abs-path bucket-archive-path)))
+(defn write-latest-records
+  "DB-VAR is an open RocksDB. Uses ga4gh/latest-records to iterate latest entries.
+   Writes them to WRITER"
+  [db-var writer]
+  (doseq [[i [entry-k entry-v]] (map-indexed vector (ga4gh/latest-records (var-get db-var)))]
+    (when (= 0 (rem i 1000))
+      (log/info :snapshot db-var :progress i))
+    (.write writer (json/generate-string entry-v))
+    (.write writer "\n")))
 
-              (log/info :msg "Restarting rocksdb state"
-                        :db-var db-var)
-              (mount/start db-var))))))))
+(defn snapshot-write
+  "Exports snapshot datasets to gzip ndjson files. Returns a map containing the location and list of files.
+   If env/snapshot-upload, also copies them to a bucket"
+  [input-datasets]
+  (let [gzip true
+        start (Instant/now)
+        output-vol env/data-vol
+        output-prefix (str "snapshots/" start)
+        output-dir-abs-path (str output-vol "/" output-prefix)]
+    (fs/mkdirs output-dir-abs-path)
+    (let [datasets (mapv #(assoc % :output-path-in-vol (str output-prefix "/"
+                                                            (cond-> (get % :output-basename)
+                                                              gzip (str ".gz"))))
+                         input-datasets)]
+      (doseq [{:keys [output-basename db-var output-path-in-vol]} datasets]
+        (let [output-abs-path (str output-vol "/" output-path-in-vol)]
+          (with-open [writer (if gzip
+                               (gzip-file-writer output-abs-path)
+                               (io/writer output-abs-path))]
+            (write-latest-records db-var writer))))
+      (log/info :msg "Finished writing local snapshot files")
+      {:output-vol output-vol
+       :output-prefix output-prefix
+       :datasets datasets})))
+
+(defn snapshot-upload
+  "INPUT-MAP should match:
+   {:output-vol <genegraph-data-vol>
+    :output-prefix <location-of-this-snapshot-in-data-vol>
+    :datasets <seq of map of :output-basename :db-var :output-path-in-vol>}
+
+   Uploads each dataset file to env/genegraph-bucket (in the directory output-prefix)"
+  [{:keys [output-vol output-prefix datasets] :as input-map}]
+  (doseq [{:keys [output-path-in-vol]} datasets]
+    (let [output-abs-path (str output-vol "/" output-path-in-vol)]
+      (log/info :fn :snapshot-upload
+                :source output-abs-path
+                :destination (str "gs://" env/genegraph-bucket "/" output-path-in-vol))
+      (gcs/put-file-in-bucket! output-abs-path output-path-in-vol))))
+
+'{:output-vol "/Users/kferrite/dev/genegraph/data/2021-11-19T2032",
+  :output-prefix "snapshots/2023-04-11T22:27:14.089910Z",
+  :datasets
+  ({:output-basename "variation-descriptors.ndjson",
+    :db-var #'genegraph.transform.clinvar.variation/variation-data-db,
+    :output-path-in-vol "snapshots/2023-04-11T22:27:14.089910Z/variation-descriptors.ndjson.gz"}
+   {:output-basename "statements.ndjson",
+    :db-var #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db,
+    :output-path-in-vol "snapshots/2023-04-11T22:27:14.089910Z/statements.ndjson.gz"})}
+
+(defn snapshot-rocksdb-upload
+  "INPUT-MAP should match:
+   {:output-vol <genegraph-data-vol>
+    :output-prefix <location-of-this-snapshot-in-data-vol>
+    :datasets <seq of map of :output-basename :db-var :output-path-in-vol>}
+
+   Uploads each :db-var RocksDB instance in a GZIP archive
+   to env/genegraph-bucket (in the directory output-prefix)"
+  [{:keys [output-prefix datasets] :as input-map}]
+  (doseq [{:keys [db-var]} datasets]
+    (let [db-abs-path (-> db-var var-get (.getName))
+          db-basename (-> db-abs-path (str/split #"/") last)
+          local-archive-abs-path (-> db-abs-path (str ".gz"))
+          bucket-archive-path (str output-prefix "/" db-basename ".gz")]
+      (log/info :msg "Temporarily stopping rocksdb state" :db-var db-var)
+      (mount/stop db-var)
+      (let [ret (migration/compress-database db-abs-path local-archive-abs-path)]
+        (if (= false ret)
+          (do (log/error :msg "Failed to compress rocksdb database" :db-var db-var
+                         :abs-path db-abs-path :archive-abs-path local-archive-abs-path)
+              (throw (ex-info "Failed to compress database" {})))
+          (do (log/info :msg "Uploading rocksdb archive"
+                        :local-archive local-archive-abs-path
+                        :bucket-archive bucket-archive-path)
+              (gcs/put-file-in-bucket! local-archive-abs-path bucket-archive-path))))
+      (log/info :msg "Restarting rocksdb state" :db-var db-var)
+      (mount/start db-var)))
+  (log/info :fn :snapshot-rocksdb-upload :msg "Done"))
 
 (defonce snapshot-keep-running-atom (atom true))
 
@@ -262,7 +323,10 @@
   (let [m (apply hash-map args)]
     (reset! snapshot-keep-running-atom true)
     (snapshot-populate :clinvar-raw snapshot-keep-running-atom)
-    (snapshot-write :clinvar-raw snapshot-keep-running-atom)))
+    (let [written-datasets (snapshot-write snapshot-datasets)]
+      (when true ;; env/snapshot-upload
+        (let [uploaded-datasets (snapshot-upload written-datasets)]
+          (snapshot-rocksdb-upload written-datasets))))))
 
 (comment
   (def snapshot-thread (doto (Thread. -main2)
