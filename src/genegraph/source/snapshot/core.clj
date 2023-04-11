@@ -2,6 +2,7 @@
   (:require [cheshire.core :as json]
             [clojure.java.io :as io]
             [clojure.string :as s]
+            [clojure.string :as str]
             [com.climate.claypoole :as cp]
             [genegraph.annotate :as ann]
             [genegraph.env :as env]
@@ -18,8 +19,7 @@
             [genegraph.util.gcs :as gcs]
             [io.pedestal.log :as log]
             [me.raynes.fs :as fs]
-            [mount.core :as mount]
-            [io.pedestal.interceptor.helpers :as interceptor])
+            [mount.core :as mount])
   (:import (java.time Duration Instant)))
 
 (def snapshot-bucket env/genegraph-bucket)
@@ -213,18 +213,15 @@
     (with-open [c (stream/consumer-for-topic topic-kw)]
       (let [tps (stream/topic-partitions c topic-kw)
             tp (first tps)
-            end (-> (.endOffsets c [tp]) first val)
-            end (min 100000 end)]
+            end (-> (.endOffsets c [tp]) first val)]
         (when (< 1 (count tps))
-          (log/error :msg "Not implemented for multi-partition topics!")
           (throw (ex-info "Not implemented for multi-partition topics!" {:tps tps})))
-        (log/info :end end)
         (.assign c [tp])
         (.seekToBeginning c [tp])
-        (prn :max_offsets (->> (.endOffsets c [tp])
-                               (mapv #(vector [(.topic (key %)) (.partition (key %))]
-                                              (val %)))
-                               (into {})))
+        (log/info :max_offsets (->> (.endOffsets c [tp])
+                                    (mapv #(vector [(.topic (key %)) (.partition (key %))]
+                                                   (val %)))
+                                    (into {})))
         (while (and (< (.position c tp) end)
                     @keep-running-atom)
           (let [records (stream/poll-once c)
@@ -253,15 +250,37 @@
                                                            (count records)))))))))
     (if @keep-running-atom
       (do (log/info :msg "Done reading topic" :topic topic-kw)
-          (let [{output-directory :directory
-                 output-files :files
-                 :as output-file-map} (write-snapshots snapshot-datasets {:gzip true})]
+          (let [{:keys [output-vol output-prefix output-files]
+                 :as output-file-map}
+                (write-snapshots snapshot-datasets {:gzip true})]
             (log/info :msg "Finished writing snapshot files" :files output-files)
-            (when env/snapshot-upload
+            (when true ;;env/snapshot-upload
               (log/info :msg "Uploading snapshot outputs to bucket"
                         :bucket env/genegraph-bucket
                         :files output-files)
-              (write-snapshot-outputs-to-bucket output-file-map))))
+              (write-snapshot-outputs-to-bucket output-file-map)
+              (let [db-vars (map second snapshot-datasets)]
+                (doseq [db-var (map second snapshot-datasets)]
+                  (let [abs-path (-> db-var var-get (.getName))
+                        basename (-> abs-path (str/split #"/") last)
+                        archive-abs-path (-> abs-path (str ".gz"))
+                        bucket-archive-path (str (ga4gh/slashjoin output-prefix basename) ".gz")]
+                    (log/info :msg "Uploading rocksdb instance"
+                              :db-var db-var :basename basename
+                              :bucket-path bucket-archive-path)
+                    (log/info :msg "Temporarily stopping rocksdb state"
+                              :db-var db-var)
+                    (mount/stop db-var)
+                    (let [ret (migration/compress-database abs-path archive-abs-path)]
+                      (if (= false ret)
+                        (log/error :msg "failed to compress rocksdb database"
+                                   :db-var db-var :abs-path abs-path
+                                   :archive-abs-path archive-abs-path)
+                        (gcs/put-file-in-bucket! archive-abs-path bucket-archive-path)))
+
+                    (log/info :msg "Restarting rocksdb state"
+                              :db-var db-var)
+                    (mount/start db-var)))))))
       (log/warn :msg "Ended snapshot due to caller signal"))))
 
 (defonce snapshot-keep-running-atom (atom true))
