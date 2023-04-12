@@ -62,9 +62,8 @@
   :start (cp/threadpool 20)
   :stop (cp/shutdown thread-pool))
 
-(defn start-states! []
-  (mount/start
-   #'genegraph.database.instance/db
+(def states
+  [#'genegraph.database.instance/db
    #'genegraph.sink.event-recorder/event-database
    #'genegraph.sink.document-store/db
    #'genegraph.database.property-store/property-store
@@ -77,7 +76,10 @@
    #'genegraph.server/server
    #'rocks-registry/db
    #'rocks-registry/server
-   #'genegraph.source.snapshot.core/thread-pool))
+   #'genegraph.source.snapshot.core/thread-pool])
+
+(defn start-states! []
+  (apply mount/start states))
 
 (defn write-snapshots
   "DATASETS is a map of output filename to the rocksdb object its content will be based on
@@ -191,8 +193,7 @@
     (with-open [c (stream/consumer-for-topic topic-kw)]
       (let [tps (stream/topic-partitions c topic-kw)
             tp (first tps)
-            end (-> (.endOffsets c [tp]) first val)
-            end (min 10 end)]
+            end (-> (.endOffsets c [tp]) first val)]
         (when (< 1 (count tps))
           (throw (ex-info "Not implemented for multi-partition topics!" {:tps tps})))
         (.assign c [tp])
@@ -324,9 +325,11 @@
     (reset! snapshot-keep-running-atom true)
     (snapshot-populate :clinvar-raw snapshot-keep-running-atom)
     (let [written-datasets (snapshot-write snapshot-datasets)]
-      (when true ;; env/snapshot-upload
+      (when env/snapshot-upload
         (let [uploaded-datasets (snapshot-upload written-datasets)]
-          (snapshot-rocksdb-upload written-datasets))))))
+          (snapshot-rocksdb-upload written-datasets)))))
+  (log/info :fn ::-main2 :msg "Shutting down states")
+  (mount/stop))
 
 (comment
   (def snapshot-thread (doto (Thread. -main2)
