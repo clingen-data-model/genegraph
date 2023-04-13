@@ -3,11 +3,11 @@
             [genegraph.source.graphql.common.cache :refer [defresolver]]
             [clojure.string :as s]))
 
-(defresolver agent [args value]
+(defresolver ^:expire-by-value agent [args value]
   (ld1-> value [:sepio/has-agent]))
 
-(defresolver realizes [args value]
+(defresolver ^:expire-by-value realizes [args value]
   (ld1-> value [:bfo/realizes]))
 
-(defresolver date [args value]
+(defresolver ^:expire-by-value date [args value]
   (ld1-> value [:sepio/activity-date]))
