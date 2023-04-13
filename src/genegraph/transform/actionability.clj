@@ -17,7 +17,7 @@
 (spec/def ::statusFlag #(#{"Released" "Released - Under Revision" "Retracted"} %))
 
 (spec/def ::condition
-  (spec/keys :req-un [:condition/iri ::gene]))
+  (spec/keys :req-un [:condition/iri]))
 
 (spec/def ::conditions
   (spec/coll-of ::condition))
@@ -48,10 +48,13 @@
    "Adult AWG" "http://dataexchange.clinicalgenome.org/terms/AdultActionabilityWorkingGroup"})
 
 (defn genetic-condition-label [parent-condition gene]
-  (str (q/ld1-> parent-condition [:rdfs/label]) ", " (q/ld1-> gene [:skos/preferred-label])))
+  (if (and parent-condition gene)
+    (str (q/ld1-> parent-condition [:rdfs/label]) ", " (q/ld1-> gene [:skos/preferred-label]))
+    ""))
 
 (defn gene-resource [gene-str]
-  (q/ld1-> (q/resource gene-str) [[:owl/same-as :<]]))
+  (when gene-str
+    (q/ld1-> (q/resource gene-str) [[:owl/same-as :<]])))
 
 (defn genetic-condition [curation-iri condition]
   (if-let [condition-resource (if (re-find #"MONDO" (:iri condition))
@@ -150,7 +153,9 @@
                         (assertions curation)
                         (total-scores curation)))
                      [])] 
-    (l/statements-to-model statements)))
+    (l/statements-to-model
+     (filter #(last %) ; remove where nil target
+             statements))))
 
 (defmethod transform-doc :actionability-v1 [doc-def]
   (let [doc (or (:document doc-def) (slurp (src-path doc-def)))]
@@ -159,7 +164,10 @@
 
 (defmethod add-model :actionability-v1 [event]
   (log/debug :fn :add-model :format :actionability-v1 :event event :msg :received-event)
-  (assoc event
-         ::q/model
-         (transform (json/parse-string (:genegraph.sink.event/value event) true))))
+  (try 
+    (assoc event
+           ::q/model
+           (transform (json/parse-string (:genegraph.sink.event/value event) true)))
+    (catch Exception e (clojure.stacktrace/print-stack-trace e)
+           (assoc event :exception e))))
 
