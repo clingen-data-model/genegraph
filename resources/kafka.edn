@@ -45,8 +45,9 @@
                           :cluster :dx-ccloud
                           :format :clinvar-raw
                           :producer-topic :test-public-v1}
-            :clinvar-combined {:name "clinvar-combined"
-                               :cluster :dx-ccloud
-                               :format :clinvar-combined}
+            :clinvar-raw-2023-02-08 {:name "clinvar-raw-2023-02-08"
+                                     :cluster :dx-ccloud
+                                     :format :clinvar-raw
+                                     :producer-topic :test-public-v1}
             :test-public-v1 {:name "test-public-v1"
                              :cluster :dx-ccloud}}}
