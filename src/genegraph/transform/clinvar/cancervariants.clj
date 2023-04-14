@@ -46,7 +46,7 @@
   (assoc val "@context" vicc-context))
 
 (defonce hato-client (hc/build-http-client {:version :http-2
-                                            :connect-timeout 10000}))
+                                            :connect-timeout (* 30 1000)}))
 
 ;; vicc-db-name is to store the http cache, which caches the full url, params, etc,
 ;; and most of the response object.
