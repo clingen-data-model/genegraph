@@ -319,6 +319,7 @@
 (defonce snapshot-keep-running-atom (atom true))
 
 (defn -main2 [& args]
+  (mount/start #'genegraph.server/server)
   (migration/populate-data-vol-if-needed)
   (start-states!)
   (let [m (apply hash-map args)]
