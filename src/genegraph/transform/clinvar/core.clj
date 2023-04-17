@@ -25,7 +25,8 @@
              (util/parse-nested-content))))
 
 (mount/defstate release-sentinel-snapshot-db
-  :start (rocksdb/open "release-sentinel-snapshot.db"))
+  :start (rocksdb/open "release-sentinel-snapshot.db")
+  :stop (rocksdb/close release-sentinel-snapshot-db))
 
 (defn add-data-for-release-sentinel [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
