@@ -48,7 +48,7 @@
 (defn process-file [filename]
   (with-open [reader (io/reader filename)
               #_#_error-log (io/writer "errors.txt")]
-    (let [limit 1
+    (let [limit 10
           line-count (atom 0)]
       (doseq [[i event] (->> (line-seq reader)
                              (take limit)
@@ -64,6 +64,8 @@
                                           (snapshot/process-event-catch-exceptions))))
                              (map-indexed vector))]
         (log/info :data (:genegraph.annotate/data event))
+        (log/info :id (get-in event [:genegraph.annotate/data :id])
+                  :description (get-in event [:genegraph.annotate/data :description]))
         (swap! line-count inc)
         (when (not (:genegraph.annotate/data event))
           (log/error :msg "Data not added to event" :event event))
@@ -111,6 +113,21 @@
 
 (def counters (atom {}))
 
+(defn count-types [counters]
+  (with-open [writer-allele (io/writer "variation-allele.txt")
+              writer-rel-cnv (io/writer "variation-rel-cnv.txt")
+              writer-abs-cnv (io/writer "variation-abs-cnv.txt")
+              writer-text (io/writer "variation-text.txt")
+              writer-null (io/writer "variation-null.txt")]
+    (let [db-var #'genegraph.transform.clinvar.variation/variation-data-db
+          writers {"Allele" writer-allele
+                   "RelativeCopyNumber" writer-rel-cnv
+                   "AbsoluteCopyNumber" writer-abs-cnv
+                   "Text" writer-text
+                   nil writer-null}
+          variation-writer (io/writer "variation.txt")
+          error-writer (io/writer "variation-errors.txt")])))
+
 (defn count-types []
   (reset! counters {})
   (with-open [writer-allele (io/writer "variation-allele.txt")
@@ -123,7 +140,9 @@
                    "RelativeCopyNumber" writer-rel-cnv
                    "AbsoluteCopyNumber" writer-abs-cnv
                    "Text" writer-text
-                   nil writer-null}]
+                   nil writer-null}
+          variation-writer (io/writer "variation.txt")
+          error-writer (io/writer "variation-errors.txt")]
       (letfn [(count-canonical-variations [counters canonical-variation]
                 (let [{core-variation :canonical_context} canonical-variation
                       {core-variation-type :type} core-variation]
@@ -137,24 +156,22 @@
                                     (update current-counters
                                             variation-type
                                             #(+ 1 (or % 0)))))))]
-        (with-open [variation-writer (io/writer "variation.txt")
-                    error-writer (io/writer "variation-errors.txt")]
-          (doseq [[idx [k descriptor]]
-                  (map-indexed vector
-                               (->> (ga4gh/latest-records (var-get db-var))
-                                    (take 10000)))]
-            (let [{canonical-variation :canonical_variation} descriptor]
-              (case (:type canonical-variation)
-                "CanonicalVariation" (count-canonical-variations counters canonical-variation)
-                nil (do (log/error :msg "nil variation type"
-                                   :descriptor descriptor)
-                        (.write error-writer (str/trim (prn-str descriptor)))
-                        (.write error-writer "\n")
-                        (count-non-canonical counters {:type nil})
-                        #_(swap! counters (fn [counters] (update counters nil #(+ 1 (or % 0))))))
-                (count-non-canonical counters canonical-variation))
-              (.write variation-writer (str/trim (prn-str descriptor)))
-              (.write variation-writer "\n"))
-            (when (= 0 (rem idx 1000))
-              (log/info :counters @counters))))
+        (doseq [[idx [k descriptor]]
+                (map-indexed vector
+                             (->> (ga4gh/latest-records (var-get db-var))
+                                  (take 10000)))]
+          (let [{canonical-variation :canonical_variation} descriptor]
+            (case (:type canonical-variation)
+              "CanonicalVariation" (count-canonical-variations counters canonical-variation)
+              nil (do (log/error :msg "nil variation type"
+                                 :descriptor descriptor)
+                      (.write error-writer (str/trim (prn-str descriptor)))
+                      (.write error-writer "\n")
+                      (count-non-canonical counters {:type nil})
+                      #_(swap! counters (fn [counters] (update counters nil #(+ 1 (or % 0))))))
+              (count-non-canonical counters canonical-variation))
+            (.write variation-writer (str/trim (prn-str descriptor)))
+            (.write variation-writer "\n"))
+          (when (= 0 (rem idx 1000))
+            (log/info :counters @counters)))
         (log/info :counters @counters)))))
