@@ -17,11 +17,26 @@
 
 (defn open [db-name]
   (let [full-path (create-db-path db-name)
-        opts (-> (Options.)
-                 (.setCreateIfMissing true))]
+        opts (doto (Options.)
+               (.setTableFormatConfig
+                (doto (org.rocksdb.BlockBasedTableConfig.)
+                  (.setCacheIndexAndFilterBlocks true)))
+               (.setCreateIfMissing true))]
     (io/make-parents full-path)
     ;; todo add logging...
     (RocksDB/open opts full-path)))
+
+(defn mem-stats
+  "Return a map of some memory-related rocksdb properties"
+  [db]
+  (->> ["rocksdb.block-cache-usage"
+        "rocksdb.estimate-table-readers-mem"
+        "rocksdb.block-cache-pinned-usage"
+        "rocksdb.total-sst-files-size"
+        "rocksdb.num-live-versions"
+        "rocksdb.live-sst-files-size"]
+       (map #(vector % (.getProperty db %)))
+       (into {})))
 
 (defn key-digest
   "Return a byte array of the md5 hash of the nippy frozen object"
@@ -158,7 +173,10 @@
              (rocks-iterator-seq iter)))
      nil)))
 
-(defn rocks-entry-iterator-seq [^org.rocksdb.RocksIterator iter]
+(defn rocks-entry-iterator-seq
+  "Iterators pin blocks they iterate into in memory.
+   When garbage collected these will be cleared, but "
+  [^org.rocksdb.RocksIterator iter]
   (lazy-seq
    (if (.isValid iter)
      (let [k (.key iter)
@@ -167,6 +185,18 @@
        (cons [k v]
              (rocks-entry-iterator-seq iter)))
      nil)))
+
+#_(defn rocks-entry-iterator-seq
+    "Iterators pin blocks they iterate into in memory.
+   When garbage collected these will be cleared, but "
+    [^org.rocksdb.RocksIterator iter]
+    (if (.isValid iter)
+      (let [k (.key iter)
+            v (nippy/fast-thaw (.value iter))]
+        (.next iter)
+        (lazy-cat [[k v]]
+                  (rocks-entry-iterator-seq iter)))
+      nil))
 
 (defn entire-db-entry-seq [^RocksDB db]
   (-> db entire-db-iter rocks-entry-iterator-seq))
