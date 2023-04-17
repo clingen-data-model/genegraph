@@ -418,34 +418,6 @@
 (defn cv-transform-test-fname [& relative-path-segs]
   (str "test/genegraph/transform/clinvar/test-inputs/" (apply slashjoin relative-path-segs)))
 
-
-(defn latest-versions-seq
-  "For key-value entries where the key is formatted like <prefix><id>.<version>,
-   get the last entry for each <prefix><id>. Assumes versions are lexicographically sortable.
-   Relies on RocksDB itself being lexicographically sorted on the byte array keys."
-  ([db]
-   (latest-versions-seq db (rocksdb/entire-db-entry-seq db)))
-  ([db remaining]
-  ;; I'm getting the iri-prefix by parsing the key of the next entry in the db.
-  ;; If we are consistent on the use of RecordMetadata for top level objects that
-  ;; are used in the output, we could use the version_of value from there as well
-   (when (seq remaining)
-     (let [[entry-k entry-v] (first remaining)
-           thawed-k (String. entry-k)
-           {:keys [id version ns-prefix type-prefix] :as parsed}
-           (parse-clinvar-resource-iri thawed-k)
-           variation-descriptor-iri-prefix (str ns-prefix type-prefix)
-           iri-prefix (str variation-descriptor-iri-prefix id ".")
-           prefix-seq (rocksdb/raw-prefix-entry-seq db (.getBytes iri-prefix))
-           last-entry (last prefix-seq)]
-       (log/debug :iri-prefix iri-prefix
-                  :parsed-iri parsed
-                  :skip-count (count prefix-seq))
-       (let [[last-k last-v] last-entry
-             deserialized-last-entry [(String. last-k) last-v]]
-         (lazy-cat [deserialized-last-entry]
-                   (latest-versions-seq db (drop (count prefix-seq) remaining))))))))
-
 (defn not-deleted?
   "Returns true if .record_metadata.deleted is not truthy"
   [[entry-k entry-v]]
@@ -453,13 +425,158 @@
     (when deleted? (log/info :entry-id (:id entry-v) :deleted deleted?))
     (not deleted?)))
 
+#_(defn latest-versions-seq
+    "For key-value entries where the key is formatted like <prefix><id>.<version>,
+   get the last entry for each <prefix><id>. Assumes versions are lexicographically sortable.
+   Relies on RocksDB itself being sorted on the byte array keys."
+    ([db]
+     (latest-versions-seq db (rocksdb/entire-db-entry-seq db)))
+    ([db remaining]
+  ;; I'm getting the iri-prefix by parsing the key of the next entry in the db.
+  ;; If we are consistent on the use of RecordMetadata for top level objects that
+  ;; are used in the output, we could use the version_of value from there as well
+     (when (seq remaining)
+       (let [[entry-k entry-v] (first remaining)
+             thawed-k (String. entry-k)
+             {:keys [id version ns-prefix type-prefix] :as parsed}
+             (parse-clinvar-resource-iri thawed-k)
+             variation-descriptor-iri-prefix (str ns-prefix type-prefix)
+             iri-prefix (str variation-descriptor-iri-prefix id ".")
+             prefix-seq (rocksdb/raw-prefix-entry-seq db (.getBytes iri-prefix))
+             last-entry (last prefix-seq)]
+         (log/debug :iri-prefix iri-prefix
+                    :parsed-iri parsed
+                    :skip-count (count prefix-seq))
+         (let [[last-k last-v] last-entry
+               deserialized-last-entry [(String. last-k) last-v]]
+           (lazy-cat [deserialized-last-entry]
+                     (latest-versions-seq db (drop (count prefix-seq) remaining))))))))
+
+;; TODO
+;; One idea is to extend the lazy seqs returned from rocksdb.clj to make them implement java Closeable
+;; so caller can close them instead of needing to construct an iterator directly in order to close it
+#_(reify
+    java.lang.AutoCloseable
+    (close [this] (.close iter))
+
+    clojure.lang.ISeq
+    (first [this] (.first out))
+    (next [this] (.next out))
+    (more [this] (.more out))
+    (cons [this o] (.cons out o)))
+
+(defn latest-versions-seq-iterator-based
+  "For key-value entries where the key is formatted like <prefix><id>.<version>,
+   get the last entry for each <prefix><id>. Assumes versions are lexicographically sortable.
+   Relies on RocksDB itself being sorted on the byte array keys.
+
+   If an iterator is not passed in, opens one and returns it. Caller must close this ASAP"
+  ([db] (let [iter (rocksdb/entire-db-iter db)
+              out (latest-versions-seq-iterator-based db iter)]
+          {:iter iter
+           :out out}))
+  ([db iter]
+  ;; I'm getting the iri-prefix by parsing the key of the next entry in the db.
+  ;; If we are consistent on the use of RecordMetadata for top level objects that
+  ;; are used in the output, we could use the version_of value from there as well
+   (letfn [(unversioned-iri-prefix [deserialized-entry-k]
+             (let [{:keys [id version ns-prefix type-prefix] :as parsed}
+                   (parse-clinvar-resource-iri deserialized-entry-k)
+                   typed-iri-prefix (str ns-prefix type-prefix)
+                   iri-prefix (str typed-iri-prefix id ".")]
+               iri-prefix))
+           (get-first-matching [pred coll]
+             (reduce (fn [agg val]
+                       (if ((comp not pred) val)
+                         (reduced agg)
+                         (concat agg [val])))
+                     [] coll))]
+     (if (.isValid iter)
+       (let [s (rocksdb/rocks-entry-iterator-seq iter)
+             [entry-k entry-v] (first s)
+             thawed-k (String. entry-k)
+             iri-prefix (unversioned-iri-prefix thawed-k)
+           ;;_ (log/info :iri-prefix iri-prefix)
+             prefix-seq (get-first-matching (fn [[k v]]
+                                              (let [k (String. k)
+                                                    k-iri-prefix (unversioned-iri-prefix k)]
+                                                (= iri-prefix k-iri-prefix)))
+                                            s)
+           ;;_ (log/info :prefix-seq prefix-seq)
+             [last-k last-v] (last prefix-seq)
+             last-k (String. last-k)]
+         (log/debug :iri-prefix iri-prefix
+                    :skip-count (count prefix-seq)
+                    :last-iri last-k)
+         ;; back up one because get-first-matching proceeded to first entry after
+         (.prev iter)
+         (lazy-cat [[last-k last-v]] (latest-versions-seq-iterator-based db iter)))))))
+
+(comment
+  #_(with-open [prefix-iter (rocksdb/raw-prefix-iter db (.getBytes iri-prefix))]
+      (let [prefix-seq (into [] (rocksdb/rocks-entry-iterator-seq prefix-iter))
+            last-entry (last prefix-seq)]
+        (.close prefix-iter)
+        (log/debug :iri-prefix iri-prefix
+                   :parsed-iri parsed
+                   :skip-count (count prefix-seq))
+        (let [[last-k last-v] last-entry
+              deserialized-last-entry [(String. last-k) last-v]]
+          deserialized-last-entry))))
+
+(comment
+  "trying latest versions seq iter-based"
+  (let [{:keys [iter out]}
+        (->> genegraph.transform.clinvar.variation/variation-data-db
+             (latest-versions-seq-iterator-based))]
+    (with-open [iter iter]
+      (doseq [entry (->> out (take 5))]
+        (prn entry))))
+
+
+  (let [{:keys [iter out]}
+        (->> genegraph.transform.clinvar.variation/variation-data-db
+             (latest-versions-seq-iterator-based))]
+    (log/info :iter iter)
+    (with-open [iter iter
+                out-writer (io/writer "variations-test.txt")]
+      (doseq [entry (->> out (take 100000))]
+        (.write out-writer (prn-str (first entry)))))
+    (.close iter)
+    (genegraph.rocksdb/mem-stats genegraph.transform.clinvar.variation/variation-data-db))
+
+
+
+  {"rocksdb.block-cache-usage" "13980177",
+   "rocksdb.estimate-table-readers-mem" "624",
+   "rocksdb.block-cache-pinned-usage" "8285064",
+   "rocksdb.total-sst-files-size" "637748541",
+   "rocksdb.num-live-versions" "1",
+   "rocksdb.live-sst-files-size" "637748541"}
+
+  {"rocksdb.block-cache-usage" "13980177",
+   "rocksdb.estimate-table-readers-mem" "624",
+   "rocksdb.block-cache-pinned-usage" "8285064",
+   "rocksdb.total-sst-files-size" "637748541",
+   "rocksdb.num-live-versions" "1",
+   "rocksdb.live-sst-files-size" "637748541"}
+
+  ())
+
+
 (defn latest-records
   "For a RocksDB instance with keys and values structured in ways we know how to iterate,
    return the latest versions of non-deleted records.
    Keys must be parseable by parse-clinvar-resource-iri. Records are filtered out when the latest
    version contains .release_metadata{.deleted=true}."
   [db]
-  (for [[entry-k entry-v] (->> (latest-versions-seq db)
+
+  #_#_iter (rocksdb/entire-db-iter db)
+  #_#_seq (reify
+            java.io.AutoCloseable
+            (close [this] (;; TODO
+                           )))
+  (for [[entry-k entry-v] (->> (latest-versions-seq-iterator-based db)
                                (filter not-deleted?))]
     [entry-k entry-v]))
 
