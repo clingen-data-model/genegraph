@@ -1,7 +1,6 @@
 (ns genegraph.source.snapshot.core
   (:require [cheshire.core :as json]
             [clojure.java.io :as io]
-            [clojure.string :as s]
             [clojure.string :as str]
             [com.climate.claypoole :as cp]
             [genegraph.annotate :as ann]
@@ -11,7 +10,6 @@
             [genegraph.sink.event :as ev]
             [genegraph.sink.stream :as stream]
             [genegraph.source.registry.rocks-registry :as rocks-registry]
-            [genegraph.source.snapshot.variation-descriptor :as variation-descriptor]
             genegraph.transform.clinvar.clinical-assertion
             [genegraph.transform.clinvar.ga4gh :as ga4gh]
             genegraph.transform.clinvar.variation
@@ -19,7 +17,8 @@
             [genegraph.util.gcs :as gcs]
             [io.pedestal.log :as log]
             [me.raynes.fs :as fs]
-            [mount.core :as mount])
+            [mount.core :as mount]
+            [genegraph.rocksdb :as rocksdb])
   (:import (java.time Duration Instant)))
 
 
@@ -30,7 +29,7 @@
         (loop [todo values
                terms []]
           (if (empty? todo)
-            (s/join delim terms)
+            (str/join delim terms)
             (let [trimmed (-> (first todo)
                               (#(if (.startsWith % delim) (.substring % (.length delim)) %))
                               (#(if (.endsWith % delim) (.substring % 0 (- (.length %) (.length delim))) %)))]
@@ -41,15 +40,6 @@
       (.startsWith (first values) delim) (->> (str delim))
       (.endsWith (last values) delim) (str delim))))
 
-(defn keywordize
-  "Return string S or keyword :k when string S starts with :."
-  [s]
-  (if (.startsWith s ":") (keyword (subs s 1)) s))
-
-
-(defn wrap-with-exception-catcher [interceptor]
-  (-> interceptor
-      (update-in [:enter] (fn [f] (when f ())))))
 
 (def interceptor-chain
   [ann/add-metadata-interceptor
@@ -127,8 +117,10 @@
            (log/info :fn :write-snapshots :timestamp (str start) :path vol-path)
            (with-open [writer (if gzip
                                 (gzip-file-writer full-path)
-                                (io/writer full-path))]
-             (doseq [[i [entry-k entry-v]] (map-indexed vector (ga4gh/latest-records db))]
+                                (io/writer full-path))
+                       db-iterator (rocksdb/entire-db-iter db)]
+             (doseq [[i [entry-k entry-v]]
+                     (map-indexed vector (ga4gh/latest-versions-seq-all db-iterator))]
                (when (= 0 (rem i 1000))
                  (log/info :snapshot filename :progress i))
                (.write writer (json/generate-string entry-v))
@@ -140,13 +132,7 @@
   [{:output-basename "variation-descriptors.ndjson"
     :db-var #'genegraph.transform.clinvar.variation/variation-data-db}
    {:output-basename "statements.ndjson"
-    :db-var #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db}]
-
-
-  #_{"variation-descriptors.ndjson"
-     #'genegraph.transform.clinvar.variation/variation-data-db
-     "statements.ndjson"
-     #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db})
+    :db-var #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db}])
 
 (defn write-snapshot-outputs-to-bucket
   "Takes a map in the form returned by write-snapshots, copies them to the configured bucket
@@ -231,11 +217,12 @@
   "DB-VAR is an open RocksDB. Uses ga4gh/latest-records to iterate latest entries.
    Writes them to WRITER"
   [db-var writer]
-  (doseq [[i [entry-k entry-v]] (map-indexed vector (ga4gh/latest-records (var-get db-var)))]
-    (when (= 0 (rem i 1000))
-      (log/info :snapshot db-var :progress i))
-    (.write writer (json/generate-string entry-v))
-    (.write writer "\n")))
+  (with-open [iter (rocksdb/entire-db-iter (var-get db-var))]
+    (doseq [[i [entry-k entry-v]] (map-indexed vector (ga4gh/latest-versions-seq-all iter))]
+      (when (= 0 (rem i 1000))
+        (log/info :snapshot db-var :progress i))
+      (.write writer (json/generate-string entry-v))
+      (.write writer "\n"))))
 
 (defn snapshot-write
   "Exports snapshot datasets to gzip ndjson files. Returns a map containing the location and list of files.
@@ -277,15 +264,6 @@
                 :destination (str "gs://" env/genegraph-bucket "/" output-path-in-vol))
       (gcs/put-file-in-bucket! output-abs-path output-path-in-vol))))
 
-'{:output-vol "/Users/kferrite/dev/genegraph/data/2021-11-19T2032",
-  :output-prefix "snapshots/2023-04-11T22:27:14.089910Z",
-  :datasets
-  ({:output-basename "variation-descriptors.ndjson",
-    :db-var #'genegraph.transform.clinvar.variation/variation-data-db,
-    :output-path-in-vol "snapshots/2023-04-11T22:27:14.089910Z/variation-descriptors.ndjson.gz"}
-   {:output-basename "statements.ndjson",
-    :db-var #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db,
-    :output-path-in-vol "snapshots/2023-04-11T22:27:14.089910Z/statements.ndjson.gz"})}
 
 (defn snapshot-rocksdb-upload
   "INPUT-MAP should match:

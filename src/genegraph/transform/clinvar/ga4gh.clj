@@ -62,7 +62,6 @@
       line-seq
       (->> (map #(json/parse-string % true)))))
 
-
 (defn add-data-catch-exceptions [event]
   (try
     (xform-types/add-data event)
@@ -72,7 +71,6 @@
                  :event event
                  :exception ex)
       event)))
-
 
 (defn message-proccess-with-jena!
   "Takes a message value map. The :value of a KafkaRecord, parsed as json"
@@ -145,270 +143,14 @@
                               (json/generate-string)))
            (.write writer "\n")))))))
 
-(defn snapshot-latest-statements-of-type
-  [type-kw]
-  (try
-    (let [type-name (name type-kw)
-          output-filename (format "statements-%s.txt" type-name)]
-      (with-open [writer (io/writer output-filename)]
-      ;; TODO look at group by for this.
-      ;; Just want each iri for latest release_date for each is-version-of
-        (tx
-         (let [unversioned-resources
-               (q/select (str/join " " ["select distinct ?vof where { "
-                                        "?i a ?type . "
-                                        "?i :vrs/record-metadata ?rmd . "
-                                        "?rmd :dc/is-version-of ?vof . "
-                                        #_"?i :vrs/extensions ?ext . "
-                                        #_"?ext :vrs/name \"local_key\" . "
-                                        " } "])
-                         {:type type-kw})
-               #_#__ (log/debug :fn :snapshot-latest-statements
-                                :msg (str "unversioned-resources count: "
-                                          (count unversioned-resources))
-                                :resources (map str unversioned-resources))
-               latest-versioned-resources
-               (map (fn [vof]
-                      (let [rs (q/select (str "select ?i where { "
-                                              "?i a ?type . "
-                                              "?i :vrs/record-metadata ?rmd . "
-                                              "?rmd :dc/is-version-of ?vof . "
-                                              "?rmd :owl/version-info ?release_date . } "
-                                              "order by desc(?release_date) "
-                                              "limit 1")
-                                         {:type type-kw
-                                          :vof vof})]
-                        (if (< 1 (count rs))
-                          (log/error :msg "More than 1 statement returned"
-                                     :vof vof :rs rs)
-                          (first rs))))
-                    (->> unversioned-resources
-                         #_(take 10)))]
-           (doseq [[i statement-resource] (->> latest-versioned-resources
-                                               (map-indexed vector))]
-             (log/info :latest-statement-resource statement-resource)
-             (try
-               (let [statement-output (ca/clinical-assertion-resource-for-output statement-resource)
-                     _ (log/debug :msg "Post processing output...")
-                     post-processed-output (-> statement-output
-                                               map-rdf-resource-values-to-str
-                                               common/map-remove-nil-values
-                                               (map-unnamespace-values (set [:type]))
-                                               (map-compact-namespaced-values))]
-                 (log/info :progress (format "%d/%d" (inc i) (count latest-versioned-resources))
-                           :post-processed-output post-processed-output)
-                 (.write writer (json/generate-string post-processed-output))
-                 (.write writer "\n"))
-               (catch Exception e
-                 (print-stack-trace e)
-                 (log/error :msg "Failed to output statement"
-                            :statement-resource statement-resource))))))))
-    (catch Exception e
-      (print-stack-trace e))))
-
-(defn snapshot-latest-rocks-data-of-type
-  [type-kw]
-  (try
-    ;; TODO look at group by for this.
-    ;; Just want each iri for latest release_date for each is-version-of
-    (tx
-     (let [unversioned-resources
-           (q/select (str/join " " ["select distinct ?vof where { "
-                                    "?i a ?type . "
-                                    "?i :vrs/record-metadata ?rmd . "
-                                    "?rmd :dc/is-version-of ?vof . "
-                                    #_"?i :vrs/extensions ?ext . "
-                                    #_"?ext :vrs/name \"local_key\" . "
-                                    " } "])
-                     {:type type-kw})
-           latest-versioned-resources
-           (map (fn [vof]
-                  (let [rs (q/select (str "select ?i where { "
-                                          "?i a ?type . "
-                                          "?i :vrs/record-metadata ?rmd . "
-                                          "?rmd :dc/is-version-of ?vof . "
-                                          "?rmd :owl/version-info ?release_date . } "
-                                          "order by desc(?release_date) "
-                                          "limit 1")
-                                     {:type type-kw
-                                      :vof vof})]
-                    (if (< 1 (count rs))
-                      (log/error :msg "More than 1 statement returned"
-                                 :vof vof :rs rs)
-                      (first rs))))
-                unversioned-resources)]
-       latest-versioned-resources))
-    (catch Exception e
-      (print-stack-trace e))))
-
-(defn write-latest-statement-snapshots [type-kw]
-  (let [type-name (name type-kw)
-        output-filename (format "statements-%s.txt" type-name)]
-    (try
-      (with-open [writer (io/writer output-filename)]
-        (doall
-         (map (fn [statement-resource]
-                (let [statement-iri (str statement-resource)
-                      event (docstore/get-document ca/clinical-assertion-data-db statement-iri)
-                      output (ca/clinical-assertion-for-output event)]
-                  (.write writer (json/generate-string (-> output
-                                                           :genegraph.annotate/output
-                                                           common/map-remove-nil-values)))
-                  (.write writer "\n")))
-              (snapshot-latest-rocks-data-of-type type-kw))))
-      (catch Exception e
-        (print-stack-trace e)))))
-
-(defn write-latest-variation-snapshots
-  "Write variation descriptors from rocks db"
-  []
-  (try
-    (with-open [writer (io/writer "x-variation-descriptors.txt")]
-      (doall
-       (map (fn [variation-resource]
-              (log/info :fn :write-latest-variation-snapshots :variation-resource variation-resource)
-              (let [variation-iri (str variation-resource)
-                    event (docstore/get-document variation/variation-data-db variation-iri)
-                    _ (log/info :fn :write-latest-variation-snapshots :event event)
-                    output (variation/variation-descriptor-for-output event)]
-                (.write writer (json/generate-string (->  output
-                                                          :genegraph.annotate/output
-                                                          common/map-remove-nil-values)))
-                (.write writer "\n")))
-            (take 5 (snapshot-latest-rocks-data-of-type :vrs/CanonicalVariationDescriptor)))))))
-
-(defn snapshot-latest-statements-of-type-parallel
-  [type-kw]
-  (try
-    (let [type-name (name type-kw)
-          output-filename (format "statements-%s.txt" type-name)]
-      (with-open [writer (io/writer output-filename)]
-        ;; TODO look at group by for this.
-        ;; Just want each iri for latest release_date for each is-version-of
-        (tx
-         (let [unversioned-resources
-               (q/select (str "select distinct ?vof where { "
-                              "?i a ?type . "
-                              "?i :vrs/record-metadata ?rmd . "
-                              "?rmd :dc/is-version-of ?vof . } ")
-                         {:type type-kw})
-               latest-versioned-resources
-               (pmap (fn [vof]
-                       (let [rs (q/select (str "select ?i where { "
-                                               "?i a ?type . "
-                                               "?i :vrs/record-metadata ?rmd . "
-                                               "?rmd :dc/is-version-of ?vof . "
-                                               "?rmd :owl/version-info ?release_date . } "
-                                               "order by desc(?release_date) "
-                                               "limit 1")
-                                          {:type type-kw
-                                           :vof vof})]
-                         (if (< 1 (count rs))
-                           (log/error :msg "More than 1 statement returned"
-                                      :vof vof :rs rs)
-                           (first rs))))
-                     (->> unversioned-resources #_(take 100)))]
-           (doseq [[i post-processed-output]
-                   (->> latest-versioned-resources
-                        (pmap #(-> (ca/clinical-assertion-resource-for-output %)
-                                   map-rdf-resource-values-to-str
-                                   common/map-remove-nil-values
-                                   (map-unnamespace-values (set [:type]))
-                                   (map-compact-namespaced-values)))
-                        (map-indexed vector))]
-             (try
-               (log/info :progress (format "Writing processed output %d/%d"
-                                           (inc i)
-                                           (count latest-versioned-resources))
-                         :post-processed-output post-processed-output)
-               (.write writer (json/generate-string post-processed-output))
-               (.write writer "\n")
-               (catch Exception e
-                 (print-stack-trace e)
-                 (log/error :msg "Failed to output statement"
-                            :statement-resource post-processed-output))))))))
-    (catch Exception e
-      (print-stack-trace e))))
-
-(defn snapshot-latest-statements []
-  (let [stmt-types [:vrs/VariationGermlinePathogenicityStatement
-                    :vrs/ClinVarDrugResponseStatement
-                    :vrs/ClinVarOtherStatement]]
-    (doseq [t stmt-types]
-      (snapshot-latest-statements-of-type t))))
-
-
-(defn snapshot-latest-variations []
-  (try
-    (let [output-filename "variation-descriptors.txt"]
-      (with-open [writer (io/writer output-filename)]
-      ;; TODO look at group by for this.
-      ;; Just want each iri for latest release_date for each is-version-of
-        (tx
-         (let [unversioned-resources
-               (q/select (str "select distinct ?vof where { "
-                              "?i a :vrs/CanonicalVariationDescriptor . "
-                              "?i :vrs/record-metadata ?rmd . "
-                              "?rmd :dc/is-version-of ?vof . "
-                              "} "))
-               _ (log/info :fn :snapshot-latest-variations
-                           :msg (str "unversioned-resources count: "
-                                     (count unversioned-resources)))
-               latest-versioned-resources
-               (->> unversioned-resources
-                    #_(take 1)
-                    (map (fn [vof]
-                           (log/info :vof vof)
-                           (let [rs (q/select (->> ["select ?i where" "{"
-                                                    ["{" ["select ?i ?rmd where" "{"
-                                                          "?i a :vrs/CanonicalVariationDescriptor ."
-                                                          "?i :vrs/record-metadata ?rmd ."
-                                                          "?rmd :dc/is-version-of ?vof ."
-                                                          "?rmd :owl/version-info ?release_date ."
-                                                          "}"]
-                                                     "order by desc(?release_date)"
-                                                     "limit 1"
-                                                     "}"]
-                                                    ["filter not exists" "{" "?rmd :cg/deleted true" "}"]
-                                                    "}"
-                                                    "order by asc(?i)"]
-                                                   flatten
-                                                   (str/join " "))
-                                              {:vof vof})]
-                             (if (< 1 (count rs))
-                               (log/error :msg "More than 1 statement returned"
-                                          :vof vof :rs rs)
-                               (first rs)))))
-                    (filter (comp not nil?)))]
-           (doseq [descriptor-resource (->> latest-versioned-resources)]
-             (try
-               (let [descriptor-output (variation/variation-descriptor-resource-for-output descriptor-resource)
-                     #_#__ (log/info :descriptor-output descriptor-output)
-                     post-processed-output (-> descriptor-output
-                                               map-rdf-resource-values-to-str
-                                               common/map-remove-nil-values
-                                               (map-unnamespace-values #{:type})
-                                               (map-compact-namespaced-values))]
-
-                 (log/info :msg "Writing descriptor"
-                           :id (:id post-processed-output))
-                 (.write writer (json/generate-string post-processed-output))
-                 (.write writer "\n"))
-               (catch Exception e
-                 (print-stack-trace e)
-                 (log/error :msg "Failed to output variation descriptor"
-                            :descriptor-resource descriptor-resource))))))))
-    (catch Exception e
-      (print-stack-trace e))))
-
-(defn snapshot-variation-db []
-  (let [db genegraph.transform.clinvar.variation/variation-data-db
-        out-fname "variation-data-db-snapshot.ndjson"]
-    (with-open [writer (io/writer (io/file out-fname))]
-      (doseq [[entry-k entry-v] (rocksdb/entire-db-entry-seq db)]
-        (let [data (:genegraph.annotate/data entry-v)]
-          (.write writer (json/generate-string data))
-          (.write writer "\n"))))))
+#_(defn snapshot-variation-db []
+    (let [db genegraph.transform.clinvar.variation/variation-data-db
+          out-fname "variation-data-db-snapshot.ndjson"]
+      (with-open [writer (io/writer (io/file out-fname))]
+        (doseq [[entry-k entry-v] (rocksdb/entire-db-entry-seq db)]
+          (let [data (:genegraph.annotate/data entry-v)]
+            (.write writer (json/generate-string data))
+            (.write writer "\n"))))))
 
 (defn slashjoin [& args]
   (reduce (fn [agg val]
@@ -465,163 +207,60 @@
     (more [this] (.more out))
     (cons [this o] (.cons out o)))
 
-(defn latest-versions-seq-iterator-based
-  "For key-value entries where the key is formatted like <prefix><id>.<version>,
-   get the last entry for each <prefix><id>. Assumes versions are lexicographically sortable.
-   Relies on RocksDB itself being sorted on the byte array keys.
-
-   If an iterator is not passed in, opens one and returns it. Caller must close this ASAP"
-  ([db] (let [iter (rocksdb/entire-db-iter db)
-              out (latest-versions-seq-iterator-based db iter)]
-          {:iter iter
-           :out out}))
-  ([db iter]
-  ;; I'm getting the iri-prefix by parsing the key of the next entry in the db.
-  ;; If we are consistent on the use of RecordMetadata for top level objects that
-  ;; are used in the output, we could use the version_of value from there as well
-   (letfn [(unversioned-iri-prefix [deserialized-entry-k]
-             (let [{:keys [id version ns-prefix type-prefix] :as parsed}
-                   (parse-clinvar-resource-iri deserialized-entry-k)
-                   typed-iri-prefix (str ns-prefix type-prefix)
-                   iri-prefix (str typed-iri-prefix id ".")]
-               iri-prefix))
-           (get-first-matching [pred coll]
-             (reduce (fn [agg val]
-                       (if ((comp not pred) val)
-                         (reduced agg)
-                         (concat agg [val])))
-                     [] coll))]
-     (if (.isValid iter)
-       (let [s (rocksdb/rocks-entry-iterator-seq iter)
-             [entry-k entry-v] (first s)
-             thawed-k (String. entry-k)
-             iri-prefix (unversioned-iri-prefix thawed-k)
-           ;;_ (log/info :iri-prefix iri-prefix)
-             prefix-seq (get-first-matching (fn [[k v]]
-                                              (let [k (String. k)
-                                                    k-iri-prefix (unversioned-iri-prefix k)]
-                                                (= iri-prefix k-iri-prefix)))
-                                            s)
-           ;;_ (log/info :prefix-seq prefix-seq)
-             [last-k last-v] (last prefix-seq)
-             last-k (String. last-k)]
-         (log/debug :iri-prefix iri-prefix
-                    :skip-count (count prefix-seq)
-                    :last-iri last-k)
-         ;; back up one because get-first-matching proceeded to first entry after
-         (.prev iter)
-         (lazy-cat [[last-k last-v]] (latest-versions-seq-iterator-based db iter)))))))
-
-(defn flatten1 [colls]
-  (for [coll colls e coll] e))
-
 (defn latest-versions-seq-all
-  "For key-value entries where the key is formatted like <prefix><id>.<version>,
-   get the last entry for each <prefix><id>. Assumes versions are lexicographically sortable.
+  "For a RocksDB instance with keys and values structured in ways we know how
+   to iterate (<prefix><id>.<version>), return the latest versions.
+   Assumes versions are lexicographically sortable.
    Relies on RocksDB itself being sorted on the byte array keys.
 
+   If :filter-deleted is true, records are filtered out when the latest
+   version contains .release_metadata{.deleted=true}.
+
    If an iterator is not passed in, opens one and returns it. Caller must close this ASAP"
-  ([db] (latest-versions-seq-all db {}))
-  ([db opts] (let [iter (rocksdb/entire-db-iter db)
-                   out (latest-versions-seq-all db iter opts)]
-               {:iter iter
-                :out out}))
-  ([db iter {:keys [filter-deleted] :or {filter-deleted true} :as opts}]
-  ;; I'm getting the iri-prefix by parsing the key of the next entry in the db.
-  ;; If we are consistent on the use of RecordMetadata for top level objects that
-  ;; are used in the output, we could use the version_of value from there as well
+  ([iter] (latest-versions-seq-all iter {}))
+  ([iter {:keys [filter-deleted] :or {filter-deleted true} :as opts}]
    (when (.isValid iter)
      (->> (for [[entry-k entry-v] (rocksdb/rocks-entry-iterator-seq iter)]
             (let [unversioned-iri (get-in entry-v [:record_metadata :is_version_of])]
               [unversioned-iri entry-v]))
           (partition-by first)
           (map last)
-          ;; If :filter-deleted is true, remove deleted
+                ;; If :filter-deleted is true, remove deleted
           (filter #(or (not filter-deleted)
                        (not-deleted? %)))))))
 
 (comment
   "trying latest versions seq iter-based"
-  (let [{:keys [iter out]}
-        (->> genegraph.transform.clinvar.variation/variation-data-db
-             (latest-versions-seq-iterator-based))]
-    (with-open [iter iter]
-      (doseq [entry (->> out (take 5))]
-        (prn entry))))
 
   ;; variation data entries: 640402
   ;; count written to file:  628470
 
-  (let [{:keys [iter out]}
-        (->> genegraph.transform.clinvar.variation/variation-data-db
-             (latest-versions-seq-iterator-based))]
-    (log/info :iter iter)
-    (with-open [iter iter
-                out-writer (io/writer "variations-test.txt")]
-      (doseq [entry (->> out (take 100000))]
-        (.write out-writer (prn-str (first entry)))))
-    (.close iter)
-    (genegraph.rocksdb/mem-stats genegraph.transform.clinvar.variation/variation-data-db))
-
-
-  (let [{:keys [iter out]}
-        (->> genegraph.transform.clinvar.variation/variation-data-db
-             (latest-versions-seq-all))]
-    (log/info :iter iter)
-    (with-open [iter iter
-                out-writer (io/writer "variations-test.txt")]
-      (doseq [entry (->> out)]
-        (.write out-writer (prn-str (first entry)))))
-    (.close iter)
-    (genegraph.rocksdb/mem-stats genegraph.transform.clinvar.variation/variation-data-db))
-
-
-  {"rocksdb.block-cache-usage" "13980177",
-   "rocksdb.estimate-table-readers-mem" "624",
-   "rocksdb.block-cache-pinned-usage" "8285064",
-   "rocksdb.total-sst-files-size" "637748541",
-   "rocksdb.num-live-versions" "1",
-   "rocksdb.live-sst-files-size" "637748541"}
-
-  {"rocksdb.block-cache-usage" "13980177",
-   "rocksdb.estimate-table-readers-mem" "624",
-   "rocksdb.block-cache-pinned-usage" "8285064",
-   "rocksdb.total-sst-files-size" "637748541",
-   "rocksdb.num-live-versions" "1",
-   "rocksdb.live-sst-files-size" "637748541"}
+  (time
+   (do (with-open [iter (rocksdb/entire-db-iter genegraph.transform.clinvar.variation/variation-data-db)
+                   out-writer (io/writer "variations-test.txt")]
+         (log/info :iter iter)
+         (doseq [[k v] (->> (latest-versions-seq-all iter))]
+           (.write out-writer (prn-str k))))
+       (genegraph.rocksdb/mem-stats genegraph.transform.clinvar.variation/variation-data-db)))
 
   ())
 
 
-(defn latest-records
-  "For a RocksDB instance with keys and values structured in ways we know how to iterate,
-   return the latest versions of non-deleted records.
-   Keys must be parseable by parse-clinvar-resource-iri. Records are filtered out when the latest
-   version contains .release_metadata{.deleted=true}."
-  [db]
-
-  #_#_iter (rocksdb/entire-db-iter db)
-  #_#_seq (reify
-            java.io.AutoCloseable
-            (close [this] (;; TODO
-                           )))
-  (for [[entry-k entry-v] (->> (latest-versions-seq-iterator-based db)
-                               (filter not-deleted?))]
-    [entry-k entry-v]))
-
 (defn snapshot-variation-db-rocksdb []
   (let [db genegraph.transform.clinvar.variation/variation-data-db
         out-fname "variation-data-db-snapshot-rocksdb.ndjson"]
-    (with-open [writer (io/writer out-fname)]
-      (doseq [[entry-k entry-v] (latest-records db)]
+    (with-open [iter (rocksdb/entire-db-iter db)
+                writer (io/writer out-fname)]
+      (doseq [[entry-k entry-v] (latest-versions-seq-all iter)]
         (.write writer (json/generate-string entry-v))
         (.write writer "\n")))))
 
 (defn snapshot-statements-db-rocksdb []
   (let [db ca/clinical-assertion-data-db
         out-fname "statements-data-db-snapshot.ndjson"]
-    (with-open [writer (io/writer (io/file out-fname))]
-      (doseq [[entry-k entry-v] (latest-records db)]
+    (with-open [iter (rocksdb/entire-db-iter db)
+                writer (io/writer (io/file out-fname))]
+      (doseq [[entry-k entry-v] (latest-versions-seq-all iter)]
         (.write writer (json/generate-string entry-v))
         (.write writer "\n")))))
 
@@ -637,18 +276,6 @@
   (process-topic-file "data/cg-vcep-2019-07-01/clinical_assertion.txt")
   (process-topic-file "data/cg-vcep-2019-07-01/one-scv.txt")
 
-  #_(process-topic-file "cg-vcep-inputs/variation.txt")
-  #_(process-topic-file "variation-inputs-556853.txt")
-  ;; snapshot with Jena
-  (snapshot-latest-variations)
-
-  (write-latest-statement-snapshots :vrs/VariationGermlinePathogenicityStatement)
-  (write-latest-statement-snapshots :vrs/ClinVarDrugResponseStatement)
-  (write-latest-statement-snapshots :vrs/ClinVarOtherStatement)
-  (write-latest-variation-snapshots)
-
-
-  ;; Kyle testing
   (start-states!)
   (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/variation-556853.txt")
   (do (process-topic-file-parallel-no-output "cg-vcep-2019-07-01/variation.txt")
