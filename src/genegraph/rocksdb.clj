@@ -20,7 +20,12 @@
         opts (doto (Options.)
                (.setTableFormatConfig
                 (doto (org.rocksdb.BlockBasedTableConfig.)
-                  (.setCacheIndexAndFilterBlocks true)))
+                  ;; Set the block cache size. Blocks from the db files are stored uncompressed here
+                  (.setBlockCache (org.rocksdb.LRUCache. (* 128 1024 1024)))
+                  ;; Store index/filter blocks inside the block cache, rather than their own unbounded cache
+                  (.setCacheIndexAndFilterBlocks true)
+                  ;; Always keep L0 index/filter blocks in cache
+                  #_(.setPinL0FilterAndIndexBlocksInCache true)))
                (.setCreateIfMissing true))]
     (io/make-parents full-path)
     ;; todo add logging...
