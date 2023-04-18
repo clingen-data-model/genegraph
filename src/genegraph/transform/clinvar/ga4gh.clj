@@ -512,17 +512,33 @@
          (.prev iter)
          (lazy-cat [[last-k last-v]] (latest-versions-seq-iterator-based db iter)))))))
 
-(comment
-  #_(with-open [prefix-iter (rocksdb/raw-prefix-iter db (.getBytes iri-prefix))]
-      (let [prefix-seq (into [] (rocksdb/rocks-entry-iterator-seq prefix-iter))
-            last-entry (last prefix-seq)]
-        (.close prefix-iter)
-        (log/debug :iri-prefix iri-prefix
-                   :parsed-iri parsed
-                   :skip-count (count prefix-seq))
-        (let [[last-k last-v] last-entry
-              deserialized-last-entry [(String. last-k) last-v]]
-          deserialized-last-entry))))
+(defn flatten1 [colls]
+  (for [coll colls e coll] e))
+
+(defn latest-versions-seq-all
+  "For key-value entries where the key is formatted like <prefix><id>.<version>,
+   get the last entry for each <prefix><id>. Assumes versions are lexicographically sortable.
+   Relies on RocksDB itself being sorted on the byte array keys.
+
+   If an iterator is not passed in, opens one and returns it. Caller must close this ASAP"
+  ([db] (latest-versions-seq-all db {}))
+  ([db opts] (let [iter (rocksdb/entire-db-iter db)
+                   out (latest-versions-seq-all db iter opts)]
+               {:iter iter
+                :out out}))
+  ([db iter {:keys [filter-deleted] :or {filter-deleted true} :as opts}]
+  ;; I'm getting the iri-prefix by parsing the key of the next entry in the db.
+  ;; If we are consistent on the use of RecordMetadata for top level objects that
+  ;; are used in the output, we could use the version_of value from there as well
+   (when (.isValid iter)
+     (->> (for [[entry-k entry-v] (rocksdb/rocks-entry-iterator-seq iter)]
+            (let [unversioned-iri (get-in entry-v [:record_metadata :is_version_of])]
+              [unversioned-iri entry-v]))
+          (partition-by first)
+          (map last)
+          ;; If :filter-deleted is true, remove deleted
+          (filter #(or (not filter-deleted)
+                       (not-deleted? %)))))))
 
 (comment
   "trying latest versions seq iter-based"
@@ -533,6 +549,8 @@
       (doseq [entry (->> out (take 5))]
         (prn entry))))
 
+  ;; variation data entries: 640402
+  ;; count written to file:  628470
 
   (let [{:keys [iter out]}
         (->> genegraph.transform.clinvar.variation/variation-data-db
@@ -545,6 +563,17 @@
     (.close iter)
     (genegraph.rocksdb/mem-stats genegraph.transform.clinvar.variation/variation-data-db))
 
+
+  (let [{:keys [iter out]}
+        (->> genegraph.transform.clinvar.variation/variation-data-db
+             (latest-versions-seq-all))]
+    (log/info :iter iter)
+    (with-open [iter iter
+                out-writer (io/writer "variations-test.txt")]
+      (doseq [entry (->> out)]
+        (.write out-writer (prn-str (first entry)))))
+    (.close iter)
+    (genegraph.rocksdb/mem-stats genegraph.transform.clinvar.variation/variation-data-db))
 
 
   {"rocksdb.block-cache-usage" "13980177",
