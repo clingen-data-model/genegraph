@@ -1,7 +1,6 @@
 (ns genegraph.transform.clinvar.cancervariants
   "Things for interacting with the cancervariants.org normalization service."
   (:require [cheshire.core :as json]
-            [clj-http.client :as http]
             [genegraph.database.names :as names :refer [prefix-ns-map]]
             [genegraph.rocksdb :as rocksdb]
             [genegraph.source.registry.redis :as redis]
@@ -40,8 +39,7 @@
    "normalize.variation" {"@id" "https://github.com/cancervariants/variation-normalization/"
                           "@prefix" true}})
 
-;; TODO move this after vrs-variation-for-expression
-;; Allow passing in an existing context, to which the VICC context will be 'smart' merged to avoid collisions
+;; TODO Allow passing in an existing context, to which the VICC context will be merged
 (defn add-vicc-context [val]
   (assoc val "@context" vicc-context))
 

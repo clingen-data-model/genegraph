@@ -48,7 +48,7 @@
 (defn process-file [filename]
   (with-open [reader (io/reader filename)
               #_#_error-log (io/writer "errors.txt")]
-    (let [limit 10
+    (let [limit Long/MAX_VALUE
           line-count (atom 0)]
       (doseq [[i event] (->> (line-seq reader)
                              (take limit)
@@ -63,9 +63,9 @@
                                           (assoc ::ev/interceptors snapshot/interceptor-chain)
                                           (snapshot/process-event-catch-exceptions))))
                              (map-indexed vector))]
-        (log/info :data (:genegraph.annotate/data event))
-        (log/info :id (get-in event [:genegraph.annotate/data :id])
-                  :description (get-in event [:genegraph.annotate/data :description]))
+        (log/debug :data (:genegraph.annotate/data event))
+        (log/debug :id (get-in event [:genegraph.annotate/data :id])
+                   :description (get-in event [:genegraph.annotate/data :description]))
         (swap! line-count inc)
         (when (not (:genegraph.annotate/data event))
           (log/error :msg "Data not added to event" :event event))
@@ -78,100 +78,73 @@
     (doseq [fname (->> files
                        (take 1))]
       (log/info :fname fname)
-    ;; Expecting 593K
       (process-file fname))))
-
-(defn make-snapshot []
-  (let [written-datasets (snapshot/snapshot-write snapshot/snapshot-datasets)]))
 
 (comment
   (def written-datasets (snapshot/snapshot-write snapshot/snapshot-datasets)))
 
 (comment
-  #_(def test-db (rocksdb/open "variation-snapshot-fromcontainer.db"))
-  #_(def test-db (rocksdb/open "variation-snapshot-fromcontainer-relcnv.db"))
-
   (require 'genegraph.transform.clinvar.variation
            '[mount.core :as mount])
 
   (def db-var #'genegraph.transform.clinvar.variation/variation-data-db)
   (mount/start db-var)
-  ;; 1668487
   (reduce (fn [agg val]
             (+ 1 agg))
           0
           (rocksdb/entire-db-seq (var-get db-var)))
-
-  #_(->> (rocksdb/entire-db-seq db)
-         (take 1))
-
-  {:CanonicalVariationDescriptor 1000}
-  ;; {:counters {"Allele" 1578992, "Text" 31604, nil 57891}, :line 339}
-  ;; {"Allele" 1578992, "Text" 31604, nil 6185, "AbsoluteCopyNumber" 51706}
-
   ())
 
-(def counters (atom {}))
 
-(defn count-types [counters]
+(defn count-variation-types []
   (with-open [writer-allele (io/writer "variation-allele.txt")
               writer-rel-cnv (io/writer "variation-rel-cnv.txt")
               writer-abs-cnv (io/writer "variation-abs-cnv.txt")
               writer-text (io/writer "variation-text.txt")
-              writer-null (io/writer "variation-null.txt")]
-    (let [db-var #'genegraph.transform.clinvar.variation/variation-data-db
+              writer-null (io/writer "variation-null.txt")
+              writer-other (io/writer "variation-other.txt")
+              variation-writer (io/writer "variation.txt")
+              error-writer (io/writer "variation-errors.txt")]
+    (let [counters (atom {})
+          db-var #'genegraph.transform.clinvar.variation/variation-data-db
           writers {"Allele" writer-allele
                    "RelativeCopyNumber" writer-rel-cnv
                    "AbsoluteCopyNumber" writer-abs-cnv
                    "Text" writer-text
-                   nil writer-null}
-          variation-writer (io/writer "variation.txt")
-          error-writer (io/writer "variation-errors.txt")])))
-
-(defn count-types []
-  (reset! counters {})
-  (with-open [writer-allele (io/writer "variation-allele.txt")
-              writer-rel-cnv (io/writer "variation-rel-cnv.txt")
-              writer-abs-cnv (io/writer "variation-abs-cnv.txt")
-              writer-text (io/writer "variation-text.txt")
-              writer-null (io/writer "variation-null.txt")]
-    (let [db-var #'genegraph.transform.clinvar.variation/variation-data-db
-          writers {"Allele" writer-allele
-                   "RelativeCopyNumber" writer-rel-cnv
-                   "AbsoluteCopyNumber" writer-abs-cnv
-                   "Text" writer-text
-                   nil writer-null}
-          variation-writer (io/writer "variation.txt")
-          error-writer (io/writer "variation-errors.txt")]
+                   nil writer-null}]
       (letfn [(count-canonical-variations [counters canonical-variation]
                 (let [{core-variation :canonical_context} canonical-variation
                       {core-variation-type :type} core-variation]
+                  (.write (get writers core-variation-type writer-other)
+                          (str (json/generate-string canonical-variation) "\n"))
                   (swap! counters (fn [current-counters]
                                     (update current-counters
                                             core-variation-type
                                             #(+ 1 (or % 0)))))))
               (count-non-canonical [counters variation]
                 (let [{variation-type :type} variation]
+                  (.write (get writers variation-type writer-other)
+                          (str (json/generate-string variation) "\n"))
                   (swap! counters (fn [current-counters]
                                     (update current-counters
                                             variation-type
                                             #(+ 1 (or % 0)))))))]
-        (doseq [[idx [k descriptor]]
-                (map-indexed vector
-                             (->> (ga4gh/latest-records (var-get db-var))
-                                  (take 10000)))]
-          (let [{canonical-variation :canonical_variation} descriptor]
-            (case (:type canonical-variation)
-              "CanonicalVariation" (count-canonical-variations counters canonical-variation)
-              nil (do (log/error :msg "nil variation type"
-                                 :descriptor descriptor)
-                      (.write error-writer (str/trim (prn-str descriptor)))
-                      (.write error-writer "\n")
-                      (count-non-canonical counters {:type nil})
-                      #_(swap! counters (fn [counters] (update counters nil #(+ 1 (or % 0))))))
-              (count-non-canonical counters canonical-variation))
-            (.write variation-writer (str/trim (prn-str descriptor)))
-            (.write variation-writer "\n"))
-          (when (= 0 (rem idx 1000))
-            (log/info :counters @counters)))
-        (log/info :counters @counters)))))
+        (with-open [iter (rocksdb/entire-db-iter (var-get db-var))]
+          (doseq [[idx [k descriptor]]
+                  (map-indexed vector (->> (ga4gh/latest-versions-seq-all iter)
+                                           #_(take 10000)))]
+            (let [{canonical-variation :canonical_variation} descriptor]
+              (case (:type canonical-variation)
+                "CanonicalVariation" (count-canonical-variations counters canonical-variation)
+                nil (do (log/error :msg "nil variation type"
+                                   :descriptor descriptor)
+                        (.write error-writer (str/trim (prn-str descriptor)))
+                        (.write error-writer "\n")
+                        (count-non-canonical counters {:type nil}))
+                (count-non-canonical counters canonical-variation))
+              (.write variation-writer (json/generate-string descriptor))
+              (.write variation-writer "\n"))
+            (when (= 0 (rem idx 1000))
+              (log/info :counters @counters)))))
+      (log/info :counters @counters)
+      counters)))
