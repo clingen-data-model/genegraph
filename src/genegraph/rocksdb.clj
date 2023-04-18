@@ -180,7 +180,7 @@
 
 (defn rocks-entry-iterator-seq
   "Iterators pin blocks they iterate into in memory.
-   When garbage collected these will be cleared, but "
+   Caller should call .close on iter when done reading from it."
   [^org.rocksdb.RocksIterator iter]
   (lazy-seq
    (if (.isValid iter)
@@ -190,18 +190,6 @@
        (cons [k v]
              (rocks-entry-iterator-seq iter)))
      nil)))
-
-#_(defn rocks-entry-iterator-seq
-    "Iterators pin blocks they iterate into in memory.
-   When garbage collected these will be cleared, but "
-    [^org.rocksdb.RocksIterator iter]
-    (if (.isValid iter)
-      (let [k (.key iter)
-            v (nippy/fast-thaw (.value iter))]
-        (.next iter)
-        (lazy-cat [[k v]]
-                  (rocks-entry-iterator-seq iter)))
-      nil))
 
 (defn entire-db-entry-seq [^RocksDB db]
   (-> db entire-db-iter rocks-entry-iterator-seq))
