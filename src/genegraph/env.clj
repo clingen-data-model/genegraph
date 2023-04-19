@@ -25,6 +25,9 @@
 (def use-experimental-schema (Boolean/valueOf (System/getenv "GENEGRAPH_EXPERIMENTAL_SCHEMA")))
 (def batch-event-sources (System/getenv "GENEGRAPH_BATCH_EVENT_SOURCES"))
 
+(def snapshot-upload (Boolean/valueOf (System/getenv "GENEGRAPH_SNAPSHOT_UPLOAD")))
+
+
 ;; When defined, this is a previous migration archive name (without the '.tar.gz')
 ;; from where the base data for a new migration will originate.
 (def migration-data-version (System/getenv "GENEGRAPH_MIGRATION_VERSION"))

@@ -2,15 +2,16 @@
   (:require [cheshire.core :as json]
             [genegraph.database.load :as l]
             [genegraph.database.query :as q]
+            [genegraph.rocksdb :as rocksdb]
             [genegraph.transform.clinvar.clinical-assertion :as clinical-assertion]
-            [genegraph.transform.clinvar.common :refer [clinvar-add-event-graphql
-                                                        clinvar-add-model
-                                                        clinvar-model-to-jsonld]]
+            [genegraph.transform.clinvar.common :as common]
+            [genegraph.transform.clinvar.iri :refer [ns-cg]]
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.clinvar.variation :as variation]
             [genegraph.transform.types :as xform-types :refer [add-model]]
             [genegraph.util :refer [str->bytestream]]
-            [io.pedestal.log :as log]))
+            [io.pedestal.log :as log]
+            [mount.core :as mount]))
 
 (defn add-parsed-value
   "Adds ::parsed-value containing the keywordized edn-map of :genegraph.sink.event/value.
@@ -23,26 +24,54 @@
              (json/parse-string true)
              (util/parse-nested-content))))
 
+(mount/defstate release-sentinel-snapshot-db
+  :start (rocksdb/open "release-sentinel-snapshot.db")
+  :stop (rocksdb/close release-sentinel-snapshot-db))
+
+(defn add-data-for-release-sentinel [event]
+  (let [message (:genegraph.transform.clinvar.core/parsed-value event)
+        id (str (ns-cg "clinvar.release_sentinel")
+                "_" (get-in message [:content :sentinel_type])
+                "." (:release_date message))]
+    (assoc event
+           :genegraph.annotate/data message
+           :genegraph.annotate/iri id
+           :genegraph.annotate/data-db release-sentinel-snapshot-db
+           :genegraph.annotate/data-id id)))
+
 (def data-fns-for-type
   {"trait" #(clinical-assertion/add-data-for-trait %)
    "trait_set" #(clinical-assertion/add-data-for-trait-set %)
    "clinical_assertion" #(clinical-assertion/add-data-for-clinical-assertion %)
-   "variation" #(variation/add-data-for-variation %)})
+   "variation" #(variation/add-data-for-variation %)
+   "release_sentinel" #(add-data-for-release-sentinel %)})
+
+(defn add-event-type [event]
+  (let [message (::parsed-value event)
+        event-type (when (#{"create" "update" "delete"} (:event_type message))
+                     (keyword (:event_type message)))]
+    (assoc event :genegraph.annotate/event-type event-type)))
 
 (defmethod xform-types/add-data :clinvar-raw [event]
   (try
-    (let [event-with-json (add-parsed-value event)
-          _ (log/debug :fn :genegraph.transform.clinvar.core/add-data
-                       :offset (:genegraph.sink.stream/offset event)
-                       :entity_type (get-in event-with-json
-                                            [::parsed-value :content :entity_type])
-                       :id (get-in event-with-json [::parsed-value :content :id]
-                                   (get-in event-with-json [::parsed-value :content]))
-                       :release_date (get-in event-with-json [::parsed-value :release_date]))
-          event-with-data (let [entity-type (get-in event-with-json [::parsed-value :content :entity_type])
-                                add-data-fn (get data-fns-for-type entity-type identity)]
-                            (add-data-fn event-with-json))]
-      event-with-data)
+    (let [event (-> event
+                    add-parsed-value
+                    add-event-type)]
+      (log/debug :fn :genegraph.transform.clinvar.core/add-data
+                 :offset (:genegraph.sink.stream/offset event)
+                 :entity_type (get-in event [::parsed-value :content :entity_type])
+                 :id (get-in event [::parsed-value :content :id]
+                             (get-in event [::parsed-value :content]))
+                 :release_date (get-in event [::parsed-value :release_date]))
+      (let [entity-type (get-in event [::parsed-value :content :entity_type])
+            add-data-fn (get data-fns-for-type entity-type identity)
+            event-with-data (add-data-fn event)]
+        (if (:genegraph.annotate/data event-with-data)
+          (update event-with-data :genegraph.annotate/data
+                  (fn [data] (-> data
+                                 (common/remove-key-recur "@context")
+                                 (common/remove-key-recur (keyword "@context")))))
+          event-with-data)))
     (catch Exception e
       (log/error :fn ::add-data :msg "Exception caught in add-data for :clinvar-raw"
                  :event event
@@ -54,7 +83,7 @@
                                (get-in value [:content :entity_type])))]
     cv-format))
 
-(defmethod clinvar-add-model :default [event]
+(defmethod common/clinvar-add-model :default [event]
   (log/debug :fn :clinvar-add-model :dispatch :default :msg "No multimethod defined for event" :event event)
   ;; Avoids NPE on downstream interceptors expecting a model to exist
   (assoc event ::q/model (l/statements-to-model [])))
@@ -84,7 +113,11 @@
     (let [event (-> event
                     add-parsed-value
                     (#(assoc % :genegraph.transform.clinvar/format (get-clinvar-format (::parsed-value %))))
-                    xform-types/add-data
+                    ;; Add data interceptor should be called before add-model.
+                    ;; Leaving this in as a fallback if it is not.
+                    ((fn [e] (if (not (:genegraph.annotate/data e))
+                               (xform-types/add-data e)
+                               e)))
                     add-model-from-contextualized-data)]
       (log/trace :fn :add-model :event event)
       event)
@@ -92,7 +125,7 @@
       (log/error :fn :add-model :msg "Exception in clinvar add-model" :exception e)
       (update event :exception conj e))))
 
-(defmethod clinvar-model-to-jsonld :default [event]
+(defmethod common/clinvar-model-to-jsonld :default [event]
   (log/warn :fn ::clinvar-model-to-jsonld
             :dispatch :default
             :msg "No multimethod defined for event"
@@ -102,9 +135,9 @@
 
 (defmethod xform-types/add-event-graphql :clinvar-raw [event]
   (log/info :fn ::add-event-graphql :iri (:genegraph.annotate/iri event))
-  (clinvar-add-event-graphql event))
+  (common/clinvar-add-event-graphql event))
 
 (defmethod xform-types/add-model-jsonld :clinvar-raw [event]
   (log/info :fn ::add-model-jsonld :iri (:genegraph.annotate/iri event))
-  (let [j (clinvar-model-to-jsonld event)]
+  (let [j (common/clinvar-model-to-jsonld event)]
     (assoc event :genegraph.annotate/jsonld j)))

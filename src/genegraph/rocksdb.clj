@@ -17,11 +17,31 @@
 
 (defn open [db-name]
   (let [full-path (create-db-path db-name)
-        opts (-> (Options.)
-                 (.setCreateIfMissing true))]
+        opts (doto (Options.)
+               (.setTableFormatConfig
+                (doto (org.rocksdb.BlockBasedTableConfig.)
+                  ;; Set the block cache size. Blocks from the db files are stored uncompressed here
+                  (.setBlockCache (org.rocksdb.LRUCache. (* 128 1024 1024)))
+                  ;; Store index/filter blocks inside the block cache, rather than their own unbounded cache
+                  (.setCacheIndexAndFilterBlocks true)
+                  ;; Always keep L0 index/filter blocks in cache
+                  #_(.setPinL0FilterAndIndexBlocksInCache true)))
+               (.setCreateIfMissing true))]
     (io/make-parents full-path)
     ;; todo add logging...
     (RocksDB/open opts full-path)))
+
+(defn mem-stats
+  "Return a map of some memory-related rocksdb properties"
+  [db]
+  (->> ["rocksdb.block-cache-usage"
+        "rocksdb.estimate-table-readers-mem"
+        "rocksdb.block-cache-pinned-usage"
+        "rocksdb.total-sst-files-size"
+        "rocksdb.num-live-versions"
+        "rocksdb.live-sst-files-size"]
+       (map #(vector % (.getProperty db %)))
+       (into {})))
 
 (defn key-digest
   "Return a byte array of the md5 hash of the nippy frozen object"
@@ -158,7 +178,10 @@
              (rocks-iterator-seq iter)))
      nil)))
 
-(defn rocks-entry-iterator-seq [^org.rocksdb.RocksIterator iter]
+(defn rocks-entry-iterator-seq
+  "Iterators pin blocks they iterate into in memory.
+   Caller should call .close on iter when done reading from it."
+  [^org.rocksdb.RocksIterator iter]
   (lazy-seq
    (if (.isValid iter)
      (let [k (.key iter)
@@ -187,6 +210,14 @@
   is significant."
   [db prefix]
   (-> db (raw-prefix-iter prefix) rocks-iterator-seq))
+
+(defn raw-prefix-entry-seq
+  "Return a lazy-seq over all records in DB beginning with PREFIX,
+  where prefix is a byte array. Intended when record ordering
+  is significant.
+   Returns key-value pairs [key value]."
+  [db prefix]
+  (-> db (raw-prefix-iter prefix) rocks-entry-iterator-seq))
 
 (defn sample-prefix
   "Take first n records from db given prefix"

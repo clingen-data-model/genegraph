@@ -2,14 +2,21 @@
   (:require [cheshire.core :as json]
             [clojure.string :as str]
             [genegraph.database.load :as l]
-            [genegraph.database.names :refer [local-class-names
-                                              local-property-names
-                                              prefix-ns-map]]
+            [genegraph.database.names
+             :refer [local-class-names
+                     local-property-names
+                     prefix-ns-map]]
             [genegraph.database.query :as q]
+            [genegraph.rocksdb :as rocks]
+            [genegraph.sink.document-store :as docstore]
             [genegraph.transform.clinvar.common :as common]
             [genegraph.transform.clinvar.iri :as iri :refer [ns-cg]]
-            [genegraph.transform.clinvar.util :refer [in?]]
-            [io.pedestal.log :as log])
+            [genegraph.transform.clinvar.util
+             :refer [in?
+                     into-sequential-if-not]]
+            [genegraph.transform.clinvar.variation :as variation]
+            [io.pedestal.log :as log]
+            [mount.core :as mount :refer [defstate]])
   (:import (genegraph.database.query.types RDFResource)))
 
 (declare statement-context)
@@ -69,17 +76,18 @@
 
 (defn normalize-clinsig-term
   "Returns the mapped normalized term for the raw input term.
-   If the term is not known, return the mapping for 'other'"
+   If the term is not known, return the mapping for 'other'.
+   TODO add error messages to return"
   [term]
-  (get common/normalize-clinsig-map (str/lower-case term)
-       (get common/normalize-clinsig-map "other")))
+  (or (some-> term str/lower-case (#(get common/normalize-clinsig-map %)))
+      (get common/normalize-clinsig-map "other")))
 
 (defn normalize-clinsig-code
   "Returns the mapped normalized code for the raw input term.
    If the term is not known, return the mapping for 'other'"
   [term]
-  (get common/normalize-clinsig-codes-map (str/lower-case term)
-       (get common/normalize-clinsig-codes-map "other")))
+  (or (some-> term str/lower-case (#(get common/normalize-clinsig-codes-map %)))
+      (get common/normalize-clinsig-codes-map "other")))
 
 (defn get-clinsig-class
   "Returns the class of a normalized clinsig term
@@ -106,25 +114,32 @@
            :genegraph.annotate/data-contextualized
            (merge data statement-context))))
 
+(defstate trait-data-db
+  :start (rocks/open "trait-snapshot.db")
+  :stop (rocks/close trait-data-db))
+
 (defn add-data-for-trait [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         trait (:content message)
         unversioned (str (ns-cg "trait") "_" (:id trait))
-        tid (str (ns-cg "trait") "_" (:id trait) "." (:release_date message))]
+        tid (str (ns-cg "trait") "_" (:id trait) "." (:release_date message))
+        data {:id tid
+              :type (case (:type trait)
+                      "Disease" "Disease"
+                      "Phenotype")
+              :medgen_id (:medgen_id trait)
+              :clinvar_trait_id (:id trait)
+              :release_date (:release_date message)
+              :record_metadata (merge {:type "RecordMetadata"
+                                       :version (:release_date message)
+                                       :is_version_of unversioned}
+                                      (when (= "delete" (:event_type message))
+                                        {:deleted true}))}]
     (-> event
-        (assoc
-         :genegraph.annotate/data
-         {:id tid
-          :type (case (:type trait)
-                  "Disease" "Disease"
-                  "Phenotype")
-          :medgen_id (:medgen_id trait)
-          :clinvar_trait_id (:id trait)
-          :release_date (:release_date message)
-          :record_metadata {:type "RecordMetadata"
-                            :version (:release_date message)
-                            :is_version_of unversioned}})
-        (assoc :genegraph.annotate/iri tid)
+        (assoc :genegraph.annotate/data-db trait-data-db
+               :genegraph.annotate/data-id tid
+               :genegraph.annotate/data data
+               :genegraph.annotate/iri tid)
         add-contextualized)))
 
 (defn trait-id-to-medgen-id
@@ -156,30 +171,35 @@
         (merge (select-keys condition [:clinvar_trait_set_id])))
     condition))
 
+(defstate trait-set-data-db
+  :start (rocks/open "trait-set-snapshot.db")
+  :stop (rocks/close trait-set-data-db))
+
 (defn add-data-for-trait-set [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         trait-set (:content message)
-        data (->
-              {:id (str (ns-cg "trait_set_") (:id trait-set)
-                        "." (:release_date message))
-               :type "Condition"
-               :clinvar_trait_set_id (:id trait-set)
-               :release_date (:release_date message)
-               :record_metadata {:type "RecordMetadata"
-                                 :is_version_of (str (ns-cg "trait_set_") (:id trait-set))
-                                 :version (:release_date message)}
-               :members (let [trait-ids (:trait_ids trait-set)]
-                          (log/debug :fn :add-data-for-trait-set
-                                     :trait-ids trait-ids)
+        iri-unversioned (str (ns-cg "trait_set_") (:id trait-set))
+        iri (str iri-unversioned "." (:release_date message))
+        data {:id iri
+              :type "Condition"
+              :clinvar_trait_set_id (:id trait-set)
+              :release_date (:release_date message)
+              :record_metadata (merge {:type "RecordMetadata"
+                                       :is_version_of (str (ns-cg "trait_set_") (:id trait-set))
+                                       :version (:release_date message)}
+                                      (when (= "delete" (:event_type message))
+                                        {:deleted true}))
+              :members (let [trait-ids (:trait_ids trait-set)]
+                         (log/debug :fn :add-data-for-trait-set
+                                    :trait-ids trait-ids)
                           ;; Unversioned identifiers for the traits
-                          (map #(str (ns-cg "trait") "_" %)
-                               trait-ids))})]
-    (-> (assoc
-         event
-         :genegraph.annotate/data
-         data
-         :genegraph.annotate/iri
-         (str (ns-cg "trait_set_") (:id trait-set) "." (:release_date message)))
+                         (map #(str (ns-cg "trait") "_" %)
+                              trait-ids))}]
+    (-> event
+        (assoc :genegraph.annotate/data-db trait-set-data-db
+               :genegraph.annotate/data-id (:id data)
+               :genegraph.annotate/data data
+               :genegraph.annotate/iri (:id data))
         add-contextualized)))
 
 (defn get-trait-resource-by-version-of
@@ -386,14 +406,18 @@
   [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
-        has-method? (= "AssertionMethod"
-                       (get-in assertion [:content "AttributeSet" "Attribute" "@Type"]))
-        method-label (get-in assertion [:content "AttributeSet" "Attribute" "$"])
-        method-url (get-in assertion [:content "AttributeSet" "Citation" "URL" "$"])
-        method-pubmed (let [citation (get-in assertion [:content "AttributeSet" "Citation"])]
+        assertion-method-obj (-> assertion
+                                 (get-in [:content "AttributeSet"])
+                                 (into-sequential-if-not)
+                                 (->> (filter #(= "AssertionMethod"
+                                                  (get-in % ["Attribute" "@Type"])))
+                                      first))
+        method-label (get-in assertion-method-obj ["Attribute" "$"])
+        method-url (get-in assertion-method-obj ["Citation" "URL" "$"])
+        method-pubmed (let [citation (get-in assertion-method-obj ["Citation"])]
                         (when (= "PubMed" (get-in citation ["ID" "@Source"]))
                           (str "PMID:" (get-in citation ["ID" "$"]))))]
-    (when has-method?
+    (when assertion-method-obj
       {;; If a deterministic id is needed:
        ;; (str iri/clinvar-assertion (:id assertion) "." (:release_date message) "_Method")
        :id (str "_:" (l/blank-node))
@@ -548,6 +572,42 @@
       :value (map #(-> % common/rdf-select-tree common/map-unnamespace-property-kw-keys)
                   (q/ld-> extension-resource [:rdf/value]))})))
 
+(defn traits-for-output
+  [traits release-date]
+  (reduce (fn [vec unversioned-trait-iri]
+            (let [versioned-trait-iri (str unversioned-trait-iri "." release-date)
+                  trait (docstore/get-document-raw-key trait-data-db versioned-trait-iri)]
+              (conj vec {:id (str "medgen:" (:medgen_id trait))
+                         :type (:type trait)})))
+          []
+          traits))
+
+(defn trait-set-for-output [unversioned-trait-set-iri release-date]
+  (let [versioned-trait-set-iri (str unversioned-trait-set-iri "." release-date)
+        trait-set (docstore/get-document-raw-key trait-set-data-db versioned-trait-set-iri)]
+    {:id (:id trait-set)
+     :type (:type trait-set)
+     :members (traits-for-output (:members trait-set) release-date)}))
+
+(defn clinical-assertion-for-output
+  "Annotate event with data with data previously stored in rocksdb for outputting clinical assertions.
+   Event is the full event stored in rocks."
+  [event]
+  (let [data (:genegraph.annotate/data event)]
+    (assoc event :genegraph.annotate/output
+           {:id (:id data)
+            :type (:type data)
+            :label (:label data)
+            :description (:description data)
+            :specified_by (:specified_by data)
+            :contributions (:contributions data)
+            :record_metadata (:record_metadata data)
+            :direction (:direction data)
+            :subject_descriptor (:subject_descriptor data)
+            :extensions (:extensions data)
+            :classification (:classification data)
+            :target_proposition (:target_proposition data)})))
+
 (defn clinical-assertion-resource-for-output
   ;; TODO remove keys with nil values
   ;; TODO handle :event_type delete for all these records.
@@ -559,7 +619,7 @@
                                                   :owl/version-info])
         ;; Assertion is stored with the subject-descriptor just being the variation id
         ;; TODO try to speed up the variation-descriptor-by-clinvar-id function call
-        subject-descriptor (variation-descriptor-by-clinvar-id
+        subject-descriptor (variation/get-variation-descriptor-by-clinvar-id
                             (q/ld1-> assertion-resource [:vrs/subject-descriptor])
                             release-date)]
     (when (nil? subject-descriptor)
@@ -592,43 +652,64 @@
      :extensions (->> (q/ld-> assertion-resource [:vrs/extensions])
                       (map extension-resource-for-output))}))
 
+(defstate clinical-assertion-data-db
+  :start (rocks/open "clinical-assertion-snapshot.db")
+  :stop (rocks/close clinical-assertion-data-db))
+
 (defn add-data-for-clinical-assertion [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
         vof (str (ns-cg "SCV_Statement_") (:id assertion))
-        id (str vof "." (:release_date message))
-        stmt-type (statement-type (:interpretation_description assertion))]
-    (-> (assoc
-         event
-         :genegraph.annotate/data
-         {:id id
-          :type stmt-type
-          :label (:title assertion)
-          ;; https://github.com/clingen-data-model/genegraph/issues/697
-          :extensions (let [local-key (get assertion :local_key)]
-                        (log/debug :fn :add-data-for-clinical-assertion
-                                   :local-key local-key
-                                   :assertion assertion)
-                        (common/fields-to-extension-maps
-                         (select-keys assertion [:local_key])))
-          :description (description event)
-          :method (method event)
-          :contributions (contributions event)
-          :record_metadata {:type "RecordMetadata"
-                            :is_version_of vof
-                            :version (:release_date message)}
-          :direction (-> (:interpretation_description assertion)
-                         normalize-clinsig-term
-                         clinsig->direction)
-          :subject_descriptor (get assertion :variation_id)
-          #_#_:subject_descriptor (str (variation-descriptor-by-clinvar-id
-                                        (get assertion :variation_id)
-                                        (get message :release_date)))
-          ;;:object_descriptor nil ; do we need this ? list of disease names, per Larry (xrefs?)
-          :classification (classification assertion)
-          :target_proposition (proposition event)}
-         :genegraph.annotate/iri
-         (str (ns-cg "clinical_assertion_") (:id assertion) "." (:release_date message)))
+        release-date (:release_date message)
+        id (str vof "." release-date)
+        stmt-type (statement-type (:interpretation_description assertion))
+        subject-descriptor (variation/get-variation-descriptor-by-clinvar-id
+                            (get assertion :variation_id) release-date)
+        data {:id id
+              :type stmt-type
+              :label (:title assertion)
+              ;; https://github.com/clingen-data-model/genegraph/issues/697
+              :extensions (let [local-key (get assertion :local_key)]
+                            (log/debug :fn :add-data-for-clinical-assertion
+                                       :local-key local-key
+                                       :assertion assertion)
+                            (common/fields-to-extension-maps
+                             (select-keys assertion [:local_key])))
+              :description (description event)
+              :method (method event)
+              :specified_by (method event)
+              :contributions (contributions event)
+              :record_metadata (merge {:type "RecordMetadata"
+                                       :is_version_of vof
+                                       :version (:release_date message)}
+                                      (when (= "delete" (:event_type message))
+                                        {:deleted true}))
+              :direction (-> (:interpretation_description assertion)
+                             normalize-clinsig-term
+                             clinsig->direction)
+              :subject_descriptor subject-descriptor
+              #_#_:subject_descriptor (str (variation-descriptor-by-clinvar-id
+                                            (get assertion :variation_id)
+                                            (get message :release_date)))
+              ;;:object_descriptor nil ; do we need this ?
+              ;; list of disease names, per Larry (xrefs?)
+              :classification (classification assertion)
+              :target_proposition (let [proposition (proposition event)
+                                        subject (:subject proposition)
+                                        vrs-id (-> (variation/get-variation-descriptor-by-clinvar-id
+                                                    subject
+                                                    release-date)
+                                                   (get-in [:canonical_variation :id]))
+                                        object (:object proposition)
+                                        trait-set (trait-set-for-output object release-date)]
+                                    (assoc proposition
+                                           :subject vrs-id
+                                           :object trait-set))}]
+    (-> event
+        (assoc :genegraph.annotate/data data
+               :genegraph.annotate/iri id
+               :genegraph.annotate/data-db clinical-assertion-data-db
+               :genegraph.annotate/data-id id)
         add-contextualized)))
 
 
@@ -683,6 +764,7 @@
     "contributor" {"@id" (str (get prefix-ns-map "vrs") "contributor")}
     "activity" {"@id" (str (get prefix-ns-map "vrs") "activity")}
     "method" {"@id" (str (get prefix-ns-map "vrs") "method")}
+    "specified_by" {"@id" (str (get prefix-ns-map "vrs") "specified_by")}
     "contributions" {"@id" (str (get prefix-ns-map "vrs") "contributions")}
     "direction" {"@id" (str (get prefix-ns-map "vrs") "direction")}
     "description" {"@id" (str (get prefix-ns-map "vrs") "description")}
@@ -756,3 +838,45 @@
     "cgterms" {"@id" (get prefix-ns-map "cgterms")
                "@prefix" true}
     "@vocab" (get prefix-ns-map "cgterms")}})
+
+(comment
+  (require '[genegraph.transform.clinvar.ga4gh :as ga4gh])
+  (require '[genegraph.transform.clinvar.core :as core])
+  (require '[genegraph.transform.clinvar.variation :as variation])
+  (require '[genegraph.transform.types :as xform-types])
+  (ga4gh/start-states!)
+  (def assertion "{
+    \"release_date\": \"2019-07-01\",
+    \"event_type\": \"create\",
+    \"content\": {
+                \"variation_id\": \"40347\",
+                \"entity_type\": \"clinical_assertion\",
+                \"variation_archive_id\": \"VCV000040347\",
+                \"submitter_id\": \"26957\",
+                \"date_last_updated\": \"2019-05-09\",
+                \"interpretation_comments\": [\"{\\\"text\\\":\\\"The L245F variant has been published previously in association with Noonan spectrum disorders, including as an apparently de novo occurrence (Koudova et al., 2009; Sarkozy et al., 2009). It has also been confirmed to occur de novo in an individual sent to GeneDx for testing. The variant is not observed in large population cohorts (Lek et al., 2016). In-silico analyses, including protein predictors and evolutionary conservation, support a deleterious effect. A different nucleotide change leading to the same missense variant (c.735 A>T) as well as missense variants in nearby residues (T241P/R/M, T244P, A246P) have been reported in the Human Gene Mutation Database in association with cardio-facio-cutaneous syndrome (Stenson et al., 2014), supporting the functional importance of this region of the protein. In summary, we consider the variant to be pathogenic.\\\",\\\"type\\\":\\\"public\\\"}\"],
+                \"interpretation_description\": \"Pathogenic\",
+                \"trait_set_id\": \"9460\",
+                \"internal_id\": \"95781\",
+                \"content\": \"{\\\"AttributeSet\\\":{\\\"Attribute\\\":{\\\"$\\\":\\\"GeneDx Variant Classification (06012015)\\\",\\\"@Type\\\":\\\"AssertionMethod\\\"},\\\"Citation\\\":{\\\"URL\\\":{\\\"$\\\":\\\"https://submit.ncbi.nlm.nih.gov/ft/byid/7oynscmk/mdi-5616_26957_genedx_interprules_final_061215.pdf\\\"}}}}\",
+                \"clingen_version\": 0,
+                \"submitted_assembly\": \"GRCh37\",
+                \"submission_id\": \"26957.2019-01-29\",
+                \"local_key\": \"GDX:6934|Not Provided\",
+                \"clinical_assertion_observation_ids\": [\"SCV000057188.0\"],
+                \"assertion_type\": \"variation to disease\",
+                \"rcv_accession_id\": \"RCV000033283\",
+                \"clinical_assertion_trait_set_id\": \"SCV000057188\",
+                \"id\": \"SCV000057188\",
+                \"submission_names\": [\"SUB5098196\"],
+                \"record_status\": \"current\",
+                \"date_created\": \"2013-03-18\",
+                \"review_status\": \"criteria provided, single submitter\",
+                \"interpretation_date_last_evaluated\": \"2018-07-03\",
+                \"version\": \"16\"
+                }
+    }")
+  (def event (-> assertion
+                 (json/parse-string true)
+                 ga4gh/eventify
+                 core/add-parsed-value)))

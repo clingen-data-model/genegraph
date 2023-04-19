@@ -1,12 +1,78 @@
 (ns genegraph.sink.document-store
   (:require [genegraph.rocksdb :as rocks]
-            [clojure.string :as s]
-            [cheshire.core :as json]
-            [mount.core :as mount :refer [defstate]]))
+            [mount.core :as mount :refer [defstate]]
+            [taoensso.nippy :as nippy]))
 
 (defstate db
   :start (rocks/open "document_store")
   :stop (rocks/close db))
+
+(defn store-event
+  "Store the document data in :genegraph.annotate/data
+  with the key :genegraph.annotate/data-id in the user opened
+  database in :genegraph.annotate/data-db or in the default db."
+  [event]
+  (when (:genegraph.annotate/data-id event)
+    (rocks/rocks-put-raw-key!
+     (or (:genegraph.annotate/data-db event) db)
+     (nippy/fast-freeze (:genegraph.annotate/data-id event))
+     ;; TODO- TON -Maybe better as a reference to db or a
+     ;; function returning db rather than dissoc??
+     (dissoc event :genegraph.annotate/data-db)))
+  event)
+
+(defn store-document
+  "Store the document data in :genegraph.annotate/data
+  with the key :genegraph.annotate/data-id in the user opened
+  database in :genegraph.annotate/data-db or in the default db."
+  [event]
+  (when (and (:genegraph.annotate/data event) (:genegraph.annotate/data-id event))
+    (rocks/rocks-put-raw-key!
+     (or (:genegraph.annotate/data-db event) db)
+     (nippy/fast-freeze (:genegraph.annotate/data-id event))
+     (:genegraph.annotate/data event)))
+  event)
+
+(defn store-document-raw-key
+  "Store the document data in :genegraph.annotate/data
+   with the key :genegraph.annotate/data-id in the user opened
+   database in :genegraph.annotate/data-db or in the default db.
+
+   Assumes :genegraph.annotate/data-id is already a str or byte array"
+  [event]
+  (when (and (:genegraph.annotate/data event) (:genegraph.annotate/data-id event))
+    (rocks/rocks-put-raw-key!
+     (or (:genegraph.annotate/data-db event) db)
+     (let [k (:genegraph.annotate/data-id event)] (if (string? k) (.getBytes k) k))
+     (:genegraph.annotate/data event)))
+  event)
+
+(def store-document-interceptor
+  {:name ::store-document
+   :enter store-document})
+
+(def store-document-raw-key-interceptor
+  {:name ::store-document-raw-key
+   :enter store-document-raw-key})
+
+(defn get-document
+  ([id] (get-document db id))
+  ([db id] (rocks/rocks-get-raw-key db (nippy/fast-freeze id))))
+
+(defn get-document-raw-key
+  ([id] (get-document-raw-key db id))
+  ([db id] (rocks/rocks-get-raw-key db (if (string? id) (.getBytes id) id))))
+
+(defn get-documents-by-prefix [event]
+  (let [db (or (:genegraph.annotate/data-db event) db)]
+    (assoc event
+           ::documents-by-prefix
+           (reduce (fn [m prefix]
+                     (assoc m prefix (rocks/raw-prefix-seq
+                                      db
+                                      (nippy/fast-freeze prefix))))
+                   {}
+                   (::get-documents-by-prefix event)))))
 
 (def an-event
   {:genegraph.annotate/format :clinvar-raw,
@@ -20,31 +86,10 @@
    :genegraph.sink.stream/offset 29751,
    :genegraph.annotate/producer-topic :test-public-v1})
 
-(defn store-document
-  "Store the document data associated with this event"
-  [event]
-  (when (and (:genegraph.annotate/data event) (::id event))
-    (rocks/rocks-put-raw-key!
-     (or (::db event) db)
-     (.getBytes (::id event))
-     (:genegraph.annotate/data event)))
-  event)
+(def doc-store-event
+  (assoc an-event :genegraph.annotate/data (:genegraph.sink.event/value an-event)
+         :genegraph.annotate/data-id (:genegraph.sink.event/key an-event)))
 
-(def store-document-interceptor
-  {:name ::store-document
-   :enter store-document})
-
-(defn get-document
-  ([id] (get-document db id))
-  ([db id] (rocks/rocks-get-raw-key db (.getBytes id))))
-
-(defn get-documents-by-prefix [event]
-  (let [db (or (::db event) db)]
-    (assoc event
-           ::documents-by-prefix
-           (reduce (fn [m prefix]
-                     (assoc m prefix (rocks/raw-prefix-seq
-                                      db
-                                      (.getBytes prefix))))
-                   {}
-                   (::get-documents-by-prefix event)))))
+(comment
+  (store-document doc-store-event)
+  (get-document "clinical_assertion_SCV000028756_2019-07-01"))

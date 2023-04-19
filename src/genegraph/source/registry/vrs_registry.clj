@@ -16,17 +16,11 @@
             [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.transform.clinvar.common :refer [with-retries]]
-            [genegraph.transform.types :as xform-types]
             [io.pedestal.log :as log]
             [mount.core :as mount]
             [ring.util.request])
   (:import (java.time Duration Instant)
            (org.apache.kafka.common TopicPartition)))
-
-(def add-data-interceptor
-  {:name ::add-data-interceptor
-   :enter (fn [event] (xform-types/add-data event))
-   :leave (fn [event] event)})
 
 (def interceptor-chain
   [ann/add-metadata-interceptor
@@ -263,108 +257,7 @@
                           flatten1)]
       (reduce count-fn {} cache-vals))))
 
-;; curl -X 'PUT' \
-;;   'http://localhost:5050/allele' \
-;;   -H 'accept: application/json' \
-;;   -H 'Content-Type: application/json' \
-;;   -d '{
-;;   "definition": "NC_000010.11:g.87894077C>T",
-;;   "format": "hgvs",
-;;   "normalize": "right"
-;; }'
 
-(defn anyvar-testing []
-
-  (cp/with-shutdown! [pool (cp/threadpool 50)]
-    (let [base-url "http://localhost:5050"
-          inp (json/generate-string
-               {"definition" "NC_000010.11:g.87894077C>T",
-                "format" "hgvs",
-                "normalize" "right"})
-          headers {"Content-Type" "application/json"
-                   "Accept" "application/json"}
-          n 1000]
-      (let [start (Instant/now)]
-        (dorun
-         (cp/pmap
-          pool
-          (fn [i]
-            (let [resp (http-client/put (str base-url "/allele")
-                                        {:throw-exceptions false
-                                         :headers headers
-                                         :body inp})]
-              (assert (= 200 (:status resp)) {:status (:status resp)
-                                              :msg "Request failed"
-                                              :resp resp})))
-          (range n)))
-        (let [duration (Duration/between start (Instant/now))
-              avg (.dividedBy duration n)]
-          (println (prn-str {:avg (str avg)
-                             :total (str duration)})))))))
-
-
-(comment
-  (def test-db (rocksdb/open "rocks_registry-container.db"))
-  (reduce (fn [agg val]
-            (+ 1 agg))
-          0
-          (rocksdb/entire-db-seq test-db))
-  (doseq [])
-  ())
-
-
-(comment
-  #_(def test-db (rocksdb/open "variation-snapshot-fromcontainer.db"))
-  (def test-db (rocksdb/open "variation-snapshot-fromcontainer-relcnv.db"))
-
-  ;; 1668487
-  (reduce (fn [agg val]
-            (+ 1 agg))
-          0
-          (rocksdb/entire-db-seq test-db))
-
-  (->> (rocksdb/entire-db-seq test-db)
-       (take 1))
-
-  {:CanonicalVariationDescriptor 1000}
-  ;; {:counters {"Allele" 1578992, "Text" 31604, nil 57891}, :line 339}
-  ;; {"Allele" 1578992, "Text" 31604, nil 6185, "AbsoluteCopyNumber" 51706}
-  (def counters (atom {}))
-  (letfn [(count-canonical-variations [counters canonical-variation]
-            (let [{core-variation :canonical_context} canonical-variation
-                  {core-variation-type :type} core-variation]
-              (swap! counters (fn [current-counters]
-                                (update current-counters
-                                        core-variation-type
-                                        #(+ 1 (or % 0)))))))
-          (count-non-canonical [counters variation]
-            (let [{variation-type :type} variation]
-              (swap! counters (fn [current-counters]
-                                (update current-counters
-                                        variation-type
-                                        #(+ 1 (or % 0)))))))]
-    (with-open [variation-writer (io/writer "variation.txt")
-                error-writer (io/writer "variation-errors.txt")]
-      (doseq [[idx {descriptor :genegraph.annotate/data}]
-              (map-indexed vector
-                           (->> (rocksdb/entire-db-seq test-db)
-                                #_(take 10000)))]
-        (let [{canonical-variation :canonical_variation} descriptor]
-          (case (:type canonical-variation)
-            "CanonicalVariation" (count-canonical-variations counters canonical-variation)
-            nil (do (log/error :msg "nil variation type"
-                               :descriptor descriptor)
-                    (.write error-writer (str/trim (prn-str descriptor)))
-                    (.write error-writer "\n")
-                    (count-non-canonical counters {:type nil})
-                    #_(swap! counters (fn [counters] (update counters nil #(+ 1 (or % 0))))))
-            (count-non-canonical counters canonical-variation))
-          (.write variation-writer (str/trim (prn-str descriptor)))
-          (.write variation-writer "\n"))
-        (when (= 0 (rem idx 1000))
-          (log/info :counters @counters))))
-    (log/info :counters @counters))
-  ())
 
 (comment
   "Grab the clinvar variation ids from a file of newline-delimited edn"

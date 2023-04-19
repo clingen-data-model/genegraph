@@ -9,6 +9,7 @@
             [genegraph.annotate :as ann]
             [genegraph.annotate.serialization :as ser]
             [genegraph.sink.stream :as stream]
+            [genegraph.sink.document-store :as docstore]
             [genegraph.suggest.suggesters :as suggest]
             [mount.core :as mount :refer [defstate]]
             [io.pedestal.interceptor :as intercept]
@@ -108,6 +109,7 @@
                                     ann/add-replaces-interceptor
                                     abort-on-dry-run-interceptor
                                     add-to-db-interceptor
+                                    docstore/store-document-interceptor
                                     unpublish-interceptor
                                     replace-interceptor
                                     ann/add-jsonld-interceptor
@@ -127,6 +129,7 @@
                             ann/add-replaces-interceptor
                             abort-on-dry-run-interceptor
                             add-to-db-interceptor
+                            docstore/store-document-interceptor
                             unpublish-interceptor
                             replace-interceptor
                             suggest/update-suggesters-interceptor

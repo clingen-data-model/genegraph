@@ -1,4 +1,4 @@
-FROM clojure:temurin-17-tools-deps-focal AS builder
+FROM clojure:temurin-17-tools-deps-jammy AS builder
 
 # Copying and building deps as a separate step in order to mitigate
 # the need to download new dependencies every build.
@@ -9,7 +9,7 @@ COPY . /usr/src/app
 RUN clojure -T:build uber-repl
 
 # Using image without lein for deployment.
-FROM eclipse-temurin:17-focal
+FROM eclipse-temurin:17-jammy
 LABEL maintainer="Tristan Nelson <thnelson@geisinger.edu>"
 
 COPY --from=builder /usr/src/app/target/genegraph.jar /app/app.jar

@@ -2,6 +2,7 @@
   (:require [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [clojure.string :as str]
+            [clojure.walk :as walk]
             [genegraph.database.load :as l]
             [genegraph.database.names :as names]
             [genegraph.database.query :as q]
@@ -531,3 +532,10 @@ LIMIT 1")
       (if ran?
         ret
         (recur (dec retry-count))))))
+
+
+(defn remove-key-recur [m k]
+  (walk/postwalk (fn [node]
+                   (cond (map? node) (dissoc node k)
+                         :else node))
+                 m))

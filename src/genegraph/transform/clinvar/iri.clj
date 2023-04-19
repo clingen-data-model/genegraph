@@ -14,8 +14,6 @@
 
 (def submitter (path-join cgterms "clinvar.submitter/"))
 (def submission (path-join cgterms "assertion_set/"))
-(def trait-set (path-join cgterms "clinvar.trait_set/"))
-(def trait (path-join cgterms "clinvar.trait/"))
 (def rcv (path-join cgterms "clinvar.rcv_accession/"))
 (def variation-archive (path-join cgterms "clinvar.variation_archive/"))
 (def release-sentinel (path-join cgterms "clinvar_release/"))
@@ -31,3 +29,34 @@
 (def trait-set (path-join cgterms "clinvar.trait_set/"))
 (def trait (path-join cgterms "clinvar.trait/"))
 ;(def variation (path-join cgterms "clinvar.variation/"))
+
+(defn parse-vd-iri
+  "http://dataexchange.clinicalgenome.org/terms/VariationDescriptor_436617.2019-07-01
+   -> {:id 436617 :version 2019-07-01}"
+  [iri]
+  (let [iri (str iri)
+        type-prefix "http://dataexchange.clinicalgenome.org/terms/VariationDescriptor_"]
+    (assert (.startsWith iri type-prefix)
+            {:msg "Failed assertion"
+             :iri iri})
+    (let [id-plus-version (subs iri (count type-prefix))]
+      (if (.contains id-plus-version ".")
+        (let [id (subs id-plus-version 0 (.indexOf id-plus-version "."))
+              version (subs id-plus-version (+ 1 (.indexOf id-plus-version ".")))]
+          {:id id
+           :version version})
+        {:id id-plus-version}))))
+
+(defn parse-clinvar-resource-iri
+  "http://dataexchange.clinicalgenome.org/terms/VariationDescriptor_436617.2019-07-01
+   -> {:id 436617 :version 2019-07-01}"
+  [iri]
+  (let [iri (str iri)
+        ns-prefix "http://dataexchange.clinicalgenome.org/terms/"
+        [matched & groups] (re-find (re-pattern (str "^" ns-prefix "(.+_)(\\w+)\\.([\\w-]+)$")) iri)
+        [type-prefix id version] groups]
+    (merge {:id id
+            :ns-prefix ns-prefix
+            :type-prefix type-prefix}
+           (when version
+             {:version version}))))
