@@ -43,8 +43,11 @@
 (defn add-vicc-context [val]
   (assoc val "@context" vicc-context))
 
-(defonce hato-client (hc/build-http-client {:version :http-2
-                                            :connect-timeout (* 30 1000)}))
+(def http-client-pool
+  "Small pool of http clients to balance http/2 load across multiple tcp connections"
+  (mapv (fn [_] (hc/build-http-client {:version :http-2
+                                       :connect-timeout (* 30 1000)}))
+        (range 5)))
 
 ;; vicc-db-name is to store the http cache, which caches the full url, params, etc,
 ;; and most of the response object.
@@ -62,7 +65,7 @@
              :variation-expression variation-expression
              :expression-type expression-type)
   (let [response (hc/get url-to-canonical
-                         {:http-client hato-client
+                         {:http-client (rand-nth http-client-pool)
                           :throw-exceptions false
                           :query-params {"q" variation-expression
                                          "fmt" (name expression-type)
@@ -85,7 +88,7 @@
   [input-map]
   (log/debug :fn :normalize-absolute-copy-number :input-map input-map)
   (let [response (hc/get url-absolute-cnv
-                         {:http-client hato-client
+                         {:http-client (rand-nth http-client-pool)
                           :throw-exceptions false
                           :query-params
                           (into {"untranslatable_returns_text" true}
@@ -130,7 +133,7 @@
          variant-length :variant-length} location]
     (log/info :fn :normalize-relative-copy-number :expr expr :copy-class copy-class)
     (let [response (hc/get url-relative-cnv
-                           {:http-client hato-client
+                           {:http-client (rand-nth http-client-pool)
                             :throw-exceptions false
                             :query-params
                             {"hgvs_expr" expr
