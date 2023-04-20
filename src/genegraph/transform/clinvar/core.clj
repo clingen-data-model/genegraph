@@ -6,6 +6,7 @@
             [genegraph.transform.clinvar.clinical-assertion :as clinical-assertion]
             [genegraph.transform.clinvar.common :as common]
             [genegraph.transform.clinvar.iri :refer [ns-cg]]
+            [genegraph.transform.clinvar.submitter :as submitter]
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.clinvar.variation :as variation]
             [genegraph.transform.types :as xform-types :refer [add-model]]
@@ -40,7 +41,8 @@
            :genegraph.annotate/data-id id)))
 
 (def data-fns-for-type
-  {"trait" #(clinical-assertion/add-data-for-trait %)
+  {"submitter" #(submitter/add-data-for-submitter %)
+   "trait" #(clinical-assertion/add-data-for-trait %)
    "trait_set" #(clinical-assertion/add-data-for-trait-set %)
    "clinical_assertion" #(clinical-assertion/add-data-for-clinical-assertion %)
    "variation" #(variation/add-data-for-variation %)

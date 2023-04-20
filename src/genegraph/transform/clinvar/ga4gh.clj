@@ -25,7 +25,8 @@
             [genegraph.util.fs :refer [gzip-file-reader]]
             [io.pedestal.log :as log]
             [mount.core :as mount]
-            [genegraph.transform.clinvar.core :as clinvar]))
+            [genegraph.transform.clinvar.core :as clinvar]
+            [genegraph.transform.clinvar.submitter :as submitter]))
 
 (def stop-removing-unused [#'write-tx #'tx #'pprint #'util/parse-nested-content])
 
@@ -38,6 +39,7 @@
    #'genegraph.sink.event-recorder/event-database
    #'genegraph.sink.document-store/db
    #'genegraph.transform.clinvar.variation/variation-data-db
+   #'genegraph.transform.clinvar.submitter/submitter-data-db
    #'genegraph.transform.clinvar.clinical-assertion/trait-data-db
    #'genegraph.transform.clinvar.clinical-assertion/trait-set-data-db
    #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db
