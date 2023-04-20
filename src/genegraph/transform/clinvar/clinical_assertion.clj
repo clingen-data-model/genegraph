@@ -16,7 +16,8 @@
                      into-sequential-if-not]]
             [genegraph.transform.clinvar.variation :as variation]
             [io.pedestal.log :as log]
-            [mount.core :as mount :refer [defstate]])
+            [mount.core :as mount :refer [defstate]]
+            [genegraph.transform.clinvar.submitter :as submitter])
   (:import (genegraph.database.query.types RDFResource)))
 
 (declare statement-context)
@@ -454,9 +455,12 @@
   ;; But after we include the submitter name, they may not be, since submitter names can change.
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         assertion (:content message)
-        qualified-submitter (str iri/submitter (:submitter_id assertion))
-        agent {:id qualified-submitter
-               :type "Agent"}]
+        #_#_qualified-submitter (str iri/submitter (:submitter_id assertion))
+        #_#_agent {:id qualified-submitter
+                   :type "Agent"}
+        ;; TODO decide if we want to tie it to the version of this record
+        ;; If so, will need to add a get-submitter-as-of-date... function
+        agent (submitter/get-latest-submitter-by-clinvar-submitter-id (:submitter_id assertion))]
     (cond-> []
       (:interpretation_date_last_evaluated assertion)
       (conj
