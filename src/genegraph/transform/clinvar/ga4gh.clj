@@ -145,15 +145,6 @@
                               (json/generate-string)))
            (.write writer "\n")))))))
 
-#_(defn snapshot-variation-db []
-    (let [db genegraph.transform.clinvar.variation/variation-data-db
-          out-fname "variation-data-db-snapshot.ndjson"]
-      (with-open [writer (io/writer (io/file out-fname))]
-        (doseq [[entry-k entry-v] (rocksdb/entire-db-entry-seq db)]
-          (let [data (:genegraph.annotate/data entry-v)]
-            (.write writer (json/generate-string data))
-            (.write writer "\n"))))))
-
 (defn slashjoin [& args]
   (reduce (fn [agg val]
             (str agg "/" val))
@@ -168,33 +159,6 @@
   (let [deleted? (get-in entry-v [:record_metadata :deleted])]
     (when deleted? (log/info :entry-id (:id entry-v) :deleted deleted?))
     (not deleted?)))
-
-#_(defn latest-versions-seq
-    "For key-value entries where the key is formatted like <prefix><id>.<version>,
-   get the last entry for each <prefix><id>. Assumes versions are lexicographically sortable.
-   Relies on RocksDB itself being sorted on the byte array keys."
-    ([db]
-     (latest-versions-seq db (rocksdb/entire-db-entry-seq db)))
-    ([db remaining]
-  ;; I'm getting the iri-prefix by parsing the key of the next entry in the db.
-  ;; If we are consistent on the use of RecordMetadata for top level objects that
-  ;; are used in the output, we could use the version_of value from there as well
-     (when (seq remaining)
-       (let [[entry-k entry-v] (first remaining)
-             thawed-k (String. entry-k)
-             {:keys [id version ns-prefix type-prefix] :as parsed}
-             (parse-clinvar-resource-iri thawed-k)
-             variation-descriptor-iri-prefix (str ns-prefix type-prefix)
-             iri-prefix (str variation-descriptor-iri-prefix id ".")
-             prefix-seq (rocksdb/raw-prefix-entry-seq db (.getBytes iri-prefix))
-             last-entry (last prefix-seq)]
-         (log/debug :iri-prefix iri-prefix
-                    :parsed-iri parsed
-                    :skip-count (count prefix-seq))
-         (let [[last-k last-v] last-entry
-               deserialized-last-entry [(String. last-k) last-v]]
-           (lazy-cat [deserialized-last-entry]
-                     (latest-versions-seq db (drop (count prefix-seq) remaining))))))))
 
 ;; TODO
 ;; One idea is to extend the lazy seqs returned from rocksdb.clj to make them implement java Closeable
