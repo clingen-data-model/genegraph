@@ -17,7 +17,6 @@
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.clinvar.variation :as variation]
             [genegraph.transform.types :as xform-types]
-            [genegraph.repl-server :as repl-server]
             [genegraph.util.fs :refer [gzip-file-reader]]
             [io.pedestal.log :as log]
             [mount.core :as mount])
@@ -33,7 +32,6 @@
    #'genegraph.transform.clinvar.variation/variation-data-db
    #'genegraph.sink.event-recorder/event-database
    #'genegraph.sink.document-store/db
-   #'genegraph.repl-server/nrepl-server
    #'genegraph.transform.clinvar.variation/variation-data-db
    #'genegraph.transform.clinvar.submitter/submitter-data-db
    #'genegraph.transform.clinvar.clinical-assertion/trait-data-db
@@ -326,7 +324,7 @@
                 (map-indexed vector records))))))))
 
 (comment
-
+  (mount/start #'genegraph.repl-server/nrepl-server)
   (time
    (->> (load-file-parallel
          "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_variation.txt")
