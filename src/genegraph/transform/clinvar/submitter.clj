@@ -20,7 +20,6 @@
 ;; https://github.com/ga4gh/va-spec/blob/4fd8a1a07f274b6d8e19f7c69d0de0d912282e3b/schema/annotation.json#L47
 (defn add-data-for-submitter [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
-        _ (log/info :message message)
         submitter (:content message)
         release-date (:release_date message)
         vof (str (ns-cg "clinvar_submitter_") (:id submitter))
@@ -35,7 +34,6 @@
                                                           :org_categority
                                                           :current_abbrev])
                                   :clinvar_submitter_id (:id submitter)))}]
-    (log/info :data data)
     (assoc event
            :genegraph.annotate/data data
            :genegraph.annotate/data-db submitter-data-db
