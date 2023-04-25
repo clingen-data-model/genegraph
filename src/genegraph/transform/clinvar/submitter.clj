@@ -5,11 +5,6 @@
             [io.pedestal.log :as log]
             [mount.core :as mount]))
 
-#_(-> "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-02-08_submitter.txt"
-      io/reader
-      line-seq
-      first
-      prn)
 '"{\"release_date\":\"2022-02-08\",\"event_type\":\"create\",\"content\":{\"current_name\":\"KK Women’s and Children’s Hospital\",\"entity_type\":\"submitter\",\"all_names\":[\"KK Women’s and Children’s Hospital\"],\"org_category\":\"other\",\"content\":\"null\",\"clingen_version\":0,\"all_abbrevs\":[\"KKH\"],\"id\":\"506077\",\"current_abbrev\":\"KKH\"}}"
 
 (mount/defstate submitter-data-db

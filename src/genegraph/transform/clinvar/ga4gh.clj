@@ -2,31 +2,26 @@
   (:require [cheshire.core :as json]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
-            [clojure.stacktrace :refer [print-stack-trace]]
-            [clojure.string :as str]
+            [com.climate.claypoole :as cp]
             [genegraph.annotate :as ann]
-            [genegraph.database.query :as q]
             [genegraph.database.util :refer [tx write-tx]]
             [genegraph.rocksdb :as rocksdb]
             [genegraph.server]
             [genegraph.sink.document-store :as docstore]
-            [genegraph.sink.event :as event]
+            [genegraph.sink.event :as ev]
             [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.clinical-assertion :as ca]
-            [genegraph.transform.clinvar.common
-             :as common
-             :refer [map-compact-namespaced-values
-                     map-rdf-resource-values-to-str map-unnamespace-values]]
-            [genegraph.transform.clinvar.iri :refer [ns-cg
-                                                     parse-clinvar-resource-iri]]
+            [genegraph.transform.clinvar.common :as common]
+            [genegraph.transform.clinvar.iri :refer [ns-cg]]
+            [genegraph.transform.clinvar.submitter :as submitter]
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.clinvar.variation :as variation]
             [genegraph.transform.types :as xform-types]
+            [genegraph.repl-server :as repl-server]
             [genegraph.util.fs :refer [gzip-file-reader]]
             [io.pedestal.log :as log]
-            [mount.core :as mount]
-            [genegraph.transform.clinvar.core :as clinvar]
-            [genegraph.transform.clinvar.submitter :as submitter]))
+            [mount.core :as mount])
+  (:import (java.time Instant Duration)))
 
 (def stop-removing-unused [#'write-tx #'tx #'pprint #'util/parse-nested-content])
 
@@ -38,6 +33,7 @@
    #'genegraph.transform.clinvar.variation/variation-data-db
    #'genegraph.sink.event-recorder/event-database
    #'genegraph.sink.document-store/db
+   #'genegraph.repl-server/nrepl-server
    #'genegraph.transform.clinvar.variation/variation-data-db
    #'genegraph.transform.clinvar.submitter/submitter-data-db
    #'genegraph.transform.clinvar.clinical-assertion/trait-data-db
@@ -84,7 +80,7 @@
       add-data-catch-exceptions
       xform-types/add-model
       docstore/store-document-raw-key
-      event/add-to-db!))
+      ev/add-to-db!))
 
 (defn message-proccess-with-rocksdb!
   "Takes a message value map. The :value of a KafkaRecord, parsed as json"
@@ -279,7 +275,7 @@
       io/reader
       line-seq
       (->> (map #(json/parse-string % true))
-           (map map-compact-namespaced-values)
+           (map common/map-compact-namespaced-values)
            ((fn [records]
               (with-open [writer (io/writer "statements-compacted.txt")]
                 (doseq [rec records]
@@ -290,3 +286,87 @@
   (let [input-filename "clinvar-raw.gz"
         messages (map #(json/parse-string % true) (line-seq (gzip-file-reader input-filename)))]
     (map message-proccess-with-jena! messages)))
+
+
+(defn load-file
+  ([filename] (load-file filename Long/MAX_VALUE))
+  ([filename limit]
+   (-> filename
+       io/reader
+       line-seq
+       (->> (take limit)
+            (map #(json/parse-string % true))
+            (map message-proccess-with-rocksdb!)))))
+
+(defonce thread-pool (cp/threadpool 20))
+
+(defn load-file-parallel
+  ([filename] (load-file-parallel filename Long/MAX_VALUE))
+  ([filename limit]
+   (-> filename
+       io/reader
+       line-seq
+       (->> (take limit)
+            (map #(json/parse-string % true))
+            ((fn [records]
+               (cp/pmap
+                thread-pool
+                (fn [[i record]]
+                  (let [start (Instant/now)
+                        event (message-proccess-with-rocksdb! record)
+                        end (Instant/now)
+                        dur (Duration/between start end)]
+                    (when (< 0 (.compareTo dur (Duration/ofMillis 200)))
+                      (log/warn :msg "process-event took longer than 200 milliseconds"
+                                :duration (str dur)
+                                :event-data (:genegraph.annotate/data event)))
+                    (when (= 0 (rem i 1000))
+                      (log/info :progress i))
+                    event))
+                (map-indexed vector records))))))))
+
+(comment
+
+  (time
+   (->> (load-file-parallel
+         "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_variation.txt")
+        count))
+
+  (time
+   (->> (load-file
+         "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_trait.txt")
+        count))
+
+  (time
+   (->> (load-file
+         "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_trait_set.txt")
+        count))
+
+  (time
+   (->> (load-file
+         "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_submitter.txt")
+        count))
+
+  (time
+   (->> (load-file-parallel
+         "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_clinical_assertion.txt")
+        count))
+
+  (time
+   (->> (load-file-parallel
+         "/Users/kferrite/dev/genegraph/SCV000050605.json")
+        (map :genegraph.annotate/data)
+        (json/generate-string)
+        (spit "SCV000050605-transformed.json")))
+
+
+  (time
+   (->
+    #_"/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-02-08_submitter.txt"
+    "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_clinical_assertion.txt"
+    io/reader
+    line-seq
+    (->> (take 1000)
+         (map #(json/parse-string % true))
+         (map message-proccess-with-rocksdb!)
+         count))))

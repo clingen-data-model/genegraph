@@ -17,7 +17,8 @@
             [genegraph.transform.clinvar.variation :as variation]
             [io.pedestal.log :as log]
             [mount.core :as mount :refer [defstate]]
-            [genegraph.transform.clinvar.submitter :as submitter])
+            [genegraph.transform.clinvar.submitter :as submitter]
+            [genegraph.rocksdb :as rocksdb])
   (:import (genegraph.database.query.types RDFResource)))
 
 (declare statement-context)
@@ -119,6 +120,13 @@
   :start (rocks/open "trait-snapshot.db")
   :stop (rocks/close trait-data-db))
 
+;; va-spec vod.json
+;; id, type, label, extensions
+;; Merged ConditionDescriptor and Disease/Phenotype
+;; If we want to pull them apart again, when embedding in the clinical_assertion
+;; statement for output, just set this under object_descriptor and put the
+;; keys #{:id :type} in the proposition object. But for internal storage, we need
+;; the version info in the record_metadata, so leave them together.
 (defn add-data-for-trait [event]
   (let [message (:genegraph.transform.clinvar.core/parsed-value event)
         trait (:content message)
@@ -128,9 +136,19 @@
               :type (case (:type trait)
                       "Disease" "Disease"
                       "Phenotype")
-              :medgen_id (:medgen_id trait)
-              :clinvar_trait_id (:id trait)
-              :release_date (:release_date message)
+              :label (:name trait)
+              :extensions (common/fields-to-extension-maps
+                           {:clinvar_trait_id (:id trait)
+                            :medgen_id (:medgen_id trait)
+                            :release_date (:release_date message)})
+              :xrefs (mapv (fn [x]
+                             (let [xp (json/parse-string x true)
+                                   {id :id db :db} xp]
+                               (if (not (.startsWith id db))
+                                 (str db ":" id)
+                                 id)))
+                           (:xrefs trait))
+              :alternate_labels (:alternate_names trait)
               :record_metadata (merge {:type "RecordMetadata"
                                        :version (:release_date message)
                                        :is_version_of unversioned}
@@ -586,6 +604,26 @@
           []
           traits))
 
+(defn get-latest-versioned-record-as-of [db unversioned-iri release-date]
+  (with-open [iter (rocksdb/raw-prefix-iter db (.getBytes unversioned-iri))]
+    (let [latest (->> (rocksdb/rocks-iterator-seq iter)
+                      (map (fn [rec]
+                             (let [release-date (get-in rec [:record_metadata
+                                                             :version])]
+                               [release-date rec])))
+                      (filter (fn [[r t]] (<= (.compareTo r release-date) 0)))
+                      (map second)
+                      last)]
+      latest)))
+
+(defn get-latest-trait-as-of [unversioned-trait-iri release-date]
+  (get-latest-versioned-record-as-of trait-data-db unversioned-trait-iri release-date))
+
+(defn get-latest-trait-set-as-of [unversioned-trait-set-iri release-date]
+  (update (get-latest-versioned-record-as-of trait-set-data-db unversioned-trait-set-iri release-date)
+          :members (fn [unversioned-member-iris]
+                     (mapv #(get-latest-trait-as-of % release-date) unversioned-member-iris))))
+
 (defn trait-set-for-output [unversioned-trait-set-iri release-date]
   (let [versioned-trait-set-iri (str unversioned-trait-set-iri "." release-date)
         trait-set (docstore/get-document-raw-key trait-set-data-db versioned-trait-set-iri)]
@@ -705,7 +743,8 @@
                                                     release-date)
                                                    (get-in [:canonical_variation :id]))
                                         object (:object proposition)
-                                        trait-set (trait-set-for-output object release-date)]
+                                        #_#_trait-set (trait-set-for-output object release-date)
+                                        trait-set (get-latest-trait-set-as-of object release-date)]
                                     (assoc proposition
                                            :subject vrs-id
                                            :object trait-set))}]
