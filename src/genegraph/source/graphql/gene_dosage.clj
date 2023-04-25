@@ -4,7 +4,8 @@
             [genegraph.database.query :as q]
             [genegraph.source.graphql.common.cache :refer [defresolver]]
             [com.walmartlabs.lacinia.schema :refer [tag-with-type]]
-            [genegraph.database.instance :refer [db]])
+            #_[genegraph.database.instance :refer [db]] ; TODO remove if this works
+            ) 
   (:import  [org.apache.jena.query ReadWrite QueryFactory QueryExecutionFactory]
             [org.apache.jena.sparql.util QueryExecUtils]))
 
