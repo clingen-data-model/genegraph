@@ -201,8 +201,11 @@
         iri (str iri-unversioned "." (:release_date message))
         data {:id iri
               :type "Condition"
-              :clinvar_trait_set_id (:id trait-set)
-              :release_date (:release_date message)
+              :extensions (common/fields-to-extension-maps
+                           (-> trait-set
+                               (dissoc :id :trait_ids)
+                               (assoc :clinvar_trait_set_id (:id trait-set)
+                                      :release_date (:release_date message))))
               :record_metadata (merge {:type "RecordMetadata"
                                        :is_version_of (str (ns-cg "trait_set_") (:id trait-set))
                                        :version (:release_date message)}
