@@ -68,9 +68,13 @@
             (get-spdi [nested-content]
               (-> nested-content (get "CanonicalSPDI") (get "$")))
             (get-sequence-location [nested-content sequence-accession]
+              (log/info :nested-content nested-content
+                        :sequence-accession sequence-accession)
               (->> (get-in nested-content ["Location" "SequenceLocation"])
+                   util/into-sequential-if-not
                    (filter #(= sequence-accession (get % "@Accession")))
-                   first))]
+                   first
+                   (#(do (log/info :location %) %))))]
       (let [exprs (for [val-opt [{:fn #(get-spdi nested-content)
                                   :type :spdi
                                   :label "SPDI"}
@@ -257,12 +261,13 @@
                Must be called *after* try-absolute-copy-number"
               (let [hgvs-exprs (->> prioritized-expressions
                                     (filter #(= :hgvs (:type %))))]
+                (log/info :variation-type variation-type :hgvs-exprs hgvs-exprs)
                 (if (and (not-empty hgvs-exprs)
                          (or (and (.startsWith variation-type "copy number")
                                   (not (::cnv event)))
                              (and (#{"Duplication" "Deletion"} variation-type)
                                   (->> hgvs-exprs
-                                       (map #(or (get % [:location :variant-length]) 0))
+                                       (map #(or (get-in % [:location :variant-length]) 0))
                                        (filter #(<= deldup-cnv-threshold %))
                                        not-empty))))
                 ;; looks like a relative cnv
@@ -410,7 +415,11 @@
                    (or (.contains expr "dup")
                        (.contains expr "del"))
                    (let [length (:variant-length location)]
-                     (or (nil? length)
+                     (or (when (nil? length)
+                           (log/warn :fn :normalization-canonical-expression
+                                     :msg "HGVS dup/del had no length defined"
+                                     :expr-object expr-object)
+                           true)
                          (when (<= 50 length)
                            (log/warn :fn :normalize-canonical-expression
                                      :msg "HGVS expr >=50bp labeled as hgvs, not cnv"
