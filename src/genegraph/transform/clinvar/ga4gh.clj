@@ -2,30 +2,25 @@
   (:require [cheshire.core :as json]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
-            [clojure.stacktrace :refer [print-stack-trace]]
-            [clojure.string :as str]
+            [com.climate.claypoole :as cp]
             [genegraph.annotate :as ann]
-            [genegraph.database.query :as q]
             [genegraph.database.util :refer [tx write-tx]]
             [genegraph.rocksdb :as rocksdb]
             [genegraph.server]
             [genegraph.sink.document-store :as docstore]
-            [genegraph.sink.event :as event]
+            [genegraph.sink.event :as ev]
             [genegraph.source.registry.rocks-registry :as rocks-registry]
             [genegraph.transform.clinvar.clinical-assertion :as ca]
-            [genegraph.transform.clinvar.common
-             :as common
-             :refer [map-compact-namespaced-values
-                     map-rdf-resource-values-to-str map-unnamespace-values]]
-            [genegraph.transform.clinvar.iri :refer [ns-cg
-                                                     parse-clinvar-resource-iri]]
+            [genegraph.transform.clinvar.common :as common]
+            [genegraph.transform.clinvar.iri :refer [ns-cg]]
+            [genegraph.transform.clinvar.submitter :as submitter]
             [genegraph.transform.clinvar.util :as util]
             [genegraph.transform.clinvar.variation :as variation]
             [genegraph.transform.types :as xform-types]
             [genegraph.util.fs :refer [gzip-file-reader]]
             [io.pedestal.log :as log]
-            [mount.core :as mount]
-            [genegraph.transform.clinvar.core :as clinvar]))
+            [mount.core :as mount])
+  (:import (java.time Instant Duration)))
 
 (def stop-removing-unused [#'write-tx #'tx #'pprint #'util/parse-nested-content])
 
@@ -38,6 +33,7 @@
    #'genegraph.sink.event-recorder/event-database
    #'genegraph.sink.document-store/db
    #'genegraph.transform.clinvar.variation/variation-data-db
+   #'genegraph.transform.clinvar.submitter/submitter-data-db
    #'genegraph.transform.clinvar.clinical-assertion/trait-data-db
    #'genegraph.transform.clinvar.clinical-assertion/trait-set-data-db
    #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db
@@ -82,7 +78,7 @@
       add-data-catch-exceptions
       xform-types/add-model
       docstore/store-document-raw-key
-      event/add-to-db!))
+      ev/add-to-db!))
 
 (defn message-proccess-with-rocksdb!
   "Takes a message value map. The :value of a KafkaRecord, parsed as json"
@@ -143,15 +139,6 @@
                               (json/generate-string)))
            (.write writer "\n")))))))
 
-#_(defn snapshot-variation-db []
-    (let [db genegraph.transform.clinvar.variation/variation-data-db
-          out-fname "variation-data-db-snapshot.ndjson"]
-      (with-open [writer (io/writer (io/file out-fname))]
-        (doseq [[entry-k entry-v] (rocksdb/entire-db-entry-seq db)]
-          (let [data (:genegraph.annotate/data entry-v)]
-            (.write writer (json/generate-string data))
-            (.write writer "\n"))))))
-
 (defn slashjoin [& args]
   (reduce (fn [agg val]
             (str agg "/" val))
@@ -166,33 +153,6 @@
   (let [deleted? (get-in entry-v [:record_metadata :deleted])]
     (when deleted? (log/info :entry-id (:id entry-v) :deleted deleted?))
     (not deleted?)))
-
-#_(defn latest-versions-seq
-    "For key-value entries where the key is formatted like <prefix><id>.<version>,
-   get the last entry for each <prefix><id>. Assumes versions are lexicographically sortable.
-   Relies on RocksDB itself being sorted on the byte array keys."
-    ([db]
-     (latest-versions-seq db (rocksdb/entire-db-entry-seq db)))
-    ([db remaining]
-  ;; I'm getting the iri-prefix by parsing the key of the next entry in the db.
-  ;; If we are consistent on the use of RecordMetadata for top level objects that
-  ;; are used in the output, we could use the version_of value from there as well
-     (when (seq remaining)
-       (let [[entry-k entry-v] (first remaining)
-             thawed-k (String. entry-k)
-             {:keys [id version ns-prefix type-prefix] :as parsed}
-             (parse-clinvar-resource-iri thawed-k)
-             variation-descriptor-iri-prefix (str ns-prefix type-prefix)
-             iri-prefix (str variation-descriptor-iri-prefix id ".")
-             prefix-seq (rocksdb/raw-prefix-entry-seq db (.getBytes iri-prefix))
-             last-entry (last prefix-seq)]
-         (log/debug :iri-prefix iri-prefix
-                    :parsed-iri parsed
-                    :skip-count (count prefix-seq))
-         (let [[last-k last-v] last-entry
-               deserialized-last-entry [(String. last-k) last-v]]
-           (lazy-cat [deserialized-last-entry]
-                     (latest-versions-seq db (drop (count prefix-seq) remaining))))))))
 
 ;; TODO
 ;; One idea is to extend the lazy seqs returned from rocksdb.clj to make them implement java Closeable
@@ -313,7 +273,7 @@
       io/reader
       line-seq
       (->> (map #(json/parse-string % true))
-           (map map-compact-namespaced-values)
+           (map common/map-compact-namespaced-values)
            ((fn [records]
               (with-open [writer (io/writer "statements-compacted.txt")]
                 (doseq [rec records]
@@ -324,3 +284,87 @@
   (let [input-filename "clinvar-raw.gz"
         messages (map #(json/parse-string % true) (line-seq (gzip-file-reader input-filename)))]
     (map message-proccess-with-jena! messages)))
+
+
+(defn load-file
+  ([filename] (load-file filename Long/MAX_VALUE))
+  ([filename limit]
+   (-> filename
+       io/reader
+       line-seq
+       (->> (take limit)
+            (map #(json/parse-string % true))
+            (map message-proccess-with-rocksdb!)))))
+
+(defonce thread-pool (cp/threadpool 20))
+
+(defn load-file-parallel
+  ([filename] (load-file-parallel filename Long/MAX_VALUE))
+  ([filename limit]
+   (-> filename
+       io/reader
+       line-seq
+       (->> (take limit)
+            (map #(json/parse-string % true))
+            ((fn [records]
+               (cp/pmap
+                thread-pool
+                (fn [[i record]]
+                  (let [start (Instant/now)
+                        event (message-proccess-with-rocksdb! record)
+                        end (Instant/now)
+                        dur (Duration/between start end)]
+                    (when (< 0 (.compareTo dur (Duration/ofMillis 200)))
+                      (log/warn :msg "process-event took longer than 200 milliseconds"
+                                :duration (str dur)
+                                :event-data (:genegraph.annotate/data event)))
+                    (when (= 0 (rem i 1000))
+                      (log/info :progress i))
+                    event))
+                (map-indexed vector records))))))))
+
+(comment
+  (mount/start #'genegraph.repl-server/nrepl-server)
+  (time
+   (->> (load-file-parallel
+         "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_variation.txt")
+        count))
+
+  (time
+   (->> (load-file
+         "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_trait.txt")
+        count))
+
+  (time
+   (->> (load-file
+         "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_trait_set.txt")
+        count))
+
+  (time
+   (->> (load-file
+         "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_submitter.txt")
+        count))
+
+  (time
+   (->> (load-file-parallel
+         "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_clinical_assertion.txt")
+        count))
+
+  (time
+   (->> (load-file-parallel
+         "/Users/kferrite/dev/genegraph/SCV000050605.json")
+        (map :genegraph.annotate/data)
+        (json/generate-string)
+        (spit "SCV000050605-transformed.json")))
+
+
+  (time
+   (->
+    #_"/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-02-08_submitter.txt"
+    "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_clinical_assertion.txt"
+    io/reader
+    line-seq
+    (->> (take 1000)
+         (map #(json/parse-string % true))
+         (map message-proccess-with-rocksdb!)
+         count))))
