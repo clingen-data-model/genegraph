@@ -271,18 +271,20 @@
                                        (filter #(<= deldup-cnv-threshold %))
                                        not-empty))))
                 ;; looks like a relative cnv
-                  (let [hgvs-expr-obj (first hgvs-exprs)
-                        hgvs-str (:expr hgvs-expr-obj)
-                        copy-class (cond
-                                     (#{"Duplication" "Deletion"} variation-type) variation-type
-                                     (.contains hgvs-str "dup") "Duplication"
-                                     (.contains hgvs-str "del") "Deletion"
-                                     :else (do (log/error :msg "Unknown hgvs copy class"
-                                                          :hgvs-expr-obj hgvs-expr-obj
-                                                          :variation value)
-                                               nil))]
-                    (assoc event ::cnv {:copy-number-type :relative
-                                        :hgvs (assoc hgvs-expr-obj :copy-class copy-class)}))
+                  (do (log/info :msg "Looks like a Relative CNV"
+                                :hgvs-str (:expr (first hgvs-exprs)))
+                      (let [hgvs-expr-obj (first hgvs-exprs)
+                            hgvs-str (:expr hgvs-expr-obj)
+                            copy-class (cond
+                                         (#{"Duplication" "Deletion"} variation-type) variation-type
+                                         (.contains hgvs-str "dup") "Duplication"
+                                         (.contains hgvs-str "del") "Deletion"
+                                         :else (do (log/error :msg "Unknown hgvs copy class"
+                                                              :hgvs-expr-obj hgvs-expr-obj
+                                                              :variation value)
+                                                   nil))]
+                        (assoc event ::cnv {:copy-number-type :relative
+                                            :hgvs (assoc hgvs-expr-obj :copy-class copy-class)})))
                   event)))
 
             (try-copy-number
@@ -368,8 +370,7 @@
     (log/debug :fn :get-vrs-variation-map :vrs-obj vrs-obj)
     (if (empty? vrs-obj)
       (let [e (ex-info "No variation received from VRS normalization" {:fn :add-vrs-model :expression expression})]
-        (log/error :message (ex-message e) :data (ex-data e))
-        (throw e))
+        (log/error :message (ex-message e) :data (ex-data e)))
       (let [vrs-obj-pretty (-> vrs-obj
                                (recursive-replace-keys
                                 (fn [k] (= "_id" k))
@@ -392,10 +393,16 @@
   (try
     (if (::copy-number? event)
       {:expression (-> event ::prioritized-expression)
-       :normalized (get (get-vrs-variation-map
-                         {:expression (-> event ::prioritized-expression :expr)
-                          :expression-type (-> event ::prioritized-expression :type)})
-                        :variation)
+       :normalized (or (get (get-vrs-variation-map
+                             {:expression (-> event ::prioritized-expression :expr)
+                              :expression-type (-> event ::prioritized-expression :type)})
+                            :variation)
+                       (get (get-vrs-variation-map
+                             {:expression (str "clinvar:" (get-in event [:genegraph.transform.clinvar.core/parsed-value
+                                                                         :content
+                                                                         :id]))
+                              :expression-type :hgvs})
+                            :variation))
        :label (-> event ::prioritized-expression :expr)}
       (let [prefiltered-candidate-expressions (::canonical-candidate-expressions event)
             _ (log/debug :prefiltered-candidate-expressions prefiltered-candidate-expressions)
@@ -466,8 +473,16 @@
                                            :variation)
                           :expression ce
                           :label (-> ce :label)}]
-              (if (not= "Text" (get-in normed [:normalized :canonical_context :type]))
+              (cond
+                (nil? (:normalized normed))
+                (do (log/info :msg "Normalized variant is nil"
+                              :candidate-expression ce)
+                    (recur (rest unnormalized-exprs) normalized-exprs))
+
+                (not= "Text" (get-in normed [:normalized :canonical_context :type]))
                 normed
+
+                :else
                 (recur (rest unnormalized-exprs)
                        (concat normalized-exprs [normed]))))))))
     (catch Exception e

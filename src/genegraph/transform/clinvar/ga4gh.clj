@@ -19,7 +19,8 @@
             [genegraph.transform.types :as xform-types]
             [genegraph.util.fs :refer [gzip-file-reader]]
             [io.pedestal.log :as log]
-            [mount.core :as mount])
+            [mount.core :as mount]
+            [genegraph.repl-server :as repl-server])
   (:import (java.time Instant Duration)))
 
 (def stop-removing-unused [#'write-tx #'tx #'pprint #'util/parse-nested-content])
@@ -37,6 +38,7 @@
    #'genegraph.transform.clinvar.clinical-assertion/trait-data-db
    #'genegraph.transform.clinvar.clinical-assertion/trait-set-data-db
    #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db
+   #'genegraph.repl-server/nrepl-server
    #'rocks-registry/db
    #'rocks-registry/server))
 
@@ -45,10 +47,11 @@
   ;; (map #(stream/consumer-record-to-event % :clinvar-raw))
   ;; but without some fields that are not used here
   {:genegraph.annotate/format :clinvar-raw
+   :genegraph.transform.core/format :clinvar-raw
    :genegraph.sink.event/key nil
    :genegraph.sink.event/value (json/generate-string input-map)
-   ::topic "clinvar-raw"
-   ::partition 0})
+   ::ev/topic "clinvar-raw"
+   ::ev/partition 0})
 
 (def topic-file "clinvar-raw-local-filtered-vcepvars.txt")
 
@@ -323,6 +326,14 @@
                     event))
                 (map-indexed vector records))))))))
 
+(defn unpretty [filename]
+  (-> filename
+      slurp
+      json/parse-string
+      json/generate-string
+      (#(spit filename %)))
+  filename)
+
 (comment
   (mount/start #'genegraph.repl-server/nrepl-server)
   (time
@@ -367,4 +378,38 @@
     (->> (take 1000)
          (map #(json/parse-string % true))
          (map message-proccess-with-rocksdb!)
-         count))))
+         count)))
+
+
+
+
+
+  (-> "garbage.json"
+      unpretty
+      load-file)
+
+
+  (def inp-file "var-1003316.json")
+  (def inp-events-file "var-1003316-events.json")
+  (require 'genegraph.transform.clinvar.vrs-analysis :reload)
+  (defn raw-ize [m]
+    {:event_type "create"
+     :release_date (:release_date m)
+     :content (assoc m :entity_type "variation")})
+  (-> inp-file
+      unpretty
+      io/reader
+      line-seq
+
+      (->> (map #(json/parse-string % true))
+           (map raw-ize)
+           ((fn [records]
+              (with-open [writer (io/writer inp-events-file)]
+                (doseq [r records]
+                  (.write writer (json/generate-string r))
+                  (.write writer "\n")))))
+           doall))
+  (->> (load-file inp-events-file)
+       (map :genegraph.annotate/data))
+
+  ())

@@ -28,7 +28,7 @@
 
 (def url-relative-cnv
   "URL for cancervariants.org Relative Copy Number normalization."
-  (str variation-normalizer-base-url "/hgvs_to_relative_copy_number"))
+  (str variation-normalizer-base-url "/hgvs_to_copy_number_change"))
 
 (def vicc-context
   {"id" {"@id" "@id"},
@@ -47,7 +47,7 @@
   "Small pool of http clients to balance http/2 load across multiple tcp connections"
   (mapv (fn [_] (hc/build-http-client {:version :http-2
                                        :connect-timeout (* 30 1000)}))
-        (range 5)))
+        (range 10)))
 
 ;; vicc-db-name is to store the http cache, which caches the full url, params, etc,
 ;; and most of the response object.
@@ -55,6 +55,30 @@
 ;; each normalization function may use a slightly different expr specification, so each
 ;; should define their own key fn for how the expr is deterministically serialized.
 (def vicc-expr-db-name "cancervariants-expr-cache.db")
+
+(defn normalize-text
+  "Right now this works by sending the definition for normalization as SPDI, with
+   untranslatable_return_text=true, to get a Text variation back. So definition
+   cannot be a valid SPDI."
+  [definition]
+  (log/debug :fn :normalize-canonical
+             :definition definition)
+  (let [response (hc/get url-to-canonical
+                         {:http-client (rand-nth http-client-pool)
+                          :throw-exceptions false
+                          :query-params {"q" definition
+                                         "fmt" "spdi"
+                                         "untranslatable_returns_text" true}})
+        status (:status response)]
+    (cond
+      (= status 200) (let [body (-> response :body json/parse-string)]
+                       (when (get body "canonical_variation")
+                         (-> body (get "canonical_variation") add-vicc-context)))
+      :else (log/error :msg "Error in VRS normalization request"
+                       :definition definition
+                       :fn :normalize-text
+                       :status status
+                       :response response))))
 
 (defn normalize-canonical
   "Normalizes an :hgvs or :spdi expression.
@@ -69,17 +93,18 @@
                           :throw-exceptions false
                           :query-params {"q" variation-expression
                                          "fmt" (name expression-type)
-                                         "untranslatable_returns_text" true}})
+                                         "untranslatable_returns_text" false}})
         status (:status response)]
-    (case status
-      200 (let [body (-> response :body json/parse-string)]
-            (log/debug :fn :normalize-canonical :body body)
-            (-> body (get "canonical_variation") add-vicc-context))
-      ;; Error case
-      (throw (ex-info "Error in VRS normalization request"
-                      {:fn :normalize-canonical
+    (cond
+      (= status 200) (let [body (-> response :body json/parse-string)]
+                       (when (get body "canonical_variation")
+                         (-> body (get "canonical_variation") add-vicc-context)))
+      :else (log/error :msg "Error in VRS normalization request"
+                       :variation-expression variation-expression
+                       :expression-type expression-type
+                       :fn :normalize-canonical
                        :status status
-                       :response response})))))
+                       :response response))))
 
 (defn normalize-absolute-copy-number
   "Normalizes an absolute copy number map of
@@ -91,7 +116,7 @@
                          {:http-client (rand-nth http-client-pool)
                           :throw-exceptions false
                           :query-params
-                          (into {"untranslatable_returns_text" true}
+                          (into {"untranslatable_returns_text" false}
                                 (map #(vector (-> % first name) (-> % second))
                                      (select-keys input-map [:assembly
                                                              :chr
@@ -99,24 +124,27 @@
                                                              :end
                                                              :total_copies])))})
         status (:status response)]
-    (case status
-      200 (let [body (-> response :body json/parse-string)]
-            (log/debug :fn :normalize-absolute-copy-number :body body)
-            (assert not-empty (-> body (get "absolute_copy_number")))
-            (-> body (get "absolute_copy_number") add-vicc-context))
-      ;; Error case
-      (throw (ex-info "Error in VRS normalization request"
-                      {:fn :normalize-absolute-copy-number
+    (cond
+      (= status 200) (let [body (-> response :body json/parse-string)]
+                       (when (get body "absolute_copy_number")
+                         (-> body (get "absolute_copy_number") add-vicc-context)))
+      :else (log/error :msg "Error in VRS normalization request"
+                       :fn :normalize-absolute-copy-number
+                       :input-map input-map
                        :status status
-                       :response response
-                       :input-map input-map})))))
+                       :response response))))
 
 (defn clinvar-copy-class-to-EFO
-  "Returns an EFO CURIE for a copy class str"
+  "Returns an EFO CURIE for a copy class str.
+   Uses lower-case 'efo' prefix"
   [copy-class-str]
-  ({"Deletion" "EFO:0030067"
-    "Duplication" "EFO:0030070"}
+  ({"Deletion" "efo:0030067"
+    "Duplication" "efo:0030070"}
    copy-class-str))
+
+(defn hc-get [url req]
+  (with-retries 10 200 (fn []
+                         (hc/get url req))))
 
 (defn normalize-relative-copy-number
   [input-map]
@@ -131,25 +159,25 @@
         {start :start
          stop :stop
          variant-length :variant-length} location]
-    (log/info :fn :normalize-relative-copy-number :expr expr :copy-class copy-class)
-    (let [response (hc/get url-relative-cnv
+    (log/info :fn :normalize-relative-copy-number :expr expr :copy-class copy-class
+              :efo-copy-class efo-copy-class)
+    (let [response (hc-get url-relative-cnv
                            {:http-client (rand-nth http-client-pool)
                             :throw-exceptions false
                             :query-params
                             {"hgvs_expr" expr
-                             "relative_copy_class" efo-copy-class
-                             "untranslatable_returns_text" true}})
+                             "copy_change" efo-copy-class
+                             "untranslatable_returns_text" false}})
           status (:status response)]
-      (case status
-        200 (let [body (-> response :body json/parse-string)]
-              (log/debug :fn :normalize-relative-copy-number :body body)
-              (assert not-empty (-> body (get "relative_copy_number")))
-              (-> body (get "relative_copy_number") add-vicc-context))
-        (throw (ex-info "Error in VRS normalization request"
-                        {:fn :normalize-relative-copy-number
+      (cond
+        (= status 200) (let [body (-> response :body json/parse-string)]
+                         (when (get body "copy_number_change")
+                           (-> body (get "copy_number_change") add-vicc-context)))
+        :else (log/error :fn :normalize-relative-copy-number
+                         :msg "Error in VRS normalization request"
                          :status status
                          :response response
-                         :input-map input-map}))))))
+                         :input-map input-map)))))
 
 (def redis-opts
   "Pool opts:
@@ -306,6 +334,7 @@
                                       {:variation-expression variation-expression})))
                :spdi (normalize-canonical variation-expression :spdi)
                :hgvs (normalize-canonical variation-expression :hgvs)
+               :text (normalize-text variation-expression)
                (normalize-canonical variation-expression :hgvs))
-         ;; Error cases throw exception so are not persisted in cache
-         (#(store-in-cache variation-expression expression-type %)))))))
+         ;; Error cases return nil, do not persist in cache
+         (#(when % (store-in-cache variation-expression expression-type %))))))))
