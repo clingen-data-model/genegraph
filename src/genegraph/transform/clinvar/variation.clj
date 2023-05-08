@@ -345,13 +345,9 @@
              :expression expression
              :syntax syntax
              :syntax-version syntax-version)
-  ;;member-iri (l/blank-node)
-  ;;expression-iri (l/blank-node)
-  {;;:id member-iri
-   :type "VariationMember"
+  {:type "VariationMember"
    :expressions [(merge
-                  {;;expression-iri
-                   :type "Expression"
+                  {:type "Expression"
                    :syntax syntax
                    :value expression}
                   (when syntax-version
@@ -369,7 +365,8 @@
                  (-> expression-type keyword))]
     (log/debug :fn :get-vrs-variation-map :vrs-obj vrs-obj)
     (if (empty? vrs-obj)
-      (let [e (ex-info "No variation received from VRS normalization" {:fn :add-vrs-model :expression expression})]
+      (let [e (ex-info "No variation received from VRS normalization"
+                       {:fn :add-vrs-model :input inp})]
         (log/error :message (ex-message e) :data (ex-data e)))
       (let [vrs-obj-pretty (-> vrs-obj
                                (recursive-replace-keys
@@ -401,7 +398,7 @@
                              {:expression (str "clinvar:" (get-in event [:genegraph.transform.clinvar.core/parsed-value
                                                                          :content
                                                                          :id]))
-                              :expression-type :hgvs})
+                              :expression-type :text})
                             :variation))
        :label (-> event ::prioritized-expression :expr)}
       (let [prefiltered-candidate-expressions (::canonical-candidate-expressions event)
@@ -449,12 +446,6 @@
         (when (not= candidate-expressions prefiltered-candidate-expressions)
           (log/warn :fn :normalize-canonical-expression
                     :msg "Removed some deldup candidate expressions"
-
-                    #_#_:removed (set/difference (set candidate-expressions)
-                                                 (set prefiltered-candidate-expressions))
-
-                    ;; TODO why not set/difference?
-                    ;; (set/difference (set candidate-expressions) (set prefiltered-candidate-expressions))
                     :removed (set/difference (set prefiltered-candidate-expressions)
                                              (set candidate-expressions))))
 
