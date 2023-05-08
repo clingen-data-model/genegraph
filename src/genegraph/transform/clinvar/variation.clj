@@ -394,11 +394,15 @@
                              {:expression (-> event ::prioritized-expression :expr)
                               :expression-type (-> event ::prioritized-expression :type)})
                             :variation)
-                       (get (get-vrs-variation-map
-                             {:expression (str "clinvar:" (get-in event [:genegraph.transform.clinvar.core/parsed-value
-                                                                         :content
-                                                                         :id]))
-                              :expression-type :text})
+                       (get (let [clinvar-id (get-in event [:genegraph.transform.clinvar.core/parsed-value
+                                                            :content
+                                                            :id])
+                                  ret (get-vrs-variation-map
+                                       {:expression (str "clinvar:" clinvar-id)
+                                        :expression-type :text})]
+                              (log/info :msg "Fell back to Text for CNV" :clinvar-id clinvar-id
+                                        :expression (-> event ::prioritized-expression))
+                              ret)
                             :variation))
        :label (-> event ::prioritized-expression :expr)}
       (let [prefiltered-candidate-expressions (::canonical-candidate-expressions event)
@@ -448,7 +452,6 @@
                     :msg "Removed some deldup candidate expressions"
                     :removed (set/difference (set prefiltered-candidate-expressions)
                                              (set candidate-expressions))))
-
         (log/debug :candidate-expressions candidate-expressions)
         ;; each vrs-ret[:variation] is the structure in the 'variation', 'canonical_variaton' (or equivalent)
         ;; field in the normalization service response body
