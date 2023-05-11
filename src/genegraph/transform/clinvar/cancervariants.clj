@@ -24,7 +24,7 @@
 
 (def url-absolute-cnv
   "URL for cancervariants.org Absolute Copy Number normalization."
-  (str variation-normalizer-base-url "/parsed_to_abs_cnv"))
+  (str variation-normalizer-base-url "/parsed_to_cn_var"))
 
 (def url-relative-cnv
   "URL for cancervariants.org Relative Copy Number normalization."
@@ -126,8 +126,8 @@
         status (:status response)]
     (cond
       (= status 200) (let [body (-> response :body json/parse-string)]
-                       (when (get body "absolute_copy_number")
-                         (-> body (get "absolute_copy_number") add-vicc-context)))
+                       (when (get body "copy_number_count")
+                         (-> body (get "copy_number_count") add-vicc-context)))
       :else (log/error :msg "Error in VRS normalization request"
                        :fn :normalize-absolute-copy-number
                        :input-map input-map
