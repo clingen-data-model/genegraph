@@ -68,13 +68,12 @@
             (get-spdi [nested-content]
               (-> nested-content (get "CanonicalSPDI") (get "$")))
             (get-sequence-location [nested-content sequence-accession]
-              (log/info :nested-content nested-content
-                        :sequence-accession sequence-accession)
+              (log/debug :nested-content nested-content
+                         :sequence-accession sequence-accession)
               (->> (get-in nested-content ["Location" "SequenceLocation"])
                    util/into-sequential-if-not
                    (filter #(= sequence-accession (get % "@Accession")))
-                   first
-                   (#(do (log/info :location %) %))))]
+                   first))]
       (let [exprs (for [val-opt [{:fn #(get-spdi nested-content)
                                   :type :spdi
                                   :label "SPDI"}
@@ -261,7 +260,7 @@
                Must be called *after* try-absolute-copy-number"
               (let [hgvs-exprs (->> prioritized-expressions
                                     (filter #(= :hgvs (:type %))))]
-                (log/info :variation-type variation-type :hgvs-exprs hgvs-exprs)
+                (log/debug :variation-type variation-type :hgvs-exprs hgvs-exprs)
                 (if (and (not-empty hgvs-exprs)
                          (or (and (.startsWith variation-type "copy number")
                                   (not (::cnv event)))
