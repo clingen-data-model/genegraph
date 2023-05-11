@@ -3,19 +3,22 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [com.climate.claypoole :as cp]
+            [genegraph.repl-server :as repl-server]
             [genegraph.rocksdb :as rocksdb]
             [genegraph.sink.event :as ev]
             [genegraph.source.snapshot.core :as snapshot]
             [genegraph.transform.clinvar.cancervariants :as vicc]
             [genegraph.transform.clinvar.ga4gh :as ga4gh]
             [io.pedestal.log :as log]
-            [me.raynes.fs :as fs]))
+            [mount.core :as mount]))
 
 
 #_(def files (mapv #(.getPath %) (fs/list-dir "vrs_analysis")))
 
 ;; "Elapsed time: 2464946.621451 msecs"
-(def files (mapv #(.getPath %) (fs/list-dir "vrs_analysis_v2")))
+(def files
+  ["/Users/kferrite/dev/genegraph/vrs_analysis_v2/000000000000"]
+  #_(mapv #(.getPath %) (fs/list-dir "vrs_analysis_v2")))
 
 (defn clinvar-raw-ize
   [bigquery-json-record]
@@ -37,57 +40,60 @@
    :genegraph.sink.stream/topic "clinvar-raw"
    :genegraph.sink.stream/partition 0})
 
-;; (defn start-states! []
-;;   (mount/start
-;;    #'genegraph.transform.clinvar.cancervariants/cache-db
-;;    #'genegraph.transform.clinvar.variation/variation-data-db
-;;    #'genegraph.sink.event-recorder/event-database
-;;    #'genegraph.sink.document-store/db
-;;    #'genegraph.transform.clinvar.variation/variation-data-db
-;;    #'genegraph.transform.clinvar.clinical-assertion/trait-data-db
-;;    #'genegraph.transform.clinvar.clinical-assertion/trait-set-data-db
-;;    #'genegraph.transform.clinvar.clinical-assertion/clinical-assertion-data-db
-;;    #'rocks-registry/db
-;;    #'rocks-registry/server))
+(defn start-states! []
+  ;{:started [...]}
+  (merge-with concat
+              (snapshot/start-states!)
+              (mount/start #'genegraph.repl-server/nrepl-server)))
 
-(defn process-file [filename]
-  (with-open [reader (io/reader filename)
-              #_#_error-log (io/writer "errors.txt")
-              data-writer (io/writer "data.ndedn")]
-    (cp/with-shutdown! [threadpool (cp/threadpool 10)]
-      (let [limit Long/MAX_VALUE
-            line-count (atom 0)]
-        (doseq [[i event] (->> (line-seq reader)
-                               (take limit)
-                               (map (fn [line]
-                                      (-> line
-                                          json/parse-string
-                                          (assoc "entity_type" "variation")
-                                          clinvar-raw-ize
-                                          eventify)))
-                               (cp/pmap threadpool
-                                        (fn [event]
-                                          (->  event
-                                               (assoc ::ev/interceptors snapshot/interceptor-chain)
-                                               (snapshot/process-event-catch-exceptions))))
-                               (map-indexed vector))]
-          (log/debug :data (:genegraph.annotate/data event))
-          (log/debug :id (get-in event [:genegraph.annotate/data :id])
-                     :description (get-in event [:genegraph.annotate/data :description]))
-          (swap! line-count inc)
-          (if (not (:genegraph.annotate/data event))
-            (log/error :msg "Data not added to event" :event (dissoc event :exceptions))
-            (.write data-writer (prn-str (:genegraph.annotate/data event))))
 
-          (when (= 0 (rem i 1000))
-            (log/info :progress i)))
-        (log/info :line-count @line-count)))))
+(defn process-file
+  ([filename line-prepper]
+   (with-open [reader (io/reader filename)
+               #_#_error-log (io/writer "errors.txt")
+               data-writer (io/writer "data.ndedn")]
+     (cp/with-shutdown! [threadpool (cp/threadpool 20)]
+       (let [limit Long/MAX_VALUE
+             line-count (atom 0)]
+         (doseq [[i event]
+                 (->> (line-seq reader)
+                      (take limit)
+                      (map line-prepper)
+                      (cp/upmap threadpool
+                                (fn [event]
+                                  (->  event
+                                       (assoc ::ev/interceptors snapshot/interceptor-chain)
+                                       (snapshot/process-event-catch-exceptions))))
+                      (map-indexed vector))]
+           (log/debug :data (:genegraph.annotate/data event))
+           (log/debug :id (get-in event [:genegraph.annotate/data :id])
+                      :description (get-in event [:genegraph.annotate/data :description]))
+           (swap! line-count inc)
+           (if (not (:genegraph.annotate/data event))
+             (log/error :msg "Data not added to event" :event (dissoc event :exceptions))
+             (.write data-writer (prn-str (:genegraph.annotate/data event))))
+
+           (when (= 0 (rem i 1000))
+             (log/info :progress i)))
+         (log/info :line-count @line-count))))))
+
+(defn clinvar-raw-line-prep [line]
+  (-> line
+      json/parse-string
+      eventify))
+
+(defn bigquery-export-line-prep [line]
+  (-> line
+      json/parse-string
+      (assoc "entity_type" "variation")
+      clinvar-raw-ize
+      eventify))
 
 (defn -main []
   (snapshot/start-states!)
   (doseq [fname (->> files)]
     (log/info :fname fname)
-    (process-file fname)))
+    (process-file fname bigquery-export-line-prep)))
 
 (comment
   (def written-datasets (snapshot/snapshot-write snapshot/snapshot-datasets)))
@@ -141,7 +147,15 @@
            doall)))
 
 (comment
-  {:counters {"CopyNumberChange" 23901, "Text" 6933, "Allele" 7, nil 2}, :line 192})
+  ;; Original set (missing some)
+  ;; vrs_analysis_v2 has 31226 variants
+  (def counts {"CopyNumberChange" 23901, "Text" 6933, "Allele" 7, nil 2})
+
+  ;; After adding text fallback for CNV, no missing, but some nil and Text
+  (def counts {"CopyNumberChange" 23901, "Text" 7317, "Allele" 7, nil 1})
+  (def counts {"CopyNumberChange" 23901, "Text" 7318, "Allele" 7})
+
+  (reduce (fn [sum [cls val]] (+ sum val)) 0 counts))
 
 (defn count-variation-types []
   (with-open [writer-allele (io/writer "variation-allele.txt")
@@ -159,19 +173,19 @@
                    "AbsoluteCopyNumber" writer-abs-cnv
                    "Text" writer-text
                    nil writer-null}]
-      (letfn [(count-canonical-variations [counters canonical-variation]
+      (letfn [(count-canonical-variations [counters canonical-variation descriptor]
                 (let [{core-variation :canonical_context} canonical-variation
                       {core-variation-type :type} core-variation]
                   (.write (get writers core-variation-type writer-other)
-                          (str (json/generate-string canonical-variation) "\n"))
+                          (str (json/generate-string descriptor) "\n"))
                   (swap! counters (fn [current-counters]
                                     (update current-counters
                                             core-variation-type
                                             #(+ 1 (or % 0)))))))
-              (count-non-canonical [counters variation]
+              (count-non-canonical [counters variation descriptor]
                 (let [{variation-type :type} variation]
                   (.write (get writers variation-type writer-other)
-                          (str (json/generate-string variation) "\n"))
+                          (str (json/generate-string descriptor) "\n"))
                   (swap! counters (fn [current-counters]
                                     (update current-counters
                                             variation-type
@@ -182,13 +196,13 @@
                                            #_(take 10000)))]
             (let [{canonical-variation :canonical_variation} descriptor]
               (case (:type canonical-variation)
-                "CanonicalVariation" (count-canonical-variations counters canonical-variation)
+                "CanonicalVariation" (count-canonical-variations counters canonical-variation descriptor)
                 nil (do (log/error :msg "nil variation type"
                                    :descriptor descriptor)
                         (.write error-writer (str/trim (prn-str descriptor)))
                         (.write error-writer "\n")
-                        (count-non-canonical counters {:type nil}))
-                (count-non-canonical counters canonical-variation))
+                        (count-non-canonical counters {:type nil} descriptor))
+                (count-non-canonical counters canonical-variation descriptor))
               (.write variation-writer (json/generate-string descriptor))
               (.write variation-writer "\n"))
             (when (= 0 (rem idx 1000))
@@ -220,5 +234,27 @@
                        :copy-class "Duplication"}}))
             (range 1000)))
 
+  (genegraph.transform.clinvar.cancervariants/normalize-absolute-copy-number
+   {:assembly "GRCh38"
+    :chr "22"
+    :start 49529760
+    :end 50759410
+    :total_copies 1})
+  ())
+
+(comment
+  (cp/with-shutdown! [pool (cp/threadpool 2)]
+    (->> (range 100)
+         (cp/upmap pool
+                   (fn [val]
+                     (if (== 0 val)
+                       (Thread/sleep (* 5 1000)))
+                     val))
+         (map (fn [val] (println val) val))
+         (into [])))
+
+  (time
+   (process-file "/Users/kferrite/dev/clinvar-streams/clinvar-raw-2023-04-10_variation.txt"
+                 clinvar-raw-line-prep))
 
   ())
