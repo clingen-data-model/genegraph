@@ -296,22 +296,24 @@
 
 (defonce snapshot-keep-running-atom (atom true))
 
-(defn -main2 [& args]
+(defn -main [& args]
   (mount/start #'genegraph.server/server)
   (migration/populate-data-vol-if-needed)
   (start-states!)
   (let [m (apply hash-map args)]
     (reset! snapshot-keep-running-atom true)
-    (snapshot-populate :clinvar-raw snapshot-keep-running-atom)
+    (let [topic-kw (or (some-> "GENEGRAPH_SNAPSHOT_TOPIC" System/getenv keyword)
+                       :clinvar-raw)]
+      (snapshot-populate topic-kw snapshot-keep-running-atom))
     (let [written-datasets (snapshot-write snapshot-datasets)]
       (when env/snapshot-upload
         (let [uploaded-datasets (snapshot-upload written-datasets)]
           (snapshot-rocksdb-upload written-datasets)))))
-  (log/info :fn ::-main2 :msg "Shutting down states")
+  (log/info :fn ::-main :msg "Shutting down states")
   (mount/stop))
 
 (comment
-  (def snapshot-thread (doto (Thread. -main2)
+  (def snapshot-thread (doto (Thread. -main)
                          .start))
 
   (reset! snapshot-keep-running-atom false))
