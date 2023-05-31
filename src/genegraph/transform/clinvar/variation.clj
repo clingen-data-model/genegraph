@@ -504,6 +504,18 @@
         variation-descriptor (docstore/get-document-raw-key variation-data-db vd-iri)]
     variation-descriptor))
 
+(defn add-canonical-wrapper
+  "If the vrs-variation is not :type CanonicalVariation, add a wrapper"
+  [id nce]
+
+  (let [vrs-variation (-> nce :normalized)]
+    (log/info :fn :add-canonical-wrapper :vrs-variation vrs-variation)
+    (if (-> vrs-variation :type (= "CanonicalVariation"))
+      nce
+      (assoc nce :normalized {:id id
+                              :type "CanonicalVariation"
+                              :canonical_context vrs-variation}))))
+
 (defn add-data-for-variation
   "Returns msg with :genegraph.annotate/data and :genegraph.annotate/data-contextualized added.
 
@@ -521,7 +533,9 @@
         vd-iri (str vrd-unversioned "." (:release_date message))
         clinvar-variation-iri (str iri/clinvar-variation (:id variation))
         ;; normalize-canonical-expression must be called after variation-preprocess
-        nce (normalize-canonical-expression event)]
+        nce (normalize-canonical-expression event)
+        nce (add-canonical-wrapper (str "CanonicalVariation:clinvar:" (:id variation))
+                                   nce)]
     #_(log/debug :fn :add-data-for-variation :nce nce)
     (when (empty? nce)
       (log/error :fn :add-data-for-variation
