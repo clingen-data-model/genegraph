@@ -29,8 +29,8 @@ nil
 
 ### [Docker](https://www.docker.com/) container support
 
-1. Build a Docker image: `docker build -t clingen-search .`
-2. Run your Docker image: `docker run -p 8888:8888 clingen-search`
+1. Build a Docker image: `docker build -t genegraph .`
+2. Run your Docker image: `docker run -p 8888:8888 genegraph`
 
 ## Links
 * [Other examples](https://github.com/pedestal/samples)
