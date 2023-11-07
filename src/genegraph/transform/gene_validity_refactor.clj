@@ -174,6 +174,7 @@
             "7" "http://purl.obolibrary.org/obo/SEPIO_0004095"
             "8" "http://purl.obolibrary.org/obo/SEPIO_0004096"
             "9" "http://purl.obolibrary.org/obo/SEPIO_0004171"
+            "10" "http://purl.obolibrary.org/obo/SEPIO_0004190"
 
 
             ;; Sex
