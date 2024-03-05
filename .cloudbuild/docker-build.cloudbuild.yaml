@@ -12,6 +12,16 @@ steps:
   args: [ 'tag', 'genegraph:$COMMIT_SHA', 'gcr.io/clingen-stage/genegraph:$COMMIT_SHA']
 - name: 'gcr.io/cloud-builders/docker'
   args: [ 'tag', 'genegraph:$COMMIT_SHA', 'gcr.io/clingen-dx/genegraph:$COMMIT_SHA']
+- name: 'gcr.io/cloud-builders/git'
+  entrypoint: bash
+  args: [
+      '-c',
+      'git log --format=format:%ae | head -n 1 > /workspace/author-email.txt
+      && git log --format=format:%s | head -n 1 > /workspace/commit-title.txt
+      && echo "Latest author: $(cat /workspace/author-email.txt) " > /workspace/body.txt
+      && echo "Latest subject: $(cat /workspace/commit-title.txt)" >> /workspace/body.txt
+      && if [[ ! -z "$TRIGGER_NAME" ]]; then echo "Trigger: $TRIGGER_NAME" >> /workspace/body.txt; fi
+      && if [[ ! -z "$_PR_NUMBER" ]]; then echo "Cause PR: https://github.com/clingen-data-model/genegraph/pull/$_PR_NUMBER" >> /workspace/body.txt; fi']
 - name: 'gcr.io/clingen-stage/git-image-updater'
   secretEnv: ["GITHUB_TOKEN"]
   args:
@@ -28,7 +38,7 @@ steps:
       && git add -u \
       && git -c user.name="Clingen CI Automation" -c user.email="clingendevs@broadinstitute.org" commit -m "bumping docker image for genegraph" \
       && git push origin image-update-$SHORT_SHA \
-      && gh pr create --fill -l automation
+      && gh pr create --fill -l automation -b "$(cat /workspace/body.txt)"
 
 availableSecrets:
   secretManager:
