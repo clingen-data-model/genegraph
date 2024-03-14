@@ -85,3 +85,7 @@
       (= "snapshot" (first args)) (apply snapshot/-main2 (rest args))
       (= "vrs-cache" (first args)) (apply vrs-registry/-main (rest args))
       :else (run-migration))))
+
+(comment
+  (run-dev)
+  )
