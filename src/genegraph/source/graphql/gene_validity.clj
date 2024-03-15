@@ -23,8 +23,14 @@
       (when (q/is-rdf-type? gciex-assertion :sepio/GeneValidityEvidenceLevelAssertion)
         gciex-assertion))))
 
+(defn phil-requested-assertion_be-ok-in-iris [iri]
+  (s/replace iri #"assertion_([0-9a-f\-]{36}).*" "$1"))
+
 (defresolver gene-validity-assertion-query [args value]
-  (let [requested-assertion (q/resource (:iri args))]
+  (let [requested-assertion (-> args
+                                :iri
+                                phil-requested-assertion_be-ok-in-iris
+                                q/resource)]
     (if (q/is-rdf-type? requested-assertion :sepio/GeneValidityEvidenceLevelAssertion)
       requested-assertion
       (or (q/ld1-> requested-assertion [[:cg/website-legacy-id :<]])

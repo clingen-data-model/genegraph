@@ -118,6 +118,9 @@
    :resolve (fn [context args value]
               (q/resource (:iri args)))})
 
+(defn phil-requested-assertion_be-ok-in-iris [iri]
+  (s/replace iri #"assertion_([0-9a-f\-]{36}).*" "$1"))
+
 (def resource-query
   {:name :resource
    :graphql-type :query
@@ -125,5 +128,4 @@
    :args {:iri {:type 'String}}
    :type :Resource
    :resolve (fn [_ args _]
-              (let [r (q/resource (:iri args))]
-                (or (q/ld1-> r [[:cg/website-legacy-id :<]]) r)))})
+              (-> args :iri phil-requested-assertion_be-ok-in-iris q/resource))})
